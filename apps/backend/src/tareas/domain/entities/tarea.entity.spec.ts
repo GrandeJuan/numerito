@@ -1,0 +1,58 @@
+import { Tarea, ESTADO_TAREA, PRIORIDAD } from './tarea.entity';
+
+describe('Tarea Entity', () => {
+  const createTarea = () => {
+    return Tarea.create({
+      titulo: 'Preparar DDJJ IVA',
+      clienteId: 'c1',
+      tenantId: 't1',
+      prioridad: PRIORIDAD.ALTA,
+    });
+  };
+
+  it('should create a tarea in PENDIENTE state', () => {
+    const t = createTarea();
+    expect(t.estado).toBe(ESTADO_TAREA.PENDIENTE);
+    expect(t.prioridad).toBe(PRIORIDAD.ALTA);
+    expect(t.horasRegistradas).toBe(0);
+  });
+
+  it('should move to EN_PROGRESO', () => {
+    const t = createTarea();
+    t.iniciar();
+    expect(t.estado).toBe(ESTADO_TAREA.EN_PROGRESO);
+  });
+
+  it('should complete', () => {
+    const t = createTarea();
+    t.iniciar();
+    t.completar();
+    expect(t.estado).toBe(ESTADO_TAREA.COMPLETADO);
+  });
+
+  it('should not complete from PENDIENTE', () => {
+    const t = createTarea();
+    expect(() => t.completar()).toThrow();
+  });
+
+  it('should assign responsable', () => {
+    const t = createTarea();
+    t.asignar('user-1');
+    expect(t.responsableId).toBe('user-1');
+  });
+
+  it('should register hours', () => {
+    const t = createTarea();
+    t.iniciar();
+    t.registrarHoras(2.5);
+    t.registrarHoras(1.5);
+    expect(t.horasRegistradas).toBe(4);
+  });
+
+  it('should add comment', () => {
+    const t = createTarea();
+    t.agregarComentario('user-1', 'Avance parcial');
+    expect(t.comentarios).toHaveLength(1);
+    expect(t.comentarios[0].texto).toBe('Avance parcial');
+  });
+});
