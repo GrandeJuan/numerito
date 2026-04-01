@@ -40,4 +40,34 @@ describe('RolesGuard', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ROL.SOCIO, ROL.RESPONSABLE]);
     expect(guard.canActivate(mockContext(ROL.RESPONSABLE))).toBe(true);
   });
+
+  it('should allow when required roles is empty array', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([]);
+    expect(guard.canActivate(mockContext(ROL.SOCIO))).toBe(true);
+  });
+
+  it('should throw when user has no rol', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ROL.SOCIO]);
+    const ctx = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({
+        getRequest: () => ({ user: {} }),
+      }),
+    } as any;
+    expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(ctx)).toThrow('Rol no encontrado en el token');
+  });
+
+  it('should throw when user is undefined', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([ROL.SOCIO]);
+    const ctx = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({
+        getRequest: () => ({}),
+      }),
+    } as any;
+    expect(() => guard.canActivate(ctx)).toThrow('Rol no encontrado en el token');
+  });
 });
