@@ -1,4 +1,4 @@
-import { v4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export abstract class BaseEntity {
   readonly id: string;
@@ -6,7 +6,7 @@ export abstract class BaseEntity {
   updatedAt: Date;
 
   constructor(id?: string) {
-    this.id = id ?? v4();
+    this.id = id ?? randomUUID();
     this.createdAt = new Date();
     this.updatedAt = new Date();
   }
