@@ -3,21 +3,21 @@ import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 export class CrearClienteDto {
   @IsString()
   @IsNotEmpty()
-  cuit: string;
+  cuit!: string;
 
   @IsString()
   @MinLength(3)
-  razonSocial: string;
+  razonSocial!: string;
 
   @IsString()
   @IsNotEmpty()
-  condicionIva: string;
+  condicionIva!: string;
 
   @IsString()
   @IsNotEmpty()
-  tipo: string;
+  tipo!: string;
 
   @IsString()
   @IsNotEmpty()
-  regimen: string;
+  regimen!: string;
 }

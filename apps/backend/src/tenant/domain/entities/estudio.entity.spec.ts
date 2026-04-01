@@ -45,4 +45,18 @@ describe('Estudio Entity (Aggregate Root)', () => {
     expect(estudio.canAddCliente(49)).toBe(true);
     expect(estudio.canAddCliente(50)).toBe(false);
   });
+
+  it('should check if can add usuarios based on plan', () => {
+    const estudio = createEstudio();
+    expect(estudio.canAddUsuario(4)).toBe(true);
+    expect(estudio.canAddUsuario(5)).toBe(false);
+  });
+
+  it('should activate after deactivation', () => {
+    const estudio = createEstudio();
+    estudio.deactivate();
+    expect(estudio.isActive).toBe(false);
+    estudio.activate();
+    expect(estudio.isActive).toBe(true);
+  });
 });

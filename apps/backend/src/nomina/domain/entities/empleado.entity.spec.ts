@@ -39,4 +39,18 @@ describe('Empleado Entity', () => {
     expect(emp.isActive).toBe(false);
     expect(emp.fechaEgreso).toEqual(new Date('2026-03-31'));
   });
+
+  it('should expose all getters', () => {
+    const emp = createEmpleado();
+    expect(emp.clienteId).toBe('c1');
+    expect(emp.tenantId).toBe('t1');
+    expect(emp.nombre).toBe('Juan');
+    expect(emp.apellido).toBe('Perez');
+    expect(emp.cuil).toBe('20-12345678-6');
+    expect(emp.fechaIngreso).toEqual(new Date('2024-01-15'));
+    expect(emp.fechaEgreso).toBeUndefined();
+    expect(emp.sueldoBasico).toBe(500000);
+    expect(emp.categoriaConvenio).toBe('Administrativo A');
+    expect(emp.isActive).toBe(true);
+  });
 });

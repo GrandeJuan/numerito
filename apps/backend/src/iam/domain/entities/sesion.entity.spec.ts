@@ -42,4 +42,50 @@ describe('Sesion Entity', () => {
 
     expect(sesion.isExpired).toBe(true);
   });
+
+  it('should expose expiresAt getter', () => {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 3600000);
+    const sesion = Sesion.create({
+      usuarioId: 'user-1',
+      refreshToken: 'token-abc',
+      ipAddress: '192.168.1.1',
+      userAgent: 'Chrome/120',
+      expiresAt,
+    });
+    expect(sesion.expiresAt).toBe(expiresAt);
+  });
+
+  it('should validate active non-expired session via isValid', () => {
+    const sesion = Sesion.create({
+      usuarioId: 'user-1',
+      refreshToken: 'token-abc',
+      ipAddress: '192.168.1.1',
+      userAgent: 'Chrome/120',
+      expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+    });
+    expect(sesion.isValid).toBe(true);
+  });
+
+  it('should be invalid when revoked', () => {
+    const sesion = Sesion.create({
+      usuarioId: 'user-1',
+      refreshToken: 'token-abc',
+      ipAddress: '192.168.1.1',
+      userAgent: 'Chrome/120',
+      expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+    });
+    sesion.revoke();
+    expect(sesion.isValid).toBe(false);
+  });
+
+  it('should be invalid when expired', () => {
+    const sesion = Sesion.create({
+      usuarioId: 'user-1',
+      refreshToken: 'token-abc',
+      ipAddress: '192.168.1.1',
+      userAgent: 'Chrome/120',
+      expiresAt: new Date(Date.now() - 1000),
+    });
+    expect(sesion.isValid).toBe(false);
+  });
 });

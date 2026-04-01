@@ -44,4 +44,19 @@ describe('Usuario Entity', () => {
     usuario.verifyEmail();
     expect(usuario.emailVerified).toBe(true);
   });
+
+  it('should activate after deactivation', async () => {
+    const usuario = await createUsuario();
+    usuario.deactivate();
+    expect(usuario.isActive).toBe(false);
+    usuario.activate();
+    expect(usuario.isActive).toBe(true);
+  });
+
+  it('should change password', async () => {
+    const usuario = await createUsuario();
+    const newPassword = await Password.create('NewSecure456!');
+    await usuario.changePassword(newPassword);
+    expect(usuario.password).toBe(newPassword);
+  });
 });

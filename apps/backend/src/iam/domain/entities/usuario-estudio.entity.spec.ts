@@ -37,4 +37,17 @@ describe('UsuarioEstudio Entity', () => {
     membership.deactivate();
     expect(membership.isActive).toBe(false);
   });
+
+  it('should activate membership after deactivation', () => {
+    const membership = UsuarioEstudio.create({
+      usuarioId: 'user-1',
+      estudioId: 'estudio-1',
+      rol: ROL.SOCIO,
+    });
+
+    membership.deactivate();
+    expect(membership.isActive).toBe(false);
+    membership.activate();
+    expect(membership.isActive).toBe(true);
+  });
 });

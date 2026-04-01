@@ -1,4 +1,4 @@
-import { Password } from './password.vo';
+import { Password } from './index';
 
 describe('Password Value Object', () => {
   it('should hash a password', async () => {

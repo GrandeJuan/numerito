@@ -53,4 +53,30 @@ describe('Vencimiento Entity', () => {
     expect(v.isProximoAVencer(3)).toBe(true);
     expect(v.isProximoAVencer(0)).toBe(false);
   });
+
+  it('should not be proximo a vencer if not PENDIENTE', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const v = Vencimiento.create({
+      clienteId: 'c1',
+      tenantId: 't1',
+      tipoObligacion: TIPO_OBLIGACION.IVA,
+      periodo: '2026-04',
+      fechaVencimiento: tomorrow,
+      descripcion: 'IVA',
+    });
+    v.presentar();
+    expect(v.isProximoAVencer(3)).toBe(false);
+  });
+
+  it('should expose all getters', () => {
+    const v = createVencimiento();
+    expect(v.clienteId).toBe('cliente-1');
+    expect(v.tenantId).toBe('tenant-1');
+    expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
+    expect(v.periodo).toBe('2026-03');
+    expect(v.fechaVencimiento).toEqual(new Date('2026-04-15'));
+    expect(v.descripcion).toBe('DDJJ IVA Marzo 2026');
+    expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+  });
 });

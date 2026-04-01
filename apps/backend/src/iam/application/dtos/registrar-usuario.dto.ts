@@ -3,21 +3,21 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 export class RegistrarUsuarioDto {
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  nombre!: string;
 
   @IsString()
   @IsNotEmpty()
-  apellido: string;
+  apellido!: string;
 
   @IsString()
   @IsNotEmpty()
-  rol: string;
+  rol!: string;
 }

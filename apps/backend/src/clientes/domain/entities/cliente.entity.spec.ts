@@ -72,4 +72,11 @@ describe('Cliente Entity (Aggregate Root)', () => {
     cliente.activate();
     expect(cliente.isActive).toBe(true);
   });
+
+  it('should update razon social', () => {
+    const cliente = createCliente();
+    const newRazonSocial = RazonSocial.create('Perez & Cia S.R.L.');
+    cliente.updateRazonSocial(newRazonSocial);
+    expect(cliente.razonSocial.value).toBe('Perez & Cia S.R.L.');
+  });
 });

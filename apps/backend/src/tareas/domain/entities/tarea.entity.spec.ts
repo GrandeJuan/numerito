@@ -55,4 +55,33 @@ describe('Tarea Entity', () => {
     expect(t.comentarios).toHaveLength(1);
     expect(t.comentarios[0].texto).toBe('Avance parcial');
   });
+
+  it('should expose all getters', () => {
+    const t = Tarea.create({
+      titulo: 'Tarea test',
+      clienteId: 'c1',
+      tenantId: 't1',
+      prioridad: PRIORIDAD.MEDIA,
+      descripcion: 'Descripcion test',
+    });
+    expect(t.titulo).toBe('Tarea test');
+    expect(t.descripcion).toBe('Descripcion test');
+    expect(t.clienteId).toBe('c1');
+    expect(t.tenantId).toBe('t1');
+    expect(t.estado).toBe(ESTADO_TAREA.PENDIENTE);
+    expect(t.prioridad).toBe(PRIORIDAD.MEDIA);
+    expect(t.responsableId).toBeUndefined();
+    expect(t.horasRegistradas).toBe(0);
+    expect(t.comentarios).toEqual([]);
+  });
+
+  it('should create tarea without optional fields', () => {
+    const t = Tarea.create({
+      titulo: 'Sin opcionales',
+      tenantId: 't1',
+      prioridad: PRIORIDAD.BAJA,
+    });
+    expect(t.clienteId).toBeUndefined();
+    expect(t.descripcion).toBeUndefined();
+  });
 });
