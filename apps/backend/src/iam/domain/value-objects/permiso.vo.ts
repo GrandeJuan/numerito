@@ -1,0 +1,84 @@
+import type { Rol } from '@numerito/shared';
+import { ROL } from '@numerito/shared';
+
+export enum Permiso {
+  // Usuarios
+  GESTIONAR_USUARIOS = 'GESTIONAR_USUARIOS',
+  VER_USUARIOS = 'VER_USUARIOS',
+
+  // Clientes
+  GESTIONAR_CLIENTES = 'GESTIONAR_CLIENTES',
+  VER_CLIENTES = 'VER_CLIENTES',
+
+  // Obligaciones
+  GESTIONAR_OBLIGACIONES = 'GESTIONAR_OBLIGACIONES',
+  VER_OBLIGACIONES = 'VER_OBLIGACIONES',
+
+  // Contabilidad
+  GESTIONAR_CONTABILIDAD = 'GESTIONAR_CONTABILIDAD',
+  VER_CONTABILIDAD = 'VER_CONTABILIDAD',
+
+  // Nomina
+  GESTIONAR_NOMINA = 'GESTIONAR_NOMINA',
+  VER_NOMINA = 'VER_NOMINA',
+
+  // Documentos
+  GESTIONAR_DOCUMENTOS = 'GESTIONAR_DOCUMENTOS',
+  VER_DOCUMENTOS = 'VER_DOCUMENTOS',
+
+  // Tareas
+  GESTIONAR_TAREAS = 'GESTIONAR_TAREAS',
+  VER_TAREAS = 'VER_TAREAS',
+
+  // Facturacion
+  GESTIONAR_FACTURACION = 'GESTIONAR_FACTURACION',
+  VER_FACTURACION = 'VER_FACTURACION',
+
+  // Configuracion
+  GESTIONAR_CONFIGURACION = 'GESTIONAR_CONFIGURACION',
+
+  // Portal cliente
+  VER_PROPIOS_DATOS = 'VER_PROPIOS_DATOS',
+  VER_PROPIOS_DOCUMENTOS = 'VER_PROPIOS_DOCUMENTOS',
+  VER_PROPIOS_VENCIMIENTOS = 'VER_PROPIOS_VENCIMIENTOS',
+}
+
+export const PERMISOS_POR_ROL: Record<Rol, Permiso[]> = {
+  [ROL.SOCIO]: Object.values(Permiso),
+
+  [ROL.RESPONSABLE]: [
+    Permiso.VER_USUARIOS,
+    Permiso.GESTIONAR_CLIENTES,
+    Permiso.VER_CLIENTES,
+    Permiso.GESTIONAR_OBLIGACIONES,
+    Permiso.VER_OBLIGACIONES,
+    Permiso.GESTIONAR_CONTABILIDAD,
+    Permiso.VER_CONTABILIDAD,
+    Permiso.GESTIONAR_NOMINA,
+    Permiso.VER_NOMINA,
+    Permiso.GESTIONAR_DOCUMENTOS,
+    Permiso.VER_DOCUMENTOS,
+    Permiso.GESTIONAR_TAREAS,
+    Permiso.VER_TAREAS,
+    Permiso.VER_FACTURACION,
+  ],
+
+  [ROL.EMPLEADO]: [
+    Permiso.VER_CLIENTES,
+    Permiso.VER_OBLIGACIONES,
+    Permiso.VER_CONTABILIDAD,
+    Permiso.VER_NOMINA,
+    Permiso.VER_DOCUMENTOS,
+    Permiso.VER_TAREAS,
+  ],
+
+  [ROL.CLIENTE]: [
+    Permiso.VER_PROPIOS_DATOS,
+    Permiso.VER_PROPIOS_DOCUMENTOS,
+    Permiso.VER_PROPIOS_VENCIMIENTOS,
+  ],
+};
+
+export function tienePermiso(rol: Rol, permiso: Permiso): boolean {
+  return PERMISOS_POR_ROL[rol].includes(permiso);
+}
