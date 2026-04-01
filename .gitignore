@@ -41,3 +41,6 @@ npm-debug.log*
 
 # Generated
 src/generated/
+
+# Claude Code
+.claude/
