@@ -1,30 +1,54 @@
 import { BaseEntity } from '../../../shared/domain';
 import { Cuit } from '../value-objects/cuit.vo';
 import { RazonSocial } from '../value-objects/razon-social.vo';
-import type { CondicionIVA } from '@numerito/shared';
+import type { CondicionIVA, Provincia } from '@numerito/shared';
+
+export const TIPO_CLIENTE = {
+  PERSONA_FISICA: 'PERSONA_FISICA',
+  PERSONA_JURIDICA: 'PERSONA_JURIDICA',
+  SOCIEDAD: 'SOCIEDAD',
+} as const;
+
+export type TipoCliente = (typeof TIPO_CLIENTE)[keyof typeof TIPO_CLIENTE];
+
+export const REGIMEN = {
+  GENERAL: 'GENERAL',
+  MONOTRIBUTO: 'MONOTRIBUTO',
+} as const;
+
+export type Regimen = (typeof REGIMEN)[keyof typeof REGIMEN];
 
 interface CreateClienteProps {
   cuit: Cuit;
   razonSocial: RazonSocial;
   condicionIva: CondicionIVA;
+  tipo: TipoCliente;
+  regimen: Regimen;
   tenantId: string;
+  provincias?: Provincia[];
 }
 
 export class Cliente extends BaseEntity {
   private _cuit: Cuit;
   private _razonSocial: RazonSocial;
   private _condicionIva: CondicionIVA;
+  private _tipo: TipoCliente;
+  private _regimen: Regimen;
   private _tenantId: string;
   private _isActive: boolean;
   private _responsableId?: string;
+  private _provincias: Provincia[];
 
   private constructor(props: CreateClienteProps, id?: string) {
     super(id);
     this._cuit = props.cuit;
     this._razonSocial = props.razonSocial;
     this._condicionIva = props.condicionIva;
+    this._tipo = props.tipo;
+    this._regimen = props.regimen;
     this._tenantId = props.tenantId;
     this._isActive = true;
+    this._provincias = props.provincias ?? [];
   }
 
   static create(props: CreateClienteProps, id?: string): Cliente {
@@ -34,9 +58,12 @@ export class Cliente extends BaseEntity {
   get cuit(): Cuit { return this._cuit; }
   get razonSocial(): RazonSocial { return this._razonSocial; }
   get condicionIva(): CondicionIVA { return this._condicionIva; }
+  get tipo(): TipoCliente { return this._tipo; }
+  get regimen(): Regimen { return this._regimen; }
   get tenantId(): string { return this._tenantId; }
   get isActive(): boolean { return this._isActive; }
   get responsableId(): string | undefined { return this._responsableId; }
+  get provincias(): Provincia[] { return [...this._provincias]; }
 
   changeCondicionIva(condicion: CondicionIVA): void {
     this._condicionIva = condicion;
@@ -50,6 +77,23 @@ export class Cliente extends BaseEntity {
 
   assignResponsable(responsableId: string): void {
     this._responsableId = responsableId;
+    this.updatedAt = new Date();
+  }
+
+  changeRegimen(regimen: Regimen): void {
+    this._regimen = regimen;
+    this.updatedAt = new Date();
+  }
+
+  addProvincia(provincia: Provincia): void {
+    if (!this._provincias.includes(provincia)) {
+      this._provincias.push(provincia);
+      this.updatedAt = new Date();
+    }
+  }
+
+  removeProvincia(provincia: Provincia): void {
+    this._provincias = this._provincias.filter(p => p !== provincia);
     this.updatedAt = new Date();
   }
 
