@@ -1,11 +1,11 @@
-import { NotificacionFiscal, ORIGEN_NOTIFICACION, ESTADO_NOTIFICACION } from './notificacion-fiscal.entity';
+import { NotificacionFiscal, ESTADO_NOTIFICACION } from './notificacion-fiscal.entity';
 
 describe('NotificacionFiscal Entity', () => {
-  it('should create a notificacion from ARCA', () => {
+  it('should create a notificacion with organismoId from DB', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
       tenantId: 't1',
-      origen: ORIGEN_NOTIFICACION.ARCA,
+      organismoId: 'org-arca-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Intimación - Falta de presentación DDJJ IVA',
       contenido: 'Se intima a presentar la DDJJ...',
@@ -13,14 +13,14 @@ describe('NotificacionFiscal Entity', () => {
     });
     expect(n.id).toBeDefined();
     expect(n.estado).toBe(ESTADO_NOTIFICACION.PENDIENTE);
-    expect(n.origen).toBe(ORIGEN_NOTIFICACION.ARCA);
+    expect(n.organismoId).toBe('org-arca-1');
   });
 
   it('should mark as leida', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
       tenantId: 't1',
-      origen: ORIGEN_NOTIFICACION.ARBA,
+      organismoId: 'org-arba-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Retención IIBB',
       contenido: 'Certificado de retención...',
@@ -34,7 +34,7 @@ describe('NotificacionFiscal Entity', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
       tenantId: 't1',
-      origen: ORIGEN_NOTIFICACION.AGIP,
+      organismoId: 'org-agip-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Vencimiento IIBB CABA',
       contenido: 'Recordatorio...',

@@ -13,12 +13,12 @@
 export interface CredencialFiscal {
   cuit: string;
   claveFiscal: string;
-  organismo: 'ARCA' | 'ARBA' | 'AGIP';
+  organismo: string;
 }
 
 export interface NotificacionScraped {
   cuitCliente: string;
-  origen: 'ARCA' | 'ARBA' | 'AGIP';
+  origen: string;
   asunto: string;
   contenido: string;
   fechaNotificacion: Date;
@@ -34,6 +34,4 @@ export interface FiscalScraperPort {
   verificarConexion(credencial: CredencialFiscal): Promise<boolean>;
 }
 
-export const ARCA_SCRAPER = Symbol('ArcaScraper');
-export const ARBA_SCRAPER = Symbol('ArbaScraper');
-export const AGIP_SCRAPER = Symbol('AgipScraper');
+export const FISCAL_SCRAPER = Symbol('FiscalScraper');

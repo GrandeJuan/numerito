@@ -25,7 +25,7 @@ export interface EmailAttachment {
 
 export interface EmailParsed {
   cuitCliente: string | null;
-  origen: 'ARCA' | 'ARBA' | 'AGIP' | 'OTRO';
+  organismoId: string | null;
   asunto: string;
   contenidoRelevante: string;
   esNotificacionFiscal: boolean;

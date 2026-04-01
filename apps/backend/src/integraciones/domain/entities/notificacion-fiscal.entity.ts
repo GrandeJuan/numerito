@@ -1,14 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
 
-export const ORIGEN_NOTIFICACION = {
-  ARCA: 'ARCA',
-  ARBA: 'ARBA',
-  AGIP: 'AGIP',
-  EMAIL: 'EMAIL',
-} as const;
-
-export type OrigenNotificacion = (typeof ORIGEN_NOTIFICACION)[keyof typeof ORIGEN_NOTIFICACION];
-
 export const ESTADO_NOTIFICACION = {
   PENDIENTE: 'PENDIENTE',
   LEIDA: 'LEIDA',
@@ -20,7 +11,7 @@ export type EstadoNotificacion = (typeof ESTADO_NOTIFICACION)[keyof typeof ESTAD
 interface CreateNotificacionFiscalProps {
   clienteId: string;
   tenantId: string;
-  origen: OrigenNotificacion;
+  organismoId: string;
   cuitCliente: string;
   asunto: string;
   contenido: string;
@@ -30,7 +21,7 @@ interface CreateNotificacionFiscalProps {
 export class NotificacionFiscal extends BaseEntity {
   private _clienteId: string;
   private _tenantId: string;
-  private _origen: OrigenNotificacion;
+  private _organismoId: string;
   private _cuitCliente: string;
   private _asunto: string;
   private _contenido: string;
@@ -42,7 +33,7 @@ export class NotificacionFiscal extends BaseEntity {
     super(id);
     this._clienteId = props.clienteId;
     this._tenantId = props.tenantId;
-    this._origen = props.origen;
+    this._organismoId = props.organismoId;
     this._cuitCliente = props.cuitCliente;
     this._asunto = props.asunto;
     this._contenido = props.contenido;
@@ -56,7 +47,7 @@ export class NotificacionFiscal extends BaseEntity {
 
   get clienteId(): string { return this._clienteId; }
   get tenantId(): string { return this._tenantId; }
-  get origen(): OrigenNotificacion { return this._origen; }
+  get organismoId(): string { return this._organismoId; }
   get cuitCliente(): string { return this._cuitCliente; }
   get asunto(): string { return this._asunto; }
   get contenido(): string { return this._contenido; }

@@ -7,11 +7,11 @@ export interface CredencialFiscalData {
   id: string;
   clienteId: string;
   tenantId: string;
-  organismo: 'ARCA' | 'ARBA' | 'AGIP';
+  organismoId: string;
   cuit: string;
-  secretArn: string; // AWS Secrets Manager ARN
+  secretArn: string;
   ultimaSincronizacion?: Date;
-  estado: 'ACTIVA' | 'ERROR' | 'EXPIRADA';
+  estado: string;
 }
 
 export interface CredencialFiscalRepository {
