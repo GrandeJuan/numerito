@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export const ESTADO_TAREA = {
   PENDIENTE: 'PENDIENTE',
@@ -75,7 +76,7 @@ export class Tarea extends BaseEntity {
 
   completar(): void {
     if (this._estado !== ESTADO_TAREA.EN_PROGRESO) {
-      throw new Error('Solo se puede completar una tarea en progreso');
+      throw new OperacionInvalidaError('Solo se puede completar una tarea en progreso');
     }
     this._estado = ESTADO_TAREA.COMPLETADO;
     this.updatedAt = new Date();

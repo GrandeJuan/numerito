@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export const TIPO_LIBRO = {
   IVA_COMPRAS: 'IVA_COMPRAS',
@@ -47,7 +48,7 @@ export class LibroContable extends BaseEntity {
 
   rubricar(numeroRubrica: string): void {
     if (this._isRubricado) {
-      throw new Error('El libro ya está rubricado');
+      throw new OperacionInvalidaError('El libro ya está rubricado');
     }
     this._isRubricado = true;
     this._numeroRubrica = numeroRubrica;

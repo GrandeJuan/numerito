@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../shared/domain';
+import { InvalidRazonSocialError } from '../../../shared/domain/exceptions';
 
 interface RazonSocialProps {
   value: string;
@@ -14,7 +15,7 @@ export class RazonSocial extends ValueObject<RazonSocialProps> {
   static create(razonSocial: string): RazonSocial {
     const trimmed = razonSocial.trim();
     if (!trimmed || trimmed.length < MIN_LENGTH) {
-      throw new Error(`Razón social debe tener al menos ${MIN_LENGTH} caracteres`);
+      throw new InvalidRazonSocialError(`debe tener al menos ${MIN_LENGTH} caracteres`);
     }
     return new RazonSocial({ value: trimmed });
   }

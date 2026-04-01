@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../shared/domain';
+import { InvalidNombreEstudioError } from '../../../shared/domain/exceptions';
 
 interface NombreEstudioProps {
   value: string;
@@ -14,7 +15,7 @@ export class NombreEstudio extends ValueObject<NombreEstudioProps> {
   static create(nombre: string): NombreEstudio {
     const trimmed = nombre.trim();
     if (!trimmed || trimmed.length < MIN_LENGTH) {
-      throw new Error(`Nombre del estudio debe tener al menos ${MIN_LENGTH} caracteres`);
+      throw new InvalidNombreEstudioError(`debe tener al menos ${MIN_LENGTH} caracteres`);
     }
     return new NombreEstudio({ value: trimmed });
   }

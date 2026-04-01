@@ -1,5 +1,6 @@
 import { verifyTotp } from '../../../shared/utils/totp';
 import type { TotpSecretRepository } from '../../domain/repositories/totp-secret.repository';
+import { TwoFANoConfiguradoError } from '../../../shared/domain/exceptions';
 
 export interface Verificar2FACommand {
   usuarioId: string;
@@ -19,7 +20,7 @@ export class Verificar2FAHandler {
   async execute(command: Verificar2FACommand): Promise<Verificar2FAResult> {
     const secretData = await this.totpSecretRepo.findByUsuarioId(command.usuarioId);
     if (!secretData) {
-      throw new Error('2FA no configurado');
+      throw new TwoFANoConfiguradoError();
     }
 
     const isValid = verifyTotp(secretData.secret, command.code);

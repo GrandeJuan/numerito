@@ -1,6 +1,7 @@
 import { Password } from '../../domain/value-objects/password.vo';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import type { ResetTokenRepository } from '../../domain/repositories/reset-token.repository';
+import { TokenInvalidoError, RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 export interface ResetearPasswordCommand {
   token: string;
@@ -17,12 +18,12 @@ export class ResetearPasswordHandler {
     const tokenData = await this.resetTokenRepo.findByToken(command.token);
 
     if (!tokenData || tokenData.expiresAt < new Date()) {
-      throw new Error('Token inválido o expirado');
+      throw new TokenInvalidoError();
     }
 
     const usuario = await this.usuarioRepo.findById(tokenData.usuarioId);
     if (!usuario) {
-      throw new Error('Usuario no encontrado');
+      throw new RecursoNoEncontradoError('Usuario');
     }
 
     const newPassword = await Password.create(command.newPassword);

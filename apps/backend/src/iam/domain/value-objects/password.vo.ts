@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import { InvalidPasswordError } from '../../../shared/domain/exceptions';
 
 const SALT_ROUNDS = 10;
 const MIN_LENGTH = 8;
@@ -12,7 +13,7 @@ export class Password {
 
   static async create(plainText: string): Promise<Password> {
     if (!plainText || plainText.length < MIN_LENGTH) {
-      throw new Error(`Password must be at least ${MIN_LENGTH} characters`);
+      throw new InvalidPasswordError(`debe tener al menos ${MIN_LENGTH} caracteres`);
     }
     const hash = await bcrypt.hash(plainText, SALT_ROUNDS);
     return new Password(hash);

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../shared/domain';
+import { InvalidEmailError } from '../../../shared/domain/exceptions';
 
 interface EmailProps {
   value: string;
@@ -11,7 +12,7 @@ export class Email extends ValueObject<EmailProps> {
 
   static create(email: string): Email {
     if (!email || !Email.isValid(email)) {
-      throw new Error(`Invalid email: ${email}`);
+      throw new InvalidEmailError(email);
     }
     return new Email({ value: email.toLowerCase().trim() });
   }

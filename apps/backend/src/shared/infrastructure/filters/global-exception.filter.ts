@@ -1,6 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { errorResponse } from '../responses/api-response';
+import { DomainException } from '../../domain/exceptions/domain.exception';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -12,7 +13,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let message = 'Error interno del servidor';
     let code = 'INTERNAL_ERROR';
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof DomainException) {
+      statusCode = exception.httpStatus;
+      message = exception.message;
+      code = exception.code;
+    } else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       const exResponse = exception.getResponse();
 

@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import type { TipoObligacion } from '@numerito/shared';
 
 export const ESTADO_VENCIMIENTO = {
@@ -52,7 +53,7 @@ export class Vencimiento extends BaseEntity {
 
   presentar(): void {
     if (this._estado === ESTADO_VENCIMIENTO.VENCIDO) {
-      throw new Error('No se puede presentar un vencimiento ya vencido');
+      throw new OperacionInvalidaError('No se puede presentar un vencimiento ya vencido');
     }
     this._estado = ESTADO_VENCIMIENTO.PRESENTADO;
     this.updatedAt = new Date();

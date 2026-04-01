@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export const ESTADO_FACTURA = {
   EMITIDA: 'EMITIDA',
@@ -72,7 +73,7 @@ export class Factura extends BaseEntity {
 
   registrarPago(monto: number): void {
     if (monto > this.saldoPendiente) {
-      throw new Error('El pago excede el saldo pendiente');
+      throw new OperacionInvalidaError('El pago excede el saldo pendiente');
     }
     this._totalPagado += monto;
     this._estado = this.saldoPendiente === 0

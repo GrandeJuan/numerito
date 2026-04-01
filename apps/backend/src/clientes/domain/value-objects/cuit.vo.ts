@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../shared/domain';
+import { InvalidCuitError } from '../../../shared/domain/exceptions';
 
 interface CuitProps {
   value: string;
@@ -33,7 +34,7 @@ export class Cuit extends ValueObject<CuitProps> {
   static create(cuit: string): Cuit {
     const clean = cuit.replace(/-/g, '');
     if (!validarCuit(clean)) {
-      throw new Error(`CUIT inválido: ${cuit}`);
+      throw new InvalidCuitError(cuit);
     }
     return new Cuit({ value: clean });
   }

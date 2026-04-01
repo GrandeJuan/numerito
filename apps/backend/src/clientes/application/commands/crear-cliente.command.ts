@@ -3,6 +3,7 @@ import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente, type TipoCliente, type Regimen } from '../../domain/entities/cliente.entity';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
+import { CuitDuplicadoError } from '../../../shared/domain/exceptions';
 
 export interface CrearClienteCommand {
   cuit: string;
@@ -21,7 +22,7 @@ export class CrearClienteHandler {
 
     const existing = await this.clienteRepo.findByCuit(cuit, command.tenantId);
     if (existing) {
-      throw new Error('CUIT ya registrado en este estudio');
+      throw new CuitDuplicadoError();
     }
 
     const cliente = Cliente.create({

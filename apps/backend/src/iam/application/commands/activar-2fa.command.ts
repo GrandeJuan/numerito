@@ -1,5 +1,6 @@
 import { generateTotpSecret, generateTotpUri } from '../../../shared/utils/totp';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
+import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 export interface Activar2FACommand {
   usuarioId: string;
@@ -16,7 +17,7 @@ export class Activar2FAHandler {
   async execute(command: Activar2FACommand): Promise<Activar2FAResult> {
     const usuario = await this.usuarioRepo.findById(command.usuarioId);
     if (!usuario) {
-      throw new Error('Usuario no encontrado');
+      throw new RecursoNoEncontradoError('Usuario');
     }
 
     const secret = generateTotpSecret();

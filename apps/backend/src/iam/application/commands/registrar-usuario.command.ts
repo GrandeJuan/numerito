@@ -3,6 +3,7 @@ import { Email } from '../../domain/value-objects/email.vo';
 import { Password } from '../../domain/value-objects/password.vo';
 import { Usuario } from '../../domain/entities/usuario.entity';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
+import { EmailYaRegistradoError } from '../../../shared/domain/exceptions';
 
 export interface RegistrarUsuarioCommand {
   email: string;
@@ -25,7 +26,7 @@ export class RegistrarUsuarioHandler {
 
     const existing = await this.usuarioRepo.findByEmail(email);
     if (existing) {
-      throw new Error('El email ya está registrado');
+      throw new EmailYaRegistradoError();
     }
 
     const password = await Password.create(command.password);

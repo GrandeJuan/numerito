@@ -1,6 +1,7 @@
 import { Email } from '../../domain/value-objects/email.vo';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import type { TokenService } from '../services/token.service';
+import { CredencialesInvalidasError, UsuarioInactivoError } from '../../../shared/domain/exceptions';
 
 export interface IniciarSesionCommand {
   email: string;
@@ -30,16 +31,16 @@ export class IniciarSesionHandler {
     const usuario = await this.usuarioRepo.findByEmail(email);
 
     if (!usuario) {
-      throw new Error('Credenciales inválidas');
+      throw new CredencialesInvalidasError();
     }
 
     if (!usuario.isActive) {
-      throw new Error('Usuario inactivo');
+      throw new UsuarioInactivoError();
     }
 
     const isValidPassword = await usuario.password.compare(command.password);
     if (!isValidPassword) {
-      throw new Error('Credenciales inválidas');
+      throw new CredencialesInvalidasError();
     }
 
     const payload = {

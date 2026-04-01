@@ -1,5 +1,6 @@
 import type { TipoObligacion } from '@numerito/shared';
 import type { ReglaVencimientoRepository } from '../repositories/regla-vencimiento.repository';
+import { ReglaNoEncontradaError } from '../../../shared/domain/exceptions';
 
 export class ReglaVencimientoService {
   constructor(private readonly reglaRepo: ReglaVencimientoRepository) {}
@@ -15,7 +16,7 @@ export class ReglaVencimientoService {
     const regla = await this.reglaRepo.findByTipoYTerminacion(tipo, terminacion);
 
     if (!regla) {
-      throw new Error(`No hay regla de vencimiento para ${tipo} con terminación ${terminacion}`);
+      throw new ReglaNoEncontradaError(tipo, terminacion);
     }
 
     const targetMonth = regla.mesSiguiente ? month : month - 1;
