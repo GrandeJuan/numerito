@@ -1,4 +1,4 @@
-import { AsientoContable, LineaAsiento } from './asiento-contable.entity';
+import { AsientoContable } from './asiento-contable.entity';
 
 describe('AsientoContable Entity', () => {
   it('should create an asiento with balanced lines', () => {
