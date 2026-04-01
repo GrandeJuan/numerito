@@ -6,6 +6,9 @@ import { USUARIO_REPOSITORY } from '../../domain/repositories/usuario.repository
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { TOKEN_SERVICE } from '../../application/services/token.service';
 import type { TokenService } from '../../application/services/token.service';
+import { RegistrarUsuarioDto } from '../../application/dtos/registrar-usuario.dto';
+import { IniciarSesionDto } from '../../application/dtos/iniciar-sesion.dto';
+import type { Rol } from '@numerito/shared';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -23,16 +26,17 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
-  async register(
-    @Body() body: { email: string; password: string; nombre: string; apellido: string; rol: string },
-  ) {
-    return this.registrarHandler.execute(body as any);
+  async register(@Body() dto: RegistrarUsuarioDto) {
+    return this.registrarHandler.execute({
+      ...dto,
+      rol: dto.rol as Rol,
+    });
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar sesión' })
-  async login(@Body() body: { email: string; password: string }) {
-    return this.iniciarSesionHandler.execute(body);
+  async login(@Body() dto: IniciarSesionDto) {
+    return this.iniciarSesionHandler.execute(dto);
   }
 }
