@@ -1,37 +1,41 @@
 import { EntitySchema } from '@mikro-orm/core';
+import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
+import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { TipoObligacionEntity } from '../../../shared/infrastructure/persistence/tipo-obligacion.schema';
+import { EstadoVencimientoEntity } from '../../../shared/infrastructure/persistence/estado-vencimiento.schema';
 
 export class VencimientoEntity {
   id!: string;
-  clienteId!: string;
-  tenantId!: string;
-  tipoObligacion!: string;
+  cliente!: ClienteEntity;
+  tenant!: EstudioEntity;
+  tipoObligacion!: TipoObligacionEntity;
   periodo!: string;
   fechaVencimiento!: Date;
   descripcion!: string;
-  estado!: string;
+  estado!: EstadoVencimientoEntity;
   createdAt!: Date;
   updatedAt!: Date;
 }
 
 export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
   class: VencimientoEntity,
-  tableName: 'vencimientos',
+  tableName: 'vencimiento',
   properties: {
     id: { type: 'uuid', primary: true },
-    clienteId: { type: 'uuid', fieldName: 'cliente_id' },
-    tenantId: { type: 'uuid', fieldName: 'tenant_id' },
-    tipoObligacion: { type: 'string', fieldName: 'tipo_obligacion', length: 50 },
+    cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
+    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    tipoObligacion: { kind: 'm:1', entity: () => TipoObligacionEntity, fieldName: 'tipo_obligacion_id' },
     periodo: { type: 'string', length: 7 },
     fechaVencimiento: { type: 'Date', fieldName: 'fecha_vencimiento' },
     descripcion: { type: 'string' },
-    estado: { type: 'string', length: 20, default: 'PENDIENTE' },
+    estado: { kind: 'm:1', entity: () => EstadoVencimientoEntity, fieldName: 'estado_id' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenantId'] },
-    { properties: ['clienteId'] },
+    { properties: ['tenant'] },
+    { properties: ['cliente'] },
     { properties: ['fechaVencimiento'] },
-    { properties: ['tenantId', 'estado'] },
+    { properties: ['tenant', 'estado'] },
   ],
 });

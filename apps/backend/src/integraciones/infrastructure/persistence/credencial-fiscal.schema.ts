@@ -1,45 +1,38 @@
 import { EntitySchema } from '@mikro-orm/core';
-import { LibroContableEntity } from './libro-contable.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
-export interface LineaAsientoDto {
-  cuentaId: string;
-  debe: number;
-  haber: number;
-  descripcion: string;
-}
-
-export class AsientoContableEntity {
+export class CredencialFiscalEntity {
   id!: string;
-  libro!: LibroContableEntity;
   cliente!: ClienteEntity;
   tenant!: EstudioEntity;
-  fecha!: Date;
-  descripcion!: string;
-  lineas!: LineaAsientoDto[];
+  organismo!: OrganismoFiscalEntity;
+  cuit!: string;
+  secretArn!: string;
+  ultimaSincronizacion?: Date;
+  estado!: string;
   createdAt!: Date;
   updatedAt!: Date;
 }
 
-export const AsientoContableSchema = new EntitySchema<AsientoContableEntity>({
-  class: AsientoContableEntity,
-  tableName: 'asiento_contable',
+export const CredencialFiscalSchema = new EntitySchema<CredencialFiscalEntity>({
+  class: CredencialFiscalEntity,
+  tableName: 'credencial_fiscal',
   properties: {
     id: { type: 'uuid', primary: true },
-    libro: { kind: 'm:1', entity: () => LibroContableEntity, fieldName: 'libro_id' },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
     tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
-    fecha: { type: 'Date' },
-    descripcion: { type: 'string' },
-    lineas: { type: 'json' },
+    organismo: { kind: 'm:1', entity: () => OrganismoFiscalEntity, fieldName: 'organismo_id' },
+    cuit: { type: 'string', length: 13 },
+    secretArn: { type: 'string', fieldName: 'secret_arn' },
+    ultimaSincronizacion: { type: 'Date', fieldName: 'ultima_sincronizacion', nullable: true },
+    estado: { type: 'string', length: 20 },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
     { properties: ['tenant'] },
     { properties: ['cliente'] },
-    { properties: ['libro'] },
-    { properties: ['fecha'] },
   ],
 });

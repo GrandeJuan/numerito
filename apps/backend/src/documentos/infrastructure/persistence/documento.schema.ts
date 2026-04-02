@@ -1,10 +1,13 @@
 import { EntitySchema } from '@mikro-orm/core';
+import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
+import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { TipoDocumentoEntity } from '../../../shared/infrastructure/persistence/tipo-documento.schema';
 
 export class DocumentoEntity {
   id!: string;
-  clienteId!: string;
-  tenantId!: string;
-  tipo!: string;
+  cliente!: ClienteEntity;
+  tenant!: EstudioEntity;
+  tipoDocumento!: TipoDocumentoEntity;
   nombre!: string;
   s3Key!: string;
   mimeType!: string;
@@ -16,14 +19,14 @@ export class DocumentoEntity {
 
 export const DocumentoSchema = new EntitySchema<DocumentoEntity>({
   class: DocumentoEntity,
-  tableName: 'documentos',
+  tableName: 'documento',
   properties: {
     id: { type: 'uuid', primary: true },
-    clienteId: { type: 'uuid', fieldName: 'cliente_id' },
-    tenantId: { type: 'uuid', fieldName: 'tenant_id' },
-    tipo: { type: 'string', length: 50 },
+    cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
+    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    tipoDocumento: { kind: 'm:1', entity: () => TipoDocumentoEntity, fieldName: 'tipo_documento_id' },
     nombre: { type: 'string' },
-    s3Key: { type: 'string', fieldName: 's3_key' },
+    s3Key: { type: 'string', fieldName: 's3_key', unique: true },
     mimeType: { type: 'string', fieldName: 'mime_type', length: 100 },
     sizeBytes: { type: 'integer', fieldName: 'size_bytes' },
     version: { type: 'integer', default: 1 },
@@ -31,8 +34,7 @@ export const DocumentoSchema = new EntitySchema<DocumentoEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenantId'] },
-    { properties: ['clienteId'] },
-    { properties: ['s3Key'], unique: true },
+    { properties: ['tenant'] },
+    { properties: ['cliente'] },
   ],
 });

@@ -15,7 +15,7 @@ export class SesionEntity {
 
 export const SesionSchema = new EntitySchema<SesionEntity>({
   class: SesionEntity,
-  tableName: 'sesiones',
+  tableName: 'sesion',
   properties: {
     id: { type: 'uuid', primary: true },
     usuario: { kind: 'm:1', entity: () => UsuarioEntity, fieldName: 'usuario_id' },

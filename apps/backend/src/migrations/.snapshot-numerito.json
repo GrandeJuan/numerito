@@ -5,7 +5,133 @@
   ],
   "tables": [
     {
-      "name": "asientos_contables",
+      "name": "alerta_config",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "dias_anticipacion": {
+          "name": "dias_anticipacion",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "canal_notificacion": {
+          "name": "canal_notificacion",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "activa": {
+          "name": "activa",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "alerta_config_pkey",
+          "unique": true,
+          "primary": true
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "alerta_config_tenant_id_unique",
+          "unique": true,
+          "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "alerta_config_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "alerta_config_tenant_id_foreign",
+          "localTableName": "public.alerta_config",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "asiento_contable",
       "schema": "public",
       "columns": {
         "id": {
@@ -160,7 +286,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "asientos_contables_cliente_id_index",
+          "keyName": "asiento_contable_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -170,7 +296,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "asientos_contables_fecha_index",
+          "keyName": "asiento_contable_fecha_index",
           "unique": false,
           "primary": false
         },
@@ -180,7 +306,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "asientos_contables_libro_id_index",
+          "keyName": "asiento_contable_libro_id_index",
           "unique": false,
           "primary": false
         },
@@ -190,7 +316,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "asientos_contables_pkey",
+          "keyName": "asiento_contable_pkey",
           "unique": true,
           "primary": true
         },
@@ -200,20 +326,46 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "asientos_contables_tenant_id_index",
+          "keyName": "asiento_contable_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
       "foreignKeys": {
-        "asientos_contables_libro_id_foreign": {
+        "asiento_contable_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "asiento_contable_cliente_id_foreign",
+          "localTableName": "public.asiento_contable",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "asiento_contable_libro_id_foreign": {
           "columnNames": [
             "libro_id"
           ],
-          "constraintName": "asientos_contables_libro_id_foreign",
-          "localTableName": "public.asientos_contables",
-          "referencedTableName": "public.libros_contables",
+          "constraintName": "asiento_contable_libro_id_foreign",
+          "localTableName": "public.asiento_contable",
+          "referencedTableName": "public.libro_contable",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "asiento_contable_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "asiento_contable_tenant_id_foreign",
+          "localTableName": "public.asiento_contable",
+          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -225,7 +377,7 @@
       "comment": null
     },
     {
-      "name": "clientes",
+      "name": "cliente",
       "schema": "public",
       "columns": {
         "id": {
@@ -276,53 +428,53 @@
           "enumItems": [],
           "mappedType": "string"
         },
-        "condicion_iva": {
-          "name": "condicion_iva",
-          "type": "varchar(50)",
+        "condicion_iva_id": {
+          "name": "condicion_iva_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
-        "tipo": {
-          "name": "tipo",
-          "type": "varchar(50)",
+        "tipo_cliente_id": {
+          "name": "tipo_cliente_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
-        "regimen": {
-          "name": "regimen",
-          "type": "varchar(50)",
+        "regimen_id": {
+          "name": "regimen_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "tenant_id": {
           "name": "tenant_id",
@@ -372,22 +524,6 @@
           "enumItems": [],
           "mappedType": "boolean"
         },
-        "provincias": {
-          "name": "provincias",
-          "type": "jsonb",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": "'[]'",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "json"
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamptz(6)",
@@ -429,7 +565,7 @@
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "clientes_cuit_tenant_id_index",
+          "keyName": "cliente_cuit_tenant_id_index",
           "unique": false,
           "primary": false
         },
@@ -439,7 +575,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "clientes_pkey",
+          "keyName": "cliente_pkey",
           "unique": true,
           "primary": true
         },
@@ -449,7 +585,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "clientes_responsable_id_index",
+          "keyName": "cliente_responsable_id_index",
           "unique": false,
           "primary": false
         },
@@ -459,9 +595,130 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "clientes_tenant_id_index",
+          "keyName": "cliente_tenant_id_index",
           "unique": false,
           "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "cliente_condicion_iva_id_foreign": {
+          "columnNames": [
+            "condicion_iva_id"
+          ],
+          "constraintName": "cliente_condicion_iva_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.condicion_iva",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "cliente_regimen_id_foreign": {
+          "columnNames": [
+            "regimen_id"
+          ],
+          "constraintName": "cliente_regimen_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.regimen",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "cliente_responsable_id_foreign": {
+          "columnNames": [
+            "responsable_id"
+          ],
+          "constraintName": "cliente_responsable_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.usuario",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "set null"
+        },
+        "cliente_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "cliente_tenant_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "cliente_tipo_cliente_id_foreign": {
+          "columnNames": [
+            "tipo_cliente_id"
+          ],
+          "constraintName": "cliente_tipo_cliente_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.tipo_cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "cliente_provincia",
+      "schema": "public",
+      "columns": {
+        "cliente_id": {
+          "name": "cliente_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "provincia_id": {
+          "name": "provincia_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "cliente_id",
+            "provincia_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "cliente_provincia_pkey",
+          "unique": true,
+          "primary": true
         }
       ],
       "checks": [],
@@ -470,7 +727,103 @@
       "comment": null
     },
     {
-      "name": "documentos",
+      "name": "condicion_iva",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "alicuota": {
+          "name": "alicuota",
+          "type": "numeric(5,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 5,
+          "scale": 2,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "condicion_iva_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "condicion_iva_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "credencial_fiscal",
       "schema": "public",
       "columns": {
         "id": {
@@ -521,21 +874,263 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tipo": {
-          "name": "tipo",
-          "type": "varchar(50)",
+        "organismo_id": {
+          "name": "organismo_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "cuit": {
+          "name": "cuit",
+          "type": "varchar(13)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 13,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "secret_arn": {
+          "name": "secret_arn",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "ultima_sincronizacion": {
+          "name": "ultima_sincronizacion",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "estado": {
+          "name": "estado",
+          "type": "varchar(20)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 20,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "credencial_fiscal_cliente_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "credencial_fiscal_pkey",
+          "unique": true,
+          "primary": true
+        },
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "credencial_fiscal_tenant_id_index",
+          "unique": false,
+          "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "credencial_fiscal_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "credencial_fiscal_cliente_id_foreign",
+          "localTableName": "public.credencial_fiscal",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "credencial_fiscal_organismo_id_foreign": {
+          "columnNames": [
+            "organismo_id"
+          ],
+          "constraintName": "credencial_fiscal_organismo_id_foreign",
+          "localTableName": "public.credencial_fiscal",
+          "referencedTableName": "public.organismo_fiscal",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "credencial_fiscal_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "credencial_fiscal_tenant_id_foreign",
+          "localTableName": "public.credencial_fiscal",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "documento",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "cliente_id": {
+          "name": "cliente_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "tipo_documento_id": {
+          "name": "tipo_documento_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
         },
         "nombre": {
           "name": "nombre",
@@ -560,7 +1155,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": 255,
           "precision": null,
           "scale": null,
@@ -657,7 +1252,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "documentos_cliente_id_index",
+          "keyName": "documento_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -667,7 +1262,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "documentos_pkey",
+          "keyName": "documento_pkey",
           "unique": true,
           "primary": true
         },
@@ -676,9 +1271,9 @@
             "s3_key"
           ],
           "composite": false,
-          "constraint": false,
-          "keyName": "documentos_s3_key_index",
-          "unique": false,
+          "constraint": true,
+          "keyName": "documento_s3_key_unique",
+          "unique": true,
           "primary": false
         },
         {
@@ -687,18 +1282,58 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "documentos_tenant_id_index",
+          "keyName": "documento_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "documento_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "documento_cliente_id_foreign",
+          "localTableName": "public.documento",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "documento_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "documento_tenant_id_foreign",
+          "localTableName": "public.documento",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "documento_tipo_documento_id_foreign": {
+          "columnNames": [
+            "tipo_documento_id"
+          ],
+          "constraintName": "documento_tipo_documento_id_foreign",
+          "localTableName": "public.documento",
+          "referencedTableName": "public.tipo_documento",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
     {
-      "name": "empleados",
+      "name": "empleado",
       "schema": "public",
       "columns": {
         "id": {
@@ -917,7 +1552,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "empleados_cliente_id_index",
+          "keyName": "empleado_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -928,7 +1563,7 @@
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "empleados_cuil_tenant_id_index",
+          "keyName": "empleado_cuil_tenant_id_index",
           "unique": false,
           "primary": false
         },
@@ -938,7 +1573,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "empleados_pkey",
+          "keyName": "empleado_pkey",
           "unique": true,
           "primary": true
         },
@@ -948,9 +1583,116 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "empleados_tenant_id_index",
+          "keyName": "empleado_tenant_id_index",
           "unique": false,
           "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "empleado_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "empleado_cliente_id_foreign",
+          "localTableName": "public.empleado",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "empleado_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "empleado_tenant_id_foreign",
+          "localTableName": "public.empleado",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "estado_factura",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "estado_factura_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "estado_factura_pkey",
+          "unique": true,
+          "primary": true
         }
       ],
       "checks": [],
@@ -959,7 +1701,167 @@
       "comment": null
     },
     {
-      "name": "estudios",
+      "name": "estado_tarea",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "estado_tarea_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "estado_tarea_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "estado_vencimiento",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "estado_vencimiento_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "estado_vencimiento_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "estudio",
       "schema": "public",
       "columns": {
         "id": {
@@ -994,40 +1896,8 @@
           "enumItems": [],
           "mappedType": "string"
         },
-        "plan": {
-          "name": "plan",
-          "type": "varchar(50)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
-        "max_clientes": {
-          "name": "max_clientes",
-          "type": "int4",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": 32,
-          "scale": 0,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "integer"
-        },
-        "max_usuarios": {
-          "name": "max_usuarios",
+        "plan_id": {
+          "name": "plan_id",
           "type": "int4",
           "unsigned": false,
           "autoincrement": false,
@@ -1114,7 +1984,7 @@
           ],
           "composite": false,
           "constraint": true,
-          "keyName": "estudios_cuit_unique",
+          "keyName": "estudio_cuit_unique",
           "unique": true,
           "primary": false
         },
@@ -1124,18 +1994,32 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "estudios_pkey",
+          "keyName": "estudio_pkey",
           "unique": true,
           "primary": true
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "estudio_plan_id_foreign": {
+          "columnNames": [
+            "plan_id"
+          ],
+          "constraintName": "estudio_plan_id_foreign",
+          "localTableName": "public.estudio",
+          "referencedTableName": "public.plan",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
     {
-      "name": "facturas",
+      "name": "factura",
       "schema": "public",
       "columns": {
         "id": {
@@ -1298,21 +2182,21 @@
           "enumItems": [],
           "mappedType": "string"
         },
-        "estado": {
-          "name": "estado",
-          "type": "varchar(30)",
+        "estado_id": {
+          "name": "estado_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 30,
-          "precision": null,
-          "scale": null,
-          "default": "'EMITIDA'",
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "total_pagado": {
           "name": "total_pagado",
@@ -1370,7 +2254,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "facturas_cliente_id_index",
+          "keyName": "factura_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -1381,7 +2265,7 @@
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "facturas_numero_tenant_id_index",
+          "keyName": "factura_numero_tenant_id_index",
           "unique": false,
           "primary": false
         },
@@ -1391,18 +2275,18 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "facturas_pkey",
+          "keyName": "factura_pkey",
           "unique": true,
           "primary": true
         },
         {
           "columnNames": [
             "tenant_id",
-            "estado"
+            "estado_id"
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "facturas_tenant_id_estado_index",
+          "keyName": "factura_tenant_id_estado_id_index",
           "unique": false,
           "primary": false
         },
@@ -1412,18 +2296,58 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "facturas_tenant_id_index",
+          "keyName": "factura_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "factura_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "factura_cliente_id_foreign",
+          "localTableName": "public.factura",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "factura_estado_id_foreign": {
+          "columnNames": [
+            "estado_id"
+          ],
+          "constraintName": "factura_estado_id_foreign",
+          "localTableName": "public.factura",
+          "referencedTableName": "public.estado_factura",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "factura_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "factura_tenant_id_foreign",
+          "localTableName": "public.factura",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
     {
-      "name": "libros_contables",
+      "name": "libro_contable",
       "schema": "public",
       "columns": {
         "id": {
@@ -1474,21 +2398,21 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tipo": {
-          "name": "tipo",
-          "type": "varchar(50)",
+        "tipo_libro_id": {
+          "name": "tipo_libro_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "periodo": {
           "name": "periodo",
@@ -1578,19 +2502,19 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "libros_contables_cliente_id_index",
+          "keyName": "libro_contable_cliente_id_index",
           "unique": false,
           "primary": false
         },
         {
           "columnNames": [
             "cliente_id",
-            "tipo",
+            "tipo_libro_id",
             "periodo"
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "libros_contables_cliente_id_tipo_periodo_index",
+          "keyName": "libro_contable_cliente_id_tipo_libro_id_periodo_index",
           "unique": false,
           "primary": false
         },
@@ -1600,7 +2524,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "libros_contables_pkey",
+          "keyName": "libro_contable_pkey",
           "unique": true,
           "primary": true
         },
@@ -1610,18 +2534,142 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "libros_contables_tenant_id_index",
+          "keyName": "libro_contable_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "libro_contable_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "libro_contable_cliente_id_foreign",
+          "localTableName": "public.libro_contable",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "libro_contable_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "libro_contable_tenant_id_foreign",
+          "localTableName": "public.libro_contable",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "libro_contable_tipo_libro_id_foreign": {
+          "columnNames": [
+            "tipo_libro_id"
+          ],
+          "constraintName": "libro_contable_tipo_libro_id_foreign",
+          "localTableName": "public.libro_contable",
+          "referencedTableName": "public.tipo_libro",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
     {
-      "name": "notificaciones_fiscales",
+      "name": "localidad",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "provincia_id": {
+          "name": "provincia_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "localidad_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "localidad_provincia_id_foreign": {
+          "columnNames": [
+            "provincia_id"
+          ],
+          "constraintName": "localidad_provincia_id_foreign",
+          "localTableName": "public.localidad",
+          "referencedTableName": "public.provincia",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "notificacion_fiscal",
       "schema": "public",
       "columns": {
         "id": {
@@ -1674,19 +2722,19 @@
         },
         "organismo_id": {
           "name": "organismo_id",
-          "type": "varchar(50)",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "cuit_cliente": {
           "name": "cuit_cliente",
@@ -1824,7 +2872,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "notificaciones_fiscales_cliente_id_index",
+          "keyName": "notificacion_fiscal_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -1834,7 +2882,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "notificaciones_fiscales_fecha_notificacion_index",
+          "keyName": "notificacion_fiscal_fecha_notificacion_index",
           "unique": false,
           "primary": false
         },
@@ -1844,7 +2892,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "notificaciones_fiscales_pkey",
+          "keyName": "notificacion_fiscal_pkey",
           "unique": true,
           "primary": true
         },
@@ -1855,7 +2903,7 @@
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "notificaciones_fiscales_tenant_id_estado_index",
+          "keyName": "notificacion_fiscal_tenant_id_estado_index",
           "unique": false,
           "primary": false
         },
@@ -1865,9 +2913,209 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "notificaciones_fiscales_tenant_id_index",
+          "keyName": "notificacion_fiscal_tenant_id_index",
           "unique": false,
           "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "notificacion_fiscal_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "notificacion_fiscal_cliente_id_foreign",
+          "localTableName": "public.notificacion_fiscal",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "notificacion_fiscal_organismo_id_foreign": {
+          "columnNames": [
+            "organismo_id"
+          ],
+          "constraintName": "notificacion_fiscal_organismo_id_foreign",
+          "localTableName": "public.notificacion_fiscal",
+          "referencedTableName": "public.organismo_fiscal",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "notificacion_fiscal_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "notificacion_fiscal_tenant_id_foreign",
+          "localTableName": "public.notificacion_fiscal",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "organismo_fiscal",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "jurisdiccion": {
+          "name": "jurisdiccion",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "url_portal": {
+          "name": "url_portal",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "requiere_scraping": {
+          "name": "requiere_scraping",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "tiene_web_service": {
+          "name": "tiene_web_service",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "activo": {
+          "name": "activo",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "organismo_fiscal_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "organismo_fiscal_pkey",
+          "unique": true,
+          "primary": true
         }
       ],
       "checks": [],
@@ -1876,7 +3124,849 @@
       "comment": null
     },
     {
-      "name": "sesiones",
+      "name": "pais",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "char(2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 2,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "character"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "pais_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "pais_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "permiso",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "modulo": {
+          "name": "modulo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "permiso_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "permiso_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "plan",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "max_clientes": {
+          "name": "max_clientes",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "max_usuarios": {
+          "name": "max_usuarios",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "precio": {
+          "name": "precio",
+          "type": "numeric(10,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 10,
+          "scale": 2,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "plan_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "plan_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "prioridad",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "orden": {
+          "name": "orden",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "prioridad_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "prioridad_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "provincia",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "pais_id": {
+          "name": "pais_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "provincia_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "provincia_pais_id_foreign": {
+          "columnNames": [
+            "pais_id"
+          ],
+          "constraintName": "provincia_pais_id_foreign",
+          "localTableName": "public.provincia",
+          "referencedTableName": "public.pais",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "regimen",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "regimen_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "regimen_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "regla_vencimiento",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "tipo_obligacion_id": {
+          "name": "tipo_obligacion_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "terminacion_cuit": {
+          "name": "terminacion_cuit",
+          "type": "char(1)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 1,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "character"
+        },
+        "dia_vencimiento": {
+          "name": "dia_vencimiento",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "mes_siguiente": {
+          "name": "mes_siguiente",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "regla_vencimiento_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "regla_vencimiento_tipo_obligacion_id_foreign": {
+          "columnNames": [
+            "tipo_obligacion_id"
+          ],
+          "constraintName": "regla_vencimiento_tipo_obligacion_id_foreign",
+          "localTableName": "public.regla_vencimiento",
+          "referencedTableName": "public.tipo_obligacion",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "rol",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "rol_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "rol_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "rol_permiso",
+      "schema": "public",
+      "columns": {
+        "rol_id": {
+          "name": "rol_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "permiso_id": {
+          "name": "permiso_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "rol_id",
+            "permiso_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "rol_permiso_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "rol_permiso_permiso_id_foreign": {
+          "columnNames": [
+            "permiso_id"
+          ],
+          "constraintName": "rol_permiso_permiso_id_foreign",
+          "localTableName": "public.rol_permiso",
+          "referencedTableName": "public.permiso",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "cascade",
+          "deleteRule": "cascade"
+        },
+        "rol_permiso_rol_id_foreign": {
+          "columnNames": [
+            "rol_id"
+          ],
+          "constraintName": "rol_permiso_rol_id_foreign",
+          "localTableName": "public.rol_permiso",
+          "referencedTableName": "public.rol",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "cascade",
+          "deleteRule": "cascade"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "sesion",
       "schema": "public",
       "columns": {
         "id": {
@@ -2031,7 +4121,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "sesiones_pkey",
+          "keyName": "sesion_pkey",
           "unique": true,
           "primary": true
         },
@@ -2041,20 +4131,20 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "sesiones_usuario_id_index",
+          "keyName": "sesion_usuario_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
       "foreignKeys": {
-        "sesiones_usuario_id_foreign": {
+        "sesion_usuario_id_foreign": {
           "columnNames": [
             "usuario_id"
           ],
-          "constraintName": "sesiones_usuario_id_foreign",
-          "localTableName": "public.sesiones",
-          "referencedTableName": "public.usuarios",
+          "constraintName": "sesion_usuario_id_foreign",
+          "localTableName": "public.sesion",
+          "referencedTableName": "public.usuario",
           "referencedColumnNames": [
             "id"
           ],
@@ -2066,7 +4156,7 @@
       "comment": null
     },
     {
-      "name": "tareas",
+      "name": "tarea",
       "schema": "public",
       "columns": {
         "id": {
@@ -2149,37 +4239,37 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "estado": {
-          "name": "estado",
-          "type": "varchar(20)",
+        "estado_id": {
+          "name": "estado_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 20,
-          "precision": null,
-          "scale": null,
-          "default": "'PENDIENTE'",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
-        "prioridad": {
-          "name": "prioridad",
-          "type": "varchar(20)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 20,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
+        },
+        "prioridad_id": {
+          "name": "prioridad_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
         },
         "responsable_id": {
           "name": "responsable_id",
@@ -2269,7 +4359,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "tareas_cliente_id_index",
+          "keyName": "tarea_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -2279,7 +4369,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "tareas_pkey",
+          "keyName": "tarea_pkey",
           "unique": true,
           "primary": true
         },
@@ -2289,18 +4379,18 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "tareas_responsable_id_index",
+          "keyName": "tarea_responsable_id_index",
           "unique": false,
           "primary": false
         },
         {
           "columnNames": [
             "tenant_id",
-            "estado"
+            "estado_id"
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "tareas_tenant_id_estado_index",
+          "keyName": "tarea_tenant_id_estado_id_index",
           "unique": false,
           "primary": false
         },
@@ -2310,175 +4400,72 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "tareas_tenant_id_index",
-          "unique": false,
-          "primary": false
-        }
-      ],
-      "checks": [],
-      "foreignKeys": {},
-      "nativeEnums": {},
-      "comment": null
-    },
-    {
-      "name": "usuario_estudios",
-      "schema": "public",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": true,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "usuario_id": {
-          "name": "usuario_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "estudio_id": {
-          "name": "estudio_id",
-          "type": "uuid",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "uuid"
-        },
-        "rol": {
-          "name": "rol",
-          "type": "varchar(50)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "bool",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": "true",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "boolean"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamptz(6)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamptz(6)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        }
-      },
-      "indexes": [
-        {
-          "columnNames": [
-            "estudio_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "usuario_estudios_estudio_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "usuario_estudios_pkey",
-          "unique": true,
-          "primary": true
-        },
-        {
-          "columnNames": [
-            "usuario_id",
-            "estudio_id"
-          ],
-          "composite": true,
-          "constraint": false,
-          "keyName": "usuario_estudios_usuario_id_estudio_id_index",
+          "keyName": "tarea_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
       "foreignKeys": {
-        "usuario_estudios_usuario_id_foreign": {
+        "tarea_cliente_id_foreign": {
           "columnNames": [
-            "usuario_id"
+            "cliente_id"
           ],
-          "constraintName": "usuario_estudios_usuario_id_foreign",
-          "localTableName": "public.usuario_estudios",
-          "referencedTableName": "public.usuarios",
+          "constraintName": "tarea_cliente_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "set null"
+        },
+        "tarea_estado_id_foreign": {
+          "columnNames": [
+            "estado_id"
+          ],
+          "constraintName": "tarea_estado_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.estado_tarea",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "tarea_prioridad_id_foreign": {
+          "columnNames": [
+            "prioridad_id"
+          ],
+          "constraintName": "tarea_prioridad_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.prioridad",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "tarea_responsable_id_foreign": {
+          "columnNames": [
+            "responsable_id"
+          ],
+          "constraintName": "tarea_responsable_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.usuario",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "set null"
+        },
+        "tarea_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "tarea_tenant_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -2490,7 +4477,343 @@
       "comment": null
     },
     {
-      "name": "usuarios",
+      "name": "tipo_cliente",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tipo_cliente_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tipo_cliente_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "tipo_documento",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tipo_documento_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tipo_documento_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "tipo_libro",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tipo_libro_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tipo_libro_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "tipo_obligacion",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "codigo": {
+          "name": "codigo",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "periodicidad": {
+          "name": "periodicidad",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "codigo"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tipo_obligacion_codigo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tipo_obligacion_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "usuario",
       "schema": "public",
       "columns": {
         "id": {
@@ -2573,21 +4896,21 @@
           "enumItems": [],
           "mappedType": "string"
         },
-        "rol": {
-          "name": "rol",
-          "type": "varchar(50)",
+        "rol_id": {
+          "name": "rol_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "is_active": {
           "name": "is_active",
@@ -2661,7 +4984,7 @@
           ],
           "composite": false,
           "constraint": true,
-          "keyName": "usuarios_email_unique",
+          "keyName": "usuario_email_unique",
           "unique": true,
           "primary": false
         },
@@ -2671,18 +4994,227 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "usuarios_pkey",
+          "keyName": "usuario_pkey",
           "unique": true,
           "primary": true
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "usuario_rol_id_foreign": {
+          "columnNames": [
+            "rol_id"
+          ],
+          "constraintName": "usuario_rol_id_foreign",
+          "localTableName": "public.usuario",
+          "referencedTableName": "public.rol",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     },
     {
-      "name": "vencimientos",
+      "name": "usuario_estudio",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "estudio_id": {
+          "name": "estudio_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "rol_id": {
+          "name": "rol_id",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "usuario_estudio_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "usuario_estudio_pkey",
+          "unique": true,
+          "primary": true
+        },
+        {
+          "columnNames": [
+            "usuario_id",
+            "estudio_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "usuario_estudio_usuario_id_estudio_id_index",
+          "unique": false,
+          "primary": false
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "usuario_estudio_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "usuario_estudio_estudio_id_foreign",
+          "localTableName": "public.usuario_estudio",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "usuario_estudio_rol_id_foreign": {
+          "columnNames": [
+            "rol_id"
+          ],
+          "constraintName": "usuario_estudio_rol_id_foreign",
+          "localTableName": "public.usuario_estudio",
+          "referencedTableName": "public.rol",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "usuario_estudio_usuario_id_foreign": {
+          "columnNames": [
+            "usuario_id"
+          ],
+          "constraintName": "usuario_estudio_usuario_id_foreign",
+          "localTableName": "public.usuario_estudio",
+          "referencedTableName": "public.usuario",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
+      "nativeEnums": {},
+      "comment": null
+    },
+    {
+      "name": "vencimiento",
       "schema": "public",
       "columns": {
         "id": {
@@ -2733,21 +5265,21 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tipo_obligacion": {
-          "name": "tipo_obligacion",
-          "type": "varchar(50)",
+        "tipo_obligacion_id": {
+          "name": "tipo_obligacion_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 50,
-          "precision": null,
-          "scale": null,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
           "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "periodo": {
           "name": "periodo",
@@ -2797,21 +5329,21 @@
           "enumItems": [],
           "mappedType": "string"
         },
-        "estado": {
-          "name": "estado",
-          "type": "varchar(20)",
+        "estado_id": {
+          "name": "estado_id",
+          "type": "int4",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": 20,
-          "precision": null,
-          "scale": null,
-          "default": "'PENDIENTE'",
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
           "comment": null,
           "enumItems": [],
-          "mappedType": "string"
+          "mappedType": "integer"
         },
         "created_at": {
           "name": "created_at",
@@ -2853,7 +5385,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "vencimientos_cliente_id_index",
+          "keyName": "vencimiento_cliente_id_index",
           "unique": false,
           "primary": false
         },
@@ -2863,7 +5395,7 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "vencimientos_fecha_vencimiento_index",
+          "keyName": "vencimiento_fecha_vencimiento_index",
           "unique": false,
           "primary": false
         },
@@ -2873,18 +5405,18 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "vencimientos_pkey",
+          "keyName": "vencimiento_pkey",
           "unique": true,
           "primary": true
         },
         {
           "columnNames": [
             "tenant_id",
-            "estado"
+            "estado_id"
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "vencimientos_tenant_id_estado_index",
+          "keyName": "vencimiento_tenant_id_estado_id_index",
           "unique": false,
           "primary": false
         },
@@ -2894,13 +5426,66 @@
           ],
           "composite": false,
           "constraint": false,
-          "keyName": "vencimientos_tenant_id_index",
+          "keyName": "vencimiento_tenant_id_index",
           "unique": false,
           "primary": false
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "vencimiento_cliente_id_foreign": {
+          "columnNames": [
+            "cliente_id"
+          ],
+          "constraintName": "vencimiento_cliente_id_foreign",
+          "localTableName": "public.vencimiento",
+          "referencedTableName": "public.cliente",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "vencimiento_estado_id_foreign": {
+          "columnNames": [
+            "estado_id"
+          ],
+          "constraintName": "vencimiento_estado_id_foreign",
+          "localTableName": "public.vencimiento",
+          "referencedTableName": "public.estado_vencimiento",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "vencimiento_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "vencimiento_tenant_id_foreign",
+          "localTableName": "public.vencimiento",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "vencimiento_tipo_obligacion_id_foreign": {
+          "columnNames": [
+            "tipo_obligacion_id"
+          ],
+          "constraintName": "vencimiento_tipo_obligacion_id_foreign",
+          "localTableName": "public.vencimiento",
+          "referencedTableName": "public.tipo_obligacion",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        }
+      },
       "nativeEnums": {},
       "comment": null
     }

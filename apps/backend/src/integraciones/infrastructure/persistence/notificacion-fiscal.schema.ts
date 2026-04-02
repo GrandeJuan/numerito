@@ -1,10 +1,13 @@
 import { EntitySchema } from '@mikro-orm/core';
+import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
+import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
 export class NotificacionFiscalEntity {
   id!: string;
-  clienteId!: string;
-  tenantId!: string;
-  organismoId!: string;
+  cliente!: ClienteEntity;
+  tenant!: EstudioEntity;
+  organismo!: OrganismoFiscalEntity;
   cuitCliente!: string;
   asunto!: string;
   contenido!: string;
@@ -17,12 +20,12 @@ export class NotificacionFiscalEntity {
 
 export const NotificacionFiscalSchema = new EntitySchema<NotificacionFiscalEntity>({
   class: NotificacionFiscalEntity,
-  tableName: 'notificaciones_fiscales',
+  tableName: 'notificacion_fiscal',
   properties: {
     id: { type: 'uuid', primary: true },
-    clienteId: { type: 'uuid', fieldName: 'cliente_id' },
-    tenantId: { type: 'uuid', fieldName: 'tenant_id' },
-    organismoId: { type: 'string', fieldName: 'organismo_id', length: 50 },
+    cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
+    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    organismo: { kind: 'm:1', entity: () => OrganismoFiscalEntity, fieldName: 'organismo_id' },
     cuitCliente: { type: 'string', fieldName: 'cuit_cliente', length: 13 },
     asunto: { type: 'string' },
     contenido: { type: 'text' },
@@ -33,9 +36,9 @@ export const NotificacionFiscalSchema = new EntitySchema<NotificacionFiscalEntit
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenantId'] },
-    { properties: ['clienteId'] },
-    { properties: ['tenantId', 'estado'] },
+    { properties: ['tenant'] },
+    { properties: ['cliente'] },
+    { properties: ['tenant', 'estado'] },
     { properties: ['fechaNotificacion'] },
   ],
 });

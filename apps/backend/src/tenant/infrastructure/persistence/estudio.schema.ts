@@ -1,11 +1,10 @@
 import { EntitySchema } from '@mikro-orm/core';
+import { PlanEntity } from '../../../shared/infrastructure/persistence/plan.schema';
 
 export class EstudioEntity {
   id!: string;
   nombre!: string;
-  plan!: string;
-  maxClientes!: number;
-  maxUsuarios!: number;
+  plan!: PlanEntity;
   cuit!: string;
   isActive!: boolean;
   createdAt!: Date;
@@ -14,13 +13,11 @@ export class EstudioEntity {
 
 export const EstudioSchema = new EntitySchema<EstudioEntity>({
   class: EstudioEntity,
-  tableName: 'estudios',
+  tableName: 'estudio',
   properties: {
     id: { type: 'uuid', primary: true },
     nombre: { type: 'string' },
-    plan: { type: 'string', length: 50 },
-    maxClientes: { type: 'integer', fieldName: 'max_clientes' },
-    maxUsuarios: { type: 'integer', fieldName: 'max_usuarios' },
+    plan: { kind: 'm:1', entity: () => PlanEntity, fieldName: 'plan_id' },
     cuit: { type: 'string', length: 13, unique: true },
     isActive: { type: 'boolean', fieldName: 'is_active', default: true },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },

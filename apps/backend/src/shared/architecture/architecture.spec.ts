@@ -115,6 +115,11 @@ describe('Architecture rules', () => {
         const files = findFiles(ctxDir, /\.ts$/, SPEC_PATTERN);
 
         for (const file of files) {
+          const rel = relativeTo(file);
+
+          // MikroORM schema files are allowed to cross-import for FK relationships
+          if (rel.includes('/infrastructure/persistence/') && rel.endsWith('.schema.ts')) continue;
+
           const imports = extractImports(file);
           for (const imp of imports) {
             // Skip external packages and shared imports

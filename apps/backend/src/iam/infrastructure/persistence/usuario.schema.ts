@@ -1,4 +1,5 @@
 import { EntitySchema } from '@mikro-orm/core';
+import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema';
 
 export class UsuarioEntity {
   id!: string;
@@ -6,7 +7,7 @@ export class UsuarioEntity {
   passwordHash!: string;
   nombre!: string;
   apellido!: string;
-  rol!: string;
+  rol!: RolEntity;
   isActive!: boolean;
   emailVerified!: boolean;
   createdAt!: Date;
@@ -15,14 +16,14 @@ export class UsuarioEntity {
 
 export const UsuarioSchema = new EntitySchema<UsuarioEntity>({
   class: UsuarioEntity,
-  tableName: 'usuarios',
+  tableName: 'usuario',
   properties: {
     id: { type: 'uuid', primary: true },
     email: { type: 'string', unique: true },
     passwordHash: { type: 'string', fieldName: 'password_hash' },
     nombre: { type: 'string' },
     apellido: { type: 'string' },
-    rol: { type: 'string', length: 50 },
+    rol: { kind: 'm:1', entity: () => RolEntity, fieldName: 'rol_id' },
     isActive: { type: 'boolean', fieldName: 'is_active', default: true },
     emailVerified: { type: 'boolean', fieldName: 'email_verified', default: false },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
