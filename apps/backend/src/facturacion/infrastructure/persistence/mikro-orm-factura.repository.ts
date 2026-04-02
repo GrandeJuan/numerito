@@ -5,7 +5,7 @@ import { Factura } from '../../domain/entities/factura.entity';
 import { FacturaEntity } from './factura.schema';
 import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/estado-factura.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
 export class MikroOrmFacturaRepository implements FacturaRepository {
@@ -13,32 +13,32 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
 
   async findById(id: string): Promise<Factura | null> {
     const entity = await this.em.findOne(FacturaEntity, { id }, {
-      populate: ['estado', 'cliente', 'tenant'],
+      populate: ['estado', 'cliente', 'estudio'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<Factura[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<Factura[]> {
     const entities = await this.em.find(FacturaEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['estado', 'cliente', 'tenant'],
+      populate: ['estado', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByTenantId(tenantId: string): Promise<Factura[]> {
-    const entities = await this.em.find(FacturaEntity, { tenant: { id: tenantId } }, {
-      populate: ['estado', 'cliente', 'tenant'],
+  async findByEstudioId(estudioId: string): Promise<Factura[]> {
+    const entities = await this.em.find(FacturaEntity, { estudio: { id: estudioId } }, {
+      populate: ['estado', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Factura[]> {
     const entities = await this.em.findAll(FacturaEntity, {
-      populate: ['estado', 'cliente', 'tenant'],
+      populate: ['estado', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -46,12 +46,12 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
   async save(factura: Factura): Promise<void> {
     const estado = await this.em.findOneOrFail(EstadoFacturaEntity, { codigo: factura.estado });
     const cliente = this.em.getReference(ClienteEntity, factura.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, factura.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, factura.estudioId);
 
     const existing = await this.em.findOne(FacturaEntity, { id: factura.id });
     if (existing) {
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.numero = factura.numero;
       existing.fechaEmision = factura.fechaEmision;
       existing.fechaVencimiento = factura.fechaVencimiento;
@@ -65,7 +65,7 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
       this.em.create(FacturaEntity, {
         id: factura.id,
         cliente,
-        tenant,
+        estudio,
         numero: factura.numero,
         fechaEmision: factura.fechaEmision,
         fechaVencimiento: factura.fechaVencimiento,
@@ -75,6 +75,8 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
         concepto: factura.concepto,
         estado,
         totalPagado: factura.totalPagado,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -91,7 +93,7 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
   private toDomain(entity: FacturaEntity): Factura {
     return Factura.create({
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       numero: entity.numero,
       fechaEmision: entity.fechaEmision,
       fechaVencimiento: entity.fechaVencimiento,

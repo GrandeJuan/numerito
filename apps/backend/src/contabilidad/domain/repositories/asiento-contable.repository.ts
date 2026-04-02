@@ -3,7 +3,7 @@ import { AsientoContable } from '../entities/asiento-contable.entity';
 
 export interface AsientoContableRepository extends BaseRepository<AsientoContable> {
   findByLibroId(libroId: string): Promise<AsientoContable[]>;
-  findByClienteId(clienteId: string, tenantId: string): Promise<AsientoContable[]>;
+  findByClienteId(clienteId: string, estudioId: string): Promise<AsientoContable[]>;
 }
 
 export const ASIENTO_CONTABLE_REPOSITORY = Symbol('AsientoContableRepository');

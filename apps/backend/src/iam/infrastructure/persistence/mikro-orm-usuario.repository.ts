@@ -50,6 +50,8 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
         rol,
         isActive: usuario.isActive,
         emailVerified: usuario.emailVerified,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();

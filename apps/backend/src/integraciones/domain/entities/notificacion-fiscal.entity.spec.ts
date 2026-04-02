@@ -4,7 +4,7 @@ describe('NotificacionFiscal Entity', () => {
   it('should create a notificacion with organismoId from DB', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       organismoId: 'org-arca-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Intimación - Falta de presentación DDJJ IVA',
@@ -19,7 +19,7 @@ describe('NotificacionFiscal Entity', () => {
   it('should mark as leida', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       organismoId: 'org-arba-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Retención IIBB',
@@ -33,7 +33,7 @@ describe('NotificacionFiscal Entity', () => {
   it('should mark as gestionada', () => {
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       organismoId: 'org-agip-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Vencimiento IIBB CABA',
@@ -50,7 +50,7 @@ describe('NotificacionFiscal Entity', () => {
     const fecha = new Date('2026-03-28');
     const n = NotificacionFiscal.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       organismoId: 'org-arca-1',
       cuitCliente: '20-12345678-6',
       asunto: 'Intimación',
@@ -58,7 +58,7 @@ describe('NotificacionFiscal Entity', () => {
       fechaNotificacion: fecha,
     });
     expect(n.clienteId).toBe('c1');
-    expect(n.tenantId).toBe('t1');
+    expect(n.estudioId).toBe('e1');
     expect(n.organismoId).toBe('org-arca-1');
     expect(n.cuitCliente).toBe('20-12345678-6');
     expect(n.asunto).toBe('Intimación');

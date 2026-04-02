@@ -10,7 +10,7 @@ export type EstadoNotificacion = (typeof ESTADO_NOTIFICACION)[keyof typeof ESTAD
 
 interface CreateNotificacionFiscalProps {
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   organismoId: string;
   cuitCliente: string;
   asunto: string;
@@ -20,7 +20,7 @@ interface CreateNotificacionFiscalProps {
 
 export class NotificacionFiscal extends BaseEntity {
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _organismoId: string;
   private _cuitCliente: string;
   private _asunto: string;
@@ -32,7 +32,7 @@ export class NotificacionFiscal extends BaseEntity {
   private constructor(props: CreateNotificacionFiscalProps, id?: string) {
     super(id);
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._organismoId = props.organismoId;
     this._cuitCliente = props.cuitCliente;
     this._asunto = props.asunto;
@@ -46,7 +46,7 @@ export class NotificacionFiscal extends BaseEntity {
   }
 
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get organismoId(): string { return this._organismoId; }
   get cuitCliente(): string { return this._cuitCliente; }
   get asunto(): string { return this._asunto; }

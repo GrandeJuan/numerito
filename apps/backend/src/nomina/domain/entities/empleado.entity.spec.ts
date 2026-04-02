@@ -4,7 +4,7 @@ describe('Empleado Entity', () => {
   const createEmpleado = () => {
     return Empleado.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       nombre: 'Juan',
       apellido: 'Perez',
       cuil: '20-12345678-6',
@@ -53,7 +53,7 @@ describe('Empleado Entity', () => {
   it('should expose all getters', () => {
     const emp = createEmpleado();
     expect(emp.clienteId).toBe('c1');
-    expect(emp.tenantId).toBe('t1');
+    expect(emp.estudioId).toBe('e1');
     expect(emp.nombre).toBe('Juan');
     expect(emp.apellido).toBe('Perez');
     expect(emp.cuil).toBe('20-12345678-6');

@@ -4,7 +4,7 @@ describe('Factura Entity', () => {
   const createFactura = () => {
     return Factura.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       numero: 'FAC-0001',
       fechaEmision: new Date('2026-03-15'),
       fechaVencimiento: new Date('2026-04-15'),
@@ -69,7 +69,7 @@ describe('Factura Entity', () => {
 
   it('should reject negative subtotal', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', tenantId: 't1', numero: 'FAC-0001',
+      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
       fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
       subtotal: -1, iva: 21000, total: 121000, concepto: 'Test',
     })).toThrow('El subtotal no puede ser negativo');
@@ -77,7 +77,7 @@ describe('Factura Entity', () => {
 
   it('should reject negative iva', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', tenantId: 't1', numero: 'FAC-0001',
+      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
       fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
       subtotal: 100000, iva: -1, total: 121000, concepto: 'Test',
     })).toThrow('El IVA no puede ser negativo');
@@ -85,7 +85,7 @@ describe('Factura Entity', () => {
 
   it('should reject negative total', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', tenantId: 't1', numero: 'FAC-0001',
+      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
       fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
       subtotal: 100000, iva: 21000, total: -1, concepto: 'Test',
     })).toThrow('El total no puede ser negativo');
@@ -93,7 +93,7 @@ describe('Factura Entity', () => {
 
   it('should reject fechaEmision after fechaVencimiento', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', tenantId: 't1', numero: 'FAC-0001',
+      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
       fechaEmision: new Date('2026-05-15'), fechaVencimiento: new Date('2026-04-15'),
       subtotal: 100000, iva: 21000, total: 121000, concepto: 'Test',
     })).toThrow('La fecha de emision no puede ser posterior a la fecha de vencimiento');
@@ -102,7 +102,7 @@ describe('Factura Entity', () => {
   it('should expose all getters', () => {
     const f = createFactura();
     expect(f.clienteId).toBe('c1');
-    expect(f.tenantId).toBe('t1');
+    expect(f.estudioId).toBe('e1');
     expect(f.numero).toBe('FAC-0001');
     expect(f.fechaEmision).toEqual(new Date('2026-03-15'));
     expect(f.fechaVencimiento).toEqual(new Date('2026-04-15'));

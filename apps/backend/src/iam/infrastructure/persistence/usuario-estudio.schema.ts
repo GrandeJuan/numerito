@@ -1,6 +1,6 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { UsuarioEntity } from './usuario.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema';
 
 export class UsuarioEstudioEntity {
@@ -25,8 +25,10 @@ export const UsuarioEstudioSchema = new EntitySchema<UsuarioEstudioEntity>({
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
+  uniques: [
+    { properties: ['usuario', 'estudio'] },
+  ],
   indexes: [
-    { properties: ['usuario', 'estudio'], unique: true },
     { properties: ['estudio'] },
   ],
 });

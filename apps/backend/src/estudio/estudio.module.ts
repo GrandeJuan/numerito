@@ -10,4 +10,4 @@ import { MikroOrmEstudioRepository } from './infrastructure/persistence/mikro-or
   ],
   exports: [ESTUDIO_REPOSITORY],
 })
-export class TenantModule {}
+export class EstudioModule {}

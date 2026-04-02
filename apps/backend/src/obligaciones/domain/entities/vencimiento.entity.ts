@@ -12,7 +12,7 @@ export type EstadoVencimiento = (typeof ESTADO_VENCIMIENTO)[keyof typeof ESTADO_
 
 interface CreateVencimientoProps {
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   tipoObligacion: TipoObligacion;
   periodo: string;
   fechaVencimiento: Date;
@@ -21,7 +21,7 @@ interface CreateVencimientoProps {
 
 export class Vencimiento extends BaseEntity {
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _tipoObligacion: TipoObligacion;
   private _periodo: string;
   private _fechaVencimiento: Date;
@@ -31,7 +31,7 @@ export class Vencimiento extends BaseEntity {
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._tipoObligacion = props.tipoObligacion;
     this._periodo = props.periodo;
     this._fechaVencimiento = props.fechaVencimiento;
@@ -44,7 +44,7 @@ export class Vencimiento extends BaseEntity {
   }
 
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get tipoObligacion(): TipoObligacion { return this._tipoObligacion; }
   get periodo(): string { return this._periodo; }
   get fechaVencimiento(): Date { return this._fechaVencimiento; }

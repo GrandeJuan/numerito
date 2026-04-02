@@ -5,7 +5,7 @@ describe('AsientoContable Entity', () => {
     const asiento = AsientoContable.create({
       libroId: 'libro-1',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       fecha: new Date('2026-03-31'),
       descripcion: 'Venta de servicios',
       lineas: [
@@ -22,7 +22,7 @@ describe('AsientoContable Entity', () => {
     const asiento = AsientoContable.create({
       libroId: 'libro-1',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       fecha: new Date('2026-03-31'),
       descripcion: 'Asiento desbalanceado',
       lineas: [
@@ -37,7 +37,7 @@ describe('AsientoContable Entity', () => {
     const asiento = AsientoContable.create({
       libroId: 'libro-1',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       fecha: new Date('2026-03-31'),
       descripcion: 'Test',
       lineas: [
@@ -55,7 +55,7 @@ describe('AsientoContable Entity', () => {
     const asiento = AsientoContable.create({
       libroId: 'libro-1',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       fecha,
       descripcion: 'Venta servicios',
       lineas: [
@@ -65,7 +65,7 @@ describe('AsientoContable Entity', () => {
     });
     expect(asiento.libroId).toBe('libro-1');
     expect(asiento.clienteId).toBe('c1');
-    expect(asiento.tenantId).toBe('t1');
+    expect(asiento.estudioId).toBe('e1');
     expect(asiento.fecha).toBe(fecha);
     expect(asiento.descripcion).toBe('Venta servicios');
     expect(asiento.lineas).toHaveLength(2);

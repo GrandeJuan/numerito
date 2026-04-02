@@ -24,8 +24,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -92,6 +92,16 @@
       "indexes": [
         {
           "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "alerta_config_estudio_id_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -99,25 +109,15 @@
           "keyName": "alerta_config_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": true,
-          "keyName": "alerta_config_tenant_id_unique",
-          "unique": true,
-          "primary": false
         }
       ],
       "checks": [],
       "foreignKeys": {
-        "alerta_config_tenant_id_foreign": {
+        "alerta_config_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "alerta_config_tenant_id_foreign",
+          "constraintName": "alerta_config_estudio_id_foreign",
           "localTableName": "public.alerta_config",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [
@@ -182,8 +182,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -292,6 +292,16 @@
         },
         {
           "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "asiento_contable_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "fecha"
           ],
           "composite": false,
@@ -319,16 +329,6 @@
           "keyName": "asiento_contable_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "asiento_contable_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -346,6 +346,19 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
+        "asiento_contable_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "asiento_contable_estudio_id_foreign",
+          "localTableName": "public.asiento_contable",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
         "asiento_contable_libro_id_foreign": {
           "columnNames": [
             "libro_id"
@@ -353,19 +366,6 @@
           "constraintName": "asiento_contable_libro_id_foreign",
           "localTableName": "public.asiento_contable",
           "referencedTableName": "public.libro_contable",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "updateRule": "no action",
-          "deleteRule": "no action"
-        },
-        "asiento_contable_tenant_id_foreign": {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "constraintName": "asiento_contable_tenant_id_foreign",
-          "localTableName": "public.asiento_contable",
-          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -403,7 +403,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": 13,
           "precision": null,
           "scale": null,
@@ -476,8 +476,8 @@
           "enumItems": [],
           "mappedType": "integer"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -561,11 +561,21 @@
         {
           "columnNames": [
             "cuit",
-            "tenant_id"
+            "estudio_id"
           ],
           "composite": true,
+          "constraint": true,
+          "keyName": "cliente_cuit_estudio_id_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
           "constraint": false,
-          "keyName": "cliente_cuit_tenant_id_index",
+          "keyName": "cliente_estudio_id_index",
           "unique": false,
           "primary": false
         },
@@ -588,16 +598,6 @@
           "keyName": "cliente_responsable_id_index",
           "unique": false,
           "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "cliente_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -609,6 +609,19 @@
           "constraintName": "cliente_condicion_iva_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.condicion_iva",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
+        "cliente_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "cliente_estudio_id_foreign",
+          "localTableName": "public.cliente",
+          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -640,19 +653,6 @@
           ],
           "updateRule": "no action",
           "deleteRule": "set null"
-        },
-        "cliente_tenant_id_foreign": {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "constraintName": "cliente_tenant_id_foreign",
-          "localTableName": "public.cliente",
-          "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "updateRule": "no action",
-          "deleteRule": "no action"
         },
         "cliente_tipo_cliente_id_foreign": {
           "columnNames": [
@@ -858,8 +858,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -1000,6 +1000,16 @@
         },
         {
           "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "credencial_fiscal_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -1007,16 +1017,6 @@
           "keyName": "credencial_fiscal_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "credencial_fiscal_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -1034,6 +1034,19 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
+        "credencial_fiscal_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "credencial_fiscal_estudio_id_foreign",
+          "localTableName": "public.credencial_fiscal",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
         "credencial_fiscal_organismo_id_foreign": {
           "columnNames": [
             "organismo_id"
@@ -1041,19 +1054,6 @@
           "constraintName": "credencial_fiscal_organismo_id_foreign",
           "localTableName": "public.credencial_fiscal",
           "referencedTableName": "public.organismo_fiscal",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "updateRule": "no action",
-          "deleteRule": "no action"
-        },
-        "credencial_fiscal_tenant_id_foreign": {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "constraintName": "credencial_fiscal_tenant_id_foreign",
-          "localTableName": "public.credencial_fiscal",
-          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -1100,8 +1100,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -1258,6 +1258,16 @@
         },
         {
           "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "documento_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -1274,16 +1284,6 @@
           "constraint": true,
           "keyName": "documento_s3_key_unique",
           "unique": true,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "documento_tenant_id_index",
-          "unique": false,
           "primary": false
         }
       ],
@@ -1302,11 +1302,11 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
-        "documento_tenant_id_foreign": {
+        "documento_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "documento_tenant_id_foreign",
+          "constraintName": "documento_estudio_id_foreign",
           "localTableName": "public.documento",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [
@@ -1368,8 +1368,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -1423,7 +1423,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": 13,
           "precision": null,
           "scale": null,
@@ -1559,11 +1559,21 @@
         {
           "columnNames": [
             "cuil",
-            "tenant_id"
+            "estudio_id"
           ],
           "composite": true,
+          "constraint": true,
+          "keyName": "empleado_cuil_estudio_id_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
           "constraint": false,
-          "keyName": "empleado_cuil_tenant_id_index",
+          "keyName": "empleado_estudio_id_index",
           "unique": false,
           "primary": false
         },
@@ -1576,16 +1586,6 @@
           "keyName": "empleado_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "empleado_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -1603,11 +1603,11 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
-        "empleado_tenant_id_foreign": {
+        "empleado_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "empleado_tenant_id_foreign",
+          "constraintName": "empleado_estudio_id_foreign",
           "localTableName": "public.empleado",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [
@@ -2054,8 +2054,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -2077,7 +2077,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": 30,
           "precision": null,
           "scale": null,
@@ -2260,13 +2260,34 @@
         },
         {
           "columnNames": [
-            "numero",
-            "tenant_id"
+            "estudio_id",
+            "estado_id"
           ],
           "composite": true,
           "constraint": false,
-          "keyName": "factura_numero_tenant_id_index",
+          "keyName": "factura_estudio_id_estado_id_index",
           "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "factura_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "numero",
+            "estudio_id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "factura_numero_estudio_id_unique",
+          "unique": true,
           "primary": false
         },
         {
@@ -2278,27 +2299,6 @@
           "keyName": "factura_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id",
-            "estado_id"
-          ],
-          "composite": true,
-          "constraint": false,
-          "keyName": "factura_tenant_id_estado_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "factura_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -2329,11 +2329,11 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
-        "factura_tenant_id_foreign": {
+        "factura_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "factura_tenant_id_foreign",
+          "constraintName": "factura_estudio_id_foreign",
           "localTableName": "public.factura",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [
@@ -2373,7 +2373,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -2382,8 +2382,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -2513,8 +2513,18 @@
             "periodo"
           ],
           "composite": true,
+          "constraint": true,
+          "keyName": "libro_contable_cliente_id_tipo_libro_id_periodo_unique",
+          "unique": true,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
           "constraint": false,
-          "keyName": "libro_contable_cliente_id_tipo_libro_id_periodo_index",
+          "keyName": "libro_contable_estudio_id_index",
           "unique": false,
           "primary": false
         },
@@ -2527,16 +2537,6 @@
           "keyName": "libro_contable_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "libro_contable_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -2554,11 +2554,11 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
-        "libro_contable_tenant_id_foreign": {
+        "libro_contable_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "libro_contable_tenant_id_foreign",
+          "constraintName": "libro_contable_estudio_id_foreign",
           "localTableName": "public.libro_contable",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [
@@ -2704,8 +2704,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -2878,6 +2878,27 @@
         },
         {
           "columnNames": [
+            "estudio_id",
+            "estado"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "notificacion_fiscal_estudio_id_estado_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "notificacion_fiscal_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "fecha_notificacion"
           ],
           "composite": false,
@@ -2895,27 +2916,6 @@
           "keyName": "notificacion_fiscal_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id",
-            "estado"
-          ],
-          "composite": true,
-          "constraint": false,
-          "keyName": "notificacion_fiscal_tenant_id_estado_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "notificacion_fiscal_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -2933,6 +2933,19 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
+        "notificacion_fiscal_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "notificacion_fiscal_estudio_id_foreign",
+          "localTableName": "public.notificacion_fiscal",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
         "notificacion_fiscal_organismo_id_foreign": {
           "columnNames": [
             "organismo_id"
@@ -2940,19 +2953,6 @@
           "constraintName": "notificacion_fiscal_organismo_id_foreign",
           "localTableName": "public.notificacion_fiscal",
           "referencedTableName": "public.organismo_fiscal",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "updateRule": "no action",
-          "deleteRule": "no action"
-        },
-        "notificacion_fiscal_tenant_id_foreign": {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "constraintName": "notificacion_fiscal_tenant_id_foreign",
-          "localTableName": "public.notificacion_fiscal",
-          "referencedTableName": "public.estudio",
           "referencedColumnNames": [
             "id"
           ],
@@ -4223,8 +4223,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -4365,6 +4365,27 @@
         },
         {
           "columnNames": [
+            "estudio_id",
+            "estado_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "tarea_estudio_id_estado_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tarea_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "id"
           ],
           "composite": false,
@@ -4380,27 +4401,6 @@
           "composite": false,
           "constraint": false,
           "keyName": "tarea_responsable_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id",
-            "estado_id"
-          ],
-          "composite": true,
-          "constraint": false,
-          "keyName": "tarea_tenant_id_estado_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "tarea_tenant_id_index",
           "unique": false,
           "primary": false
         }
@@ -4433,6 +4433,19 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
+        "tarea_estudio_id_foreign": {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "constraintName": "tarea_estudio_id_foreign",
+          "localTableName": "public.tarea",
+          "referencedTableName": "public.estudio",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "updateRule": "no action",
+          "deleteRule": "no action"
+        },
         "tarea_prioridad_id_foreign": {
           "columnNames": [
             "prioridad_id"
@@ -4458,19 +4471,6 @@
           ],
           "updateRule": "no action",
           "deleteRule": "set null"
-        },
-        "tarea_tenant_id_foreign": {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "constraintName": "tarea_tenant_id_foreign",
-          "localTableName": "public.tarea",
-          "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "updateRule": "no action",
-          "deleteRule": "no action"
         }
       },
       "nativeEnums": {},
@@ -5045,7 +5045,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -5162,9 +5162,9 @@
             "estudio_id"
           ],
           "composite": true,
-          "constraint": false,
-          "keyName": "usuario_estudio_usuario_id_estudio_id_index",
-          "unique": false,
+          "constraint": true,
+          "keyName": "usuario_estudio_usuario_id_estudio_id_unique",
+          "unique": true,
           "primary": false
         }
       ],
@@ -5249,8 +5249,8 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "estudio_id": {
+          "name": "estudio_id",
           "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
@@ -5391,6 +5391,27 @@
         },
         {
           "columnNames": [
+            "estudio_id",
+            "estado_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "vencimiento_estudio_id_estado_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
+            "estudio_id"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "vencimiento_estudio_id_index",
+          "unique": false,
+          "primary": false
+        },
+        {
+          "columnNames": [
             "fecha_vencimiento"
           ],
           "composite": false,
@@ -5408,27 +5429,6 @@
           "keyName": "vencimiento_pkey",
           "unique": true,
           "primary": true
-        },
-        {
-          "columnNames": [
-            "tenant_id",
-            "estado_id"
-          ],
-          "composite": true,
-          "constraint": false,
-          "keyName": "vencimiento_tenant_id_estado_id_index",
-          "unique": false,
-          "primary": false
-        },
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "vencimiento_tenant_id_index",
-          "unique": false,
-          "primary": false
         }
       ],
       "checks": [],
@@ -5459,11 +5459,11 @@
           "updateRule": "no action",
           "deleteRule": "no action"
         },
-        "vencimiento_tenant_id_foreign": {
+        "vencimiento_estudio_id_foreign": {
           "columnNames": [
-            "tenant_id"
+            "estudio_id"
           ],
-          "constraintName": "vencimiento_tenant_id_foreign",
+          "constraintName": "vencimiento_estudio_id_foreign",
           "localTableName": "public.vencimiento",
           "referencedTableName": "public.estudio",
           "referencedColumnNames": [

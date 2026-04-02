@@ -8,7 +8,7 @@ import { ClienteEntity } from './cliente.schema';
 import { CondicionIvaEntity } from '../../../shared/infrastructure/persistence/condicion-iva.schema';
 import { TipoClienteEntity } from '../../../shared/infrastructure/persistence/tipo-cliente.schema';
 import { RegimenEntity } from '../../../shared/infrastructure/persistence/regimen.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
 import type { CondicionIVA } from '@numerito/shared';
 
@@ -18,43 +18,43 @@ export class MikroOrmClienteRepository implements ClienteRepository {
 
   async findById(id: string): Promise<Cliente | null> {
     const entity = await this.em.findOne(ClienteEntity, { id }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'tenant', 'responsable'],
+      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByCuit(cuit: Cuit, tenantId: string): Promise<Cliente | null> {
+  async findByCuit(cuit: Cuit, estudioId: string): Promise<Cliente | null> {
     const entity = await this.em.findOne(ClienteEntity, {
       cuit: cuit.raw,
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'tenant', 'responsable'],
+      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByTenantId(tenantId: string): Promise<Cliente[]> {
-    const entities = await this.em.find(ClienteEntity, { tenant: { id: tenantId } }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'tenant', 'responsable'],
+  async findByEstudioId(estudioId: string): Promise<Cliente[]> {
+    const entities = await this.em.find(ClienteEntity, { estudio: { id: estudioId } }, {
+      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByResponsableId(responsableId: string, tenantId: string): Promise<Cliente[]> {
+  async findByResponsableId(responsableId: string, estudioId: string): Promise<Cliente[]> {
     const entities = await this.em.find(ClienteEntity, {
       responsable: { id: responsableId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'tenant', 'responsable'],
+      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Cliente[]> {
     const entities = await this.em.findAll(ClienteEntity, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'tenant', 'responsable'],
+      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -65,7 +65,7 @@ export class MikroOrmClienteRepository implements ClienteRepository {
       this.em.findOneOrFail(TipoClienteEntity, { codigo: cliente.tipo }),
       this.em.findOneOrFail(RegimenEntity, { codigo: cliente.regimen }),
     ]);
-    const tenant = this.em.getReference(EstudioEntity, cliente.tenantId);
+    const estudio =this.em.getReference(EstudioEntity, cliente.estudioId);
     const responsable = cliente.responsableId
       ? this.em.getReference(UsuarioEntity, cliente.responsableId)
       : undefined;
@@ -77,7 +77,7 @@ export class MikroOrmClienteRepository implements ClienteRepository {
       existing.condicionIva = condicionIva;
       existing.tipoCliente = tipoCliente;
       existing.regimen = regimen;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.responsable = responsable;
       existing.isActive = cliente.isActive;
     } else {
@@ -88,9 +88,11 @@ export class MikroOrmClienteRepository implements ClienteRepository {
         condicionIva,
         tipoCliente,
         regimen,
-        tenant,
+        estudio,
         responsable,
         isActive: cliente.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -111,7 +113,7 @@ export class MikroOrmClienteRepository implements ClienteRepository {
       condicionIva: entity.condicionIva.codigo as CondicionIVA,
       tipo: entity.tipoCliente.codigo as TipoCliente,
       regimen: entity.regimen.codigo as Regimen,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
     }, entity.id);
   }
 }

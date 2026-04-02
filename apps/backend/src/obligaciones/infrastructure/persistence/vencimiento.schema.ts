@@ -1,13 +1,13 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { TipoObligacionEntity } from '../../../shared/infrastructure/persistence/tipo-obligacion.schema';
 import { EstadoVencimientoEntity } from '../../../shared/infrastructure/persistence/estado-vencimiento.schema';
 
 export class VencimientoEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   tipoObligacion!: TipoObligacionEntity;
   periodo!: string;
   fechaVencimiento!: Date;
@@ -23,7 +23,7 @@ export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     tipoObligacion: { kind: 'm:1', entity: () => TipoObligacionEntity, fieldName: 'tipo_obligacion_id' },
     periodo: { type: 'string', length: 7 },
     fechaVencimiento: { type: 'Date', fieldName: 'fecha_vencimiento' },
@@ -33,9 +33,9 @@ export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
     { properties: ['fechaVencimiento'] },
-    { properties: ['tenant', 'estado'] },
+    { properties: ['estudio', 'estado'] },
   ],
 });

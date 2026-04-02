@@ -24,7 +24,7 @@ interface CreateClienteProps {
   condicionIva: CondicionIVA;
   tipo: TipoCliente;
   regimen: Regimen;
-  tenantId: string;
+  estudioId: string;
   provincias?: Provincia[];
 }
 
@@ -34,7 +34,7 @@ export class Cliente extends BaseEntity {
   private _condicionIva: CondicionIVA;
   private _tipo: TipoCliente;
   private _regimen: Regimen;
-  private _tenantId: string;
+  private _estudioId: string;
   private _isActive: boolean;
   private _responsableId?: string;
   private _provincias: Provincia[];
@@ -46,7 +46,7 @@ export class Cliente extends BaseEntity {
     this._condicionIva = props.condicionIva;
     this._tipo = props.tipo;
     this._regimen = props.regimen;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._isActive = true;
     this._provincias = props.provincias ?? [];
   }
@@ -60,7 +60,7 @@ export class Cliente extends BaseEntity {
   get condicionIva(): CondicionIVA { return this._condicionIva; }
   get tipo(): TipoCliente { return this._tipo; }
   get regimen(): Regimen { return this._regimen; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get isActive(): boolean { return this._isActive; }
   get responsableId(): string | undefined { return this._responsableId; }
   get provincias(): Provincia[] { return [...this._provincias]; }

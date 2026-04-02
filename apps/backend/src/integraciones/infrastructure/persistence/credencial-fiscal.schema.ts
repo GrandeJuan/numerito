@@ -1,12 +1,12 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
 export class CredencialFiscalEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   organismo!: OrganismoFiscalEntity;
   cuit!: string;
   secretArn!: string;
@@ -22,7 +22,7 @@ export const CredencialFiscalSchema = new EntitySchema<CredencialFiscalEntity>({
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     organismo: { kind: 'm:1', entity: () => OrganismoFiscalEntity, fieldName: 'organismo_id' },
     cuit: { type: 'string', length: 13 },
     secretArn: { type: 'string', fieldName: 'secret_arn' },
@@ -32,7 +32,7 @@ export const CredencialFiscalSchema = new EntitySchema<CredencialFiscalEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
   ],
 });

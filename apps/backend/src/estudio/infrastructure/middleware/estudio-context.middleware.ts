@@ -1,22 +1,22 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
-export const TENANT_ID_HEADER = 'x-tenant-id';
+export const ESTUDIO_ID_HEADER = 'x-estudio-id';
 
 declare global {
   namespace Express {
     interface Request {
-      tenantId?: string;
+      estudioId?: string;
     }
   }
 }
 
 @Injectable()
-export class TenantContextMiddleware implements NestMiddleware {
+export class EstudioContextMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: NextFunction) {
-    const tenantId = req.headers[TENANT_ID_HEADER] as string | undefined;
-    if (tenantId) {
-      req.tenantId = tenantId;
+    const estudioId = req.headers[ESTUDIO_ID_HEADER] as string | undefined;
+    if (estudioId) {
+      req.estudioId = estudioId;
     }
     next();
   }

@@ -11,7 +11,7 @@ export interface CrearClienteCommand {
   condicionIva: CondicionIVA;
   tipo: TipoCliente;
   regimen: Regimen;
-  tenantId: string;
+  estudioId: string;
 }
 
 export class CrearClienteHandler {
@@ -20,7 +20,7 @@ export class CrearClienteHandler {
   async execute(command: CrearClienteCommand): Promise<{ id: string }> {
     const cuit = Cuit.create(command.cuit);
 
-    const existing = await this.clienteRepo.findByCuit(cuit, command.tenantId);
+    const existing = await this.clienteRepo.findByCuit(cuit, command.estudioId);
     if (existing) {
       throw new CuitDuplicadoError();
     }
@@ -31,7 +31,7 @@ export class CrearClienteHandler {
       condicionIva: command.condicionIva,
       tipo: command.tipo,
       regimen: command.regimen,
-      tenantId: command.tenantId,
+      estudioId: command.estudioId,
     });
 
     await this.clienteRepo.save(cliente);

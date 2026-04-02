@@ -6,7 +6,7 @@
 export interface CredencialFiscalData {
   id: string;
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   organismoId: string;
   cuit: string;
   secretArn: string;
@@ -15,8 +15,8 @@ export interface CredencialFiscalData {
 }
 
 export interface CredencialFiscalRepository {
-  findByClienteId(clienteId: string, tenantId: string): Promise<CredencialFiscalData[]>;
-  findByOrganismo(organismo: string, tenantId: string): Promise<CredencialFiscalData[]>;
+  findByClienteId(clienteId: string, estudioId: string): Promise<CredencialFiscalData[]>;
+  findByOrganismo(organismo: string, estudioId: string): Promise<CredencialFiscalData[]>;
   findAllActivas(): Promise<CredencialFiscalData[]>;
   save(credencial: CredencialFiscalData): Promise<void>;
   updateEstado(id: string, estado: string, ultimaSincronizacion?: Date): Promise<void>;

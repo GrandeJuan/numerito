@@ -13,7 +13,7 @@ describe('CrearCliente Command', () => {
       findById: jest.fn(),
       findAll: jest.fn(),
       delete: jest.fn(),
-      findByTenantId: jest.fn(),
+      findByEstudioId: jest.fn(),
       findByResponsableId: jest.fn(),
     };
     handler = new CrearClienteHandler(mockRepo);
@@ -26,14 +26,14 @@ describe('CrearCliente Command', () => {
       condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
       tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
       regimen: REGIMEN.GENERAL,
-      tenantId: 'tenant-1',
+      estudioId: 'estudio-1',
     });
 
     expect(result.id).toBeDefined();
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw if CUIT already exists in tenant', async () => {
+  it('should throw if CUIT already exists in estudio', async () => {
     mockRepo.findByCuit.mockResolvedValue({ id: 'existing' });
 
     await expect(
@@ -43,7 +43,7 @@ describe('CrearCliente Command', () => {
         condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
         tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
         regimen: REGIMEN.GENERAL,
-        tenantId: 'tenant-1',
+        estudioId: 'estudio-1',
       }),
     ).rejects.toThrow('CUIT ya registrado en este estudio');
   });

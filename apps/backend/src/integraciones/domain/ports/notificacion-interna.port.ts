@@ -9,7 +9,7 @@
 
 export interface NotificacionInternaPayload {
   usuarioId: string;
-  tenantId: string;
+  estudioId: string;
   tipo: 'VENCIMIENTO_PROXIMO' | 'TAREA_ASIGNADA' | 'DOCUMENTO_NUEVO' | 'NOTIFICACION_FISCAL' | 'SISTEMA';
   titulo: string;
   mensaje: string;

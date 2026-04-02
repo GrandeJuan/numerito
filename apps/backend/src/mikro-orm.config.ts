@@ -32,8 +32,8 @@ import { UsuarioSchema } from './iam/infrastructure/persistence/usuario.schema';
 import { SesionSchema } from './iam/infrastructure/persistence/sesion.schema';
 import { UsuarioEstudioSchema } from './iam/infrastructure/persistence/usuario-estudio.schema';
 
-// Tenant
-import { EstudioSchema } from './tenant/infrastructure/persistence/estudio.schema';
+// Estudio
+import { EstudioSchema } from './estudio/infrastructure/persistence/estudio.schema';
 
 // Clientes
 import { ClienteSchema } from './clientes/infrastructure/persistence/cliente.schema';
@@ -96,7 +96,7 @@ export default defineConfig({
     UsuarioSchema,
     SesionSchema,
     UsuarioEstudioSchema,
-    // Tenant
+    // Estudio
     EstudioSchema,
     // Clientes
     ClienteSchema,

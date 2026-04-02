@@ -3,10 +3,10 @@ import { PlanSubscripcion, PLAN } from '../../domain/value-objects/plan-subscrip
 import { Estudio } from '../../domain/entities/estudio.entity';
 
 /**
- * Default tenant seed data.
+ * Default estudio seed data.
  * Used to initialize the first studio on fresh deployments.
  */
-export const DEFAULT_TENANT_SEED = {
+export const DEFAULT_ESTUDIO_SEED = {
   estudio: {
     nombre: 'Grande & Asociados',
     plan: PLAN.PROFESIONAL,
@@ -23,7 +23,7 @@ export const DEFAULT_TENANT_SEED = {
 };
 
 export function createDefaultEstudio(): Estudio {
-  const { estudio } = DEFAULT_TENANT_SEED;
+  const { estudio } = DEFAULT_ESTUDIO_SEED;
   return Estudio.create({
     nombre: NombreEstudio.create(estudio.nombre),
     plan: PlanSubscripcion.create(estudio.plan, estudio.planLimits.maxClientes, estudio.planLimits.maxUsuarios),

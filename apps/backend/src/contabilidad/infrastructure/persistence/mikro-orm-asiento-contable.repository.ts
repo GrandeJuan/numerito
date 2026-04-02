@@ -5,7 +5,7 @@ import { AsientoContable, type LineaAsiento } from '../../domain/entities/asient
 import { AsientoContableEntity } from './asiento-contable.schema';
 import { LibroContableEntity } from './libro-contable.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
 export class MikroOrmAsientoContableRepository implements AsientoContableRepository {
@@ -13,7 +13,7 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
 
   async findById(id: string): Promise<AsientoContable | null> {
     const entity = await this.em.findOne(AsientoContableEntity, { id }, {
-      populate: ['libro', 'cliente', 'tenant'],
+      populate: ['libro', 'cliente', 'estudio'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
@@ -23,24 +23,24 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
     const entities = await this.em.find(AsientoContableEntity, {
       libro: { id: libroId },
     }, {
-      populate: ['libro', 'cliente', 'tenant'],
+      populate: ['libro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<AsientoContable[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<AsientoContable[]> {
     const entities = await this.em.find(AsientoContableEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['libro', 'cliente', 'tenant'],
+      populate: ['libro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<AsientoContable[]> {
     const entities = await this.em.findAll(AsientoContableEntity, {
-      populate: ['libro', 'cliente', 'tenant'],
+      populate: ['libro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -48,13 +48,13 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
   async save(asiento: AsientoContable): Promise<void> {
     const libro = this.em.getReference(LibroContableEntity, asiento.libroId);
     const cliente = this.em.getReference(ClienteEntity, asiento.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, asiento.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, asiento.estudioId);
 
     const existing = await this.em.findOne(AsientoContableEntity, { id: asiento.id });
     if (existing) {
       existing.libro = libro;
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.fecha = asiento.fecha;
       existing.descripcion = asiento.descripcion;
       existing.lineas = asiento.lineas;
@@ -63,10 +63,12 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
         id: asiento.id,
         libro,
         cliente,
-        tenant,
+        estudio,
         fecha: asiento.fecha,
         descripcion: asiento.descripcion,
         lineas: asiento.lineas,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -84,7 +86,7 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
     return AsientoContable.create({
       libroId: entity.libro.id,
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       fecha: entity.fecha,
       descripcion: entity.descripcion,
       lineas: entity.lineas as LineaAsiento[],

@@ -27,7 +27,7 @@ interface Comentario {
 interface CreateTareaProps {
   titulo: string;
   clienteId?: string;
-  tenantId: string;
+  estudioId: string;
   prioridad: Prioridad;
   descripcion?: string;
 }
@@ -36,7 +36,7 @@ export class Tarea extends BaseEntity {
   private _titulo: string;
   private _descripcion?: string;
   private _clienteId?: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _estado: EstadoTarea;
   private _prioridad: Prioridad;
   private _responsableId?: string;
@@ -48,7 +48,7 @@ export class Tarea extends BaseEntity {
     this._titulo = props.titulo;
     this._descripcion = props.descripcion;
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._estado = ESTADO_TAREA.PENDIENTE;
     this._prioridad = props.prioridad;
     this._horasRegistradas = 0;
@@ -62,7 +62,7 @@ export class Tarea extends BaseEntity {
   get titulo(): string { return this._titulo; }
   get descripcion(): string | undefined { return this._descripcion; }
   get clienteId(): string | undefined { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get estado(): EstadoTarea { return this._estado; }
   get prioridad(): Prioridad { return this._prioridad; }
   get responsableId(): string | undefined { return this._responsableId; }

@@ -1,12 +1,12 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
 export class NotificacionFiscalEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   organismo!: OrganismoFiscalEntity;
   cuitCliente!: string;
   asunto!: string;
@@ -24,7 +24,7 @@ export const NotificacionFiscalSchema = new EntitySchema<NotificacionFiscalEntit
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     organismo: { kind: 'm:1', entity: () => OrganismoFiscalEntity, fieldName: 'organismo_id' },
     cuitCliente: { type: 'string', fieldName: 'cuit_cliente', length: 13 },
     asunto: { type: 'string' },
@@ -36,9 +36,9 @@ export const NotificacionFiscalSchema = new EntitySchema<NotificacionFiscalEntit
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
-    { properties: ['tenant', 'estado'] },
+    { properties: ['estudio', 'estado'] },
     { properties: ['fechaNotificacion'] },
   ],
 });

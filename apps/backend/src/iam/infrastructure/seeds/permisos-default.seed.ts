@@ -4,7 +4,7 @@ import { Permiso } from '../../domain/value-objects/permiso.vo';
 
 /**
  * Default permissions per role, used to seed the database.
- * Once seeded, permissions are managed from the DB (configurable per tenant).
+ * Once seeded, permissions are managed from the DB (configurable per estudio).
  */
 export const PERMISOS_DEFAULT_SEED: Record<Rol, Permiso[]> = {
   [ROL.SOCIO]: Object.values(Permiso),

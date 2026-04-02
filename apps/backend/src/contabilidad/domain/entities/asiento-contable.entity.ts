@@ -11,7 +11,7 @@ export interface LineaAsiento {
 interface CreateAsientoContableProps {
   libroId: string;
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   fecha: Date;
   descripcion: string;
   lineas: LineaAsiento[];
@@ -20,7 +20,7 @@ interface CreateAsientoContableProps {
 export class AsientoContable extends BaseEntity {
   private _libroId: string;
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _fecha: Date;
   private _descripcion: string;
   private _lineas: LineaAsiento[];
@@ -29,7 +29,7 @@ export class AsientoContable extends BaseEntity {
     super(id);
     this._libroId = props.libroId;
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._fecha = props.fecha;
     this._descripcion = props.descripcion;
     this._lineas = props.lineas;
@@ -41,7 +41,7 @@ export class AsientoContable extends BaseEntity {
 
   get libroId(): string { return this._libroId; }
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get fecha(): Date { return this._fecha; }
   get descripcion(): string { return this._descripcion; }
   get lineas(): LineaAsiento[] { return [...this._lineas]; }

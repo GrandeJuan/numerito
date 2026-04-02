@@ -4,7 +4,7 @@ describe('LibroContable Entity', () => {
   it('should create a libro contable', () => {
     const libro = LibroContable.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipo: TIPO_LIBRO.IVA_COMPRAS,
       periodo: '2026',
     });
@@ -16,7 +16,7 @@ describe('LibroContable Entity', () => {
   it('should rubricar a libro', () => {
     const libro = LibroContable.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipo: TIPO_LIBRO.DIARIO,
       periodo: '2026',
     });
@@ -28,7 +28,7 @@ describe('LibroContable Entity', () => {
   it('should not rubricar twice', () => {
     const libro = LibroContable.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipo: TIPO_LIBRO.DIARIO,
       periodo: '2026',
     });
@@ -39,12 +39,12 @@ describe('LibroContable Entity', () => {
   it('should expose all getters', () => {
     const libro = LibroContable.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipo: TIPO_LIBRO.IVA_VENTAS,
       periodo: '2025',
     });
     expect(libro.clienteId).toBe('c1');
-    expect(libro.tenantId).toBe('t1');
+    expect(libro.estudioId).toBe('e1');
     expect(libro.tipo).toBe(TIPO_LIBRO.IVA_VENTAS);
     expect(libro.periodo).toBe('2025');
     expect(libro.isRubricado).toBe(false);

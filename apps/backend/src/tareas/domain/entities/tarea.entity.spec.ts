@@ -5,7 +5,7 @@ describe('Tarea Entity', () => {
     return Tarea.create({
       titulo: 'Preparar DDJJ IVA',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       prioridad: PRIORIDAD.ALTA,
     });
   };
@@ -70,14 +70,14 @@ describe('Tarea Entity', () => {
     const t = Tarea.create({
       titulo: 'Tarea test',
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       prioridad: PRIORIDAD.MEDIA,
       descripcion: 'Descripcion test',
     });
     expect(t.titulo).toBe('Tarea test');
     expect(t.descripcion).toBe('Descripcion test');
     expect(t.clienteId).toBe('c1');
-    expect(t.tenantId).toBe('t1');
+    expect(t.estudioId).toBe('e1');
     expect(t.estado).toBe(ESTADO_TAREA.PENDIENTE);
     expect(t.prioridad).toBe(PRIORIDAD.MEDIA);
     expect(t.responsableId).toBeUndefined();
@@ -88,7 +88,7 @@ describe('Tarea Entity', () => {
   it('should create tarea without optional fields', () => {
     const t = Tarea.create({
       titulo: 'Sin opcionales',
-      tenantId: 't1',
+      estudioId: 'e1',
       prioridad: PRIORIDAD.BAJA,
     });
     expect(t.clienteId).toBeUndefined();

@@ -5,7 +5,7 @@ describe('Vencimiento Entity', () => {
   const createVencimiento = () => {
     return Vencimiento.create({
       clienteId: 'cliente-1',
-      tenantId: 'tenant-1',
+      estudioId: 'estudio-1',
       tipoObligacion: TIPO_OBLIGACION.IVA,
       periodo: '2026-03',
       fechaVencimiento: new Date('2026-04-15'),
@@ -44,7 +44,7 @@ describe('Vencimiento Entity', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const v = Vencimiento.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipoObligacion: TIPO_OBLIGACION.MONOTRIBUTO,
       periodo: '2026-04',
       fechaVencimiento: tomorrow,
@@ -59,7 +59,7 @@ describe('Vencimiento Entity', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const v = Vencimiento.create({
       clienteId: 'c1',
-      tenantId: 't1',
+      estudioId: 'e1',
       tipoObligacion: TIPO_OBLIGACION.IVA,
       periodo: '2026-04',
       fechaVencimiento: tomorrow,
@@ -72,7 +72,7 @@ describe('Vencimiento Entity', () => {
   it('should expose all getters', () => {
     const v = createVencimiento();
     expect(v.clienteId).toBe('cliente-1');
-    expect(v.tenantId).toBe('tenant-1');
+    expect(v.estudioId).toBe('estudio-1');
     expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
     expect(v.periodo).toBe('2026-03');
     expect(v.fechaVencimiento).toEqual(new Date('2026-04-15'));

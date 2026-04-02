@@ -16,7 +16,7 @@ export type TipoDocumento = (typeof TIPO_DOCUMENTO)[keyof typeof TIPO_DOCUMENTO]
 
 interface CreateDocumentoProps {
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   tipo: TipoDocumento;
   nombre: string;
   s3Key: string;
@@ -26,7 +26,7 @@ interface CreateDocumentoProps {
 
 export class Documento extends BaseEntity {
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _tipo: TipoDocumento;
   private _nombre: string;
   private _s3Key: string;
@@ -37,7 +37,7 @@ export class Documento extends BaseEntity {
   private constructor(props: CreateDocumentoProps, id?: string) {
     super(id);
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._tipo = props.tipo;
     this._nombre = props.nombre;
     this._s3Key = props.s3Key;
@@ -51,7 +51,7 @@ export class Documento extends BaseEntity {
   }
 
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get tipo(): TipoDocumento { return this._tipo; }
   get nombre(): string { return this._nombre; }
   get s3Key(): string { return this._s3Key; }

@@ -5,7 +5,7 @@ const SRC_DIR = path.resolve(__dirname, '../..');
 
 const BOUNDED_CONTEXTS = [
   'iam',
-  'tenant',
+  'estudio',
   'clientes',
   'contabilidad',
   'nomina',

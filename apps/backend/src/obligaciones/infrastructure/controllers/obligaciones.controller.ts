@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestj
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VENCIMIENTO_REPOSITORY } from '../../domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
-import { TenantId } from '../../../shared/infrastructure/decorators/tenant-id.decorator';
+import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Obligaciones')
@@ -15,7 +15,7 @@ export class ObligacionesController {
   @Get('vencimientos')
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(
-    @TenantId() tenantId: string,
+    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
@@ -23,11 +23,11 @@ export class ObligacionesController {
   ) {
     let vencimientos;
     if (periodo) {
-      vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, tenantId);
+      vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, estudioId);
     } else if (estado) {
-      vencimientos = await this.vencimientoRepo.findByEstado(estado as any, tenantId);
+      vencimientos = await this.vencimientoRepo.findByEstado(estado as any, estudioId);
     } else {
-      vencimientos = await this.vencimientoRepo.findByTenantId(tenantId);
+      vencimientos = await this.vencimientoRepo.findByEstudioId(estudioId);
     }
     return successResponse(vencimientos, { total: vencimientos.length, page: +page, limit: +limit });
   }

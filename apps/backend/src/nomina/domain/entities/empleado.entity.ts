@@ -3,7 +3,7 @@ import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 interface CreateEmpleadoProps {
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   nombre: string;
   apellido: string;
   cuil: string;
@@ -14,7 +14,7 @@ interface CreateEmpleadoProps {
 
 export class Empleado extends BaseEntity {
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _nombre: string;
   private _apellido: string;
   private _cuil: string;
@@ -27,7 +27,7 @@ export class Empleado extends BaseEntity {
   private constructor(props: CreateEmpleadoProps, id?: string) {
     super(id);
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._nombre = props.nombre;
     this._apellido = props.apellido;
     this._cuil = props.cuil;
@@ -42,7 +42,7 @@ export class Empleado extends BaseEntity {
   }
 
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get nombre(): string { return this._nombre; }
   get apellido(): string { return this._apellido; }
   get cuil(): string { return this._cuil; }

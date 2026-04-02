@@ -1,12 +1,12 @@
 export interface AlertaConfigData {
-  tenantId: string;
+  estudioId: string;
   diasAnticipacion: number;
   canalNotificacion: 'EMAIL' | 'INTERNAL' | 'BOTH';
   activa: boolean;
 }
 
 export interface AlertaConfigRepository {
-  findByTenantId(tenantId: string): Promise<AlertaConfigData | null>;
+  findByEstudioId(estudioId: string): Promise<AlertaConfigData | null>;
   save(config: AlertaConfigData): Promise<void>;
 }
 

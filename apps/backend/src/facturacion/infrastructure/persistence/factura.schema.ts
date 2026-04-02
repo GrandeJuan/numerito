@@ -1,12 +1,12 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/estado-factura.schema';
 
 export class FacturaEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   numero!: string;
   fechaEmision!: Date;
   fechaVencimiento!: Date;
@@ -26,7 +26,7 @@ export const FacturaSchema = new EntitySchema<FacturaEntity>({
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     numero: { type: 'string', length: 30 },
     fechaEmision: { type: 'Date', fieldName: 'fecha_emision' },
     fechaVencimiento: { type: 'Date', fieldName: 'fecha_vencimiento' },
@@ -39,10 +39,12 @@ export const FacturaSchema = new EntitySchema<FacturaEntity>({
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
+  uniques: [
+    { properties: ['numero', 'estudio'] },
+  ],
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
-    { properties: ['numero', 'tenant'], unique: true },
-    { properties: ['tenant', 'estado'] },
+    { properties: ['estudio', 'estado'] },
   ],
 });

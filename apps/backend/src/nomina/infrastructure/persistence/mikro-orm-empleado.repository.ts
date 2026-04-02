@@ -4,7 +4,7 @@ import type { EmpleadoRepository } from '../../domain/repositories/empleado.repo
 import { Empleado } from '../../domain/entities/empleado.entity';
 import { EmpleadoEntity } from './empleado.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
 export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
@@ -12,44 +12,44 @@ export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
 
   async findById(id: string): Promise<Empleado | null> {
     const entity = await this.em.findOne(EmpleadoEntity, { id }, {
-      populate: ['cliente', 'tenant'],
+      populate: ['cliente', 'estudio'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<Empleado[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<Empleado[]> {
     const entities = await this.em.find(EmpleadoEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['cliente', 'tenant'],
+      populate: ['cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByTenantId(tenantId: string): Promise<Empleado[]> {
-    const entities = await this.em.find(EmpleadoEntity, { tenant: { id: tenantId } }, {
-      populate: ['cliente', 'tenant'],
+  async findByEstudioId(estudioId: string): Promise<Empleado[]> {
+    const entities = await this.em.find(EmpleadoEntity, { estudio: { id: estudioId } }, {
+      populate: ['cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Empleado[]> {
     const entities = await this.em.findAll(EmpleadoEntity, {
-      populate: ['cliente', 'tenant'],
+      populate: ['cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async save(empleado: Empleado): Promise<void> {
     const cliente = this.em.getReference(ClienteEntity, empleado.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, empleado.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, empleado.estudioId);
 
     const existing = await this.em.findOne(EmpleadoEntity, { id: empleado.id });
     if (existing) {
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.nombre = empleado.nombre;
       existing.apellido = empleado.apellido;
       existing.cuil = empleado.cuil;
@@ -62,7 +62,7 @@ export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
       this.em.create(EmpleadoEntity, {
         id: empleado.id,
         cliente,
-        tenant,
+        estudio,
         nombre: empleado.nombre,
         apellido: empleado.apellido,
         cuil: empleado.cuil,
@@ -71,6 +71,8 @@ export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
         sueldoBasico: empleado.sueldoBasico,
         categoriaConvenio: empleado.categoriaConvenio,
         isActive: empleado.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -87,7 +89,7 @@ export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
   private toDomain(entity: EmpleadoEntity): Empleado {
     return Empleado.create({
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       nombre: entity.nombre,
       apellido: entity.apellido,
       cuil: entity.cuil,

@@ -3,49 +3,49 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import type { CredencialFiscalRepository, CredencialFiscalData } from '../../domain/repositories/credencial-fiscal.repository';
 import { CredencialFiscalEntity } from './credencial-fiscal.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
 @Injectable()
 export class MikroOrmCredencialFiscalRepository implements CredencialFiscalRepository {
   constructor(private readonly em: EntityManager) {}
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<CredencialFiscalData[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(CredencialFiscalEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['cliente', 'tenant', 'organismo'],
+      populate: ['cliente', 'estudio', 'organismo'],
     });
     return entities.map(e => this.toData(e));
   }
 
-  async findByOrganismo(organismo: string, tenantId: string): Promise<CredencialFiscalData[]> {
+  async findByOrganismo(organismo: string, estudioId: string): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(CredencialFiscalEntity, {
       organismo: { codigo: organismo },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['cliente', 'tenant', 'organismo'],
+      populate: ['cliente', 'estudio', 'organismo'],
     });
     return entities.map(e => this.toData(e));
   }
 
   async findAllActivas(): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(CredencialFiscalEntity, { estado: 'ACTIVA' }, {
-      populate: ['cliente', 'tenant', 'organismo'],
+      populate: ['cliente', 'estudio', 'organismo'],
     });
     return entities.map(e => this.toData(e));
   }
 
   async save(credencial: CredencialFiscalData): Promise<void> {
     const cliente = this.em.getReference(ClienteEntity, credencial.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, credencial.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, credencial.estudioId);
     const organismo = await this.em.findOneOrFail(OrganismoFiscalEntity, { id: Number(credencial.organismoId) });
 
     const existing = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id });
     if (existing) {
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.organismo = organismo;
       existing.cuit = credencial.cuit;
       existing.secretArn = credencial.secretArn;
@@ -55,12 +55,14 @@ export class MikroOrmCredencialFiscalRepository implements CredencialFiscalRepos
       this.em.create(CredencialFiscalEntity, {
         id: credencial.id,
         cliente,
-        tenant,
+        estudio,
         organismo,
         cuit: credencial.cuit,
         secretArn: credencial.secretArn,
         ultimaSincronizacion: credencial.ultimaSincronizacion,
         estado: credencial.estado,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -79,7 +81,7 @@ export class MikroOrmCredencialFiscalRepository implements CredencialFiscalRepos
     return {
       id: entity.id,
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       organismoId: String(entity.organismo.id),
       cuit: entity.cuit,
       secretArn: entity.secretArn,

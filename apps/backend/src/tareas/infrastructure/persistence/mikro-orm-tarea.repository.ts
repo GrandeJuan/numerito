@@ -6,7 +6,7 @@ import { TareaEntity } from './tarea.schema';
 import { EstadoTareaEntity } from '../../../shared/infrastructure/persistence/estado-tarea.schema';
 import { PrioridadEntity } from '../../../shared/infrastructure/persistence/prioridad.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
 
 @Injectable()
@@ -15,32 +15,32 @@ export class MikroOrmTareaRepository implements TareaRepository {
 
   async findById(id: string): Promise<Tarea | null> {
     const entity = await this.em.findOne(TareaEntity, { id }, {
-      populate: ['estado', 'prioridad', 'cliente', 'tenant', 'responsable'],
+      populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByTenantId(tenantId: string): Promise<Tarea[]> {
-    const entities = await this.em.find(TareaEntity, { tenant: { id: tenantId } }, {
-      populate: ['estado', 'prioridad', 'cliente', 'tenant', 'responsable'],
+  async findByEstudioId(estudioId: string): Promise<Tarea[]> {
+    const entities = await this.em.find(TareaEntity, { estudio: { id: estudioId } }, {
+      populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByResponsableId(responsableId: string, tenantId: string): Promise<Tarea[]> {
+  async findByResponsableId(responsableId: string, estudioId: string): Promise<Tarea[]> {
     const entities = await this.em.find(TareaEntity, {
       responsable: { id: responsableId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['estado', 'prioridad', 'cliente', 'tenant', 'responsable'],
+      populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Tarea[]> {
     const entities = await this.em.findAll(TareaEntity, {
-      populate: ['estado', 'prioridad', 'cliente', 'tenant', 'responsable'],
+      populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -50,7 +50,7 @@ export class MikroOrmTareaRepository implements TareaRepository {
       this.em.findOneOrFail(EstadoTareaEntity, { codigo: tarea.estado }),
       this.em.findOneOrFail(PrioridadEntity, { codigo: tarea.prioridad }),
     ]);
-    const tenant = this.em.getReference(EstudioEntity, tarea.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, tarea.estudioId);
     const cliente = tarea.clienteId
       ? this.em.getReference(ClienteEntity, tarea.clienteId)
       : undefined;
@@ -63,7 +63,7 @@ export class MikroOrmTareaRepository implements TareaRepository {
       existing.titulo = tarea.titulo;
       existing.descripcion = tarea.descripcion;
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.estado = estado;
       existing.prioridad = prioridad;
       existing.responsable = responsable;
@@ -79,7 +79,7 @@ export class MikroOrmTareaRepository implements TareaRepository {
         titulo: tarea.titulo,
         descripcion: tarea.descripcion,
         cliente,
-        tenant,
+        estudio,
         estado,
         prioridad,
         responsable,
@@ -89,6 +89,8 @@ export class MikroOrmTareaRepository implements TareaRepository {
           texto: c.texto,
           fecha: c.fecha.toISOString(),
         })),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -107,7 +109,7 @@ export class MikroOrmTareaRepository implements TareaRepository {
       titulo: entity.titulo,
       descripcion: entity.descripcion,
       clienteId: entity.cliente?.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       prioridad: entity.prioridad.codigo as Prioridad,
     }, entity.id);
   }

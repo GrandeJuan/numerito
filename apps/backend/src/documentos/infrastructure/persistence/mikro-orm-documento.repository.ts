@@ -5,7 +5,7 @@ import { Documento, type TipoDocumento } from '../../domain/entities/documento.e
 import { DocumentoEntity } from './documento.schema';
 import { TipoDocumentoEntity } from '../../../shared/infrastructure/persistence/tipo-documento.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
 export class MikroOrmDocumentoRepository implements DocumentoRepository {
@@ -13,32 +13,32 @@ export class MikroOrmDocumentoRepository implements DocumentoRepository {
 
   async findById(id: string): Promise<Documento | null> {
     const entity = await this.em.findOne(DocumentoEntity, { id }, {
-      populate: ['tipoDocumento', 'cliente', 'tenant'],
+      populate: ['tipoDocumento', 'cliente', 'estudio'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<Documento[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<Documento[]> {
     const entities = await this.em.find(DocumentoEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['tipoDocumento', 'cliente', 'tenant'],
+      populate: ['tipoDocumento', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByTenantId(tenantId: string): Promise<Documento[]> {
-    const entities = await this.em.find(DocumentoEntity, { tenant: { id: tenantId } }, {
-      populate: ['tipoDocumento', 'cliente', 'tenant'],
+  async findByEstudioId(estudioId: string): Promise<Documento[]> {
+    const entities = await this.em.find(DocumentoEntity, { estudio: { id: estudioId } }, {
+      populate: ['tipoDocumento', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Documento[]> {
     const entities = await this.em.findAll(DocumentoEntity, {
-      populate: ['tipoDocumento', 'cliente', 'tenant'],
+      populate: ['tipoDocumento', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -46,12 +46,12 @@ export class MikroOrmDocumentoRepository implements DocumentoRepository {
   async save(documento: Documento): Promise<void> {
     const tipoDocumento = await this.em.findOneOrFail(TipoDocumentoEntity, { codigo: documento.tipo });
     const cliente = this.em.getReference(ClienteEntity, documento.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, documento.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, documento.estudioId);
 
     const existing = await this.em.findOne(DocumentoEntity, { id: documento.id });
     if (existing) {
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.tipoDocumento = tipoDocumento;
       existing.nombre = documento.nombre;
       existing.s3Key = documento.s3Key;
@@ -62,13 +62,15 @@ export class MikroOrmDocumentoRepository implements DocumentoRepository {
       this.em.create(DocumentoEntity, {
         id: documento.id,
         cliente,
-        tenant,
+        estudio,
         tipoDocumento,
         nombre: documento.nombre,
         s3Key: documento.s3Key,
         mimeType: documento.mimeType,
         sizeBytes: documento.sizeBytes,
         version: documento.version,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -85,7 +87,7 @@ export class MikroOrmDocumentoRepository implements DocumentoRepository {
   private toDomain(entity: DocumentoEntity): Documento {
     return Documento.create({
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       tipo: entity.tipoDocumento.codigo as TipoDocumento,
       nombre: entity.nombre,
       s3Key: entity.s3Key,

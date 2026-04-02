@@ -1,6 +1,6 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { EstadoTareaEntity } from '../../../shared/infrastructure/persistence/estado-tarea.schema';
 import { PrioridadEntity } from '../../../shared/infrastructure/persistence/prioridad.schema';
 import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
@@ -16,7 +16,7 @@ export class TareaEntity {
   titulo!: string;
   descripcion?: string;
   cliente?: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   estado!: EstadoTareaEntity;
   prioridad!: PrioridadEntity;
   responsable?: UsuarioEntity;
@@ -34,7 +34,7 @@ export const TareaSchema = new EntitySchema<TareaEntity>({
     titulo: { type: 'string' },
     descripcion: { type: 'string', nullable: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id', nullable: true },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     estado: { kind: 'm:1', entity: () => EstadoTareaEntity, fieldName: 'estado_id' },
     prioridad: { kind: 'm:1', entity: () => PrioridadEntity, fieldName: 'prioridad_id' },
     responsable: { kind: 'm:1', entity: () => UsuarioEntity, fieldName: 'responsable_id', nullable: true },
@@ -44,9 +44,9 @@ export const TareaSchema = new EntitySchema<TareaEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
     { properties: ['responsable'] },
-    { properties: ['tenant', 'estado'] },
+    { properties: ['estudio', 'estado'] },
   ],
 });

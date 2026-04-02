@@ -1,7 +1,7 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { LibroContableEntity } from './libro-contable.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 export interface LineaAsientoDto {
   cuentaId: string;
@@ -14,7 +14,7 @@ export class AsientoContableEntity {
   id!: string;
   libro!: LibroContableEntity;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   fecha!: Date;
   descripcion!: string;
   lineas!: LineaAsientoDto[];
@@ -29,7 +29,7 @@ export const AsientoContableSchema = new EntitySchema<AsientoContableEntity>({
     id: { type: 'uuid', primary: true },
     libro: { kind: 'm:1', entity: () => LibroContableEntity, fieldName: 'libro_id' },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     fecha: { type: 'Date' },
     descripcion: { type: 'string' },
     lineas: { type: 'json' },
@@ -37,7 +37,7 @@ export const AsientoContableSchema = new EntitySchema<AsientoContableEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
     { properties: ['libro'] },
     { properties: ['fecha'] },

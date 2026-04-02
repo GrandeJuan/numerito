@@ -13,7 +13,7 @@ export type EstadoFactura = (typeof ESTADO_FACTURA)[keyof typeof ESTADO_FACTURA]
 
 interface CreateFacturaProps {
   clienteId: string;
-  tenantId: string;
+  estudioId: string;
   numero: string;
   fechaEmision: Date;
   fechaVencimiento: Date;
@@ -25,7 +25,7 @@ interface CreateFacturaProps {
 
 export class Factura extends BaseEntity {
   private _clienteId: string;
-  private _tenantId: string;
+  private _estudioId: string;
   private _numero: string;
   private _fechaEmision: Date;
   private _fechaVencimiento: Date;
@@ -51,7 +51,7 @@ export class Factura extends BaseEntity {
       throw new OperacionInvalidaError('La fecha de emision no puede ser posterior a la fecha de vencimiento');
     }
     this._clienteId = props.clienteId;
-    this._tenantId = props.tenantId;
+    this._estudioId = props.estudioId;
     this._numero = props.numero;
     this._fechaEmision = props.fechaEmision;
     this._fechaVencimiento = props.fechaVencimiento;
@@ -68,7 +68,7 @@ export class Factura extends BaseEntity {
   }
 
   get clienteId(): string { return this._clienteId; }
-  get tenantId(): string { return this._tenantId; }
+  get estudioId(): string { return this._estudioId; }
   get numero(): string { return this._numero; }
   get fechaEmision(): Date { return this._fechaEmision; }
   get fechaVencimiento(): Date { return this._fechaVencimiento; }

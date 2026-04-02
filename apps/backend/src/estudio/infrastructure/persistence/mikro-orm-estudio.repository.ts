@@ -43,6 +43,8 @@ export class MikroOrmEstudioRepository implements EstudioRepository {
         plan,
         cuit: estudio.cuit,
         isActive: estudio.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();

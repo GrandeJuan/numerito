@@ -4,7 +4,7 @@ import { CrearClienteDto } from '../../application/dtos/crear-cliente.dto';
 import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
-import { TenantId } from '../../../shared/infrastructure/decorators/tenant-id.decorator';
+import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Clientes')
@@ -17,11 +17,11 @@ export class ClientesController {
   @Get()
   @ApiOperation({ summary: 'Listar clientes del estudio' })
   async list(
-    @TenantId() tenantId: string,
+    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
   ) {
-    const clientes = await this.clienteRepo.findByTenantId(tenantId);
+    const clientes = await this.clienteRepo.findByEstudioId(estudioId);
     return successResponse(clientes, { total: clientes.length, page: +page, limit: +limit });
   }
 
@@ -33,8 +33,8 @@ export class ClientesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body() dto: CrearClienteDto, @TenantId() tenantId: string) {
+  async create(@Body() dto: CrearClienteDto, @EstudioId() estudioId: string) {
     const handler = new CrearClienteHandler(this.clienteRepo);
-    return handler.execute({ ...dto, tenantId } as any);
+    return handler.execute({ ...dto, estudioId } as any);
   }
 }

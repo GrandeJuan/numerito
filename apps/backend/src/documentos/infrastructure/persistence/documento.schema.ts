@@ -1,12 +1,12 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { TipoDocumentoEntity } from '../../../shared/infrastructure/persistence/tipo-documento.schema';
 
 export class DocumentoEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   tipoDocumento!: TipoDocumentoEntity;
   nombre!: string;
   s3Key!: string;
@@ -23,7 +23,7 @@ export const DocumentoSchema = new EntitySchema<DocumentoEntity>({
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     tipoDocumento: { kind: 'm:1', entity: () => TipoDocumentoEntity, fieldName: 'tipo_documento_id' },
     nombre: { type: 'string' },
     s3Key: { type: 'string', fieldName: 's3_key', unique: true },
@@ -34,7 +34,7 @@ export const DocumentoSchema = new EntitySchema<DocumentoEntity>({
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
   ],
 });

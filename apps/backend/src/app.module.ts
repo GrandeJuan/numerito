@@ -4,7 +4,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import mikroOrmConfig from './mikro-orm.config';
 import { AppController } from './app.controller';
 import { IamModule } from './iam/iam.module';
-import { TenantModule } from './tenant/tenant.module';
+import { EstudioModule } from './estudio/estudio.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { ObligacionesModule } from './obligaciones/obligaciones.module';
 import { ContabilidadModule } from './contabilidad/contabilidad.module';
@@ -19,7 +19,7 @@ import { IntegracionesModule } from './integraciones/integraciones.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MikroOrmModule.forRoot(mikroOrmConfig),
     IamModule,
-    TenantModule,
+    EstudioModule,
     ClientesModule,
     ObligacionesModule,
     ContabilidadModule,

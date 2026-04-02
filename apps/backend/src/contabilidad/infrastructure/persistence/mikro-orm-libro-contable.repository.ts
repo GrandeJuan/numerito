@@ -5,7 +5,7 @@ import { LibroContable, type TipoLibro } from '../../domain/entities/libro-conta
 import { LibroContableEntity } from './libro-contable.schema';
 import { TipoLibroEntity } from '../../../shared/infrastructure/persistence/tipo-libro.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
 export class MikroOrmLibroContableRepository implements LibroContableRepository {
@@ -13,32 +13,32 @@ export class MikroOrmLibroContableRepository implements LibroContableRepository 
 
   async findById(id: string): Promise<LibroContable | null> {
     const entity = await this.em.findOne(LibroContableEntity, { id }, {
-      populate: ['tipoLibro', 'cliente', 'tenant'],
+      populate: ['tipoLibro', 'cliente', 'estudio'],
     });
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, tenantId: string): Promise<LibroContable[]> {
+  async findByClienteId(clienteId: string, estudioId: string): Promise<LibroContable[]> {
     const entities = await this.em.find(LibroContableEntity, {
       cliente: { id: clienteId },
-      tenant: { id: tenantId },
+      estudio: { id: estudioId },
     }, {
-      populate: ['tipoLibro', 'cliente', 'tenant'],
+      populate: ['tipoLibro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
-  async findByTenantId(tenantId: string): Promise<LibroContable[]> {
-    const entities = await this.em.find(LibroContableEntity, { tenant: { id: tenantId } }, {
-      populate: ['tipoLibro', 'cliente', 'tenant'],
+  async findByEstudioId(estudioId: string): Promise<LibroContable[]> {
+    const entities = await this.em.find(LibroContableEntity, { estudio: { id: estudioId } }, {
+      populate: ['tipoLibro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<LibroContable[]> {
     const entities = await this.em.findAll(LibroContableEntity, {
-      populate: ['tipoLibro', 'cliente', 'tenant'],
+      populate: ['tipoLibro', 'cliente', 'estudio'],
     });
     return entities.map(e => this.toDomain(e));
   }
@@ -46,12 +46,12 @@ export class MikroOrmLibroContableRepository implements LibroContableRepository 
   async save(libro: LibroContable): Promise<void> {
     const tipoLibro = await this.em.findOneOrFail(TipoLibroEntity, { codigo: libro.tipo });
     const cliente = this.em.getReference(ClienteEntity, libro.clienteId);
-    const tenant = this.em.getReference(EstudioEntity, libro.tenantId);
+    const estudio = this.em.getReference(EstudioEntity, libro.estudioId);
 
     const existing = await this.em.findOne(LibroContableEntity, { id: libro.id });
     if (existing) {
       existing.cliente = cliente;
-      existing.tenant = tenant;
+      existing.estudio = estudio;
       existing.tipoLibro = tipoLibro;
       existing.periodo = libro.periodo;
       existing.isRubricado = libro.isRubricado;
@@ -60,11 +60,13 @@ export class MikroOrmLibroContableRepository implements LibroContableRepository 
       this.em.create(LibroContableEntity, {
         id: libro.id,
         cliente,
-        tenant,
+        estudio,
         tipoLibro,
         periodo: libro.periodo,
         isRubricado: libro.isRubricado,
         numeroRubrica: libro.numeroRubrica,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
     }
     await this.em.flush();
@@ -81,7 +83,7 @@ export class MikroOrmLibroContableRepository implements LibroContableRepository 
   private toDomain(entity: LibroContableEntity): LibroContable {
     return LibroContable.create({
       clienteId: entity.cliente.id,
-      tenantId: entity.tenant.id,
+      estudioId: entity.estudio.id,
       tipo: entity.tipoLibro.codigo as TipoLibro,
       periodo: entity.periodo,
     }, entity.id);

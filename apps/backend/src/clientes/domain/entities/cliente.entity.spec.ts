@@ -11,7 +11,7 @@ describe('Cliente Entity (Aggregate Root)', () => {
       condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
       tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
       regimen: REGIMEN.GENERAL,
-      tenantId: 'tenant-1',
+      estudioId: 'estudio-1',
     });
   };
 
@@ -23,7 +23,7 @@ describe('Cliente Entity (Aggregate Root)', () => {
     expect(cliente.condicionIva).toBe(CONDICION_IVA.RESPONSABLE_INSCRIPTO);
     expect(cliente.tipo).toBe(TIPO_CLIENTE.PERSONA_JURIDICA);
     expect(cliente.regimen).toBe(REGIMEN.GENERAL);
-    expect(cliente.tenantId).toBe('tenant-1');
+    expect(cliente.estudioId).toBe('estudio-1');
     expect(cliente.isActive).toBe(true);
     expect(cliente.provincias).toEqual([]);
   });

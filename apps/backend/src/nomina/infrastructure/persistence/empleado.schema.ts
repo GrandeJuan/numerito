@@ -1,11 +1,11 @@
 import { EntitySchema } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
-import { EstudioEntity } from '../../../tenant/infrastructure/persistence/estudio.schema';
+import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 export class EmpleadoEntity {
   id!: string;
   cliente!: ClienteEntity;
-  tenant!: EstudioEntity;
+  estudio!: EstudioEntity;
   nombre!: string;
   apellido!: string;
   cuil!: string;
@@ -24,7 +24,7 @@ export const EmpleadoSchema = new EntitySchema<EmpleadoEntity>({
   properties: {
     id: { type: 'uuid', primary: true },
     cliente: { kind: 'm:1', entity: () => ClienteEntity, fieldName: 'cliente_id' },
-    tenant: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'tenant_id' },
+    estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     nombre: { type: 'string' },
     apellido: { type: 'string' },
     cuil: { type: 'string', length: 13 },
@@ -36,9 +36,11 @@ export const EmpleadoSchema = new EntitySchema<EmpleadoEntity>({
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
+  uniques: [
+    { properties: ['cuil', 'estudio'] },
+  ],
   indexes: [
-    { properties: ['tenant'] },
+    { properties: ['estudio'] },
     { properties: ['cliente'] },
-    { properties: ['cuil', 'tenant'], unique: true },
   ],
 });
