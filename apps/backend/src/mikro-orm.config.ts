@@ -33,6 +33,8 @@ import { ClienteProvinciaSchema } from './shared/infrastructure/persistence/clie
 import { UsuarioSchema } from './iam/infrastructure/persistence/usuario.schema';
 import { SesionSchema } from './iam/infrastructure/persistence/sesion.schema';
 import { UsuarioEstudioSchema } from './iam/infrastructure/persistence/usuario-estudio.schema';
+import { ResetTokenSchema } from './iam/infrastructure/persistence/reset-token.schema';
+import { TotpSecretSchema } from './iam/infrastructure/persistence/totp-secret.schema';
 
 // Estudio
 import { EstudioSchema } from './estudio/infrastructure/persistence/estudio.schema';
@@ -105,6 +107,8 @@ export default defineConfig({
     UsuarioSchema,
     SesionSchema,
     UsuarioEstudioSchema,
+    ResetTokenSchema,
+    TotpSecretSchema,
     // Estudio
     EstudioSchema,
     SubscripcionSchema,

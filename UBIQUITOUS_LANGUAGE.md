@@ -1,0 +1,135 @@
+# Ubiquitous Language — Numerito ERP Contable
+
+## Actores y Acceso
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Estudio** | Firma contable que opera como tenant en el sistema SaaS | Tenant, organización, empresa |
+| **Usuario** | Identidad de autenticación con credenciales de login | Account, login, user |
+| **Socio** | Rol de socio/dueño del estudio con acceso total | Admin, owner |
+| **Responsable** | Rol de gerente/encargado que supervisa clientes | Manager, supervisor |
+| **Empleado** (rol) | Rol de empleado del estudio con permisos limitados | Staff, worker |
+| **Sesión** | Registro de login activo con refresh token y metadata de seguridad | Session, token |
+
+## Clientes y Datos Fiscales
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Cliente** | Persona física o jurídica atendida por el estudio contable | Customer, cuenta, account |
+| **CUIT** | Código Único de Identificación Tributaria — 11 dígitos con verificador | Tax ID, RUT, NIF |
+| **Razón Social** | Nombre legal registrado de la entidad | Business name, company name |
+| **Condición IVA** | Situación fiscal del cliente frente al IVA (Responsable Inscripto, Monotributo, Exento, etc.) | VAT status |
+| **Régimen** | Régimen impositivo del cliente: General o Monotributo | Tax regime |
+| **Persona Física** | Cliente individual o autónomo | Individual |
+| **Persona Jurídica** | Empresa o sociedad con personería jurídica | Company, corporation |
+
+## Obligaciones Fiscales
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Vencimiento** | Obligación fiscal con fecha límite de presentación | Deadline, due date, obligation |
+| **Presentar** | Marcar un vencimiento como cumplido ante el organismo fiscal | File, submit |
+| **Vencido** | Estado de un vencimiento cuya fecha límite expiró sin presentación | Overdue, expired |
+| **Pendiente** | Estado de un vencimiento aún no presentado ni vencido | Pending |
+| **Período** | Mes/trimestre/año fiscal al que corresponde la obligación (formato YYYY-MM) | Period |
+| **DDJJ** | Declaración Jurada — formulario de declaración impositiva | Tax return, filing |
+| **IIBB** | Ingresos Brutos — impuesto provincial sobre facturación | Gross income tax |
+
+## Contabilidad
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Libro Contable** | Registro legal obligatorio de transacciones (IVA Compras, IVA Ventas, Diario, etc.) | Ledger, accounting book |
+| **Rubricar** | Registrar un libro ante la autoridad fiscal con número de rúbrica (irreversible) | Stamp, certify, register |
+| **Asiento Contable** | Registro de partida doble que vincula cambios en cuentas del plan contable | Journal entry |
+| **Debe** | Columna de débito en un asiento contable | Debit |
+| **Haber** | Columna de crédito en un asiento contable | Credit |
+| **Balanceado** | Un asiento donde total Debe == total Haber (dentro de tolerancia) | Balanced |
+
+## Nómina
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Empleado** (entidad) | Trabajador en relación de dependencia de un cliente del estudio | Employee, worker |
+| **CUIL** | Código Único de Identificación Laboral — identificador tributario del trabajador | Labor tax ID |
+| **Sueldo Básico** | Salario mensual base del empleado | Base salary |
+| **Categoría Convenio** | Categoría dentro del convenio colectivo de trabajo que aplica al empleado | Labor category |
+| **Dar de Baja** | Registrar el egreso/despido de un empleado con fecha (irreversible) | Terminate, fire |
+| **Antigüedad** | Años de servicio calculados desde la fecha de ingreso | Seniority |
+
+## Facturación y Cobranzas
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Factura** | Comprobante de venta emitido por el estudio a su cliente por servicios | Invoice, bill |
+| **Línea de Factura** | Ítem individual dentro de una factura con cantidad, precio unitario y alícuota IVA | Invoice line, line item |
+| **Pago** | Registro de un cobro aplicado a una factura | Payment |
+| **Saldo Pendiente** | Monto total de factura menos pagos recibidos | Outstanding balance |
+| **Anular** | Cancelar una factura (estado terminal, sin reversión) | Void, cancel |
+| **Cuenta Corriente** | Listado de facturas de un cliente mostrando saldos | Account statement |
+| **Emitida** | Factura creada pero aún sin pago | Issued |
+
+## Documentos
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Documento** | Archivo digital almacenado en S3, organizado por cliente y tipo | File, attachment |
+| **Versión** | Revisión de un documento (auto-incrementada al subir nueva versión) | Revision |
+
+## Tareas y Gestión Interna
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Tarea** | Unidad de trabajo interno del estudio, puede estar vinculada a un cliente | Task, ticket, issue |
+| **Iniciar** | Transicionar una tarea de Pendiente a En Progreso | Start, begin |
+| **Completar** | Marcar una tarea como finalizada (solo desde En Progreso) | Finish, close, resolve |
+| **Registrar Horas** | Agregar tiempo trabajado a una tarea (acumulativo) | Log time, track hours |
+| **Prioridad** | Nivel de urgencia: Baja, Media, Alta, Urgente | Priority |
+
+## Subscripción y Planes
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Subscripción** | Vínculo activo entre un estudio y un plan de precios | Subscription, membership |
+| **Plan** | Nivel de servicio con límites de clientes y usuarios (Free, Profesional, Enterprise) | Tier, pricing plan |
+| **Trial** | Período de prueba gratuito antes de activar un plan pago | Free trial |
+| **Suspender** | Pausar temporalmente una subscripción activa (reversible) | Pause |
+| **Reactivar** | Reanudar una subscripción suspendida | Resume |
+| **Renovar** | Extender la fecha de fin de una subscripción | Renew |
+
+## Integraciones Fiscales
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **ARCA** | Administración de Recaudación y Control Aduanero (ex-AFIP) — organismo fiscal nacional | AFIP |
+| **ARBA** | Agencia de Recaudación de Buenos Aires — organismo fiscal provincial | Buenos Aires tax authority |
+| **AGIP** | Administración Gubernamental de Ingresos Públicos — organismo fiscal de CABA | CABA tax authority |
+| **Notificación Fiscal** | Comunicación de un organismo fiscal dirigida a un cliente del estudio | Tax notice |
+| **Gestionada** | Estado de una notificación que ya fue atendida/resuelta con nota de gestión | Handled, resolved |
+
+## Relaciones
+
+- Un **Estudio** tiene muchos **Clientes**, **Usuarios** y una **Subscripción** activa
+- Un **Cliente** pertenece a exactamente un **Estudio** y puede tener un **Responsable** asignado
+- Un **Vencimiento** pertenece a un **Cliente** dentro de un **Estudio**
+- Un **Libro Contable** contiene múltiples **Asientos Contables**
+- Una **Factura** contiene una o más **Líneas de Factura** y puede recibir múltiples **Pagos**
+- Un **Empleado** pertenece a un **Cliente** (es empleado del cliente, no del estudio)
+- Una **Tarea** puede estar vinculada a un **Cliente** o ser general del **Estudio**
+- Un **Usuario** puede pertenecer a múltiples **Estudios** con diferentes roles
+
+## Diálogo de ejemplo
+
+> **Dev:** "Cuando un **Cliente** cambia de **Monotributo** a **Responsable Inscripto**, qué pasa con sus **Vencimientos**?"
+> **Experto:** "Al cambiar la **Condición IVA**, los **Vencimientos** pendientes del período actual no se modifican. Pero a partir del próximo **Período**, se generan nuevos **Vencimientos** según las reglas del nuevo **Régimen** — por ejemplo, ahora tiene que **Presentar** DDJJ de IVA mensual."
+> **Dev:** "Y si tiene un **Libro Contable** de IVA Compras ya **Rubricado**, se invalida?"
+> **Experto:** "No. La **Rúbrica** es permanente. El libro sigue válido. Lo que cambia es que ahora necesita un libro de IVA Ventas también, porque como **Responsable Inscripto** debe discriminar IVA en sus **Facturas**."
+> **Dev:** "Entonces el cambio de **Régimen** no afecta datos históricos, solo genera nuevas obligaciones futuras."
+> **Experto:** "Exacto. Es un cambio prospectivo. Los **Asientos** ya registrados no se tocan."
+
+## Ambigüedades flaggeadas
+
+- **"Empleado"** se usa para dos conceptos distintos: (1) el rol de **Usuario** dentro del estudio (`ROL.EMPLEADO`), y (2) la entidad **Empleado** que representa un trabajador de un cliente para nómina. Son conceptos completamente diferentes — el primero es un rol de acceso, el segundo es un dato de RRHH.
+- **"Vencido/a"** se usa en tres contextos: **Vencimiento** vencido (obligación fiscal no presentada a tiempo), **Factura** vencida (no pagada al vencer), y **Subscripción** vencida (período expirado). Aunque comparten el término, los estados y transiciones son diferentes en cada caso.
+- **"Pendiente"** aparece en **Vencimientos**, **Tareas** y **Notificaciones** con semánticas ligeramente diferentes: en vencimientos significa "no presentado", en tareas significa "no iniciado", en notificaciones significa "no leída".
+- **"Cliente"** como rol (`ROL.CLIENTE` para acceso al portal) vs **Cliente** como entidad del dominio (persona/empresa atendida por el estudio). El primero es un tipo de usuario, el segundo es la entidad central del negocio.

@@ -1,12 +1,107 @@
-import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CrearTareaDto } from '../../application/dtos/crear-tarea.dto';
+import { AsignarTareaDto } from '../../application/dtos/asignar-tarea.dto';
+import { RegistrarHorasDto } from '../../application/dtos/registrar-horas.dto';
+import { AgregarComentarioDto } from '../../application/dtos/agregar-comentario.dto';
+import { TAREA_REPOSITORY } from '../../domain/repositories/tarea.repository';
+import type { TareaRepository } from '../../domain/repositories/tarea.repository';
+import { Tarea } from '../../domain/entities/tarea.entity';
+import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { successResponse } from '../../../shared/infrastructure/responses/api-response';
+import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 @ApiTags('Tareas')
 @Controller({ path: 'tareas', version: '1' })
 export class TareasController {
+  constructor(
+    @Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository,
+  ) {}
+
   @Get()
-  @ApiOperation({ summary: 'Listar tareas' })
-  async list(@Query('page') _page = 1, @Query('limit') _limit = 20) {
-    return [];
+  @ApiOperation({ summary: 'Listar tareas del estudio' })
+  async list(
+    @EstudioId() estudioId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('estado') estado?: string,
+    @Query('responsableId') responsableId?: string,
+    @Query('clienteId') clienteId?: string,
+  ) {
+    let tareas: Tarea[];
+
+    if (responsableId) {
+      tareas = await this.tareaRepo.findByResponsableId(responsableId, estudioId);
+    } else {
+      tareas = await this.tareaRepo.findByEstudioId(estudioId);
+    }
+
+    if (estado) {
+      tareas = tareas.filter((t) => t.estado === estado);
+    }
+    if (clienteId) {
+      tareas = tareas.filter((t) => t.clienteId === clienteId);
+    }
+
+    return successResponse(tareas, { total: tareas.length, page: +page, limit: +limit });
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Crear tarea' })
+  async create(@Body() dto: CrearTareaDto, @EstudioId() estudioId: string) {
+    const tarea = Tarea.create({ ...dto, estudioId });
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  @Patch(':id/iniciar')
+  @ApiOperation({ summary: 'Iniciar tarea' })
+  async iniciar(@Param('id') id: string) {
+    const tarea = await this.findOrFail(id);
+    tarea.iniciar();
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  @Patch(':id/completar')
+  @ApiOperation({ summary: 'Completar tarea' })
+  async completar(@Param('id') id: string) {
+    const tarea = await this.findOrFail(id);
+    tarea.completar();
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  @Patch(':id/asignar')
+  @ApiOperation({ summary: 'Asignar responsable a tarea' })
+  async asignar(@Param('id') id: string, @Body() dto: AsignarTareaDto) {
+    const tarea = await this.findOrFail(id);
+    tarea.asignar(dto.responsableId);
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  @Post(':id/horas')
+  @ApiOperation({ summary: 'Registrar horas en tarea' })
+  async registrarHoras(@Param('id') id: string, @Body() dto: RegistrarHorasDto) {
+    const tarea = await this.findOrFail(id);
+    tarea.registrarHoras(dto.horas);
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  @Post(':id/comentarios')
+  @ApiOperation({ summary: 'Agregar comentario a tarea' })
+  async agregarComentario(@Param('id') id: string, @Body() dto: AgregarComentarioDto) {
+    const tarea = await this.findOrFail(id);
+    tarea.agregarComentario(dto.autorId, dto.texto);
+    await this.tareaRepo.save(tarea);
+    return successResponse(tarea);
+  }
+
+  private async findOrFail(id: string): Promise<Tarea> {
+    const tarea = await this.tareaRepo.findById(id);
+    if (!tarea) throw new RecursoNoEncontradoError('Tarea');
+    return tarea;
   }
 }

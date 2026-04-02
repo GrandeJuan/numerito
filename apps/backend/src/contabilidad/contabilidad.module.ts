@@ -3,10 +3,11 @@ import { LIBRO_CONTABLE_REPOSITORY } from './domain/repositories/libro-contable.
 import { ASIENTO_CONTABLE_REPOSITORY } from './domain/repositories/asiento-contable.repository';
 import { MikroOrmLibroContableRepository } from './infrastructure/persistence/mikro-orm-libro-contable.repository';
 import { MikroOrmAsientoContableRepository } from './infrastructure/persistence/mikro-orm-asiento-contable.repository';
+import { ContabilidadController } from './infrastructure/controllers/contabilidad.controller';
 
 @Module({
   imports: [],
-  controllers: [],
+  controllers: [ContabilidadController],
   providers: [
     { provide: LIBRO_CONTABLE_REPOSITORY, useClass: MikroOrmLibroContableRepository },
     { provide: ASIENTO_CONTABLE_REPOSITORY, useClass: MikroOrmAsientoContableRepository },

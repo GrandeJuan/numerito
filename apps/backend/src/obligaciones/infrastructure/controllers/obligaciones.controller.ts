@@ -2,8 +2,12 @@ import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestj
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VENCIMIENTO_REPOSITORY } from '../../domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
+import { Vencimiento } from '../../domain/entities/vencimiento.entity';
+import { CrearVencimientoDto } from '../../application/dtos/crear-vencimiento.dto';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
+import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import type { TipoObligacion } from '@numerito/shared';
 
 @ApiTags('Obligaciones')
 @Controller({ path: 'obligaciones', version: '1' })
@@ -35,6 +39,52 @@ export class ObligacionesController {
   @Get('vencimientos/:id')
   @ApiOperation({ summary: 'Obtener vencimiento por ID' })
   async getById(@Param('id') id: string) {
-    return this.vencimientoRepo.findById(id);
+    const vencimiento = await this.vencimientoRepo.findById(id);
+    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
+    return vencimiento;
+  }
+
+  @Post('vencimientos')
+  @ApiOperation({ summary: 'Crear vencimiento' })
+  async create(@Body() dto: CrearVencimientoDto, @EstudioId() estudioId: string) {
+    const vencimiento = Vencimiento.create({
+      clienteId: dto.clienteId,
+      estudioId,
+      tipoObligacion: dto.tipoObligacion as TipoObligacion,
+      periodo: dto.periodo,
+      fechaVencimiento: new Date(dto.fechaVencimiento),
+      descripcion: dto.descripcion,
+    });
+    await this.vencimientoRepo.save(vencimiento);
+    return { id: vencimiento.id };
+  }
+
+  @Patch('vencimientos/:id/presentar')
+  @ApiOperation({ summary: 'Marcar vencimiento como presentado' })
+  async presentar(@Param('id') id: string) {
+    const vencimiento = await this.vencimientoRepo.findById(id);
+    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
+
+    vencimiento.presentar();
+    await this.vencimientoRepo.save(vencimiento);
+    return vencimiento;
+  }
+
+  @Patch('vencimientos/:id/vencido')
+  @ApiOperation({ summary: 'Marcar vencimiento como vencido' })
+  async marcarVencido(@Param('id') id: string) {
+    const vencimiento = await this.vencimientoRepo.findById(id);
+    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
+
+    vencimiento.marcarVencido();
+    await this.vencimientoRepo.save(vencimiento);
+    return vencimiento;
+  }
+
+  @Get('calendario/:periodo')
+  @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
+  async calendario(@Param('periodo') periodo: string, @EstudioId() estudioId: string) {
+    const vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, estudioId);
+    return successResponse(vencimientos);
   }
 }

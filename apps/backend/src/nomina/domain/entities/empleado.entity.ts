@@ -57,6 +57,13 @@ export class Empleado extends BaseEntity {
     return Math.floor((now.getTime() - this._fechaIngreso.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   }
 
+  actualizar(props: { nombre?: string; apellido?: string; categoriaConvenio?: string }): void {
+    if (props.nombre) this._nombre = props.nombre;
+    if (props.apellido) this._apellido = props.apellido;
+    if (props.categoriaConvenio) this._categoriaConvenio = props.categoriaConvenio;
+    this.updatedAt = new Date();
+  }
+
   actualizarSueldo(nuevoSueldo: number): void {
     if (nuevoSueldo <= 0) {
       throw new OperacionInvalidaError('El sueldo debe ser mayor a 0');
