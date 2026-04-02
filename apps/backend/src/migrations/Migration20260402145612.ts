@@ -1,8 +1,11 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20260402142312 extends Migration {
+export class Migration20260402145612 extends Migration {
 
   override up(): void | Promise<void> {
+    this.addSql(`create table "ciclo_facturacion" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
+    this.addSql(`alter table "ciclo_facturacion" add constraint "ciclo_facturacion_codigo_unique" unique ("codigo");`);
+
     this.addSql(`create table "cliente_provincia" ("cliente_id" uuid not null, "provincia_id" int not null, primary key ("cliente_id", "provincia_id"));`);
 
     this.addSql(`create table "condicion_iva" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null, "alicuota" numeric(5,2) not null);`);
@@ -10,6 +13,9 @@ export class Migration20260402142312 extends Migration {
 
     this.addSql(`create table "estado_factura" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
     this.addSql(`alter table "estado_factura" add constraint "estado_factura_codigo_unique" unique ("codigo");`);
+
+    this.addSql(`create table "estado_subscripcion" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
+    this.addSql(`alter table "estado_subscripcion" add constraint "estado_subscripcion_codigo_unique" unique ("codigo");`);
 
     this.addSql(`create table "estado_tarea" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
     this.addSql(`alter table "estado_tarea" add constraint "estado_tarea_codigo_unique" unique ("codigo");`);
@@ -29,11 +35,13 @@ export class Migration20260402142312 extends Migration {
     this.addSql(`create table "permiso" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null, "modulo" varchar(255) not null);`);
     this.addSql(`alter table "permiso" add constraint "permiso_codigo_unique" unique ("codigo");`);
 
-    this.addSql(`create table "plan" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null, "max_clientes" int not null, "max_usuarios" int not null, "precio" numeric(10,2) not null);`);
+    this.addSql(`create table "plan" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null, "descripcion" varchar(255) null, "max_clientes" int not null, "max_usuarios" int not null, "precio" numeric(10,2) not null, "is_publico" boolean not null default true, "is_activo" boolean not null default true, "condiciones" jsonb null);`);
     this.addSql(`alter table "plan" add constraint "plan_codigo_unique" unique ("codigo");`);
 
     this.addSql(`create table "estudio" ("id" uuid not null, "nombre" varchar(255) not null, "plan_id" int not null, "cuit" varchar(13) not null, "is_active" boolean not null default true, "created_at" timestamptz not null, "updated_at" timestamptz not null, primary key ("id"));`);
     this.addSql(`alter table "estudio" add constraint "estudio_cuit_unique" unique ("cuit");`);
+
+    this.addSql(`create table "historial_plan" ("id" uuid not null, "estudio_id" uuid not null, "plan_anterior_id" int not null, "plan_nuevo_id" int not null, "fecha_cambio" timestamptz not null, "motivo" varchar(255) null, primary key ("id"));`);
 
     this.addSql(`create table "alerta_config" ("id" uuid not null, "estudio_id" uuid not null, "dias_anticipacion" int not null, "canal_notificacion" varchar(255) not null, "activa" boolean not null default true, primary key ("id"));`);
     this.addSql(`alter table "alerta_config" add constraint "alerta_config_estudio_id_unique" unique ("estudio_id");`);
@@ -52,6 +60,8 @@ export class Migration20260402142312 extends Migration {
     this.addSql(`alter table "rol" add constraint "rol_codigo_unique" unique ("codigo");`);
 
     this.addSql(`create table "rol_permiso" ("rol_id" int not null, "permiso_id" int not null, primary key ("rol_id", "permiso_id"));`);
+
+    this.addSql(`create table "subscripcion" ("id" uuid not null, "estudio_id" uuid not null, "plan_id" int not null, "estado_subscripcion_id" int not null, "ciclo_facturacion_id" int not null, "fecha_inicio" timestamptz not null, "fecha_fin" timestamptz not null, "auto_renovacion" boolean not null default true, "created_at" timestamptz not null, "updated_at" timestamptz not null, primary key ("id"));`);
 
     this.addSql(`create table "tipo_cliente" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
     this.addSql(`alter table "tipo_cliente" add constraint "tipo_cliente_codigo_unique" unique ("codigo");`);
@@ -140,6 +150,10 @@ export class Migration20260402142312 extends Migration {
 
     this.addSql(`alter table "estudio" add constraint "estudio_plan_id_foreign" foreign key ("plan_id") references "plan" ("id");`);
 
+    this.addSql(`alter table "historial_plan" add constraint "historial_plan_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);
+    this.addSql(`alter table "historial_plan" add constraint "historial_plan_plan_anterior_id_foreign" foreign key ("plan_anterior_id") references "plan" ("id");`);
+    this.addSql(`alter table "historial_plan" add constraint "historial_plan_plan_nuevo_id_foreign" foreign key ("plan_nuevo_id") references "plan" ("id");`);
+
     this.addSql(`alter table "alerta_config" add constraint "alerta_config_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);
 
     this.addSql(`alter table "provincia" add constraint "provincia_pais_id_foreign" foreign key ("pais_id") references "pais" ("id");`);
@@ -148,6 +162,11 @@ export class Migration20260402142312 extends Migration {
 
     this.addSql(`alter table "rol_permiso" add constraint "rol_permiso_rol_id_foreign" foreign key ("rol_id") references "rol" ("id") on update cascade on delete cascade;`);
     this.addSql(`alter table "rol_permiso" add constraint "rol_permiso_permiso_id_foreign" foreign key ("permiso_id") references "permiso" ("id") on update cascade on delete cascade;`);
+
+    this.addSql(`alter table "subscripcion" add constraint "subscripcion_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);
+    this.addSql(`alter table "subscripcion" add constraint "subscripcion_plan_id_foreign" foreign key ("plan_id") references "plan" ("id");`);
+    this.addSql(`alter table "subscripcion" add constraint "subscripcion_estado_subscripcion_id_foreign" foreign key ("estado_subscripcion_id") references "estado_subscripcion" ("id");`);
+    this.addSql(`alter table "subscripcion" add constraint "subscripcion_ciclo_facturacion_id_foreign" foreign key ("ciclo_facturacion_id") references "ciclo_facturacion" ("id");`);
 
     this.addSql(`alter table "regla_vencimiento" add constraint "regla_vencimiento_tipo_obligacion_id_foreign" foreign key ("tipo_obligacion_id") references "tipo_obligacion" ("id");`);
 

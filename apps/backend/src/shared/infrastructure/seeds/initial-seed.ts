@@ -189,6 +189,25 @@ INSERT INTO prioridad (codigo, nombre, orden) VALUES
 ON CONFLICT (codigo) DO NOTHING;
 
 -- ============================================
+-- ESTADO SUBSCRIPCION
+-- ============================================
+INSERT INTO estado_subscripcion (codigo, nombre) VALUES
+  ('TRIAL', 'Trial'),
+  ('ACTIVA', 'Activa'),
+  ('SUSPENDIDA', 'Suspendida'),
+  ('CANCELADA', 'Cancelada'),
+  ('VENCIDA', 'Vencida')
+ON CONFLICT (codigo) DO NOTHING;
+
+-- ============================================
+-- CICLO FACTURACION
+-- ============================================
+INSERT INTO ciclo_facturacion (codigo, nombre) VALUES
+  ('MENSUAL', 'Mensual'),
+  ('ANUAL', 'Anual')
+ON CONFLICT (codigo) DO NOTHING;
+
+-- ============================================
 -- PLAN
 -- ============================================
 INSERT INTO plan (codigo, nombre, max_clientes, max_usuarios, precio) VALUES

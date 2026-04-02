@@ -22,6 +22,8 @@ import { PrioridadSchema } from './shared/infrastructure/persistence/prioridad.s
 import { PlanSchema } from './shared/infrastructure/persistence/plan.schema';
 import { OrganismoFiscalSchema } from './shared/infrastructure/persistence/organismo-fiscal.schema';
 import { PermisoSchema } from './shared/infrastructure/persistence/permiso.schema';
+import { EstadoSubscripcionSchema } from './shared/infrastructure/persistence/estado-subscripcion.schema';
+import { CicloFacturacionSchema } from './shared/infrastructure/persistence/ciclo-facturacion.schema';
 
 // Shared — Junction/M2M
 import { RolPermisoSchema } from './shared/infrastructure/persistence/rol-permiso.schema';
@@ -34,6 +36,8 @@ import { UsuarioEstudioSchema } from './iam/infrastructure/persistence/usuario-e
 
 // Estudio
 import { EstudioSchema } from './estudio/infrastructure/persistence/estudio.schema';
+import { SubscripcionSchema } from './estudio/infrastructure/persistence/subscripcion.schema';
+import { HistorialPlanSchema } from './estudio/infrastructure/persistence/historial-plan.schema';
 
 // Clientes
 import { ClienteSchema } from './clientes/infrastructure/persistence/cliente.schema';
@@ -92,6 +96,8 @@ export default defineConfig({
     PlanSchema,
     OrganismoFiscalSchema,
     PermisoSchema,
+    EstadoSubscripcionSchema,
+    CicloFacturacionSchema,
     // Junction/M2M
     RolPermisoSchema,
     ClienteProvinciaSchema,
@@ -101,6 +107,8 @@ export default defineConfig({
     UsuarioEstudioSchema,
     // Estudio
     EstudioSchema,
+    SubscripcionSchema,
+    HistorialPlanSchema,
     // Clientes
     ClienteSchema,
     // Obligaciones
