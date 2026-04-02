@@ -1,44 +1,80 @@
 import { Factura, ESTADO_FACTURA } from './factura.entity';
+import { LineaFactura } from './linea-factura.entity';
 
 describe('Factura Entity', () => {
+  const createLinea = (cantidad: number, precioUnitario: number, alicuotaIva: number) =>
+    LineaFactura.create({
+      facturaId: 'placeholder',
+      descripcion: 'Servicio',
+      cantidad,
+      precioUnitario,
+      alicuotaIva,
+    });
+
   const createFactura = () => {
+    const lineas = [
+      createLinea(1, 100000, 21), // subtotal 100000, iva 21000
+    ];
     return Factura.create({
       clienteId: 'c1',
       estudioId: 'e1',
       numero: 'FAC-0001',
       fechaEmision: new Date('2026-03-15'),
       fechaVencimiento: new Date('2026-04-15'),
-      subtotal: 100000,
-      iva: 21000,
-      total: 121000,
       concepto: 'Honorarios profesionales Marzo 2026',
+      lineas,
     });
   };
 
   it('should create a factura in EMITIDA state', () => {
     const f = createFactura();
     expect(f.estado).toBe(ESTADO_FACTURA.EMITIDA);
+    expect(f.subtotal).toBe(100000);
+    expect(f.iva).toBe(21000);
     expect(f.total).toBe(121000);
     expect(f.saldoPendiente).toBe(121000);
   });
 
-  it('should register partial payment', () => {
+  it('should calculate from multiple lineas with different alicuotas', () => {
+    const lineas = [
+      createLinea(2, 50000, 21),   // subtotal 100000, iva 21000
+      createLinea(1, 10000, 10.5), // subtotal 10000, iva 1050
+      createLinea(3, 5000, 0),     // subtotal 15000, iva 0
+    ];
+    const f = Factura.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      numero: 'FAC-0002',
+      fechaEmision: new Date('2026-03-15'),
+      fechaVencimiento: new Date('2026-04-15'),
+      concepto: 'Varios servicios',
+      lineas,
+    });
+    expect(f.subtotal).toBe(125000);
+    expect(f.iva).toBe(22050);
+    expect(f.total).toBe(147050);
+  });
+
+  it('should track totalPagado and derive estado from pagos', () => {
     const f = createFactura();
-    f.registrarPago(50000);
+    expect(f.totalPagado).toBe(0);
+
+    f.registrarPagoExterno(50000);
+    expect(f.totalPagado).toBe(50000);
     expect(f.saldoPendiente).toBe(71000);
     expect(f.estado).toBe(ESTADO_FACTURA.PARCIALMENTE_PAGADA);
   });
 
   it('should mark as fully paid', () => {
     const f = createFactura();
-    f.registrarPago(121000);
+    f.registrarPagoExterno(121000);
     expect(f.saldoPendiente).toBe(0);
     expect(f.estado).toBe(ESTADO_FACTURA.PAGADA);
   });
 
   it('should not overpay', () => {
     const f = createFactura();
-    expect(() => f.registrarPago(200000)).toThrow();
+    expect(() => f.registrarPagoExterno(200000)).toThrow('El pago excede el saldo pendiente');
   });
 
   it('should anular', () => {
@@ -55,48 +91,46 @@ describe('Factura Entity', () => {
 
   it('should marcarVencida from PARCIALMENTE_PAGADA', () => {
     const f = createFactura();
-    f.registrarPago(50000);
+    f.registrarPagoExterno(50000);
     f.marcarVencida();
     expect(f.estado).toBe(ESTADO_FACTURA.VENCIDA);
   });
 
   it('should not marcarVencida from PAGADA', () => {
     const f = createFactura();
-    f.registrarPago(121000);
+    f.registrarPagoExterno(121000);
     f.marcarVencida();
     expect(f.estado).toBe(ESTADO_FACTURA.PAGADA);
   });
 
-  it('should reject negative subtotal', () => {
+  it('should reject empty lineas', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
-      fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
-      subtotal: -1, iva: 21000, total: 121000, concepto: 'Test',
-    })).toThrow('El subtotal no puede ser negativo');
-  });
-
-  it('should reject negative iva', () => {
-    expect(() => Factura.create({
-      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
-      fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
-      subtotal: 100000, iva: -1, total: 121000, concepto: 'Test',
-    })).toThrow('El IVA no puede ser negativo');
-  });
-
-  it('should reject negative total', () => {
-    expect(() => Factura.create({
-      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
-      fechaEmision: new Date('2026-03-15'), fechaVencimiento: new Date('2026-04-15'),
-      subtotal: 100000, iva: 21000, total: -1, concepto: 'Test',
-    })).toThrow('El total no puede ser negativo');
+      clienteId: 'c1',
+      estudioId: 'e1',
+      numero: 'FAC-0001',
+      fechaEmision: new Date('2026-03-15'),
+      fechaVencimiento: new Date('2026-04-15'),
+      concepto: 'Test',
+      lineas: [],
+    })).toThrow('La factura debe tener al menos una linea');
   });
 
   it('should reject fechaEmision after fechaVencimiento', () => {
     expect(() => Factura.create({
-      clienteId: 'c1', estudioId: 'e1', numero: 'FAC-0001',
-      fechaEmision: new Date('2026-05-15'), fechaVencimiento: new Date('2026-04-15'),
-      subtotal: 100000, iva: 21000, total: 121000, concepto: 'Test',
+      clienteId: 'c1',
+      estudioId: 'e1',
+      numero: 'FAC-0001',
+      fechaEmision: new Date('2026-05-15'),
+      fechaVencimiento: new Date('2026-04-15'),
+      concepto: 'Test',
+      lineas: [createLinea(1, 100, 21)],
     })).toThrow('La fecha de emision no puede ser posterior a la fecha de vencimiento');
+  });
+
+  it('should expose lineas', () => {
+    const f = createFactura();
+    expect(f.lineas).toHaveLength(1);
+    expect(f.lineas[0].subtotal).toBe(100000);
   });
 
   it('should expose all getters', () => {
@@ -106,9 +140,6 @@ describe('Factura Entity', () => {
     expect(f.numero).toBe('FAC-0001');
     expect(f.fechaEmision).toEqual(new Date('2026-03-15'));
     expect(f.fechaVencimiento).toEqual(new Date('2026-04-15'));
-    expect(f.subtotal).toBe(100000);
-    expect(f.iva).toBe(21000);
-    expect(f.total).toBe(121000);
     expect(f.concepto).toBe('Honorarios profesionales Marzo 2026');
     expect(f.estado).toBe(ESTADO_FACTURA.EMITIDA);
     expect(f.totalPagado).toBe(0);

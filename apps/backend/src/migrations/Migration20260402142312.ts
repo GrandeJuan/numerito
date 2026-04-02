@@ -1,6 +1,6 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20260402140643 extends Migration {
+export class Migration20260402142312 extends Migration {
 
   override up(): void | Promise<void> {
     this.addSql(`create table "cliente_provincia" ("cliente_id" uuid not null, "provincia_id" int not null, primary key ("cliente_id", "provincia_id"));`);
@@ -16,6 +16,9 @@ export class Migration20260402140643 extends Migration {
 
     this.addSql(`create table "estado_vencimiento" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
     this.addSql(`alter table "estado_vencimiento" add constraint "estado_vencimiento_codigo_unique" unique ("codigo");`);
+
+    this.addSql(`create table "medio_pago" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null);`);
+    this.addSql(`alter table "medio_pago" add constraint "medio_pago_codigo_unique" unique ("codigo");`);
 
     this.addSql(`create table "organismo_fiscal" ("id" serial primary key, "codigo" varchar(255) not null, "nombre" varchar(255) not null, "jurisdiccion" varchar(255) not null, "url_portal" varchar(255) not null, "requiere_scraping" boolean not null, "tiene_web_service" boolean not null, "activo" boolean not null default true);`);
     this.addSql(`alter table "organismo_fiscal" add constraint "organismo_fiscal_codigo_unique" unique ("codigo");`);
@@ -98,6 +101,13 @@ export class Migration20260402140643 extends Migration {
     this.addSql(`create index "factura_estudio_id_estado_id_index" on "factura" ("estudio_id", "estado_id");`);
     this.addSql(`alter table "factura" add constraint "factura_numero_estudio_id_unique" unique ("numero", "estudio_id");`);
 
+    this.addSql(`create table "pago" ("id" uuid not null, "factura_id" uuid not null, "estudio_id" uuid not null, "fecha" timestamptz not null, "monto" numeric(12,2) not null, "medio_pago_id" int not null, "referencia" varchar(255) null, "created_at" timestamptz not null, primary key ("id"));`);
+    this.addSql(`create index "pago_factura_id_index" on "pago" ("factura_id");`);
+    this.addSql(`create index "pago_estudio_id_index" on "pago" ("estudio_id");`);
+
+    this.addSql(`create table "linea_factura" ("id" uuid not null, "factura_id" uuid not null, "descripcion" varchar(255) not null, "cantidad" numeric(12,4) not null, "precio_unitario" numeric(12,2) not null, "alicuota_iva" numeric(5,2) not null, "subtotal" numeric(12,2) not null, primary key ("id"));`);
+    this.addSql(`create index "linea_factura_factura_id_index" on "linea_factura" ("factura_id");`);
+
     this.addSql(`create table "empleado" ("id" uuid not null, "cliente_id" uuid not null, "estudio_id" uuid not null, "nombre" varchar(255) not null, "apellido" varchar(255) not null, "cuil" varchar(13) not null, "fecha_ingreso" timestamptz not null, "fecha_egreso" timestamptz null, "sueldo_basico" numeric(12,2) not null, "categoria_convenio" varchar(255) not null, "is_active" boolean not null default true, "created_at" timestamptz not null, "updated_at" timestamptz not null, primary key ("id"));`);
     this.addSql(`create index "empleado_estudio_id_index" on "empleado" ("estudio_id");`);
     this.addSql(`create index "empleado_cliente_id_index" on "empleado" ("cliente_id");`);
@@ -168,6 +178,12 @@ export class Migration20260402140643 extends Migration {
     this.addSql(`alter table "factura" add constraint "factura_cliente_id_foreign" foreign key ("cliente_id") references "cliente" ("id");`);
     this.addSql(`alter table "factura" add constraint "factura_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);
     this.addSql(`alter table "factura" add constraint "factura_estado_id_foreign" foreign key ("estado_id") references "estado_factura" ("id");`);
+
+    this.addSql(`alter table "pago" add constraint "pago_factura_id_foreign" foreign key ("factura_id") references "factura" ("id");`);
+    this.addSql(`alter table "pago" add constraint "pago_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);
+    this.addSql(`alter table "pago" add constraint "pago_medio_pago_id_foreign" foreign key ("medio_pago_id") references "medio_pago" ("id");`);
+
+    this.addSql(`alter table "linea_factura" add constraint "linea_factura_factura_id_foreign" foreign key ("factura_id") references "factura" ("id");`);
 
     this.addSql(`alter table "empleado" add constraint "empleado_cliente_id_foreign" foreign key ("cliente_id") references "cliente" ("id");`);
     this.addSql(`alter table "empleado" add constraint "empleado_estudio_id_foreign" foreign key ("estudio_id") references "estudio" ("id");`);

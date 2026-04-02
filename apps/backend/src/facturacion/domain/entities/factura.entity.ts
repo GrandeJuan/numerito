@@ -1,5 +1,6 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import { LineaFactura } from './linea-factura.entity';
 
 export const ESTADO_FACTURA = {
   EMITIDA: 'EMITIDA',
@@ -17,10 +18,8 @@ interface CreateFacturaProps {
   numero: string;
   fechaEmision: Date;
   fechaVencimiento: Date;
-  subtotal: number;
-  iva: number;
-  total: number;
   concepto: string;
+  lineas: LineaFactura[];
 }
 
 export class Factura extends BaseEntity {
@@ -29,23 +28,15 @@ export class Factura extends BaseEntity {
   private _numero: string;
   private _fechaEmision: Date;
   private _fechaVencimiento: Date;
-  private _subtotal: number;
-  private _iva: number;
-  private _total: number;
   private _concepto: string;
+  private _lineas: LineaFactura[];
   private _estado: EstadoFactura;
   private _totalPagado: number;
 
   private constructor(props: CreateFacturaProps, id?: string) {
     super(id);
-    if (props.subtotal < 0) {
-      throw new OperacionInvalidaError('El subtotal no puede ser negativo');
-    }
-    if (props.iva < 0) {
-      throw new OperacionInvalidaError('El IVA no puede ser negativo');
-    }
-    if (props.total < 0) {
-      throw new OperacionInvalidaError('El total no puede ser negativo');
+    if (props.lineas.length === 0) {
+      throw new OperacionInvalidaError('La factura debe tener al menos una linea');
     }
     if (props.fechaEmision > props.fechaVencimiento) {
       throw new OperacionInvalidaError('La fecha de emision no puede ser posterior a la fecha de vencimiento');
@@ -55,10 +46,8 @@ export class Factura extends BaseEntity {
     this._numero = props.numero;
     this._fechaEmision = props.fechaEmision;
     this._fechaVencimiento = props.fechaVencimiento;
-    this._subtotal = props.subtotal;
-    this._iva = props.iva;
-    this._total = props.total;
     this._concepto = props.concepto;
+    this._lineas = props.lineas;
     this._estado = ESTADO_FACTURA.EMITIDA;
     this._totalPagado = 0;
   }
@@ -72,18 +61,28 @@ export class Factura extends BaseEntity {
   get numero(): string { return this._numero; }
   get fechaEmision(): Date { return this._fechaEmision; }
   get fechaVencimiento(): Date { return this._fechaVencimiento; }
-  get subtotal(): number { return this._subtotal; }
-  get iva(): number { return this._iva; }
-  get total(): number { return this._total; }
   get concepto(): string { return this._concepto; }
+  get lineas(): readonly LineaFactura[] { return this._lineas; }
   get estado(): EstadoFactura { return this._estado; }
   get totalPagado(): number { return this._totalPagado; }
 
-  get saldoPendiente(): number {
-    return this._total - this._totalPagado;
+  get subtotal(): number {
+    return this._lineas.reduce((sum, l) => sum + l.subtotal, 0);
   }
 
-  registrarPago(monto: number): void {
+  get iva(): number {
+    return this._lineas.reduce((sum, l) => sum + (l.subtotal * l.alicuotaIva / 100), 0);
+  }
+
+  get total(): number {
+    return this.subtotal + this.iva;
+  }
+
+  get saldoPendiente(): number {
+    return this.total - this._totalPagado;
+  }
+
+  registrarPagoExterno(monto: number): void {
     if (monto > this.saldoPendiente) {
       throw new OperacionInvalidaError('El pago excede el saldo pendiente');
     }

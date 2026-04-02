@@ -148,6 +148,17 @@ INSERT INTO estado_vencimiento (codigo, nombre) VALUES
 ON CONFLICT (codigo) DO NOTHING;
 
 -- ============================================
+-- MEDIO PAGO
+-- ============================================
+INSERT INTO medio_pago (codigo, nombre) VALUES
+  ('TRANSFERENCIA', 'Transferencia Bancaria'),
+  ('CHEQUE', 'Cheque'),
+  ('EFECTIVO', 'Efectivo'),
+  ('TARJETA_CREDITO', 'Tarjeta de Crédito'),
+  ('TARJETA_DEBITO', 'Tarjeta de Débito')
+ON CONFLICT (codigo) DO NOTHING;
+
+-- ============================================
 -- ESTADO FACTURA
 -- ============================================
 INSERT INTO estado_factura (codigo, nombre) VALUES

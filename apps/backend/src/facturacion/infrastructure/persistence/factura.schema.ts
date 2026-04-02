@@ -1,7 +1,9 @@
-import { EntitySchema } from '@mikro-orm/core';
+import { EntitySchema, Collection } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/estado-factura.schema';
+import { LineaFacturaEntity } from './linea-factura.schema';
+import { PagoEntity } from './pago.schema';
 
 export class FacturaEntity {
   id!: string;
@@ -16,6 +18,8 @@ export class FacturaEntity {
   concepto!: string;
   estado!: EstadoFacturaEntity;
   totalPagado!: number;
+  lineas = new Collection<LineaFacturaEntity>(this);
+  pagos = new Collection<PagoEntity>(this);
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -36,6 +40,8 @@ export const FacturaSchema = new EntitySchema<FacturaEntity>({
     concepto: { type: 'string' },
     estado: { kind: 'm:1', entity: () => EstadoFacturaEntity, fieldName: 'estado_id' },
     totalPagado: { type: 'number', fieldName: 'total_pagado', columnType: 'numeric(12,2)', default: 0 },
+    lineas: { kind: '1:m', entity: () => LineaFacturaEntity, mappedBy: 'factura' },
+    pagos: { kind: '1:m', entity: () => PagoEntity, mappedBy: 'factura' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

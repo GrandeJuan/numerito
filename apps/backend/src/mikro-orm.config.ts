@@ -58,6 +58,9 @@ import { TareaSchema } from './tareas/infrastructure/persistence/tarea.schema';
 
 // Facturacion
 import { FacturaSchema } from './facturacion/infrastructure/persistence/factura.schema';
+import { LineaFacturaSchema } from './facturacion/infrastructure/persistence/linea-factura.schema';
+import { PagoSchema } from './facturacion/infrastructure/persistence/pago.schema';
+import { MedioPagoSchema } from './shared/infrastructure/persistence/medio-pago.schema';
 
 // Integraciones
 import { NotificacionFiscalSchema } from './integraciones/infrastructure/persistence/notificacion-fiscal.schema';
@@ -115,6 +118,9 @@ export default defineConfig({
     TareaSchema,
     // Facturacion
     FacturaSchema,
+    LineaFacturaSchema,
+    PagoSchema,
+    MedioPagoSchema,
     // Integraciones
     NotificacionFiscalSchema,
     CredencialFiscalSchema,
