@@ -88,6 +88,9 @@ export class Tarea extends BaseEntity {
   }
 
   registrarHoras(horas: number): void {
+    if (horas <= 0) {
+      throw new OperacionInvalidaError('Las horas deben ser mayor a 0');
+    }
     this._horasRegistradas += horas;
     this.updatedAt = new Date();
   }

@@ -40,6 +40,16 @@ describe('Empleado Entity', () => {
     expect(emp.fechaEgreso).toEqual(new Date('2026-03-31'));
   });
 
+  it('should reject zero sueldo', () => {
+    const emp = createEmpleado();
+    expect(() => emp.actualizarSueldo(0)).toThrow('El sueldo debe ser mayor a 0');
+  });
+
+  it('should reject negative sueldo', () => {
+    const emp = createEmpleado();
+    expect(() => emp.actualizarSueldo(-100)).toThrow('El sueldo debe ser mayor a 0');
+  });
+
   it('should expose all getters', () => {
     const emp = createEmpleado();
     expect(emp.clienteId).toBe('c1');

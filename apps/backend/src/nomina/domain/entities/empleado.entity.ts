@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 interface CreateEmpleadoProps {
   clienteId: string;
@@ -57,6 +58,9 @@ export class Empleado extends BaseEntity {
   }
 
   actualizarSueldo(nuevoSueldo: number): void {
+    if (nuevoSueldo <= 0) {
+      throw new OperacionInvalidaError('El sueldo debe ser mayor a 0');
+    }
     this._sueldoBasico = nuevoSueldo;
     this.updatedAt = new Date();
   }

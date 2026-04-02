@@ -3,20 +3,15 @@ import { generateTotpSecret, generateTotp } from '../../../shared/utils/totp';
 
 describe('Verificar2FA Command', () => {
   let handler: Verificar2FAHandler;
-  let mockUsuarioRepo: any;
   let mockTotpSecretRepo: any;
   const secret = generateTotpSecret();
 
   beforeEach(() => {
-    mockUsuarioRepo = {
-      findById: jest.fn().mockResolvedValue({ id: 'user-1' }),
-      save: jest.fn(),
-    };
     mockTotpSecretRepo = {
       findByUsuarioId: jest.fn().mockResolvedValue({ secret, verified: false }),
       save: jest.fn().mockResolvedValue(undefined),
     };
-    handler = new Verificar2FAHandler(mockUsuarioRepo, mockTotpSecretRepo);
+    handler = new Verificar2FAHandler(mockTotpSecretRepo);
   });
 
   it('should verify a valid TOTP code', async () => {

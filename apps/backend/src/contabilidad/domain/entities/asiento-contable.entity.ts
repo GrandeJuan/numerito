@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { ACCOUNTING } from '../../../shared/config/constants';
 
 export interface LineaAsiento {
   cuentaId: string;
@@ -54,6 +55,6 @@ export class AsientoContable extends BaseEntity {
   }
 
   get isBalanceado(): boolean {
-    return Math.abs(this.totalDebe - this.totalHaber) < 0.01;
+    return Math.abs(this.totalDebe - this.totalHaber) < ACCOUNTING.BALANCE_TOLERANCE;
   }
 }

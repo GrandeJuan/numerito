@@ -49,6 +49,16 @@ describe('Tarea Entity', () => {
     expect(t.horasRegistradas).toBe(4);
   });
 
+  it('should reject zero hours', () => {
+    const t = createTarea();
+    expect(() => t.registrarHoras(0)).toThrow('Las horas deben ser mayor a 0');
+  });
+
+  it('should reject negative hours', () => {
+    const t = createTarea();
+    expect(() => t.registrarHoras(-1)).toThrow('Las horas deben ser mayor a 0');
+  });
+
   it('should add comment', () => {
     const t = createTarea();
     t.agregarComentario('user-1', 'Avance parcial');

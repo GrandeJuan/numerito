@@ -1,8 +1,9 @@
 import * as bcrypt from 'bcrypt';
 import { InvalidPasswordError } from '../../../shared/domain/exceptions';
+import { AUTH } from '../../../shared/config/constants';
 
-const SALT_ROUNDS = 10;
-const MIN_LENGTH = 8;
+const SALT_ROUNDS = AUTH.SALT_ROUNDS;
+const MIN_LENGTH = AUTH.MIN_PASSWORD_LENGTH;
 
 export class Password {
   private constructor(private readonly hash: string) {}

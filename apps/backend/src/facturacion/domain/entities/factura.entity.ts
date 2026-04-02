@@ -38,6 +38,18 @@ export class Factura extends BaseEntity {
 
   private constructor(props: CreateFacturaProps, id?: string) {
     super(id);
+    if (props.subtotal < 0) {
+      throw new OperacionInvalidaError('El subtotal no puede ser negativo');
+    }
+    if (props.iva < 0) {
+      throw new OperacionInvalidaError('El IVA no puede ser negativo');
+    }
+    if (props.total < 0) {
+      throw new OperacionInvalidaError('El total no puede ser negativo');
+    }
+    if (props.fechaEmision > props.fechaVencimiento) {
+      throw new OperacionInvalidaError('La fecha de emision no puede ser posterior a la fecha de vencimiento');
+    }
     this._clienteId = props.clienteId;
     this._tenantId = props.tenantId;
     this._numero = props.numero;

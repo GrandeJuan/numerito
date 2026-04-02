@@ -11,7 +11,7 @@ describe('Verificar2FA Command - already verified branch', () => {
       findByUsuarioId: jest.fn().mockResolvedValue({ secret, verified: true }),
       save: jest.fn().mockResolvedValue(undefined),
     };
-    handler = new Verificar2FAHandler({}, mockTotpSecretRepo);
+    handler = new Verificar2FAHandler(mockTotpSecretRepo);
   });
 
   it('should not save when already verified', async () => {

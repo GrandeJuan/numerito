@@ -1,4 +1,5 @@
 import { createHmac, randomBytes } from 'crypto';
+import { TOTP } from '../config/constants';
 
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -38,7 +39,7 @@ function base32Decode(encoded: string): Buffer {
   return Buffer.from(bytes);
 }
 
-export function generateTotp(secret: string, timeStep = 30): string {
+export function generateTotp(secret: string, timeStep = TOTP.TIME_STEP): string {
   const time = Math.floor(Date.now() / 1000 / timeStep);
   const timeBuffer = Buffer.alloc(8);
   timeBuffer.writeBigUInt64BE(BigInt(time));
@@ -56,8 +57,8 @@ export function generateTotp(secret: string, timeStep = 30): string {
   return (code % 1000000).toString().padStart(6, '0');
 }
 
-export function verifyTotp(secret: string, token: string, window = 1): boolean {
-  const timeStep = 30;
+export function verifyTotp(secret: string, token: string, window = TOTP.WINDOW): boolean {
+  const timeStep = TOTP.TIME_STEP;
   const currentTime = Math.floor(Date.now() / 1000 / timeStep);
 
   for (let i = -window; i <= window; i++) {

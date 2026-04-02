@@ -13,7 +13,6 @@ export interface Verificar2FAResult {
 
 export class Verificar2FAHandler {
   constructor(
-    private readonly _usuarioRepo: unknown,
     private readonly totpSecretRepo: TotpSecretRepository,
   ) {}
 

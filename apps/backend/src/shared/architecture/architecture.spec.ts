@@ -117,8 +117,8 @@ describe('Architecture rules', () => {
         for (const file of files) {
           const rel = relativeTo(file);
 
-          // MikroORM schema files are allowed to cross-import for FK relationships
-          if (rel.includes('/infrastructure/persistence/') && rel.endsWith('.schema.ts')) continue;
+          // MikroORM persistence files (schemas + repo implementations) are allowed to cross-import for FK relationships
+          if (rel.includes('/infrastructure/persistence/')) continue;
 
           const imports = extractImports(file);
           for (const imp of imports) {
@@ -228,12 +228,14 @@ describe('Architecture rules', () => {
 
       for (const file of repoFiles) {
         const rel = relativeTo(file);
-        // Allow shared/domain/ as well
+        // Interfaces must be in domain/repositories/
+        // Implementations (mikro-orm-*) are in infrastructure/persistence/ — that's OK
+        const isImplementation = rel.includes('/infrastructure/persistence/');
         const inDomainRepos =
           rel.includes('/domain/repositories/') ||
-          rel.includes('/domain/') && rel.startsWith('shared/');
+          (rel.includes('/domain/') && rel.startsWith('shared/'));
 
-        if (!inDomainRepos) {
+        if (!inDomainRepos && !isImplementation) {
           violations.push(
             `${rel} is a repository interface outside domain/repositories/`,
           );

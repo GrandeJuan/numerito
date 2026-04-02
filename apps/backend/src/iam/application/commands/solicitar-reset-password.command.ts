@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { Email } from '../../domain/value-objects/email.vo';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import type { ResetTokenRepository } from '../../domain/repositories/reset-token.repository';
+import { AUTH } from '../../../shared/config/constants';
 
 export interface SolicitarResetPasswordCommand {
   email: string;
@@ -11,7 +12,7 @@ export interface SolicitarResetPasswordResult {
   token: string | null;
 }
 
-const TOKEN_EXPIRY_HOURS = 1;
+const TOKEN_EXPIRY_HOURS = AUTH.TOKEN_EXPIRY_HOURS;
 
 export class SolicitarResetPasswordHandler {
   constructor(
