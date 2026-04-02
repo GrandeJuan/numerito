@@ -1,16 +1,11 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { LineaFactura } from './linea-factura.entity';
+import { ESTADO_FACTURA } from '@numerito/shared';
+import type { EstadoFactura } from '@numerito/shared';
 
-export const ESTADO_FACTURA = {
-  EMITIDA: 'EMITIDA',
-  PARCIALMENTE_PAGADA: 'PARCIALMENTE_PAGADA',
-  PAGADA: 'PAGADA',
-  VENCIDA: 'VENCIDA',
-  ANULADA: 'ANULADA',
-} as const;
-
-export type EstadoFactura = (typeof ESTADO_FACTURA)[keyof typeof ESTADO_FACTURA];
+export { ESTADO_FACTURA };
+export type { EstadoFactura };
 
 interface CreateFacturaProps {
   clienteId: string;

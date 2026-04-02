@@ -1,6 +1,7 @@
 import { Estudio } from './estudio.entity';
 import { NombreEstudio } from '../value-objects/nombre-estudio.vo';
-import { PlanSubscripcion, PLAN } from '../value-objects/plan-subscripcion.vo';
+import { PlanSubscripcion } from '../value-objects/plan-subscripcion.vo';
+import { PLAN } from '@numerito/shared';
 
 describe('Estudio Entity (Aggregate Root)', () => {
   const createEstudio = () => {

@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsIn } from 'class-validator';
-import { PRIORIDAD, type Prioridad } from '../../domain/entities/tarea.entity';
+import { PRIORIDAD, type Prioridad } from '@numerito/shared';
 
 export class CrearTareaDto {
   @IsString()

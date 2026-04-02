@@ -18,8 +18,8 @@ describe('AsientoContable Entity', () => {
     expect(asiento.lineas).toHaveLength(2);
   });
 
-  it('should detect unbalanced asiento', () => {
-    const asiento = AsientoContable.create({
+  it('should reject unbalanced asiento on create', () => {
+    expect(() => AsientoContable.create({
       libroId: 'libro-1',
       clienteId: 'c1',
       estudioId: 'e1',
@@ -29,8 +29,18 @@ describe('AsientoContable Entity', () => {
         { cuentaId: 'cuenta-1', debe: 10000, haber: 0, descripcion: 'Deudores' },
         { cuentaId: 'cuenta-2', debe: 0, haber: 5000, descripcion: 'Ventas' },
       ],
-    });
-    expect(asiento.isBalanceado).toBe(false);
+    })).toThrow('El asiento contable debe estar balanceado');
+  });
+
+  it('should reject empty lineas', () => {
+    expect(() => AsientoContable.create({
+      libroId: 'libro-1',
+      clienteId: 'c1',
+      estudioId: 'e1',
+      fecha: new Date('2026-03-31'),
+      descripcion: 'Sin lineas',
+      lineas: [],
+    })).toThrow('El asiento debe tener al menos una linea');
   });
 
   it('should calculate totals', () => {

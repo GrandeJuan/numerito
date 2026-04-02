@@ -1,6 +1,5 @@
 import { CrearClienteHandler } from './crear-cliente.command';
-import { CONDICION_IVA } from '@numerito/shared';
-import { TIPO_CLIENTE, REGIMEN } from '../../domain/entities/cliente.entity';
+import { CONDICION_IVA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 
 describe('CrearCliente Command', () => {
   let handler: CrearClienteHandler;

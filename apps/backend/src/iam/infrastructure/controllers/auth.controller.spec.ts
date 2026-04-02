@@ -3,52 +3,62 @@ import { ROL } from '@numerito/shared';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let mockUsuarioRepo: any;
+  let mockRegistrarHandler: any;
+  let mockIniciarSesionHandler: any;
+  let mockSolicitarResetHandler: any;
+  let mockResetearPasswordHandler: any;
+  let mockActivar2FAHandler: any;
+  let mockVerificar2FAHandler: any;
   let mockTokenService: any;
-  let mockResetTokenRepo: any;
   let mockTotpSecretRepo: any;
-  let mockSesionRepo: any;
 
   beforeEach(() => {
-    mockUsuarioRepo = {
-      findByEmail: jest.fn().mockResolvedValue(null),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      save: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn(),
+    mockRegistrarHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@test.com' }),
+    };
+    mockIniciarSesionHandler = {
+      execute: jest.fn().mockResolvedValue({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        usuario: { id: 'user-1', email: 'test@test.com', nombre: 'Juan', apellido: 'Perez', rol: ROL.SOCIO },
+      }),
+    };
+    mockSolicitarResetHandler = {
+      execute: jest.fn().mockResolvedValue({ token: 'reset-token' }),
+    };
+    mockResetearPasswordHandler = {
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
+    mockActivar2FAHandler = {
+      execute: jest.fn().mockResolvedValue({ secret: 'SECRET', otpauthUrl: 'otpauth://totp/...' }),
+    };
+    mockVerificar2FAHandler = {
+      execute: jest.fn().mockResolvedValue({ valid: true }),
     };
     mockTokenService = {
       generateAccessToken: jest.fn().mockReturnValue('access-token'),
       generateRefreshToken: jest.fn().mockReturnValue('refresh-token'),
       verifyRefreshToken: jest.fn(),
     };
-    mockResetTokenRepo = {
-      save: jest.fn().mockResolvedValue(undefined),
-      findByToken: jest.fn().mockResolvedValue(null),
-      deleteByUsuarioId: jest.fn().mockResolvedValue(undefined),
-    };
     mockTotpSecretRepo = {
       save: jest.fn().mockResolvedValue(undefined),
       findByUsuarioId: jest.fn().mockResolvedValue(null),
       deleteByUsuarioId: jest.fn().mockResolvedValue(undefined),
     };
-    mockSesionRepo = {
-      findByUsuarioId: jest.fn().mockResolvedValue([]),
-      findByRefreshToken: jest.fn().mockResolvedValue(null),
-      save: jest.fn().mockResolvedValue(undefined),
-      revokeAllByUsuarioId: jest.fn().mockResolvedValue(undefined),
-    };
     controller = new AuthController(
-      mockUsuarioRepo,
+      mockRegistrarHandler,
+      mockIniciarSesionHandler,
+      mockSolicitarResetHandler,
+      mockResetearPasswordHandler,
+      mockActivar2FAHandler,
+      mockVerificar2FAHandler,
       mockTokenService,
-      mockResetTokenRepo,
       mockTotpSecretRepo,
-      mockSesionRepo,
     );
   });
 
   describe('register', () => {
-    it('should register a new user', async () => {
+    it('should delegate to registrar handler', async () => {
       const dto = {
         email: 'test@test.com',
         password: 'SecurePass123!',
@@ -57,23 +67,16 @@ describe('AuthController', () => {
         rol: ROL.SOCIO,
       };
       const result = await controller.register(dto);
-      expect(result.id).toBeDefined();
+      expect(result.id).toBe('user-1');
       expect(result.email).toBe('test@test.com');
-      expect(mockUsuarioRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRegistrarHandler.execute).toHaveBeenCalledWith({
+        ...dto,
+        rol: ROL.SOCIO,
+      });
     });
 
-    it('should throw on duplicate email', async () => {
-      const { Email } = await import('../../domain/value-objects/email.vo');
-      const { Usuario } = await import('../../domain/entities/usuario.entity');
-      mockUsuarioRepo.findByEmail.mockResolvedValue(
-        Usuario.create({
-          email: Email.create('dup@test.com'),
-          password: { hashedValue: 'h' } as any,
-          nombre: 'X',
-          apellido: 'Y',
-          rol: ROL.SOCIO,
-        }),
-      );
+    it('should propagate handler errors', async () => {
+      mockRegistrarHandler.execute.mockRejectedValue(new Error('El email ya está registrado'));
 
       await expect(
         controller.register({
@@ -88,7 +91,16 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    it('should throw on invalid credentials', async () => {
+    it('should delegate to iniciar sesion handler', async () => {
+      const dto = { email: 'test@test.com', password: 'pass' };
+      const result = await controller.login(dto);
+      expect(result.accessToken).toBe('access-token');
+      expect(mockIniciarSesionHandler.execute).toHaveBeenCalledWith(dto);
+    });
+
+    it('should propagate handler errors', async () => {
+      mockIniciarSesionHandler.execute.mockRejectedValue(new Error('Credenciales inválidas'));
+
       await expect(
         controller.login({ email: 'no@test.com', password: 'pass' }),
       ).rejects.toThrow('Credenciales inválidas');
@@ -96,71 +108,35 @@ describe('AuthController', () => {
   });
 
   describe('forgotPassword', () => {
-    it('should return token when user exists', async () => {
-      const { Email } = await import('../../domain/value-objects/email.vo');
-      const { Usuario } = await import('../../domain/entities/usuario.entity');
-      mockUsuarioRepo.findByEmail.mockResolvedValue(
-        Usuario.create({
-          email: Email.create('user@test.com'),
-          password: { hashedValue: 'h' } as any,
-          nombre: 'X',
-          apellido: 'Y',
-          rol: ROL.SOCIO,
-        }),
-      );
-
+    it('should delegate to solicitar reset handler', async () => {
       const result = await controller.forgotPassword({ email: 'user@test.com' });
-      expect(result.token).toBeDefined();
-      expect(mockResetTokenRepo.save).toHaveBeenCalledTimes(1);
+      expect(result.token).toBe('reset-token');
+      expect(mockSolicitarResetHandler.execute).toHaveBeenCalledWith({ email: 'user@test.com' });
     });
 
-    it('should return null token when user does not exist', async () => {
+    it('should return null token when handler returns null', async () => {
+      mockSolicitarResetHandler.execute.mockResolvedValue({ token: null });
+
       const result = await controller.forgotPassword({ email: 'nobody@test.com' });
       expect(result.token).toBeNull();
     });
   });
 
   describe('resetPassword', () => {
-    it('should throw on invalid token', async () => {
+    it('should delegate to resetear password handler', async () => {
+      await controller.resetPassword({ token: 'valid-token', newPassword: 'NewPass123!' });
+      expect(mockResetearPasswordHandler.execute).toHaveBeenCalledWith({
+        token: 'valid-token',
+        newPassword: 'NewPass123!',
+      });
+    });
+
+    it('should propagate handler errors', async () => {
+      mockResetearPasswordHandler.execute.mockRejectedValue(new Error('Token inválido o expirado'));
+
       await expect(
         controller.resetPassword({ token: 'invalid', newPassword: 'NewPass123!' }),
       ).rejects.toThrow('Token inválido o expirado');
-    });
-
-    it('should throw on expired token', async () => {
-      mockResetTokenRepo.findByToken.mockResolvedValue({
-        usuarioId: 'user-1',
-        token: 'valid-token',
-        expiresAt: new Date(Date.now() - 10000),
-      });
-
-      await expect(
-        controller.resetPassword({ token: 'valid-token', newPassword: 'NewPass123!' }),
-      ).rejects.toThrow('Token inválido o expirado');
-    });
-
-    it('should reset password with valid token', async () => {
-      const { Email } = await import('../../domain/value-objects/email.vo');
-      const { Password } = await import('../../domain/value-objects/password.vo');
-      const { Usuario } = await import('../../domain/entities/usuario.entity');
-      const hashedPw = await Password.create('OldPass123!');
-      const usuario = Usuario.create({
-        email: Email.create('user@test.com'),
-        password: hashedPw,
-        nombre: 'X',
-        apellido: 'Y',
-        rol: ROL.SOCIO,
-      });
-      mockResetTokenRepo.findByToken.mockResolvedValue({
-        usuarioId: usuario.id,
-        token: 'valid-token',
-        expiresAt: new Date(Date.now() + 3600000),
-      });
-      mockUsuarioRepo.findById.mockResolvedValue(usuario);
-
-      await controller.resetPassword({ token: 'valid-token', newPassword: 'NewPass123!' });
-      expect(mockUsuarioRepo.save).toHaveBeenCalledTimes(1);
-      expect(mockResetTokenRepo.deleteByUsuarioId).toHaveBeenCalledWith(usuario.id);
     });
   });
 
@@ -188,49 +164,40 @@ describe('AuthController', () => {
   });
 
   describe('activate2FA', () => {
-    it('should throw when user not found', async () => {
-      mockUsuarioRepo.findById.mockResolvedValue(null);
-
-      await expect(
-        controller.activate2FA('nonexistent-id'),
-      ).rejects.toThrow('Usuario no encontrado');
+    it('should delegate to activar 2FA handler and save secret', async () => {
+      const result = await controller.activate2FA('user-1');
+      expect(result.secret).toBe('SECRET');
+      expect(result.otpauthUrl).toBe('otpauth://totp/...');
+      expect(mockTotpSecretRepo.save).toHaveBeenCalledWith({
+        usuarioId: 'user-1',
+        secret: 'SECRET',
+        verified: false,
+      });
     });
 
-    it('should return secret and otpauth URL', async () => {
-      const { Email } = await import('../../domain/value-objects/email.vo');
-      const { Usuario } = await import('../../domain/entities/usuario.entity');
-      const usuario = Usuario.create({
-        email: Email.create('user@test.com'),
-        password: { hashedValue: 'h' } as any,
-        nombre: 'X',
-        apellido: 'Y',
-        rol: ROL.SOCIO,
-      });
-      mockUsuarioRepo.findById.mockResolvedValue(usuario);
+    it('should propagate handler errors', async () => {
+      mockActivar2FAHandler.execute.mockRejectedValue(new Error('Usuario no encontrado'));
 
-      const result = await controller.activate2FA(usuario.id);
-      expect(result.secret).toBeDefined();
-      expect(result.otpauthUrl).toBeDefined();
-      expect(mockTotpSecretRepo.save).toHaveBeenCalledTimes(1);
+      await expect(controller.activate2FA('nonexistent-id')).rejects.toThrow('Usuario no encontrado');
     });
   });
 
   describe('verify2FA', () => {
-    it('should throw when 2FA not configured', async () => {
+    it('should delegate to verificar 2FA handler', async () => {
+      const result = await controller.verify2FA('user-1', { code: '123456' });
+      expect(result.valid).toBe(true);
+      expect(mockVerificar2FAHandler.execute).toHaveBeenCalledWith({
+        usuarioId: 'user-1',
+        code: '123456',
+      });
+    });
+
+    it('should propagate handler errors', async () => {
+      mockVerificar2FAHandler.execute.mockRejectedValue(new Error('2FA no configurado'));
+
       await expect(
         controller.verify2FA('user-1', { code: '123456' }),
       ).rejects.toThrow('2FA no configurado');
-    });
-
-    it('should return valid:false for wrong code', async () => {
-      mockTotpSecretRepo.findByUsuarioId.mockResolvedValue({
-        usuarioId: 'user-1',
-        secret: 'TESTSECRET',
-        verified: false,
-      });
-
-      const result = await controller.verify2FA('user-1', { code: '000000' });
-      expect(result.valid).toBe(false);
     });
   });
 });

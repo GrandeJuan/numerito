@@ -50,6 +50,46 @@ describe('Empleado Entity', () => {
     expect(() => emp.actualizarSueldo(-100)).toThrow('El sueldo debe ser mayor a 0');
   });
 
+  it('should reject sueldoBasico <= 0 on create', () => {
+    expect(() => Empleado.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      cuil: '20-12345678-6',
+      fechaIngreso: new Date('2024-01-15'),
+      sueldoBasico: 0,
+      categoriaConvenio: 'Administrativo A',
+    })).toThrow('El sueldo debe ser mayor a 0');
+
+    expect(() => Empleado.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      cuil: '20-12345678-6',
+      fechaIngreso: new Date('2024-01-15'),
+      sueldoBasico: -100,
+      categoriaConvenio: 'Administrativo A',
+    })).toThrow('El sueldo debe ser mayor a 0');
+  });
+
+  it('should reject future fechaIngreso', () => {
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+    expect(() => Empleado.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      cuil: '20-12345678-6',
+      fechaIngreso: futureDate,
+      sueldoBasico: 500000,
+      categoriaConvenio: 'Administrativo A',
+    })).toThrow('La fecha de ingreso no puede ser futura');
+  });
+
   it('should expose all getters', () => {
     const emp = createEmpleado();
     expect(emp.clienteId).toBe('c1');

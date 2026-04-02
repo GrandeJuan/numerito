@@ -1,4 +1,5 @@
-import { PlanSubscripcion, PLAN } from './plan-subscripcion.vo';
+import { PlanSubscripcion } from './plan-subscripcion.vo';
+import { PLAN } from '@numerito/shared';
 
 describe('PlanSubscripcion Value Object', () => {
   it('should create a plan with limits from DB', () => {

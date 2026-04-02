@@ -1,7 +1,7 @@
-import { Cliente, TIPO_CLIENTE, REGIMEN } from './cliente.entity';
+import { Cliente } from './cliente.entity';
 import { Cuit } from '../value-objects/cuit.vo';
 import { RazonSocial } from '../value-objects/razon-social.vo';
-import { CONDICION_IVA, PROVINCIA } from '@numerito/shared';
+import { CONDICION_IVA, PROVINCIA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 
 describe('Cliente Entity (Aggregate Root)', () => {
   const createCliente = () => {

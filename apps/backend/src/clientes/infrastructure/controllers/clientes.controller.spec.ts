@@ -2,6 +2,7 @@ import { ClientesController } from './clientes.controller';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
+import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
 
 const makeCliente = (overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {}) =>
   Cliente.create({
@@ -16,6 +17,7 @@ const makeCliente = (overrides: Partial<{ id: string; cuit: string; razonSocial:
 describe('ClientesController', () => {
   let controller: ClientesController;
   let mockClienteRepo: any;
+  let crearClienteHandler: CrearClienteHandler;
 
   beforeEach(() => {
     mockClienteRepo = {
@@ -27,7 +29,8 @@ describe('ClientesController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    controller = new ClientesController(mockClienteRepo);
+    crearClienteHandler = new CrearClienteHandler(mockClienteRepo);
+    controller = new ClientesController(mockClienteRepo, crearClienteHandler);
   });
 
   describe('list', () => {

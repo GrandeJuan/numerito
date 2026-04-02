@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearClienteDto } from '../../application/dtos/crear-cliente.dto';
 import { ActualizarClienteDto } from '../../application/dtos/actualizar-cliente.dto';
 import { AsignarResponsableDto } from '../../application/dtos/asignar-responsable.dto';
-import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
+import { CrearClienteHandler, type CrearClienteCommand } from '../../application/commands/crear-cliente.command';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
@@ -18,6 +18,7 @@ import type { Regimen } from '../../domain/entities/cliente.entity';
 export class ClientesController {
   constructor(
     @Inject(CLIENTE_REPOSITORY) private readonly clienteRepo: ClienteRepository,
+    private readonly crearClienteHandler: CrearClienteHandler,
   ) {}
 
   @Get()
@@ -42,8 +43,7 @@ export class ClientesController {
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
   async create(@Body() dto: CrearClienteDto, @EstudioId() estudioId: string) {
-    const handler = new CrearClienteHandler(this.clienteRepo);
-    return handler.execute({ ...dto, estudioId } as any);
+    return this.crearClienteHandler.execute({ ...dto, estudioId } as CrearClienteCommand);
   }
 
   @Put(':id')

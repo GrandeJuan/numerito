@@ -1,18 +1,7 @@
 import { BaseEntity } from '../../../shared/domain';
+import type { TipoDocumento } from '@numerito/shared';
 
-export const TIPO_DOCUMENTO = {
-  BALANCE: 'BALANCE',
-  DDJJ: 'DDJJ',
-  FACTURA: 'FACTURA',
-  RECIBO_SUELDO: 'RECIBO_SUELDO',
-  CONTRATO: 'CONTRATO',
-  PODER: 'PODER',
-  ESTATUTO: 'ESTATUTO',
-  CERTIFICACION: 'CERTIFICACION',
-  OTRO: 'OTRO',
-} as const;
-
-export type TipoDocumento = (typeof TIPO_DOCUMENTO)[keyof typeof TIPO_DOCUMENTO];
+export type { TipoDocumento };
 
 interface CreateDocumentoProps {
   clienteId: string;

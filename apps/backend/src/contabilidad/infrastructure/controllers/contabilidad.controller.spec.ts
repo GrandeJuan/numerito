@@ -158,7 +158,7 @@ describe('ContabilidadController', () => {
       };
 
       await expect(controller.createAsiento(dto as any, 'estudio-1')).rejects.toThrow(
-        'El asiento no está balanceado',
+        'El asiento contable debe estar balanceado',
       );
       expect(mockAsientoRepo.save).not.toHaveBeenCalled();
     });

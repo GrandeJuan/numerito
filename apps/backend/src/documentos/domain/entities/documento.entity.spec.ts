@@ -1,4 +1,5 @@
-import { Documento, TIPO_DOCUMENTO } from './documento.entity';
+import { Documento } from './documento.entity';
+import { TIPO_DOCUMENTO } from '@numerito/shared';
 
 describe('Documento Entity', () => {
   it('should create a documento', () => {

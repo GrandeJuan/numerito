@@ -26,6 +26,12 @@ export class Empleado extends BaseEntity {
 
   private constructor(props: CreateEmpleadoProps, id?: string) {
     super(id);
+    if (props.sueldoBasico <= 0) {
+      throw new OperacionInvalidaError('El sueldo debe ser mayor a 0');
+    }
+    if (props.fechaIngreso > new Date()) {
+      throw new OperacionInvalidaError('La fecha de ingreso no puede ser futura');
+    }
     this._clienteId = props.clienteId;
     this._estudioId = props.estudioId;
     this._nombre = props.nombre;

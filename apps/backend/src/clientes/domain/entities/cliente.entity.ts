@@ -1,22 +1,9 @@
 import { BaseEntity } from '../../../shared/domain';
 import { Cuit } from '../value-objects/cuit.vo';
 import { RazonSocial } from '../value-objects/razon-social.vo';
-import type { CondicionIVA, Provincia } from '@numerito/shared';
+import type { CondicionIVA, Provincia, TipoCliente, Regimen } from '@numerito/shared';
 
-export const TIPO_CLIENTE = {
-  PERSONA_FISICA: 'PERSONA_FISICA',
-  PERSONA_JURIDICA: 'PERSONA_JURIDICA',
-  SOCIEDAD: 'SOCIEDAD',
-} as const;
-
-export type TipoCliente = (typeof TIPO_CLIENTE)[keyof typeof TIPO_CLIENTE];
-
-export const REGIMEN = {
-  GENERAL: 'GENERAL',
-  MONOTRIBUTO: 'MONOTRIBUTO',
-} as const;
-
-export type Regimen = (typeof REGIMEN)[keyof typeof REGIMEN];
+export type { TipoCliente, Regimen };
 
 interface CreateClienteProps {
   cuit: Cuit;

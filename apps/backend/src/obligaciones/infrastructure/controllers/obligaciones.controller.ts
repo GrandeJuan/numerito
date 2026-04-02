@@ -8,6 +8,7 @@ import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { TipoObligacion } from '@numerito/shared';
+import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
 @ApiTags('Obligaciones')
 @Controller({ path: 'obligaciones', version: '1' })
@@ -29,7 +30,7 @@ export class ObligacionesController {
     if (periodo) {
       vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, estudioId);
     } else if (estado) {
-      vencimientos = await this.vencimientoRepo.findByEstado(estado as any, estudioId);
+      vencimientos = await this.vencimientoRepo.findByEstado(estado as EstadoVencimiento, estudioId);
     } else {
       vencimientos = await this.vencimientoRepo.findByEstudioId(estudioId);
     }

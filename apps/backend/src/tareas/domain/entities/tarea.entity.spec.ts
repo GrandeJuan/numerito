@@ -1,4 +1,5 @@
-import { Tarea, ESTADO_TAREA, PRIORIDAD } from './tarea.entity';
+import { Tarea } from './tarea.entity';
+import { ESTADO_TAREA, PRIORIDAD } from '@numerito/shared';
 
 describe('Tarea Entity', () => {
   const createTarea = () => {

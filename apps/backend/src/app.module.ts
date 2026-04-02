@@ -13,6 +13,7 @@ import { DocumentosModule } from './documentos/documentos.module';
 import { TareasModule } from './tareas/tareas.module';
 import { FacturacionModule } from './facturacion/facturacion.module';
 import { IntegracionesModule } from './integraciones/integraciones.module';
+import { AdministracionModule } from './administracion/administracion.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { IntegracionesModule } from './integraciones/integraciones.module';
     TareasModule,
     FacturacionModule,
     IntegracionesModule,
+    AdministracionModule,
   ],
   controllers: [AppController],
 })

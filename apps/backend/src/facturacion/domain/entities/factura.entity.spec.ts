@@ -1,4 +1,5 @@
-import { Factura, ESTADO_FACTURA } from './factura.entity';
+import { Factura } from './factura.entity';
+import { ESTADO_FACTURA } from '@numerito/shared';
 import { LineaFactura } from './linea-factura.entity';
 
 describe('Factura Entity', () => {

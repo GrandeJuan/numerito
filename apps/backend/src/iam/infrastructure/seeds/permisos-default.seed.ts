@@ -7,6 +7,8 @@ import { Permiso } from '../../domain/value-objects/permiso.vo';
  * Once seeded, permissions are managed from the DB (configurable per estudio).
  */
 export const PERMISOS_DEFAULT_SEED: Record<Rol, Permiso[]> = {
+  [ROL.SUPERADMIN]: Object.values(Permiso),
+
   [ROL.SOCIO]: Object.values(Permiso),
 
   [ROL.RESPONSABLE]: [

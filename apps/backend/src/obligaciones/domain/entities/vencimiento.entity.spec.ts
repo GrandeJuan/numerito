@@ -1,5 +1,5 @@
-import { Vencimiento, ESTADO_VENCIMIENTO } from './vencimiento.entity';
-import { TIPO_OBLIGACION } from '@numerito/shared';
+import { Vencimiento } from './vencimiento.entity';
+import { TIPO_OBLIGACION, ESTADO_VENCIMIENTO } from '@numerito/shared';
 
 describe('Vencimiento Entity', () => {
   const createVencimiento = () => {
@@ -67,6 +67,18 @@ describe('Vencimiento Entity', () => {
     });
     v.presentar();
     expect(v.isProximoAVencer(3)).toBe(false);
+  });
+
+  it('should reject past fechaVencimiento on create', () => {
+    const pastDate = new Date('2020-01-01');
+    expect(() => Vencimiento.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      tipoObligacion: TIPO_OBLIGACION.IVA,
+      periodo: '2020-01',
+      fechaVencimiento: pastDate,
+      descripcion: 'IVA viejo',
+    })).toThrow('La fecha de vencimiento no puede ser pasada');
   });
 
   it('should expose all getters', () => {

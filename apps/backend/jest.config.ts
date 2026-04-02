@@ -12,7 +12,7 @@ const config: Config = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^@numerito/shared(.*)$': '<rootDir>/../../../packages/shared/src$1',
+    '^@numerito/shared(.*)$': '<rootDir>/../../../packages/shared/dist$1',
   },
 };
 

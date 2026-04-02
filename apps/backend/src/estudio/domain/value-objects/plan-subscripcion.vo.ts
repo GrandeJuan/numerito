@@ -1,12 +1,9 @@
 import { ValueObject } from '../../../shared/domain';
+import { PLAN } from '@numerito/shared';
+import type { Plan } from '@numerito/shared';
 
-export const PLAN = {
-  FREE: 'FREE',
-  PROFESIONAL: 'PROFESIONAL',
-  ENTERPRISE: 'ENTERPRISE',
-} as const;
-
-export type Plan = (typeof PLAN)[keyof typeof PLAN];
+export { PLAN };
+export type { Plan };
 
 interface PlanSubscripcionProps {
   value: Plan;

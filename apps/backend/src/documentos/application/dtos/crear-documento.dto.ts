@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsNumber, IsPositive, IsIn } from 'class-validator';
-import { TIPO_DOCUMENTO, type TipoDocumento } from '../../domain/entities/documento.entity';
+import { TIPO_DOCUMENTO, type TipoDocumento } from '@numerito/shared';
 
 export class CrearDocumentoDto {
   @IsString()

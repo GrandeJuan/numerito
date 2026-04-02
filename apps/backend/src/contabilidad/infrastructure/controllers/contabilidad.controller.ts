@@ -11,7 +11,7 @@ import { LibroContable, TipoLibro } from '../../domain/entities/libro-contable.e
 import { AsientoContable } from '../../domain/entities/asiento-contable.entity';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
-import { OperacionInvalidaError, RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 @ApiTags('Contabilidad')
 @Controller({ path: 'contabilidad', version: '1' })
@@ -81,10 +81,6 @@ export class ContabilidadController {
       descripcion: dto.descripcion,
       lineas: dto.lineas,
     });
-
-    if (!asiento.isBalanceado) {
-      throw new OperacionInvalidaError('El asiento no está balanceado');
-    }
 
     await this.asientoRepo.save(asiento);
     return asiento;

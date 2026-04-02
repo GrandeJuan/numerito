@@ -1,4 +1,5 @@
 import { BaseEntity } from '../../../shared/domain';
+import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { ACCOUNTING } from '../../../shared/config/constants';
 
 export interface LineaAsiento {
@@ -27,6 +28,14 @@ export class AsientoContable extends BaseEntity {
 
   private constructor(props: CreateAsientoContableProps, id?: string) {
     super(id);
+    if (props.lineas.length === 0) {
+      throw new OperacionInvalidaError('El asiento debe tener al menos una linea');
+    }
+    const totalDebe = props.lineas.reduce((sum, l) => sum + l.debe, 0);
+    const totalHaber = props.lineas.reduce((sum, l) => sum + l.haber, 0);
+    if (Math.abs(totalDebe - totalHaber) >= ACCOUNTING.BALANCE_TOLERANCE) {
+      throw new OperacionInvalidaError('El asiento contable debe estar balanceado');
+    }
     this._libroId = props.libroId;
     this._clienteId = props.clienteId;
     this._estudioId = props.estudioId;

@@ -1,14 +1,10 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
-import type { TipoObligacion } from '@numerito/shared';
+import { ESTADO_VENCIMIENTO } from '@numerito/shared';
+import type { TipoObligacion, EstadoVencimiento } from '@numerito/shared';
 
-export const ESTADO_VENCIMIENTO = {
-  PENDIENTE: 'PENDIENTE',
-  PRESENTADO: 'PRESENTADO',
-  VENCIDO: 'VENCIDO',
-} as const;
-
-export type EstadoVencimiento = (typeof ESTADO_VENCIMIENTO)[keyof typeof ESTADO_VENCIMIENTO];
+export { ESTADO_VENCIMIENTO };
+export type { EstadoVencimiento };
 
 interface CreateVencimientoProps {
   clienteId: string;
@@ -30,6 +26,9 @@ export class Vencimiento extends BaseEntity {
 
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
+    if (props.fechaVencimiento < new Date()) {
+      throw new OperacionInvalidaError('La fecha de vencimiento no puede ser pasada');
+    }
     this._clienteId = props.clienteId;
     this._estudioId = props.estudioId;
     this._tipoObligacion = props.tipoObligacion;

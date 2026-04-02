@@ -1,22 +1,10 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import { ESTADO_TAREA } from '@numerito/shared';
+import type { EstadoTarea, Prioridad } from '@numerito/shared';
 
-export const ESTADO_TAREA = {
-  PENDIENTE: 'PENDIENTE',
-  EN_PROGRESO: 'EN_PROGRESO',
-  COMPLETADO: 'COMPLETADO',
-} as const;
-
-export type EstadoTarea = (typeof ESTADO_TAREA)[keyof typeof ESTADO_TAREA];
-
-export const PRIORIDAD = {
-  BAJA: 'BAJA',
-  MEDIA: 'MEDIA',
-  ALTA: 'ALTA',
-  URGENTE: 'URGENTE',
-} as const;
-
-export type Prioridad = (typeof PRIORIDAD)[keyof typeof PRIORIDAD];
+export { ESTADO_TAREA };
+export type { EstadoTarea, Prioridad };
 
 interface Comentario {
   usuarioId: string;
