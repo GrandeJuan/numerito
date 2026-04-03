@@ -1,7 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Inject, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, Inject, Param, Req, UseGuards, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Request, Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RegistrarUsuarioHandler } from '../../application/commands/registrar-usuario.command';
 import { IniciarSesionHandler } from '../../application/commands/iniciar-sesion.command';
+import { CerrarSesionHandler } from '../../application/commands/cerrar-sesion.command';
+import { AutenticarSsoHandler } from '../../application/commands/autenticar-sso.command';
 import { SolicitarResetPasswordHandler } from '../../application/commands/solicitar-reset-password.command';
 import { ResetearPasswordHandler } from '../../application/commands/resetear-password.command';
 import { Activar2FAHandler } from '../../application/commands/activar-2fa.command';
@@ -17,6 +21,7 @@ import { ResetearPasswordDto } from '../../application/dtos/resetear-password.dt
 import { RefreshTokenDto } from '../../application/dtos/refresh-token.dto';
 import { Verificar2FADto } from '../../application/dtos/verificar-2fa.dto';
 import { Public } from '../decorators/public.decorator';
+import { CurrentUser } from '../decorators/current-user.decorator';
 import type { Rol } from '@numerito/shared';
 
 @ApiTags('Auth')
@@ -25,6 +30,8 @@ export class AuthController {
   constructor(
     private readonly registrarHandler: RegistrarUsuarioHandler,
     private readonly iniciarSesionHandler: IniciarSesionHandler,
+    private readonly cerrarSesionHandler: CerrarSesionHandler,
+    private readonly autenticarSsoHandler: AutenticarSsoHandler,
     private readonly solicitarResetHandler: SolicitarResetPasswordHandler,
     private readonly resetearPasswordHandler: ResetearPasswordHandler,
     private readonly activar2FAHandler: Activar2FAHandler,
@@ -78,6 +85,61 @@ export class AuthController {
     const refreshToken = this.tokenService.generateRefreshToken(payload);
 
     return { accessToken, refreshToken };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cerrar sesión' })
+  async logout(@CurrentUser('sub') usuarioId: string) {
+    return this.cerrarSesionHandler.execute({ usuarioId });
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Iniciar login con Google' })
+  googleLogin() {
+    // Passport redirects to Google
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Callback de Google OAuth' })
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
+    const result = await this.autenticarSsoHandler.execute(req.user as any);
+    const frontendUrl = this.getFrontendUrl();
+    const params = new URLSearchParams({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+    res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+  }
+
+  @Public()
+  @Get('microsoft')
+  @UseGuards(AuthGuard('microsoft'))
+  @ApiOperation({ summary: 'Iniciar login con Microsoft' })
+  microsoftLogin() {
+    // Passport redirects to Microsoft
+  }
+
+  @Public()
+  @Get('microsoft/callback')
+  @UseGuards(AuthGuard('microsoft'))
+  @ApiOperation({ summary: 'Callback de Microsoft OAuth' })
+  async microsoftCallback(@Req() req: Request, @Res() res: Response) {
+    const result = await this.autenticarSsoHandler.execute(req.user as any);
+    const frontendUrl = this.getFrontendUrl();
+    const params = new URLSearchParams({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+    res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+  }
+
+  private getFrontendUrl(): string {
+    return process.env.FRONTEND_URL || 'http://localhost:3000';
   }
 
   @Post('2fa/activate')

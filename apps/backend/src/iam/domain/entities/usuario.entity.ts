@@ -3,12 +3,16 @@ import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
 import type { Rol } from '@numerito/shared';
 
+export type AuthProvider = 'google' | 'microsoft' | null;
+
 interface CreateUsuarioProps {
   email: Email;
   password: Password;
   nombre: string;
   apellido: string;
   rol: Rol;
+  provider?: AuthProvider;
+  providerId?: string | null;
 }
 
 export class Usuario extends BaseEntity {
@@ -19,6 +23,8 @@ export class Usuario extends BaseEntity {
   private _rol: Rol;
   private _isActive: boolean;
   private _emailVerified: boolean;
+  private _provider: AuthProvider;
+  private _providerId: string | null;
 
   private constructor(props: CreateUsuarioProps, id?: string) {
     super(id);
@@ -29,6 +35,8 @@ export class Usuario extends BaseEntity {
     this._rol = props.rol;
     this._isActive = true;
     this._emailVerified = false;
+    this._provider = props.provider ?? null;
+    this._providerId = props.providerId ?? null;
   }
 
   static create(props: CreateUsuarioProps, id?: string): Usuario {
@@ -61,6 +69,21 @@ export class Usuario extends BaseEntity {
 
   get emailVerified(): boolean {
     return this._emailVerified;
+  }
+
+  get provider(): AuthProvider {
+    return this._provider;
+  }
+
+  get providerId(): string | null {
+    return this._providerId;
+  }
+
+  linkSsoProvider(provider: AuthProvider, providerId: string): void {
+    this._provider = provider;
+    this._providerId = providerId;
+    this._emailVerified = true;
+    this.updatedAt = new Date();
   }
 
   changeRol(newRol: Rol): void {

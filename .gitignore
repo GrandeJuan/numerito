@@ -49,3 +49,6 @@ packages/*/src/**/*.js.map
 
 # Claude Code
 .claude/
+
+# Plans
+/plans

@@ -10,6 +10,8 @@ export class UsuarioEntity {
   rol!: RolEntity;
   isActive!: boolean;
   emailVerified!: boolean;
+  provider!: string | null;
+  providerId!: string | null;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -26,6 +28,8 @@ export const UsuarioSchema = new EntitySchema<UsuarioEntity>({
     rol: { kind: 'm:1', entity: () => RolEntity, fieldName: 'rol_id' },
     isActive: { type: 'boolean', fieldName: 'is_active', default: true },
     emailVerified: { type: 'boolean', fieldName: 'email_verified', default: false },
+    provider: { type: 'string', nullable: true, default: null },
+    providerId: { type: 'string', fieldName: 'provider_id', nullable: true, default: null },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

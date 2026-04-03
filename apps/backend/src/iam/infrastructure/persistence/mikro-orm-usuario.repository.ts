@@ -7,6 +7,7 @@ import { Password } from '../../domain/value-objects/password.vo';
 import { UsuarioEntity } from './usuario.schema';
 import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema';
 import type { Rol } from '@numerito/shared';
+import type { AuthProvider } from '../../domain/entities/usuario.entity';
 
 @Injectable()
 export class MikroOrmUsuarioRepository implements UsuarioRepository {
@@ -40,6 +41,8 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
       existing.rol = rol;
       existing.isActive = usuario.isActive;
       existing.emailVerified = usuario.emailVerified;
+      existing.provider = usuario.provider;
+      existing.providerId = usuario.providerId;
     } else {
       this.em.create(UsuarioEntity, {
         id: usuario.id,
@@ -50,6 +53,8 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
         rol,
         isActive: usuario.isActive,
         emailVerified: usuario.emailVerified,
+        provider: usuario.provider,
+        providerId: usuario.providerId,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -72,6 +77,8 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
       nombre: entity.nombre,
       apellido: entity.apellido,
       rol: entity.rol.codigo as Rol,
+      provider: entity.provider as AuthProvider,
+      providerId: entity.providerId,
     }, entity.id);
   }
 }

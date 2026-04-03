@@ -147,7 +147,7 @@ export default function Verify2FAPage() {
           <div className="border-t border-[#c5c6cd]/20 pt-5">
             <p className="text-xs text-[#45474c]">
               ¿Tuviste problemas con el código?{' '}
-              <a className="font-bold text-[#091426] hover:underline" href="#">
+              <a className="font-bold text-[#091426] hover:underline" href="/support">
                 Contactá a nuestro equipo de soporte
               </a>
             </p>
@@ -158,8 +158,8 @@ export default function Verify2FAPage() {
         <footer className="flex justify-between items-center text-[9px] uppercase tracking-widest font-bold text-[#75777d] mt-8 lg:mt-0">
           <span>© {new Date().getFullYear()} Numerito</span>
           <div className="flex gap-4">
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Privacidad</a>
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Soporte</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/privacy">Privacidad</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/support">Soporte</a>
           </div>
         </footer>
       </div>

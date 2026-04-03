@@ -125,8 +125,8 @@ export default function ForgotPasswordPage() {
         <footer className="flex justify-between items-center text-[9px] uppercase tracking-widest font-bold text-[#75777d] mt-8 lg:mt-0">
           <span>© {new Date().getFullYear()} Numerito</span>
           <div className="flex gap-4">
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Privacidad</a>
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Soporte</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/privacy">Privacidad</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/support">Soporte</a>
           </div>
         </footer>
       </div>

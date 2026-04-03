@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-2fa'];
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-2fa', '/auth/callback', '/terms', '/privacy', '/support'];
 const PORTAL_PATHS = ['/portal'];
 const DASHBOARD_PATHS = ['/dashboard'];
+const ADMIN_PATHS = ['/admin'];
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -47,10 +48,23 @@ export function middleware(request: NextRequest) {
 
   const rol = payload.rol as string;
 
+  // SUPERADMIN can only access /admin
+  if (rol === 'SUPERADMIN' && !ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
+  // Non-SUPERADMIN cannot access /admin
+  if (rol !== 'SUPERADMIN' && ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
+    const target = rol === 'CLIENTE' ? '/portal' : '/dashboard';
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
+  // CLIENTE can only access /portal
   if (rol === 'CLIENTE' && DASHBOARD_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/portal', request.url));
   }
 
+  // Non-CLIENTE cannot access /portal
   if (rol !== 'CLIENTE' && PORTAL_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

@@ -5,10 +5,12 @@ describe('AuthController', () => {
   let controller: AuthController;
   let mockRegistrarHandler: any;
   let mockIniciarSesionHandler: any;
+  let mockCerrarSesionHandler: any;
   let mockSolicitarResetHandler: any;
   let mockResetearPasswordHandler: any;
   let mockActivar2FAHandler: any;
   let mockVerificar2FAHandler: any;
+  let mockAutenticarSsoHandler: any;
   let mockTokenService: any;
   let mockTotpSecretRepo: any;
 
@@ -23,6 +25,9 @@ describe('AuthController', () => {
         usuario: { id: 'user-1', email: 'test@test.com', nombre: 'Juan', apellido: 'Perez', rol: ROL.SOCIO },
       }),
     };
+    mockCerrarSesionHandler = {
+      execute: jest.fn().mockResolvedValue({ message: 'Sesión cerrada exitosamente' }),
+    };
     mockSolicitarResetHandler = {
       execute: jest.fn().mockResolvedValue({ token: 'reset-token' }),
     };
@@ -34,6 +39,13 @@ describe('AuthController', () => {
     };
     mockVerificar2FAHandler = {
       execute: jest.fn().mockResolvedValue({ valid: true }),
+    };
+    mockAutenticarSsoHandler = {
+      execute: jest.fn().mockResolvedValue({
+        accessToken: 'sso-access-token',
+        refreshToken: 'sso-refresh-token',
+        usuario: { id: 'user-1', email: 'sso@test.com', nombre: 'SSO', apellido: 'User', rol: ROL.EMPLEADO },
+      }),
     };
     mockTokenService = {
       generateAccessToken: jest.fn().mockReturnValue('access-token'),
@@ -48,6 +60,8 @@ describe('AuthController', () => {
     controller = new AuthController(
       mockRegistrarHandler,
       mockIniciarSesionHandler,
+      mockCerrarSesionHandler,
+      mockAutenticarSsoHandler,
       mockSolicitarResetHandler,
       mockResetearPasswordHandler,
       mockActivar2FAHandler,
@@ -163,6 +177,20 @@ describe('AuthController', () => {
     });
   });
 
+  describe('logout', () => {
+    it('should delegate to cerrar sesion handler with user id', async () => {
+      const result = await controller.logout('user-1');
+      expect(result.message).toBe('Sesión cerrada exitosamente');
+      expect(mockCerrarSesionHandler.execute).toHaveBeenCalledWith({ usuarioId: 'user-1' });
+    });
+
+    it('should propagate handler errors', async () => {
+      mockCerrarSesionHandler.execute.mockRejectedValue(new Error('DB error'));
+
+      await expect(controller.logout('user-1')).rejects.toThrow('DB error');
+    });
+  });
+
   describe('activate2FA', () => {
     it('should delegate to activar 2FA handler and save secret', async () => {
       const result = await controller.activate2FA('user-1');
@@ -198,6 +226,52 @@ describe('AuthController', () => {
       await expect(
         controller.verify2FA('user-1', { code: '123456' }),
       ).rejects.toThrow('2FA no configurado');
+    });
+  });
+
+  describe('googleCallback', () => {
+    it('should delegate to SSO handler and redirect to frontend', async () => {
+      const req = {
+        user: {
+          provider: 'google',
+          providerId: 'g-123',
+          email: 'sso@test.com',
+          nombre: 'SSO',
+          apellido: 'User',
+        },
+      };
+      const res = { redirect: jest.fn() };
+      process.env.FRONTEND_URL = 'http://localhost:3000';
+
+      await controller.googleCallback(req as any, res as any);
+
+      expect(mockAutenticarSsoHandler.execute).toHaveBeenCalledWith(req.user);
+      expect(res.redirect).toHaveBeenCalledWith(
+        expect.stringContaining('http://localhost:3000/auth/callback?'),
+      );
+    });
+  });
+
+  describe('microsoftCallback', () => {
+    it('should delegate to SSO handler and redirect to frontend', async () => {
+      const req = {
+        user: {
+          provider: 'microsoft',
+          providerId: 'ms-456',
+          email: 'ms@test.com',
+          nombre: 'MS',
+          apellido: 'User',
+        },
+      };
+      const res = { redirect: jest.fn() };
+      process.env.FRONTEND_URL = 'http://localhost:3000';
+
+      await controller.microsoftCallback(req as any, res as any);
+
+      expect(mockAutenticarSsoHandler.execute).toHaveBeenCalledWith(req.user);
+      expect(res.redirect).toHaveBeenCalledWith(
+        expect.stringContaining('http://localhost:3000/auth/callback?'),
+      );
     });
   });
 });

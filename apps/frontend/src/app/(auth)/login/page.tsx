@@ -1,9 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+
+function getRedirectByRol(rol: string): string {
+  switch (rol) {
+    case 'SUPERADMIN':
+      return '/admin';
+    case 'CLIENTE':
+      return '/portal';
+    default:
+      return '/dashboard';
+  }
+}
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
+  const { login } = useAuth();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -16,23 +39,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Credenciales inválidas');
-      }
-
-      const data = await res.json();
-      document.cookie = `access_token=${data.accessToken}; path=/; max-age=900`;
-      document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800`;
-
-      const rol = data.usuario.rol;
-      window.location.href = rol === 'CLIENTE' ? '/portal' : '/dashboard';
+      const user = await login(email, password);
+      const redirectParam = searchParams.get('redirect');
+      window.location.href = redirectParam || getRedirectByRol(user.rol);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
@@ -70,7 +79,11 @@ export default function LoginPage() {
 
           {/* SSO Section */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <button className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-white border-[#c5c6cd]/30 border rounded-xl hover:bg-[#f2f3ff] transition-all duration-200">
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/google`}
+              className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-white border-[#c5c6cd]/30 border rounded-xl hover:bg-[#f2f3ff] transition-all duration-200"
+              data-testid="sso-google"
+            >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -78,8 +91,12 @@ export default function LoginPage() {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
               <span className="text-sm font-semibold">Google</span>
-            </button>
-            <button className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-white border-[#c5c6cd]/30 border rounded-xl hover:bg-[#f2f3ff] transition-all duration-200">
+            </a>
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL}/v1/auth/microsoft`}
+              className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-white border-[#c5c6cd]/30 border rounded-xl hover:bg-[#f2f3ff] transition-all duration-200"
+              data-testid="sso-microsoft"
+            >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" fill="#f25022" />
                 <path d="M24 24H12.6V12.6H24V24z" fill="#00a4ef" />
@@ -88,7 +105,7 @@ export default function LoginPage() {
                 <path d="M11.4 24H0V12.6h11.4V24z" fill="#f25022" />
               </svg>
               <span className="text-sm font-semibold">Microsoft</span>
-            </button>
+            </a>
           </div>
 
           <div className="relative flex items-center gap-4">
@@ -174,8 +191,8 @@ export default function LoginPage() {
         <footer className="flex justify-between items-center text-[9px] uppercase tracking-widest font-bold text-[#75777d] mt-8 lg:mt-0">
           <span>© {new Date().getFullYear()} Numerito</span>
           <div className="flex gap-4">
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Privacidad</a>
-            <a className="hover:text-[#131b2e] transition-colors" href="#">Soporte</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/privacy">Privacidad</a>
+            <a className="hover:text-[#131b2e] transition-colors" href="/support">Soporte</a>
           </div>
         </footer>
       </div>
