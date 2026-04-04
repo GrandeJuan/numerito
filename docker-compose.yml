@@ -1,21 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: numerito-db
-    ports:
-      - "5433:5432"
-    environment:
-      POSTGRES_DB: numerito
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: numerito_dev
-    volumes:
-      - numerito_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     build:
       context: .
@@ -23,15 +6,14 @@ services:
     container_name: numerito-backend
     ports:
       - "5101:3001"
-    depends_on:
-      db:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PORT: "3001"
-      DB_HOST: db
+      DB_HOST: host.docker.internal
       DB_PORT: "5432"
       DB_USER: postgres
-      DB_PASSWORD: numerito_dev
+      DB_PASSWORD: admin
       DB_NAME: numerito
       JWT_SECRET: dev-secret-change-in-production
       JWT_EXPIRATION: 15m
@@ -50,6 +32,3 @@ services:
       - "5100:3000"
     depends_on:
       - backend
-
-volumes:
-  numerito_pgdata:
