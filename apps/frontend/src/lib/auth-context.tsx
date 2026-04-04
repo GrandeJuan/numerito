@@ -146,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setEstudioActual(null);
     setEstudioId(null);
     setPermisos([]);
+    window.location.href = '/login';
   }, []);
 
   const switchEstudio = useCallback((estudio: EstudioInfo) => {

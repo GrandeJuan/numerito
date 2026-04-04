@@ -34,15 +34,18 @@ export function middleware(request: NextRequest) {
   if (!accessToken) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl, 302);
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   }
 
   const payload = decodeJwtPayload(accessToken);
   if (!payload || isTokenExpired(payload)) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    const response = NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl, 302);
     response.cookies.delete('access_token');
+    response.headers.set('Cache-Control', 'no-store');
     return response;
   }
 

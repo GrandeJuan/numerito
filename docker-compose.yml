@@ -1,34 +1,55 @@
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: numerito-postgres
+    container_name: numerito-db
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: numerito
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: numerito_dev
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - numerito_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: numerito-redis
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: numerito-backend
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - "5101:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "3001"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: numerito_dev
+      DB_NAME: numerito
+      JWT_SECRET: dev-secret-change-in-production
+      JWT_EXPIRATION: 15m
+      JWT_REFRESH_EXPIRATION: 7d
+      FRONTEND_URL: "http://localhost:5100"
+      NODE_ENV: production
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:5101/api"
+    container_name: numerito-frontend
+    ports:
+      - "5100:3000"
+    depends_on:
+      - backend
 
 volumes:
-  postgres_data:
-  redis_data:
+  numerito_pgdata:
