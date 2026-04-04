@@ -115,6 +115,6 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
     JwtAuthGuard,
     RolesGuard,
   ],
-  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, JwtAuthGuard, RolesGuard],
+  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard],
 })
 export class IamModule {}
