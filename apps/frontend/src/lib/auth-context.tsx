@@ -20,9 +20,11 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   estudioActual: EstudioInfo | null;
+  permisos: string[];
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
   switchEstudio: (estudio: EstudioInfo) => void;
+  tienePermiso: (permiso: string) => boolean;
 }
 
 const ESTUDIO_STORAGE_KEY = 'numerito_estudio_actual';
@@ -67,6 +69,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [estudioActual, setEstudioActual] = useState<EstudioInfo | null>(null);
+  const [permisos, setPermisos] = useState<string[]>([]);
+
+  const loadPermisos = useCallback(async (estudioId: string) => {
+    try {
+      const res = await apiFetch(`/v1/usuarios/me/permisos?estudioId=${estudioId}`);
+      if (res.ok) {
+        const body = await res.json();
+        const data = body.data ?? body;
+        setPermisos(Array.isArray(data) ? data : []);
+      } else {
+        setPermisos([]);
+      }
+    } catch {
+      setPermisos([]);
+    }
+  }, []);
 
   // Hydrate from cookie on mount
   useEffect(() => {
@@ -85,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (savedEstudio) {
           setEstudioActual(savedEstudio);
           setEstudioId(savedEstudio.id);
+          loadPermisos(savedEstudio.id);
         }
       }
     }
@@ -126,13 +145,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setEstudioActual(null);
     setEstudioId(null);
+    setPermisos([]);
   }, []);
 
   const switchEstudio = useCallback((estudio: EstudioInfo) => {
     setEstudioActual(estudio);
     setEstudioId(estudio.id);
     localStorage.setItem(ESTUDIO_STORAGE_KEY, JSON.stringify(estudio));
-  }, []);
+    loadPermisos(estudio.id);
+  }, [loadPermisos]);
+
+  const tienePermiso = useCallback((permiso: string) => permisos.includes(permiso), [permisos]);
 
   // Wire up auto-logout on refresh failure
   useEffect(() => {
@@ -143,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setEstudioActual(null);
       setEstudioId(null);
+      setPermisos([]);
       window.location.href = '/login';
     });
     return () => setOnUnauthorized(null);
@@ -154,9 +178,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       estudioActual,
+      permisos,
       login,
       logout,
       switchEstudio,
+      tienePermiso,
     }}>
       {children}
     </AuthContext>

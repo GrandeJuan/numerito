@@ -64,6 +64,14 @@ export class ReglaNoEncontradaError extends DomainException {
   }
 }
 
+export class UsuarioNoRegistradoSsoError extends DomainException {
+  readonly code = 'SSO_USER_NOT_FOUND';
+  readonly httpStatus = 404;
+  constructor() {
+    super('No existe una cuenta con ese email. Registrate o pedí una invitación a tu estudio.');
+  }
+}
+
 export class TwoFANoConfiguradoError extends DomainException {
   readonly code = '2FA_NOT_CONFIGURED';
   readonly httpStatus = 400;

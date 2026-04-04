@@ -1,92 +1,96 @@
 import { AutenticarSsoHandler } from './autenticar-sso.command';
+import { Email } from '../../domain/value-objects/email.vo';
+import { Password } from '../../domain/value-objects/password.vo';
+import { Usuario } from '../../domain/entities/usuario.entity';
+import { ROL } from '@numerito/shared';
 
 describe('AutenticarSsoHandler', () => {
   let handler: AutenticarSsoHandler;
   let mockUsuarioRepo: any;
   let mockTokenService: any;
+  let activeUsuario: Usuario;
 
-  const mockExistingUser = {
-    id: 'user-1',
-    email: { value: 'test@test.com' },
-    nombre: 'Juan',
-    apellido: 'Perez',
-    rol: 'SOCIO',
-    isActive: true,
-    provider: null,
-    providerId: null,
-    linkSsoProvider: jest.fn(),
-  };
+  beforeEach(async () => {
+    const email = Email.create('juan@estudio.com');
+    const password = await Password.create('SecurePass123!');
+    activeUsuario = Usuario.create({
+      email,
+      password,
+      nombre: 'Juan',
+      apellido: 'Perez',
+      rol: ROL.SOCIO,
+    });
 
-  beforeEach(() => {
     mockUsuarioRepo = {
-      findByEmail: jest.fn(),
+      findByEmail: jest.fn().mockResolvedValue(activeUsuario),
       save: jest.fn().mockResolvedValue(undefined),
     };
+
     mockTokenService = {
       generateAccessToken: jest.fn().mockReturnValue('access-token'),
       generateRefreshToken: jest.fn().mockReturnValue('refresh-token'),
     };
+
     handler = new AutenticarSsoHandler(mockUsuarioRepo, mockTokenService);
   });
 
-  it('should generate tokens for existing user with matching email', async () => {
-    mockUsuarioRepo.findByEmail.mockResolvedValue(mockExistingUser);
-
+  it('should link provider and generate tokens for existing user', async () => {
     const result = await handler.execute({
       provider: 'google',
       providerId: 'google-123',
-      email: 'test@test.com',
+      email: 'juan@estudio.com',
       nombre: 'Juan',
       apellido: 'Perez',
     });
 
     expect(result.accessToken).toBe('access-token');
     expect(result.refreshToken).toBe('refresh-token');
-    expect(result.usuario.email).toBe('test@test.com');
+    expect(result.usuario.email).toBe('juan@estudio.com');
+    expect(result.usuario.rol).toBe(ROL.SOCIO);
+    expect(activeUsuario.provider).toBe('google');
+    expect(activeUsuario.providerId).toBe('google-123');
+    expect(mockUsuarioRepo.save).toHaveBeenCalledWith(activeUsuario);
   });
 
-  it('should link SSO provider to existing user', async () => {
-    mockUsuarioRepo.findByEmail.mockResolvedValue(mockExistingUser);
-
-    await handler.execute({
-      provider: 'google',
-      providerId: 'google-123',
-      email: 'test@test.com',
+  it('should work with microsoft provider', async () => {
+    const result = await handler.execute({
+      provider: 'microsoft',
+      providerId: 'ms-456',
+      email: 'juan@estudio.com',
       nombre: 'Juan',
       apellido: 'Perez',
     });
 
-    expect(mockExistingUser.linkSsoProvider).toHaveBeenCalledWith('google', 'google-123');
-    expect(mockUsuarioRepo.save).toHaveBeenCalled();
+    expect(result.accessToken).toBe('access-token');
+    expect(activeUsuario.provider).toBe('microsoft');
+    expect(activeUsuario.providerId).toBe('ms-456');
   });
 
-  it('should create new user when none exists', async () => {
+  it('should throw when user does not exist', async () => {
     mockUsuarioRepo.findByEmail.mockResolvedValue(null);
 
-    const result = await handler.execute({
-      provider: 'microsoft',
-      providerId: 'ms-456',
-      email: 'new@test.com',
-      nombre: 'Maria',
-      apellido: 'Garcia',
-    });
-
-    expect(mockUsuarioRepo.save).toHaveBeenCalled();
-    expect(result.accessToken).toBe('access-token');
-    expect(result.usuario.email).toBe('new@test.com');
+    await expect(
+      handler.execute({
+        provider: 'google',
+        providerId: 'google-999',
+        email: 'noexiste@test.com',
+        nombre: 'Maria',
+        apellido: 'Garcia',
+      }),
+    ).rejects.toThrow('No existe una cuenta con ese email');
   });
 
-  it('should throw if existing user is inactive', async () => {
-    mockUsuarioRepo.findByEmail.mockResolvedValue({ ...mockExistingUser, isActive: false });
+  it('should throw when user is inactive', async () => {
+    activeUsuario.deactivate();
 
     await expect(
       handler.execute({
         provider: 'google',
         providerId: 'g-123',
-        email: 'test@test.com',
+        email: 'juan@estudio.com',
         nombre: 'Juan',
         apellido: 'Perez',
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow('Usuario inactivo');
   });
 });

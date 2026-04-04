@@ -5,13 +5,16 @@ import { AuthProvider, useAuth } from './auth-context';
 
 // Helper component to test the hook
 function TestConsumer() {
-  const { user, isAuthenticated, isLoading, login, logout, estudioActual, switchEstudio } = useAuth();
+  const { user, isAuthenticated, isLoading, login, logout, estudioActual, switchEstudio, permisos, tienePermiso } = useAuth();
   return (
     <div>
       <span data-testid="loading">{String(isLoading)}</span>
       <span data-testid="authenticated">{String(isAuthenticated)}</span>
       <span data-testid="user">{user ? JSON.stringify(user) : 'null'}</span>
       <span data-testid="estudio">{estudioActual ? JSON.stringify(estudioActual) : 'null'}</span>
+      <span data-testid="permisos">{JSON.stringify(permisos)}</span>
+      <span data-testid="tiene-ver-clientes">{String(tienePermiso('VER_CLIENTES'))}</span>
+      <span data-testid="tiene-editar-clientes">{String(tienePermiso('EDITAR_CLIENTES'))}</span>
       <button
         data-testid="login-btn"
         onClick={() => login('test@test.com', 'pass123').catch(() => {})}
@@ -310,6 +313,203 @@ describe('AuthContext', () => {
         const parsed = JSON.parse(stored!);
         expect(parsed.id).toBe('est-2');
       });
+    });
+  });
+
+  describe('permisos', () => {
+    it('starts with empty permisos array', async () => {
+      renderWithProvider();
+      await waitFor(() => {
+        expect(screen.getByTestId('permisos').textContent).toBe('[]');
+      });
+    });
+
+    it('tienePermiso returns false when no permisos loaded', async () => {
+      renderWithProvider();
+      await waitFor(() => {
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('false');
+      });
+    });
+
+    it('loads permisos from API when switchEstudio is called', async () => {
+      const token = fakeJwt({
+        sub: 'user-1',
+        email: 'test@example.com',
+        rol: 'SOCIO',
+        exp: Math.floor(Date.now() / 1000) + 900,
+      });
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: `access_token=${token}`,
+      });
+
+      // First call: logout endpoint (if any), second: permisos endpoint
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/v1/usuarios/me/permisos')) {
+          return new Response(
+            JSON.stringify({ data: ['VER_CLIENTES', 'EDITAR_CLIENTES'] }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      });
+
+      const user = userEvent.setup();
+      await act(async () => {
+        await user.click(screen.getByTestId('switch-btn'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('true');
+        expect(screen.getByTestId('tiene-editar-clientes').textContent).toBe('true');
+      });
+
+      // Verify the API was called with correct estudioId
+      const permisosCall = vi.mocked(fetch).mock.calls.find(
+        (call) => String(call[0]).includes('/v1/usuarios/me/permisos'),
+      );
+      expect(permisosCall).toBeTruthy();
+      expect(String(permisosCall![0])).toContain('estudioId=est-2');
+    });
+
+    it('tienePermiso returns false for permissions not in the list', async () => {
+      const token = fakeJwt({
+        sub: 'user-1',
+        email: 'test@example.com',
+        rol: 'SOCIO',
+        exp: Math.floor(Date.now() / 1000) + 900,
+      });
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: `access_token=${token}`,
+      });
+
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/v1/usuarios/me/permisos')) {
+          return new Response(
+            JSON.stringify({ data: ['VER_CLIENTES'] }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      });
+
+      const user = userEvent.setup();
+      await act(async () => {
+        await user.click(screen.getByTestId('switch-btn'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('true');
+        expect(screen.getByTestId('tiene-editar-clientes').textContent).toBe('false');
+      });
+    });
+
+    it('clears permisos on logout', async () => {
+      const token = fakeJwt({
+        sub: 'user-1',
+        email: 'test@example.com',
+        rol: 'SOCIO',
+        exp: Math.floor(Date.now() / 1000) + 900,
+      });
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: `access_token=${token}`,
+      });
+
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/v1/usuarios/me/permisos')) {
+          return new Response(
+            JSON.stringify({ data: ['VER_CLIENTES'] }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      });
+
+      const user = userEvent.setup();
+
+      // Switch estudio to load permisos
+      await act(async () => {
+        await user.click(screen.getByTestId('switch-btn'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('true');
+      });
+
+      // Now logout
+      await act(async () => {
+        await user.click(screen.getByTestId('logout-btn'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('permisos').textContent).toBe('[]');
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('false');
+      });
+    });
+
+    it('loads permisos on hydration when estudio is restored from localStorage', async () => {
+      const token = fakeJwt({
+        sub: 'user-1',
+        email: 'test@example.com',
+        rol: 'SOCIO',
+        exp: Math.floor(Date.now() / 1000) + 900,
+      });
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: `access_token=${token}`,
+      });
+
+      // Pre-store estudio in localStorage
+      localStorage.setItem(
+        'numerito_estudio_actual',
+        JSON.stringify({ id: 'est-1', nombre: 'Estudio Uno', rol: 'SOCIO' }),
+      );
+
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/v1/usuarios/me/permisos')) {
+          return new Response(
+            JSON.stringify({ data: ['VER_CLIENTES', 'VER_OBLIGACIONES'] }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tiene-ver-clientes').textContent).toBe('true');
+      });
+
+      const permisosCall = vi.mocked(fetch).mock.calls.find(
+        (call) => String(call[0]).includes('/v1/usuarios/me/permisos'),
+      );
+      expect(permisosCall).toBeTruthy();
+      expect(String(permisosCall![0])).toContain('estudioId=est-1');
     });
   });
 });

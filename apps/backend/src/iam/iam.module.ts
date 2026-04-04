@@ -18,10 +18,15 @@ import { GoogleStrategy } from './infrastructure/strategies/google.strategy';
 import { MicrosoftStrategy } from './infrastructure/strategies/microsoft.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { ObtenerEstudiosUsuarioHandler } from './application/queries/obtener-estudios-usuario.query';
+import { ObtenerPermisosUsuarioHandler } from './application/queries/obtener-permisos-usuario.query';
+import { PermisoService } from './application/services/permiso.service';
 import type { SesionRepository } from './domain/repositories/sesion.repository';
 import { USUARIO_ESTUDIO_REPOSITORY } from './domain/repositories/usuario-estudio.repository';
 import type { UsuarioEstudioRepository } from './domain/repositories/usuario-estudio.repository';
+import { ROL_PERMISO_REPOSITORY } from './domain/repositories/rol-permiso.repository';
+import type { RolPermisoRepository } from './domain/repositories/rol-permiso.repository';
 import { MikroOrmUsuarioEstudioRepository } from './infrastructure/persistence/mikro-orm-usuario-estudio.repository';
+import { MikroOrmRolPermisoRepository } from './infrastructure/persistence/mikro-orm-rol-permiso.repository';
 import { ESTUDIO_LOOKUP_SERVICE } from './application/services/estudio-lookup.service';
 import type { EstudioLookupService } from './application/services/estudio-lookup.service';
 import { TOKEN_SERVICE } from './application/services/token.service';
@@ -48,6 +53,7 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
     { provide: TOTP_SECRET_REPOSITORY, useClass: MikroOrmTotpSecretRepository },
     { provide: SESION_REPOSITORY, useClass: MikroOrmSesionRepository },
     { provide: USUARIO_ESTUDIO_REPOSITORY, useClass: MikroOrmUsuarioEstudioRepository },
+    { provide: ROL_PERMISO_REPOSITORY, useClass: MikroOrmRolPermisoRepository },
     {
       provide: RegistrarUsuarioHandler,
       useFactory: (repo: UsuarioRepository) => new RegistrarUsuarioHandler(repo),
@@ -91,6 +97,12 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
       useFactory: (ueRepo: UsuarioEstudioRepository, estudioLookup: EstudioLookupService) =>
         new ObtenerEstudiosUsuarioHandler(ueRepo, estudioLookup),
       inject: [USUARIO_ESTUDIO_REPOSITORY, ESTUDIO_LOOKUP_SERVICE],
+    },
+    {
+      provide: ObtenerPermisosUsuarioHandler,
+      useFactory: (ueRepo: UsuarioEstudioRepository, rpRepo: RolPermisoRepository) =>
+        new ObtenerPermisosUsuarioHandler(ueRepo, rpRepo),
+      inject: [USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY],
     },
     {
       provide: AutenticarSsoHandler,

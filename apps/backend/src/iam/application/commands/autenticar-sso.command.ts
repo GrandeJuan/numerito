@@ -1,10 +1,10 @@
 import { Email } from '../../domain/value-objects/email.vo';
-import { Password } from '../../domain/value-objects/password.vo';
-import { Usuario, type AuthProvider } from '../../domain/entities/usuario.entity';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import type { TokenService } from '../services/token.service';
-import { UsuarioInactivoError } from '../../../shared/domain/exceptions';
-import { ROL } from '@numerito/shared';
+import {
+  UsuarioInactivoError,
+  UsuarioNoRegistradoSsoError,
+} from '../../../shared/domain/exceptions';
 
 export interface AutenticarSsoCommand {
   provider: 'google' | 'microsoft';
@@ -34,32 +34,18 @@ export class AutenticarSsoHandler {
 
   async execute(command: AutenticarSsoCommand): Promise<AutenticarSsoResult> {
     const email = Email.create(command.email);
-    let usuario = await this.usuarioRepo.findByEmail(email);
+    const usuario = await this.usuarioRepo.findByEmail(email);
 
-    if (usuario) {
-      if (!usuario.isActive) {
-        throw new UsuarioInactivoError();
-      }
-      // Link SSO provider to existing account
-      usuario.linkSsoProvider(command.provider, command.providerId);
-      await this.usuarioRepo.save(usuario);
-    } else {
-      // Create new user with SSO
-      const randomPassword = await Password.create(
-        `SSO_${Date.now()}_${Math.random().toString(36)}!Aa1`,
-      );
-      usuario = Usuario.create({
-        email,
-        password: randomPassword,
-        nombre: command.nombre,
-        apellido: command.apellido,
-        rol: ROL.EMPLEADO,
-        provider: command.provider,
-        providerId: command.providerId,
-      });
-      usuario.verifyEmail();
-      await this.usuarioRepo.save(usuario);
+    if (!usuario) {
+      throw new UsuarioNoRegistradoSsoError();
     }
+
+    if (!usuario.isActive) {
+      throw new UsuarioInactivoError();
+    }
+
+    usuario.linkSsoProvider(command.provider, command.providerId);
+    await this.usuarioRepo.save(usuario);
 
     const payload = {
       sub: usuario.id,
