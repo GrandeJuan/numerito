@@ -77,7 +77,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const navItems = getNavItems(pathname);
-  const showEstudioSelector = !isPortalRoute(pathname);
+  const showEstudioSelector = !isPortalRoute(pathname) && !pathname.startsWith('/admin');
 
   return (
     <div className="flex h-screen bg-[#f5f5f7] dark:bg-gray-900">
