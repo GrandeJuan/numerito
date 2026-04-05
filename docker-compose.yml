@@ -27,6 +27,7 @@ services:
       dockerfile: apps/frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: "http://localhost:5101/api"
+        NEXT_PUBLIC_SHOW_DEV_USERS: "true"
     container_name: numerito-frontend
     ports:
       - "5100:3000"

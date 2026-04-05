@@ -13,7 +13,9 @@ RUN pnpm install --frozen-lockfile
 # ---- Build ----
 FROM deps AS build
 ARG NEXT_PUBLIC_API_URL=http://localhost:5101/api
+ARG NEXT_PUBLIC_SHOW_DEV_USERS=false
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SHOW_DEV_USERS=${NEXT_PUBLIC_SHOW_DEV_USERS}
 
 # Shared: copy source only (preserve node_modules from deps)
 COPY packages/shared/src/ packages/shared/src/
@@ -25,7 +27,7 @@ COPY apps/frontend/next.config.ts apps/frontend/tsconfig.json apps/frontend/post
 COPY apps/frontend/components.json apps/frontend/
 RUN pnpm --filter @numerito/frontend run build
 
-# ---- Production ----
+# ---- Runtime ----
 FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app

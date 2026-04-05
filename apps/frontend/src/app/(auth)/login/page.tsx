@@ -30,6 +30,7 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -135,15 +136,27 @@ function LoginPageContent() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-[#45474c]" htmlFor="password">
                   Contraseña
                 </label>
-                <input
-                  className="border-0 border-b-[1.5px] border-[#c5c6cd] bg-transparent py-2 text-[#131b2e] placeholder:text-[#75777d]/30 text-sm focus:outline-none focus:border-[#00a472] transition-colors"
-                  id="password"
-                  placeholder="••••••••"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    className="w-full border-0 border-b-[1.5px] border-[#c5c6cd] bg-transparent py-2 pr-8 text-[#131b2e] placeholder:text-[#75777d]/30 text-sm focus:outline-none focus:border-[#00a472] transition-colors"
+                    id="password"
+                    placeholder="••••••••"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-[#75777d] hover:text-[#131b2e] transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -187,9 +200,9 @@ function LoginPageContent() {
           </p>
 
           {/* DEV ONLY — remove before production */}
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NEXT_PUBLIC_SHOW_DEV_USERS === 'true' && (
             <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 p-3 text-xs">
-              <p className="font-bold text-amber-700 mb-2">Dev Seed Users (Admin123!)</p>
+              <p className="font-bold text-amber-700 mb-2">Dev Seed Users</p>
               <div className="space-y-1 text-amber-600">
                 {[
                   { email: 'superadmin@numerito.com', rol: 'SUPERADMIN' },
