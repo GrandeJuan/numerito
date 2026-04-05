@@ -53,6 +53,29 @@ describe('ClientesController', () => {
     });
   });
 
+  describe('summary', () => {
+    it('should return total and condicion IVA breakdown', async () => {
+      const clientes = [
+        makeCliente(),
+        makeCliente({ cuit: '27-12345678-0' }),
+      ];
+      mockClienteRepo.findByEstudioId.mockResolvedValue(clientes);
+
+      const result = await controller.summary('estudio-1');
+      expect(result.data.total).toBe(2);
+      expect(result.data.porCondicionIva).toBeDefined();
+      expect(result.data.porCondicionIva['RESPONSABLE_INSCRIPTO']).toBe(2);
+    });
+
+    it('should return empty breakdown when no clientes', async () => {
+      mockClienteRepo.findByEstudioId.mockResolvedValue([]);
+
+      const result = await controller.summary('estudio-1');
+      expect(result.data.total).toBe(0);
+      expect(result.data.porCondicionIva).toEqual({});
+    });
+  });
+
   describe('getById', () => {
     it('should return a cliente by id', async () => {
       const cliente = makeCliente();

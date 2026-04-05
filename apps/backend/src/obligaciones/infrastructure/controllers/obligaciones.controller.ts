@@ -17,6 +17,37 @@ export class ObligacionesController {
     @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
   ) {}
 
+  @Get('kpis')
+  @ApiOperation({ summary: 'KPIs de obligaciones del estudio' })
+  async kpis(@EstudioId() estudioId: string) {
+    const all = await this.vencimientoRepo.findByEstudioId(estudioId);
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    let pendientes = 0;
+    let vencidos = 0;
+    let presentadosEsteMes = 0;
+    let proximoVencimiento: Date | null = null;
+
+    for (const v of all) {
+      if (v.estado === 'PENDIENTE') {
+        pendientes++;
+        if (!proximoVencimiento || v.fechaVencimiento < proximoVencimiento) {
+          proximoVencimiento = v.fechaVencimiento;
+        }
+      }
+      if (v.estado === 'VENCIDO') vencidos++;
+      if (v.estado === 'PRESENTADO' && v.periodo === currentMonth) presentadosEsteMes++;
+    }
+
+    return successResponse({
+      pendientes,
+      vencidos,
+      presentadosEsteMes,
+      proximoVencimiento: proximoVencimiento?.toISOString().split('T')[0] ?? null,
+    });
+  }
+
   @Get('vencimientos')
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(

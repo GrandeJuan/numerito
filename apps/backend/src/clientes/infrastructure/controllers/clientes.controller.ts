@@ -32,6 +32,18 @@ export class ClientesController {
     return successResponse(clientes, { total: clientes.length, page: +page, limit: +limit });
   }
 
+  @Get('summary')
+  @ApiOperation({ summary: 'Resumen de clientes del estudio' })
+  async summary(@EstudioId() estudioId: string) {
+    const clientes = await this.clienteRepo.findByEstudioId(estudioId);
+    const porCondicionIva: Record<string, number> = {};
+    for (const c of clientes) {
+      const key = String(c.condicionIva);
+      porCondicionIva[key] = (porCondicionIva[key] ?? 0) + 1;
+    }
+    return successResponse({ total: clientes.length, porCondicionIva });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener cliente por ID' })
   async getById(@Param('id') id: string) {

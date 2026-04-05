@@ -30,6 +30,29 @@ describe('ObligacionesController', () => {
     controller = new ObligacionesController(mockVencimientoRepo);
   });
 
+  describe('kpis', () => {
+    it('should return KPI counts', async () => {
+      const pendiente = makeVencimiento();
+      const vencido = makeVencimiento();
+      vencido.marcarVencido();
+      mockVencimientoRepo.findByEstudioId.mockResolvedValue([pendiente, vencido]);
+
+      const result = await controller.kpis('estudio-1');
+      expect(result.data.pendientes).toBe(1);
+      expect(result.data.vencidos).toBe(1);
+      expect(result.data.presentadosEsteMes).toBe(0);
+      expect(result.data.proximoVencimiento).toBeDefined();
+    });
+
+    it('should return null proximoVencimiento when no pendientes', async () => {
+      mockVencimientoRepo.findByEstudioId.mockResolvedValue([]);
+
+      const result = await controller.kpis('estudio-1');
+      expect(result.data.pendientes).toBe(0);
+      expect(result.data.proximoVencimiento).toBeNull();
+    });
+  });
+
   describe('list', () => {
     it('should return paginated vencimientos', async () => {
       const items = [makeVencimiento(), makeVencimiento()];
