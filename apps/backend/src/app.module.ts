@@ -16,6 +16,7 @@ import { FacturacionModule } from './facturacion/facturacion.module';
 import { IntegracionesModule } from './integraciones/integraciones.module';
 import { AdministracionModule } from './administracion/administracion.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { PortalModule } from './portal/portal.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     IntegracionesModule,
     AdministracionModule,
     DashboardModule,
+    PortalModule,
   ],
   controllers: [AppController],
 })
