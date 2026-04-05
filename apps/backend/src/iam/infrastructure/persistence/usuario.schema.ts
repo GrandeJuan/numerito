@@ -12,6 +12,7 @@ export class UsuarioEntity {
   emailVerified!: boolean;
   provider!: string | null;
   providerId!: string | null;
+  themePreference!: string;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -30,6 +31,7 @@ export const UsuarioSchema = new EntitySchema<UsuarioEntity>({
     emailVerified: { type: 'boolean', fieldName: 'email_verified', default: false },
     provider: { type: 'string', nullable: true, default: null },
     providerId: { type: 'string', fieldName: 'provider_id', nullable: true, default: null },
+    themePreference: { type: 'string', fieldName: 'theme_preference', default: 'light' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

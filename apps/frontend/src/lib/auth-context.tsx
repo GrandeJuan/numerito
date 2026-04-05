@@ -134,6 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rol: data.usuario.rol,
     };
     setUser(authUser);
+
+    // Apply theme preference from server
+    if (data.usuario.themePreference) {
+      localStorage.setItem('numerito_dark_mode', String(data.usuario.themePreference === 'dark'));
+    }
+
     return authUser;
   }, []);
 

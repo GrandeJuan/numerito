@@ -13,6 +13,7 @@ interface CreateUsuarioProps {
   rol: Rol;
   provider?: AuthProvider;
   providerId?: string | null;
+  themePreference?: 'light' | 'dark';
 }
 
 export class Usuario extends BaseEntity {
@@ -25,6 +26,7 @@ export class Usuario extends BaseEntity {
   private _emailVerified: boolean;
   private _provider: AuthProvider;
   private _providerId: string | null;
+  private _themePreference: 'light' | 'dark';
 
   private constructor(props: CreateUsuarioProps, id?: string) {
     super(id);
@@ -37,6 +39,7 @@ export class Usuario extends BaseEntity {
     this._emailVerified = false;
     this._provider = props.provider ?? null;
     this._providerId = props.providerId ?? null;
+    this._themePreference = props.themePreference ?? 'light';
   }
 
   static create(props: CreateUsuarioProps, id?: string): Usuario {
@@ -77,6 +80,15 @@ export class Usuario extends BaseEntity {
 
   get providerId(): string | null {
     return this._providerId;
+  }
+
+  get themePreference(): 'light' | 'dark' {
+    return this._themePreference;
+  }
+
+  changeThemePreference(theme: 'light' | 'dark'): void {
+    this._themePreference = theme;
+    this.updatedAt = new Date();
   }
 
   linkSsoProvider(provider: AuthProvider, providerId: string): void {

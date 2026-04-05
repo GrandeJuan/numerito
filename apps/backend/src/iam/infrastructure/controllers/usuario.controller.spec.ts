@@ -6,6 +6,7 @@ describe('UsuarioController', () => {
   let controller: UsuarioController;
   let mockObtenerEstudiosHandler: any;
   let mockObtenerPermisosHandler: any;
+  let mockUsuarioRepo: any;
 
   beforeEach(() => {
     mockObtenerEstudiosHandler = {
@@ -14,7 +15,11 @@ describe('UsuarioController', () => {
     mockObtenerPermisosHandler = {
       execute: jest.fn(),
     };
-    controller = new UsuarioController(mockObtenerEstudiosHandler, mockObtenerPermisosHandler);
+    mockUsuarioRepo = {
+      findById: jest.fn(),
+      save: jest.fn(),
+    };
+    controller = new UsuarioController(mockObtenerEstudiosHandler, mockObtenerPermisosHandler, mockUsuarioRepo);
   });
 
   describe('getMisEstudios', () => {
@@ -69,6 +74,32 @@ describe('UsuarioController', () => {
       await expect(controller.getMisPermisos('user-1', undefined as any)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('updatePreferencias', () => {
+    it('should update theme preference and return it', async () => {
+      const mockUsuario = {
+        themePreference: 'light',
+        changeThemePreference: jest.fn(),
+      };
+      mockUsuarioRepo.findById.mockResolvedValue(mockUsuario);
+      mockUsuarioRepo.save.mockResolvedValue(undefined);
+
+      const result = await controller.updatePreferencias('user-1', { themePreference: 'dark' });
+
+      expect(mockUsuarioRepo.findById).toHaveBeenCalledWith('user-1');
+      expect(mockUsuario.changeThemePreference).toHaveBeenCalledWith('dark');
+      expect(mockUsuarioRepo.save).toHaveBeenCalledWith(mockUsuario);
+      expect(result.data).toHaveProperty('themePreference');
+    });
+
+    it('should throw if user not found', async () => {
+      mockUsuarioRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        controller.updatePreferencias('user-1', { themePreference: 'dark' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

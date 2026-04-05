@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { apiFetch } from './api-client';
 
 const STORAGE_KEY = 'numerito_dark_mode';
 
@@ -27,6 +28,13 @@ export function useDarkMode() {
     setIsDark((prev) => {
       const next = !prev;
       localStorage.setItem(STORAGE_KEY, String(next));
+
+      // Persist to backend (fire-and-forget)
+      apiFetch('/v1/usuarios/me/preferencias', {
+        method: 'PATCH',
+        body: JSON.stringify({ themePreference: next ? 'dark' : 'light' }),
+      }).catch(() => {});
+
       return next;
     });
   }, []);
