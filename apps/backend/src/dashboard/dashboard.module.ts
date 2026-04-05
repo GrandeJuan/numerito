@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { EntityManager } from '@mikro-orm/core';
 import { DashboardController } from './infrastructure/controllers/dashboard.controller';
 import { ObtenerDashboardStatsHandler } from './application/queries/obtener-dashboard-stats.query';
@@ -9,7 +10,7 @@ import { ROL_PERMISO_REPOSITORY } from '../iam/domain/repositories/rol-permiso.r
 import type { RolPermisoRepository } from '../iam/domain/repositories/rol-permiso.repository';
 
 @Module({
-  imports: [IamModule],
+  imports: [IamModule, JwtModule.register({})],
   controllers: [DashboardController],
   providers: [
     {

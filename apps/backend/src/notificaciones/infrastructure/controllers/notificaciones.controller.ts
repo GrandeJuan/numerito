@@ -1,11 +1,13 @@
-import { Controller, Get, Patch, Param, Query, Headers, Req, Inject } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, Headers, Req, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
 import { NOTIFICACION_REPOSITORY } from '../../domain/repositories/notificacion.repository';
 import type { NotificacionRepository } from '../../domain/repositories/notificacion.repository';
 import { RecursoNoEncontradoError, OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 @ApiTags('Notificaciones')
 @Controller({ path: 'notificaciones', version: '1' })
+@UseGuards(JwtAuthGuard)
 export class NotificacionesController {
   constructor(
     @Inject(NOTIFICACION_REPOSITORY) private readonly notificacionRepo: NotificacionRepository,
