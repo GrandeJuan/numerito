@@ -1,14 +1,16 @@
-import { Controller, Get, Patch, Body, Query, BadRequestException, Inject } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Query, BadRequestException, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ObtenerEstudiosUsuarioHandler } from '../../application/queries/obtener-estudios-usuario.query';
 import { ObtenerPermisosUsuarioHandler } from '../../application/queries/obtener-permisos-usuario.query';
 import { USUARIO_REPOSITORY } from '../../domain/repositories/usuario.repository';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Usuarios')
 @Controller({ path: 'usuarios', version: '1' })
+@UseGuards(JwtAuthGuard)
 export class UsuarioController {
   constructor(
     private readonly obtenerEstudiosHandler: ObtenerEstudiosUsuarioHandler,

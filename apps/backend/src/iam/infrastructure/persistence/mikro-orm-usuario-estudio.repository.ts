@@ -16,7 +16,7 @@ export class MikroOrmUsuarioEstudioRepository implements UsuarioEstudioRepositor
     const entities = await this.em.find(
       UsuarioEstudioEntity,
       { usuario: { id: usuarioId } },
-      { populate: ['rol'] },
+      { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entities.map((e) => this.toDomain(e));
   }
@@ -25,7 +25,7 @@ export class MikroOrmUsuarioEstudioRepository implements UsuarioEstudioRepositor
     const entities = await this.em.find(
       UsuarioEstudioEntity,
       { estudio: { id: estudioId } },
-      { populate: ['rol'] },
+      { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entities.map((e) => this.toDomain(e));
   }
@@ -34,7 +34,7 @@ export class MikroOrmUsuarioEstudioRepository implements UsuarioEstudioRepositor
     const entity = await this.em.findOne(
       UsuarioEstudioEntity,
       { usuario: { id: usuarioId }, estudio: { id: estudioId } },
-      { populate: ['rol'] },
+      { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entity ? this.toDomain(entity) : null;
   }
