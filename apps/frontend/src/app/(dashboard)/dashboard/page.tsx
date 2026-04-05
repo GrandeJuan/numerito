@@ -75,8 +75,8 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-gray-500">domain</span>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Seleccione un estudio para ver el dashboard.</p>
+          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-gray-500 animate-pulse">business</span>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Cargando estudio...</p>
         </div>
       </div>
     );

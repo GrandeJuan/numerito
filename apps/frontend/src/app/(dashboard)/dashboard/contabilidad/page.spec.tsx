@@ -85,7 +85,7 @@ describe('ContabilidadPage', () => {
   it('should show message when no estudio selected', () => {
     mockEstudioActual = null;
     render(<ContabilidadPage />);
-    expect(screen.getByText(/Seleccione un estudio/)).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
   it('should render KPI cards', async () => {

@@ -30,7 +30,18 @@ export function EstudioSelector() {
       .finally(() => setLoaded(true));
   }, [isAuthenticated]);
 
-  if (!loaded || estudios.length === 0) return null;
+  if (!loaded) return null;
+
+  if (estudios.length === 0) {
+    return (
+      <div data-testid="estudio-selector-empty" className="px-3 py-3 border-b border-white/10">
+        <div className="flex items-center gap-2 px-3 py-2">
+          <span className="material-symbols-outlined text-red-400 text-lg">warning</span>
+          <p className="text-xs text-white/50">Sin estudios asignados</p>
+        </div>
+      </div>
+    );
+  }
 
   const selected = estudioActual || estudios[0];
 

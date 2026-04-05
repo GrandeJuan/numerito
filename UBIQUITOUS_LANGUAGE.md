@@ -10,6 +10,9 @@
 | **Responsable** | Rol de gerente/encargado que supervisa clientes | Manager, supervisor |
 | **Empleado** (rol) | Rol de empleado del estudio con permisos limitados | Staff, worker |
 | **Sesión** | Registro de login activo con refresh token y metadata de seguridad | Session, token |
+| **Superadmin** | Rol de administrador global de la plataforma con acceso al panel de administración (no pertenece a ningún estudio) | Platform admin, god mode |
+| **Permiso** | Capacidad específica asignada a un rol dentro de un estudio (ej: VER_FACTURACION) | Permission, capability |
+| **Portal** | Vista simplificada del sistema accesible solo por usuarios con rol Cliente | Client portal, client view |
 
 ## Clientes y Datos Fiscales
 
@@ -86,6 +89,13 @@
 | **Registrar Horas** | Agregar tiempo trabajado a una tarea (acumulativo) | Log time, track hours |
 | **Prioridad** | Nivel de urgencia: Baja, Media, Alta, Urgente | Priority |
 
+## Notificaciones
+
+| Término | Definición | Aliases a evitar |
+|---|---|---|
+| **Notificación** | Aviso interno del sistema dirigido a un usuario sobre un evento relevante (vencimiento próximo, tarea asignada, pago recibido) | Alert, message, notification |
+| **Leída** | Estado de una notificación que el usuario ya vio y marcó como leída | Read, seen |
+
 ## Subscripción y Planes
 
 | Término | Definición | Aliases a evitar |
@@ -117,6 +127,9 @@
 - Un **Empleado** pertenece a un **Cliente** (es empleado del cliente, no del estudio)
 - Una **Tarea** puede estar vinculada a un **Cliente** o ser general del **Estudio**
 - Un **Usuario** puede pertenecer a múltiples **Estudios** con diferentes roles
+- Un **Rol** en un **Estudio** otorga un conjunto de **Permisos** (configurable por estudio)
+- Una **Notificación** pertenece a un **Usuario** y opcionalmente a un **Estudio**
+- Un **Superadmin** no pertenece a ningún **Estudio** — opera a nivel plataforma
 
 ## Diálogo de ejemplo
 
@@ -133,3 +146,5 @@
 - **"Vencido/a"** se usa en tres contextos: **Vencimiento** vencido (obligación fiscal no presentada a tiempo), **Factura** vencida (no pagada al vencer), y **Subscripción** vencida (período expirado). Aunque comparten el término, los estados y transiciones son diferentes en cada caso.
 - **"Pendiente"** aparece en **Vencimientos**, **Tareas** y **Notificaciones** con semánticas ligeramente diferentes: en vencimientos significa "no presentado", en tareas significa "no iniciado", en notificaciones significa "no leída".
 - **"Cliente"** como rol (`ROL.CLIENTE` para acceso al portal) vs **Cliente** como entidad del dominio (persona/empresa atendida por el estudio). El primero es un tipo de usuario, el segundo es la entidad central del negocio.
+- **"Estudio" en el dashboard** — el mensaje "Seleccione un estudio para ver el dashboard" es confuso porque el usuario ya está autenticado y puede pertenecer a un solo estudio. El concepto de "seleccionar estudio" es multi-tenancy (un usuario puede ser Socio en un estudio y Empleado en otro). No es "seleccionar qué estudio usar" en el sentido de crear uno, sino "en cuál de mis estudios quiero trabajar ahora". Mejor redacción: "Seleccione en cuál de sus estudios desea trabajar" o auto-seleccionar cuando hay uno solo.
+- **"Notificación"** se usa para dos cosas: (1) **Notificación** interna del sistema (aviso de vencimiento, tarea asignada — bounded context Notificaciones), y (2) **Notificación Fiscal** (comunicación de ARCA/ARBA dirigida a un cliente — bounded context Integraciones). Son conceptos completamente distintos.

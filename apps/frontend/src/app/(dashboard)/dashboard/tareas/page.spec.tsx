@@ -147,7 +147,7 @@ describe('TareasPage', () => {
   it('should show message when no estudio selected', () => {
     mockEstudioActual = null;
     render(<TareasPage />);
-    expect(screen.getByText('Seleccione un estudio para ver las tareas.')).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
   it('should show error state on API failure', async () => {

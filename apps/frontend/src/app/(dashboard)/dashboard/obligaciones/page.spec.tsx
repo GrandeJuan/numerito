@@ -210,7 +210,7 @@ describe('ObligacionesPage', () => {
   it('should show message when no estudio selected', () => {
     mockEstudioActual = null;
     render(<ObligacionesPage />);
-    expect(screen.getByText('Seleccione un estudio para ver las obligaciones.')).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
   it('should show error on API failure', async () => {

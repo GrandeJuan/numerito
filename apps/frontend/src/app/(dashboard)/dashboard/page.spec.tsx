@@ -188,6 +188,6 @@ describe('DashboardPage — no estudio selected', () => {
 
   it('should show message to select estudio', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Seleccione un estudio para ver el dashboard.')).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 });

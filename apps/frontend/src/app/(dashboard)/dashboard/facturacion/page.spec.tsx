@@ -113,7 +113,7 @@ describe('FacturacionPage', () => {
   it('should show message when no estudio selected', () => {
     mockEstudioActual = null;
     render(<FacturacionPage />);
-    expect(screen.getByText(/Seleccione un estudio/)).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
   it('should render KPI cards with stats', async () => {

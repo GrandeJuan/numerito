@@ -175,6 +175,6 @@ describe('ConfiguracionPage', () => {
   it('should show no estudio message when none selected', () => {
     mockEstudioActual = null;
     render(<ConfiguracionPage />);
-    expect(screen.getByText('Seleccione un estudio para ver la configuracion.')).toBeInTheDocument();
+    expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 });
