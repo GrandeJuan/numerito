@@ -9,7 +9,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "lint": "eslint \"{src,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "seed:dev": "npx ts-node -r tsconfig-paths/register src/shared/infrastructure/seeds/dev-seed.ts"
   },
   "dependencies": {
     "@mikro-orm/cli": "^7.0.7",
