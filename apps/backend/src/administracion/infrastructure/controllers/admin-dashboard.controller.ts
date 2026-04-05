@@ -1,12 +1,13 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../guards/superadmin.guard';
 import { ObtenerAdminDashboardStatsHandler } from '../../application/queries/obtener-admin-dashboard-stats.query';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Dashboard')
 @Controller({ path: 'admin/dashboard', version: '1' })
-@UseGuards(SuperAdminGuard)
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 export class AdminDashboardController {
   constructor(private readonly statsHandler: ObtenerAdminDashboardStatsHandler) {}
 

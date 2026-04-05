@@ -4,13 +4,14 @@ import { EntityManager, FilterQuery } from '@mikro-orm/core';
 import { ESTUDIO_REPOSITORY } from '../../../estudio/domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../../estudio/domain/repositories/estudio.repository';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../guards/superadmin.guard';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Estudios')
 @Controller({ path: 'admin/estudios', version: '1' })
-@UseGuards(SuperAdminGuard)
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 export class AdminEstudiosController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,

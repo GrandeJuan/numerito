@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { EntityManager } from '@mikro-orm/core';
 import { AdminPlanesController } from './infrastructure/controllers/admin-planes.controller';
 import { AdminEstudiosController } from './infrastructure/controllers/admin-estudios.controller';
@@ -10,9 +11,10 @@ import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-
 import { ObtenerAdminDashboardStatsHandler } from './application/queries/obtener-admin-dashboard-stats.query';
 import { ObtenerAdminUsuariosHandler } from './application/queries/obtener-admin-usuarios.query';
 import { EstudioModule } from '../estudio/estudio.module';
+import { IamModule } from '../iam/iam.module';
 
 @Module({
-  imports: [EstudioModule],
+  imports: [EstudioModule, IamModule, JwtModule.register({})],
   controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController],
   providers: [
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
