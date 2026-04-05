@@ -14,6 +14,7 @@ import { DocumentosModule } from './documentos/documentos.module';
 import { TareasModule } from './tareas/tareas.module';
 import { FacturacionModule } from './facturacion/facturacion.module';
 import { IntegracionesModule } from './integraciones/integraciones.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { AdministracionModule } from './administracion/administracion.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PortalModule } from './portal/portal.module';
@@ -33,6 +34,7 @@ import { PortalModule } from './portal/portal.module';
     TareasModule,
     FacturacionModule,
     IntegracionesModule,
+    NotificacionesModule,
     AdministracionModule,
     DashboardModule,
     PortalModule,

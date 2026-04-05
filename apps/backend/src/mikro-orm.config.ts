@@ -72,6 +72,9 @@ import { MedioPagoSchema } from './shared/infrastructure/persistence/medio-pago.
 import { NotificacionFiscalSchema } from './integraciones/infrastructure/persistence/notificacion-fiscal.schema';
 import { CredencialFiscalSchema } from './integraciones/infrastructure/persistence/credencial-fiscal.schema';
 
+// Notificaciones
+import { NotificacionSchema } from './notificaciones/infrastructure/persistence/notificacion.schema';
+
 export default defineConfig({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 5432,
@@ -136,6 +139,8 @@ export default defineConfig({
     // Integraciones
     NotificacionFiscalSchema,
     CredencialFiscalSchema,
+    // Notificaciones
+    NotificacionSchema,
   ],
   extensions: [Migrator],
   migrations: {

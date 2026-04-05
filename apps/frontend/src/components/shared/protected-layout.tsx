@@ -8,6 +8,7 @@ import { useDarkMode } from '@/lib/use-dark-mode';
 import { EstudioSelector } from './estudio-selector';
 import { Breadcrumbs } from './breadcrumbs';
 import { Can } from './can';
+import { NotificationBell } from './notification-bell';
 
 interface NavItem {
   label: string;
@@ -122,18 +123,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
 
           {/* Notification bell */}
           <div className="px-3 py-4 border-t border-white/10">
-            <button
-              aria-label="Notificaciones"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors w-full"
-            >
-              <span className="material-symbols-outlined text-lg relative">
-                notifications
-              </span>
-              Notificaciones
-              <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                0
-              </span>
-            </button>
+            <NotificationBell />
           </div>
         </div>
       </aside>
