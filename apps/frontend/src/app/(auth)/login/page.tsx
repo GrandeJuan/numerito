@@ -185,6 +185,32 @@ function LoginPageContent() {
               Solicitar Demo
             </Link>
           </p>
+
+          {/* DEV ONLY — remove before production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 p-3 text-xs">
+              <p className="font-bold text-amber-700 mb-2">Dev Seed Users (Admin123!)</p>
+              <div className="space-y-1 text-amber-600">
+                {[
+                  { email: 'superadmin@numerito.com', rol: 'SUPERADMIN' },
+                  { email: 'admin@demo.com', rol: 'SOCIO' },
+                  { email: 'responsable@demo.com', rol: 'RESPONSABLE' },
+                  { email: 'empleado@demo.com', rol: 'EMPLEADO' },
+                  { email: 'cliente@demo.com', rol: 'CLIENTE' },
+                ].map((u) => (
+                  <button
+                    key={u.email}
+                    type="button"
+                    className="flex w-full items-center justify-between rounded px-2 py-1 hover:bg-amber-100 transition-colors text-left"
+                    onClick={() => { setEmail(u.email); setPassword('Admin123!'); }}
+                  >
+                    <span className="font-mono">{u.email}</span>
+                    <span className="font-bold text-[10px] uppercase">{u.rol}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
