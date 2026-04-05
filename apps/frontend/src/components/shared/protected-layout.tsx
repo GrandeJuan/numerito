@@ -23,6 +23,7 @@ const DASHBOARD_NAV: NavItem[] = [
   { label: 'Facturación', href: '/dashboard/facturacion', icon: 'receipt_long', permission: 'VER_FACTURACION' },
   { label: 'Contabilidad', href: '/dashboard/contabilidad', icon: 'account_balance', permission: 'VER_CONTABILIDAD' },
   { label: 'Tareas', href: '/dashboard/tareas', icon: 'task_alt', permission: 'VER_TAREAS' },
+  { label: 'Configuracion', href: '/dashboard/configuracion', icon: 'settings', permission: 'GESTIONAR_CONFIGURACION' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
