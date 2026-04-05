@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-2fa', '/auth/callback', '/terms', '/privacy', '/support'];
 const PORTAL_PATHS = ['/portal'];
-const DASHBOARD_PATHS = ['/dashboard'];
 const ADMIN_PATHS = ['/admin'];
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -22,10 +21,19 @@ function isTokenExpired(payload: Record<string, unknown>): boolean {
   return Date.now() >= exp * 1000;
 }
 
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+}
+
+function isStudioPath(pathname: string): boolean {
+  return !ADMIN_PATHS.some((p) => pathname.startsWith(p)) &&
+         !PORTAL_PATHS.some((p) => pathname.startsWith(p));
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path)) || pathname === '/') {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -58,18 +66,18 @@ export function middleware(request: NextRequest) {
 
   // Non-SUPERADMIN cannot access /admin
   if (rol !== 'SUPERADMIN' && ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
-    const target = rol === 'CLIENTE' ? '/portal' : '/dashboard';
+    const target = rol === 'CLIENTE' ? '/portal' : '/';
     return NextResponse.redirect(new URL(target, request.url));
   }
 
   // CLIENTE can only access /portal
-  if (rol === 'CLIENTE' && DASHBOARD_PATHS.some((p) => pathname.startsWith(p))) {
+  if (rol === 'CLIENTE' && isStudioPath(pathname)) {
     return NextResponse.redirect(new URL('/portal', request.url));
   }
 
   // Non-CLIENTE cannot access /portal
   if (rol !== 'CLIENTE' && PORTAL_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

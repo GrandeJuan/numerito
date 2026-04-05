@@ -12,7 +12,7 @@ function getRedirectByRol(rol: string): string {
     case 'CLIENTE':
       return '/portal';
     default:
-      return '/dashboard';
+      return '/';
   }
 }
 

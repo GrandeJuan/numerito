@@ -77,7 +77,7 @@ describe('LoginPage', () => {
 
   async function fillAndSubmitLogin(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByLabelText(/email/i), 'test@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'password123');
     await user.click(screen.getByRole('button', { name: /ingresar/i }));
   }
 
@@ -106,7 +106,7 @@ describe('LoginPage', () => {
       });
     });
 
-    it('redirects SOCIO to /dashboard', async () => {
+    it('redirects SOCIO to /', async () => {
       vi.mocked(fetch).mockResolvedValueOnce(makeLoginResponse('SOCIO'));
       renderLoginPage();
       const user = userEvent.setup();
@@ -114,11 +114,11 @@ describe('LoginPage', () => {
       await fillAndSubmitLogin(user);
 
       await waitFor(() => {
-        expect(locationHref).toBe('/dashboard');
+        expect(locationHref).toBe('/');
       });
     });
 
-    it('redirects RESPONSABLE to /dashboard', async () => {
+    it('redirects RESPONSABLE to /', async () => {
       vi.mocked(fetch).mockResolvedValueOnce(makeLoginResponse('RESPONSABLE'));
       renderLoginPage();
       const user = userEvent.setup();
@@ -126,11 +126,11 @@ describe('LoginPage', () => {
       await fillAndSubmitLogin(user);
 
       await waitFor(() => {
-        expect(locationHref).toBe('/dashboard');
+        expect(locationHref).toBe('/');
       });
     });
 
-    it('redirects EMPLEADO to /dashboard', async () => {
+    it('redirects EMPLEADO to /', async () => {
       vi.mocked(fetch).mockResolvedValueOnce(makeLoginResponse('EMPLEADO'));
       renderLoginPage();
       const user = userEvent.setup();
@@ -138,7 +138,7 @@ describe('LoginPage', () => {
       await fillAndSubmitLogin(user);
 
       await waitFor(() => {
-        expect(locationHref).toBe('/dashboard');
+        expect(locationHref).toBe('/');
       });
     });
   });

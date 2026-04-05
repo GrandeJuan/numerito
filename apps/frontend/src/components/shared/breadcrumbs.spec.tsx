@@ -21,45 +21,42 @@ describe('Breadcrumbs', () => {
   });
 
   it('renders single segment as plain text (no link)', () => {
-    mockPathname.mockReturnValue('/dashboard');
+    mockPathname.mockReturnValue('/clientes');
     render(<Breadcrumbs />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    // Single segment should not be a link
-    expect(screen.queryByRole('link')).toBeNull();
-  });
-
-  it('renders parent segments as links', () => {
-    mockPathname.mockReturnValue('/dashboard/clientes');
-    render(<Breadcrumbs />);
-
-    const dashboardLink = screen.getByRole('link', { name: 'Dashboard' });
-    expect(dashboardLink).toHaveAttribute('href', '/dashboard');
-    // Last segment is plain text
     expect(screen.getByText('Clientes')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Clientes' })).toBeNull();
   });
 
+  it('renders parent segments as links', () => {
+    mockPathname.mockReturnValue('/clientes/123');
+    render(<Breadcrumbs />);
+
+    const clientesLink = screen.getByRole('link', { name: 'Clientes' });
+    expect(clientesLink).toHaveAttribute('href', '/clientes');
+    expect(screen.getByText('123')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '123' })).toBeNull();
+  });
+
   it('formats segments: capitalizes and replaces hyphens with spaces', () => {
-    mockPathname.mockReturnValue('/dashboard/mis-obligaciones');
+    mockPathname.mockReturnValue('/mis-obligaciones');
     render(<Breadcrumbs />);
     expect(screen.getByText('Mis obligaciones')).toBeInTheDocument();
   });
 
   it('renders deep paths correctly', () => {
-    mockPathname.mockReturnValue('/dashboard/clientes/123');
+    mockPathname.mockReturnValue('/admin/estudios/123');
     render(<Breadcrumbs />);
 
-    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/dashboard');
-    expect(screen.getByRole('link', { name: 'Clientes' })).toHaveAttribute('href', '/dashboard/clientes');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: 'Estudios' })).toHaveAttribute('href', '/admin/estudios');
     expect(screen.getByText('123')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: '123' })).toBeNull();
   });
 
   it('renders separator icons between segments', () => {
-    mockPathname.mockReturnValue('/dashboard/clientes/123');
+    mockPathname.mockReturnValue('/clientes/123');
     render(<Breadcrumbs />);
 
     const separators = screen.getAllByText('chevron_right');
-    expect(separators).toHaveLength(2);
+    expect(separators).toHaveLength(1);
   });
 });

@@ -33,10 +33,10 @@ function CallbackContent() {
         } else if (rol === 'CLIENTE') {
           window.location.href = '/portal';
         } else {
-          window.location.href = '/dashboard';
+          window.location.href = '/';
         }
       } catch {
-        window.location.href = '/dashboard';
+        window.location.href = '/';
       }
     } else {
       setError('No se recibieron credenciales');

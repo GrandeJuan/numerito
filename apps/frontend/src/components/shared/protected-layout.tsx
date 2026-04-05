@@ -18,13 +18,13 @@ interface NavItem {
 }
 
 const DASHBOARD_NAV: NavItem[] = [
-  { label: 'Inicio', href: '/dashboard', icon: 'home' },
-  { label: 'Clientes', href: '/dashboard/clientes', icon: 'people' },
-  { label: 'Obligaciones', href: '/dashboard/obligaciones', icon: 'event' },
-  { label: 'Facturación', href: '/dashboard/facturacion', icon: 'receipt_long', permission: 'VER_FACTURACION' },
-  { label: 'Contabilidad', href: '/dashboard/contabilidad', icon: 'account_balance', permission: 'VER_CONTABILIDAD' },
-  { label: 'Tareas', href: '/dashboard/tareas', icon: 'task_alt', permission: 'VER_TAREAS' },
-  { label: 'Configuracion', href: '/dashboard/configuracion', icon: 'settings', permission: 'GESTIONAR_CONFIGURACION' },
+  { label: 'Inicio', href: '/', icon: 'home' },
+  { label: 'Clientes', href: '/clientes', icon: 'people' },
+  { label: 'Obligaciones', href: '/obligaciones', icon: 'event' },
+  { label: 'Facturación', href: '/facturacion', icon: 'receipt_long', permission: 'VER_FACTURACION' },
+  { label: 'Contabilidad', href: '/contabilidad', icon: 'account_balance', permission: 'VER_CONTABILIDAD' },
+  { label: 'Tareas', href: '/tareas', icon: 'task_alt', permission: 'VER_TAREAS' },
+  { label: 'Configuracion', href: '/configuracion', icon: 'settings', permission: 'GESTIONAR_CONFIGURACION' },
 ];
 
 const ADMIN_NAV: NavItem[] = [

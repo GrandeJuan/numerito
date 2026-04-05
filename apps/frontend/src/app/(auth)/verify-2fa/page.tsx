@@ -61,7 +61,7 @@ export default function Verify2FAPage() {
 
       const data = await res.json();
       document.cookie = `access_token=${data.accessToken}; path=/; max-age=900`;
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error de verificación');
       setCode(['', '', '', '', '', '']);

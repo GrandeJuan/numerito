@@ -14,7 +14,7 @@ vi.mock('next/link', () => ({
 }));
 
 // Mock next/navigation
-const mockPathname = vi.fn().mockReturnValue('/dashboard');
+const mockPathname = vi.fn().mockReturnValue('/');
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
 }));
@@ -60,7 +60,7 @@ describe('ProtectedLayout', () => {
       removeEventListener: vi.fn(),
     }));
     Object.defineProperty(document, 'cookie', { writable: true, value: '' });
-    mockPathname.mockReturnValue('/dashboard');
+    mockPathname.mockReturnValue('/');
   });
 
   afterEach(() => {
@@ -136,13 +136,11 @@ describe('ProtectedLayout', () => {
 
   // --- Breadcrumbs ---
   it('renders breadcrumbs in topbar', async () => {
-    mockPathname.mockReturnValue('/dashboard/clientes');
+    mockPathname.mockReturnValue('/clientes');
     renderLayout();
     await waitFor(() => {
       const breadcrumbNav = screen.getByRole('navigation', { name: /breadcrumbs/i });
       expect(breadcrumbNav).toBeInTheDocument();
-      // Dashboard link + Clientes text inside breadcrumb
-      expect(breadcrumbNav.textContent).toContain('Dashboard');
       expect(breadcrumbNav.textContent).toContain('Clientes');
     });
   });
