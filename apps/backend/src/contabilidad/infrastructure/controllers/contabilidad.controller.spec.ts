@@ -55,6 +55,28 @@ describe('ContabilidadController', () => {
     controller = new ContabilidadController(mockLibroRepo, mockAsientoRepo);
   });
 
+  describe('stats', () => {
+    it('should return contabilidad stats', async () => {
+      const libros = [makeLibro(), makeLibro({ id: 'l2' })];
+      const asientos = [makeAsiento()];
+      mockLibroRepo.findByEstudioId.mockResolvedValue(libros);
+      mockAsientoRepo.findByEstudioId = jest.fn().mockResolvedValue(asientos);
+
+      const result = await controller.stats('estudio-1');
+      expect(result.data.asientosDelPeriodo).toBe(1);
+      expect(result.data.totalLibros).toBe(2);
+      expect(result.data.balanceCuadrado).toBe(true);
+    });
+
+    it('should return zero stats when no data', async () => {
+      mockAsientoRepo.findByEstudioId = jest.fn().mockResolvedValue([]);
+
+      const result = await controller.stats('estudio-1');
+      expect(result.data.asientosDelPeriodo).toBe(0);
+      expect(result.data.totalLibros).toBe(0);
+    });
+  });
+
   describe('listLibros', () => {
     it('should return paginated libros for estudio', async () => {
       const libros = [makeLibro(), makeLibro()];

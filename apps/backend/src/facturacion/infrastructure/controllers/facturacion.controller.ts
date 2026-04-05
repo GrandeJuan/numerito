@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestj
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearFacturaDto } from '../../application/dtos/crear-factura.dto';
 import { RegistrarPagoDto } from '../../application/dtos/registrar-pago.dto';
+import { FacturacionStatsQuery } from '../../application/queries/facturacion-stats.query';
 import { FACTURA_REPOSITORY } from '../../domain/repositories/factura.repository';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { PAGO_REPOSITORY } from '../../domain/repositories/pago.repository';
@@ -20,6 +21,14 @@ export class FacturacionController {
     @Inject(FACTURA_REPOSITORY) private readonly facturaRepo: FacturaRepository,
     @Inject(PAGO_REPOSITORY) private readonly pagoRepo: PagoRepository,
   ) {}
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Estadisticas de facturacion del estudio' })
+  async stats(@EstudioId() estudioId: string) {
+    const query = new FacturacionStatsQuery(this.facturaRepo);
+    const stats = await query.execute(estudioId);
+    return successResponse(stats);
+  }
 
   @Get('facturas')
   @ApiOperation({ summary: 'Listar facturas del estudio' })

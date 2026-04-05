@@ -38,6 +38,15 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
     return entities.map(e => this.toDomain(e));
   }
 
+  async findByEstudioId(estudioId: string): Promise<AsientoContable[]> {
+    const entities = await this.em.find(AsientoContableEntity, {
+      estudio: { id: estudioId },
+    }, {
+      populate: ['libro', 'cliente', 'estudio'],
+    });
+    return entities.map(e => this.toDomain(e));
+  }
+
   async findAll(): Promise<AsientoContable[]> {
     const entities = await this.em.findAll(AsientoContableEntity, {
       populate: ['libro', 'cliente', 'estudio'],

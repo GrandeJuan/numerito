@@ -47,6 +47,24 @@ describe('FacturacionController', () => {
     controller = new FacturacionController(mockFacturaRepo, mockPagoRepo);
   });
 
+  describe('stats', () => {
+    it('should return facturacion stats', async () => {
+      const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
+      mockFacturaRepo.findByEstudioId.mockResolvedValue(facturas);
+
+      const result = await controller.stats('estudio-1');
+      expect(result.data.facturado).toBeDefined();
+      expect(result.data.cobrado).toBeDefined();
+      expect(result.data.porEstado).toBeDefined();
+      expect(result.data.mensual).toBeDefined();
+    });
+
+    it('should return zero stats when no facturas', async () => {
+      const result = await controller.stats('estudio-1');
+      expect(result.data.facturado).toBe(0);
+    });
+  });
+
   describe('list', () => {
     it('should return paginated facturas for estudio', async () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];

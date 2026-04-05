@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearLibroDto } from '../../application/dtos/crear-libro.dto';
 import { RubricarLibroDto } from '../../application/dtos/rubricar-libro.dto';
 import { CrearAsientoDto } from '../../application/dtos/crear-asiento.dto';
+import { ContabilidadStatsQuery } from '../../application/queries/contabilidad-stats.query';
 import { LIBRO_CONTABLE_REPOSITORY } from '../../domain/repositories/libro-contable.repository';
 import { ASIENTO_CONTABLE_REPOSITORY } from '../../domain/repositories/asiento-contable.repository';
 import type { LibroContableRepository } from '../../domain/repositories/libro-contable.repository';
@@ -20,6 +21,14 @@ export class ContabilidadController {
     @Inject(LIBRO_CONTABLE_REPOSITORY) private readonly libroRepo: LibroContableRepository,
     @Inject(ASIENTO_CONTABLE_REPOSITORY) private readonly asientoRepo: AsientoContableRepository,
   ) {}
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Estadisticas de contabilidad del estudio' })
+  async stats(@EstudioId() estudioId: string) {
+    const query = new ContabilidadStatsQuery(this.libroRepo, this.asientoRepo);
+    const stats = await query.execute(estudioId);
+    return successResponse(stats);
+  }
 
   @Get('libros')
   @ApiOperation({ summary: 'Listar libros contables del estudio' })
