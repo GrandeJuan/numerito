@@ -50,5 +50,14 @@ packages/*/src/**/*.js.map
 # Claude Code
 .claude/
 
+# Playwright MCP
+.playwright-mcp/
+
+# Screenshots
+*.png
+
+# TypeScript build info
+*.tsbuildinfo
+
 # Plans
 /plans
