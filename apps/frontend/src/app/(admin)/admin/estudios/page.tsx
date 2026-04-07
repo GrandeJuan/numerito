@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 interface Estudio {
   id: string;
@@ -30,28 +31,31 @@ export default function AdminEstudiosPage() {
   const [estado, setEstado] = useState('');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const fetchEstudios = useCallback(async (page = 1) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      params.set('page', String(page));
-      params.set('limit', '20');
-      if (search) params.set('search', search);
-      if (plan) params.set('plan', plan);
-      if (estado) params.set('isActive', estado);
+  const fetchEstudios = useCallback(
+    async (page = 1) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('limit', '20');
+        if (search) params.set('search', search);
+        if (plan) params.set('plan', plan);
+        if (estado) params.set('isActive', estado);
 
-      const res = await apiFetch(`/v1/admin/estudios?${params}`);
-      if (!res.ok) throw new Error('Error al cargar estudios');
-      const body = await res.json();
-      setEstudios(body.data);
-      setMeta(body.meta);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, plan, estado]);
+        const res = await apiFetch(`/v1/admin/estudios?${params}`);
+        if (!res.ok) throw new Error('Error al cargar estudios');
+        const body = await res.json();
+        setEstudios(body.data);
+        setMeta(body.meta);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search, plan, estado],
+  );
 
   useEffect(() => {
     fetchEstudios();
@@ -74,12 +78,14 @@ export default function AdminEstudiosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Estudios</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Administrar estudios contables de la plataforma.</p>
+        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Gestión de Estudios</h1>
+        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">
+          Administrar estudios contables de la plataforma.
+        </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div className={`${CARD_CLASSES.full} p-4`}>
         <div className="flex flex-wrap gap-3">
           <div className="flex-1 min-w-[200px]">
             <input
@@ -87,13 +93,13 @@ export default function AdminEstudiosPage() {
               placeholder="Buscar por nombre o CUIT..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
           </div>
           <select
             value={plan}
             onChange={(e) => setPlan(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
           >
             <option value="">Todos los planes</option>
             <option value="STARTER">Starter</option>
@@ -103,7 +109,7 @@ export default function AdminEstudiosPage() {
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
           >
             <option value="">Todos los estados</option>
             <option value="true">Activo</option>
@@ -115,48 +121,55 @@ export default function AdminEstudiosPage() {
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+          <p className="text-[#45474c] dark:text-[#a0a3a8]">Cargando...</p>
         </div>
       ) : error ? (
         <div className="flex items-center justify-center h-64">
           <p className="text-red-500">{error}</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className={CARD_CLASSES.full}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nombre</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">CUIT</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Plan</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Estado</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Creado</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+                <tr className="border-b border-gray-200 dark:border-white/10">
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>CUIT</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Plan</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Creado</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {estudios.map((est) => (
-                  <tr key={est.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{est.nombre}</td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300 font-mono text-xs">{est.cuit}</td>
+                  <tr
+                    key={est.id}
+                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
+                  >
+                    <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
+                      {est.nombre}
+                    </td>
+                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd] font-mono text-xs">
+                      {est.cuit}
+                    </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS['SOCIO']}`}
+                      >
                         {est.plan}
                       </span>
                     </td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          est.isActive
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          est.isActive ? STATUS_COLORS['ACTIVO'] : STATUS_COLORS['INACTIVO']
                         }`}
                       >
                         {est.isActive ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
+                    <td className="py-3 px-4 text-[#45474c] dark:text-[#a0a3a8]">
                       {new Date(est.createdAt).toLocaleDateString('es-AR')}
                     </td>
                     <td className="py-3 px-4 relative">
@@ -165,31 +178,39 @@ export default function AdminEstudiosPage() {
                         className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                         aria-label="Acciones"
                       >
-                        <span className="material-symbols-outlined text-gray-500 dark:text-gray-400">more_vert</span>
+                        <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]">
+                          more_vert
+                        </span>
                       </button>
                       {openMenu === est.id && (
-                        <div className="absolute right-4 top-10 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[160px]">
+                        <div className="absolute right-4 top-10 z-10 bg-white dark:bg-[#162a4a] border border-[#e2e8f0] dark:border-white/10 rounded-lg shadow-lg py-1 min-w-[160px]">
                           <button
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-[#c5c6cd] hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
                             onClick={() => setOpenMenu(null)}
                           >
-                            <span className="material-symbols-outlined text-base mr-2 align-middle">visibility</span>
+                            <span className="material-symbols-outlined text-base mr-2 align-middle">
+                              visibility
+                            </span>
                             Ver Detalle
                           </button>
                           {est.isActive ? (
                             <button
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
                               onClick={() => handleAction(est.id, 'suspend')}
                             >
-                              <span className="material-symbols-outlined text-base mr-2 align-middle">block</span>
+                              <span className="material-symbols-outlined text-base mr-2 align-middle">
+                                block
+                              </span>
                               Suspender
                             </button>
                           ) : (
                             <button
-                              className="w-full text-left px-4 py-2 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="w-full text-left px-4 py-2 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
                               onClick={() => handleAction(est.id, 'reactivate')}
                             >
-                              <span className="material-symbols-outlined text-base mr-2 align-middle">check_circle</span>
+                              <span className="material-symbols-outlined text-base mr-2 align-middle">
+                                check_circle
+                              </span>
                               Reactivar
                             </button>
                           )}
@@ -200,7 +221,7 @@ export default function AdminEstudiosPage() {
                 ))}
                 {estudios.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={6} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
                       No se encontraron estudios.
                     </td>
                   </tr>
@@ -210,22 +231,22 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-white/10">
+            <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
               Mostrando {start}-{end} de {meta.total} estudios
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => fetchEstudios(meta.page - 1)}
                 disabled={meta.page <= 1}
-                className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Anterior
               </button>
               <button
                 onClick={() => fetchEstudios(meta.page + 1)}
                 disabled={meta.page >= meta.totalPages}
-                className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Siguiente
               </button>

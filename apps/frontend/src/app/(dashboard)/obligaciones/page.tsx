@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { STATUS_COLORS, CARD_CLASSES, TABLE_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
 
 interface VencimientoRow {
   id: string;
@@ -21,12 +22,6 @@ interface ObligacionesKpis {
   presentadosEsteMes: number;
   proximoVencimiento: string | null;
 }
-
-const ESTADO_COLORS: Record<string, string> = {
-  PENDIENTE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  PRESENTADO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  VENCIDO: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-};
 
 const ESTADO_LABELS: Record<string, string> = {
   PENDIENTE: 'Pendiente',
@@ -123,29 +118,34 @@ export default function ObligacionesPage() {
     loadData();
   }, [estudioActual, periodo]);
 
-  const handlePresentar = useCallback(async (id: string) => {
-    setPresentando(id);
-    try {
-      const res = await apiFetch(`/v1/obligaciones/vencimientos/${id}/presentar`, { method: 'PATCH' });
-      if (res.ok) {
-        setVencimientos((prev) =>
-          prev.map((v) => (v.id === id ? { ...v, estado: 'PRESENTADO' } : v)),
-        );
-        setCalendarVencimientos((prev) =>
-          prev.map((v) => (v.id === id ? { ...v, estado: 'PRESENTADO' } : v)),
-        );
-        if (kpis) {
-          setKpis({
-            ...kpis,
-            pendientes: Math.max(0, kpis.pendientes - 1),
-            presentadosEsteMes: kpis.presentadosEsteMes + 1,
-          });
+  const handlePresentar = useCallback(
+    async (id: string) => {
+      setPresentando(id);
+      try {
+        const res = await apiFetch(`/v1/obligaciones/vencimientos/${id}/presentar`, {
+          method: 'PATCH',
+        });
+        if (res.ok) {
+          setVencimientos((prev) =>
+            prev.map((v) => (v.id === id ? { ...v, estado: 'PRESENTADO' } : v)),
+          );
+          setCalendarVencimientos((prev) =>
+            prev.map((v) => (v.id === id ? { ...v, estado: 'PRESENTADO' } : v)),
+          );
+          if (kpis) {
+            setKpis({
+              ...kpis,
+              pendientes: Math.max(0, kpis.pendientes - 1),
+              presentadosEsteMes: kpis.presentadosEsteMes + 1,
+            });
+          }
         }
+      } finally {
+        setPresentando(null);
       }
-    } finally {
-      setPresentando(null);
-    }
-  }, [kpis]);
+    },
+    [kpis],
+  );
 
   const prevMonth = () => {
     setCalendarDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -175,8 +175,10 @@ export default function ObligacionesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-gray-500">event</span>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Cargando estudio...</p>
+          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-[#75777d]">
+            event
+          </span>
+          <p className="mt-2 text-[#45474c] dark:text-[#a0a3a8]">Cargando estudio...</p>
         </div>
       </div>
     );
@@ -185,7 +187,7 @@ export default function ObligacionesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+        <p className="text-[#45474c] dark:text-[#a0a3a8]">Cargando...</p>
       </div>
     );
   }
@@ -206,37 +208,29 @@ export default function ObligacionesPage() {
       label: 'Pendientes',
       value: kpis?.pendientes ?? 0,
       icon: 'pending_actions',
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-50 dark:bg-amber-900/30',
     },
     {
       label: 'Vencidos',
       value: kpis?.vencidos ?? 0,
       icon: 'warning',
-      color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-50 dark:bg-red-900/30',
     },
     {
       label: 'Presentados este mes',
       value: kpis?.presentadosEsteMes ?? 0,
       icon: 'check_circle',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
     },
     {
       label: 'Proximo vencimiento',
       value: kpis?.proximoVencimiento ? formatFecha(kpis.proximoVencimiento) : '-',
       icon: 'event',
-      color: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-50 dark:bg-blue-900/30',
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Obligaciones</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Obligaciones</h1>
+        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">
           Calendario y gestion de vencimientos fiscales.
         </p>
       </div>
@@ -244,17 +238,16 @@ export default function ObligacionesPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map((kpi) => (
-          <div
-            key={kpi.label}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
+          <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
             <div className="flex items-center gap-3">
-              <div className={`${kpi.bg} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${kpi.color} text-xl`}>{kpi.icon}</span>
+              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
+                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
+                  {kpi.icon}
+                </span>
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpi.value}</p>
+                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
+                <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
               </div>
             </div>
           </div>
@@ -262,24 +255,26 @@ export default function ObligacionesPage() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className={`${CARD_CLASSES.full} p-6`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Calendario de Vencimientos</h2>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+            Calendario de Vencimientos
+          </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={prevMonth}
               aria-label="Mes anterior"
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-[#45474c] dark:text-[#a0a3a8]"
             >
               <span className="material-symbols-outlined text-lg">chevron_left</span>
             </button>
-            <span className="text-sm font-medium text-gray-900 dark:text-white capitalize min-w-[140px] text-center">
+            <span className="text-sm font-medium text-[#091426] dark:text-white capitalize min-w-[140px] text-center">
               {getMonthLabel(calendarDate)}
             </span>
             <button
               onClick={nextMonth}
               aria-label="Mes siguiente"
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-[#45474c] dark:text-[#a0a3a8]"
             >
               <span className="material-symbols-outlined text-lg">chevron_right</span>
             </button>
@@ -289,7 +284,10 @@ export default function ObligacionesPage() {
         <div className="grid grid-cols-7 gap-px">
           {/* Day headers */}
           {DAY_NAMES.map((d) => (
-            <div key={d} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">
+            <div
+              key={d}
+              className="text-center text-xs font-medium text-[#45474c] dark:text-[#a0a3a8] py-2"
+            >
               {d}
             </div>
           ))}
@@ -306,8 +304,8 @@ export default function ObligacionesPage() {
                 key={i}
                 className={`min-h-[48px] p-1 text-center text-sm rounded ${
                   day
-                    ? 'text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/30'
-                    : 'text-gray-300 dark:text-gray-600'
+                    ? 'text-[#091426] dark:text-white hover:bg-gray-50 dark:hover:bg-[#4edea3]/5'
+                    : 'text-[#e2e8f0] dark:text-[#45474c]'
                 }`}
               >
                 {day && (
@@ -327,31 +325,44 @@ export default function ObligacionesPage() {
       </div>
 
       {/* Vencimientos Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Vencimientos</h2>
+      <div className={`${CARD_CLASSES.full} overflow-hidden`}>
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white">Vencimientos</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Cliente</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Obligacion</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Periodo</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fecha</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Estado</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Acciones</th>
+              <tr
+                className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+              >
+                <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Cliente</th>
+                <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Obligacion</th>
+                <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Periodo</th>
+                <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Fecha</th>
+                <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
+                <th className={`text-right py-3 px-4 ${TABLE_CLASSES.headerText}`}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {vencimientos.map((v) => (
-                <tr key={v.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                  <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{v.cliente}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{v.tipoObligacion}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{v.periodo}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{formatFecha(v.fechaVencimiento)}</td>
+                <tr
+                  key={v.id}
+                  className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
+                >
+                  <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
+                    {v.cliente}
+                  </td>
+                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
+                    {v.tipoObligacion}
+                  </td>
+                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">{v.periodo}</td>
+                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
+                    {formatFecha(v.fechaVencimiento)}
+                  </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_COLORS[v.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'}`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[v.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'}`}
+                    >
                       {ESTADO_LABELS[v.estado] ?? v.estado}
                     </span>
                   </td>
@@ -360,7 +371,7 @@ export default function ObligacionesPage() {
                       <button
                         onClick={() => handlePresentar(v.id)}
                         disabled={presentando === v.id}
-                        className="px-3 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg disabled:opacity-50 transition-colors"
+                        className="px-3 py-1 text-xs bg-[#091426] text-white font-bold rounded-xl shadow-lg shadow-[#091426]/20 hover:opacity-90 disabled:opacity-50 transition-all"
                       >
                         {presentando === v.id ? 'Presentando...' : 'Presentar'}
                       </button>
@@ -370,7 +381,7 @@ export default function ObligacionesPage() {
               ))}
               {vencimientos.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
                     No hay vencimientos.
                   </td>
                 </tr>
@@ -380,8 +391,8 @@ export default function ObligacionesPage() {
         </div>
 
         {/* Pagination */}
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
+          <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
             Mostrando {start}-{end} de {vencimientos.length} vencimientos
           </p>
         </div>

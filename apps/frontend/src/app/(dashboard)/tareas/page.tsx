@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { PRIORIDAD_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 interface TareaRow {
   id: string;
@@ -26,13 +27,6 @@ const PRIORIDAD_LABELS: Record<string, string> = {
   MEDIA: 'Media',
   ALTA: 'Alta',
   URGENTE: 'Urgente',
-};
-
-const PRIORIDAD_COLORS: Record<string, string> = {
-  BAJA: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-  MEDIA: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  ALTA: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  URGENTE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
 const ESTADO_COLUMN_COLORS: Record<string, string> = {
@@ -66,19 +60,21 @@ function TaskCard({ tarea }: { tarea: TareaRow }) {
   return (
     <div
       data-testid={`task-card-${tarea.id}`}
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-grab hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-[#162a4a] rounded-lg border border-[#e2e8f0] dark:border-white/10 p-4 cursor-grab hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
+        <h4 className="text-sm font-medium text-[#091426] dark:text-white leading-tight">
           {tarea.titulo}
         </h4>
-        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${PRIORIDAD_COLORS[tarea.prioridad] ?? ''}`}>
+        <span
+          className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${PRIORIDAD_COLORS[tarea.prioridad] ?? ''}`}
+        >
           {PRIORIDAD_LABELS[tarea.prioridad] ?? tarea.prioridad}
         </span>
       </div>
 
       {tarea.clienteNombre && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{tarea.clienteNombre}</p>
+        <p className="text-xs text-[#45474c] dark:text-[#a0a3a8] mb-2">{tarea.clienteNombre}</p>
       )}
 
       <div className="flex items-center justify-between text-xs">
@@ -88,21 +84,27 @@ function TaskCard({ tarea }: { tarea: TareaRow }) {
               <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                 {tarea.responsableNombre.charAt(0)}
               </div>
-              <span className="text-gray-600 dark:text-gray-300">{tarea.responsableNombre.split(' ')[0]}</span>
+              <span className="text-[#45474c] dark:text-[#c5c6cd]">
+                {tarea.responsableNombre.split(' ')[0]}
+              </span>
             </div>
           ) : (
-            <span className="text-gray-400 dark:text-gray-500">Sin asignar</span>
+            <span className="text-gray-400 dark:text-[#75777d]">Sin asignar</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {tarea.horasRegistradas > 0 && (
-            <span className="text-gray-500 dark:text-gray-400">
-              {tarea.horasRegistradas}h
-            </span>
+            <span className="text-[#45474c] dark:text-[#a0a3a8]">{tarea.horasRegistradas}h</span>
           )}
           {tarea.fechaVencimiento && (
-            <span className={overdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-gray-400'}>
+            <span
+              className={
+                overdue
+                  ? 'text-red-600 dark:text-red-400 font-medium'
+                  : 'text-[#45474c] dark:text-[#a0a3a8]'
+              }
+            >
               {formatFecha(tarea.fechaVencimiento)}
             </span>
           )}
@@ -165,8 +167,10 @@ export default function TareasPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-gray-500">task_alt</span>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Cargando estudio...</p>
+          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-[#75777d]">
+            task_alt
+          </span>
+          <p className="mt-2 text-[#45474c] dark:text-[#a0a3a8]">Cargando estudio...</p>
         </div>
       </div>
     );
@@ -175,7 +179,7 @@ export default function TareasPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+        <p className="text-[#45474c] dark:text-[#a0a3a8]">Cargando...</p>
       </div>
     );
   }
@@ -192,36 +196,38 @@ export default function TareasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tareas</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
-            Gestion de tareas del estudio.
-          </p>
+          <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Tareas</h1>
+          <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">Gestion de tareas del estudio.</p>
         </div>
         <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setView('kanban')}
             aria-label="Vista kanban"
-            className={`p-1.5 rounded ${view === 'kanban' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+            className={`p-1.5 rounded ${view === 'kanban' ? 'bg-white dark:bg-[#162a4a] shadow-sm' : ''}`}
           >
-            <span className="material-symbols-outlined text-lg text-gray-600 dark:text-gray-300">view_column</span>
+            <span className="material-symbols-outlined text-lg text-[#45474c] dark:text-[#c5c6cd]">
+              view_column
+            </span>
           </button>
           <button
             onClick={() => setView('list')}
             aria-label="Vista lista"
-            className={`p-1.5 rounded ${view === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+            className={`p-1.5 rounded ${view === 'list' ? 'bg-white dark:bg-[#162a4a] shadow-sm' : ''}`}
           >
-            <span className="material-symbols-outlined text-lg text-gray-600 dark:text-gray-300">view_list</span>
+            <span className="material-symbols-outlined text-lg text-[#45474c] dark:text-[#c5c6cd]">
+              view_list
+            </span>
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div className={`${CARD_CLASSES.full} p-4`}>
         <div className="flex flex-wrap gap-3">
           <select
             value={prioridadFilter}
             onChange={(e) => setPrioridadFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-2 text-sm border border-[#e2e8f0] dark:border-white/10 rounded-lg bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white"
           >
             <option value="">Todas las prioridades</option>
             <option value="BAJA">Baja</option>
@@ -232,11 +238,13 @@ export default function TareasPage() {
           <select
             value={responsableFilter}
             onChange={(e) => setResponsableFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-2 text-sm border border-[#e2e8f0] dark:border-white/10 rounded-lg bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white"
           >
             <option value="">Todos los responsables</option>
             {responsables.map((r) => (
-              <option key={r} value={r}>{r}</option>
+              <option key={r} value={r}>
+                {r}
+              </option>
             ))}
           </select>
         </div>
@@ -246,10 +254,16 @@ export default function TareasPage() {
       {view === 'kanban' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {COLUMNS.map((col) => (
-            <div key={col.key} className={`bg-gray-50 dark:bg-gray-800/50 rounded-xl border-t-4 ${ESTADO_COLUMN_COLORS[col.key]} p-4`}>
-              <div data-testid={`column-${col.key}`} className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white">{col.label}</h3>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+            <div
+              key={col.key}
+              className={`bg-[#f0f4f8] dark:bg-[#162a4a]/50 rounded-xl border-t-4 ${ESTADO_COLUMN_COLORS[col.key]} p-4`}
+            >
+              <div
+                data-testid={`column-${col.key}`}
+                className="flex items-center justify-between mb-4"
+              >
+                <h3 className="font-semibold text-[#091426] dark:text-white">{col.label}</h3>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-[#162a4a] text-xs font-medium text-gray-700 dark:text-[#c5c6cd]">
                   {byEstado[col.key]?.length ?? 0}
                 </span>
               </div>
@@ -258,7 +272,9 @@ export default function TareasPage() {
                   <TaskCard key={t.id} tarea={t} />
                 ))}
                 {(byEstado[col.key] ?? []).length === 0 && (
-                  <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">Sin tareas</p>
+                  <p className="text-sm text-gray-400 dark:text-[#75777d] text-center py-4">
+                    Sin tareas
+                  </p>
                 )}
               </div>
             </div>
@@ -268,48 +284,65 @@ export default function TareasPage() {
 
       {/* List View */}
       {view === 'list' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Titulo</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Cliente</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Estado</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Prioridad</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Responsable</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Vencimiento</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Horas</th>
+                <tr
+                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+                >
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Titulo</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Cliente</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Prioridad</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Responsable</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Vencimiento</th>
+                  <th className={`text-right py-3 px-4 ${TABLE_CLASSES.headerText}`}>Horas</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((t) => {
                   const overdue = t.estado !== 'COMPLETADO' && isOverdue(t.fechaVencimiento);
                   return (
-                    <tr key={t.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                      <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{t.titulo}</td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{t.clienteNombre ?? '-'}</td>
+                    <tr
+                      key={t.id}
+                      className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
+                    >
+                      <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
+                        {t.titulo}
+                      </td>
+                      <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
+                        {t.clienteNombre ?? '-'}
+                      </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]">
                           {ESTADO_LABELS[t.estado] ?? t.estado}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORIDAD_COLORS[t.prioridad] ?? ''}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORIDAD_COLORS[t.prioridad] ?? ''}`}
+                        >
                           {PRIORIDAD_LABELS[t.prioridad] ?? t.prioridad}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{t.responsableNombre ?? 'Sin asignar'}</td>
-                      <td className={`py-3 px-4 ${overdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-gray-300'}`}>
+                      <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
+                        {t.responsableNombre ?? 'Sin asignar'}
+                      </td>
+                      <td
+                        className={`py-3 px-4 ${overdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-[#45474c] dark:text-[#c5c6cd]'}`}
+                      >
                         {t.fechaVencimiento ? formatFecha(t.fechaVencimiento) : '-'}
                       </td>
-                      <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{t.horasRegistradas}h</td>
+                      <td className="py-3 px-4 text-right text-[#45474c] dark:text-[#c5c6cd]">
+                        {t.horasRegistradas}h
+                      </td>
                     </tr>
                   );
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={7} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
                       No se encontraron tareas.
                     </td>
                   </tr>

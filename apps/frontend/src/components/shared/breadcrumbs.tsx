@@ -23,18 +23,18 @@ export function Breadcrumbs() {
         return (
           <span key={href} className="flex items-center gap-1">
             {index > 0 && (
-              <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-base">
+              <span className="material-symbols-outlined text-[#45474c]/50 dark:text-[#75777d] text-base">
                 chevron_right
               </span>
             )}
             {isLast ? (
-              <span className="text-gray-800 dark:text-gray-200 font-medium">
+              <span className="text-[#091426] dark:text-gray-200 font-medium">
                 {formatSegment(segment)}
               </span>
             ) : (
               <Link
                 href={href}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="text-[#45474c] dark:text-[#a0a3a8] hover:text-[#091426] dark:hover:text-gray-200 transition-colors"
               >
                 {formatSegment(segment)}
               </Link>

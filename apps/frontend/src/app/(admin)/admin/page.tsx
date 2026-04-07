@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import {
+  STATUS_COLORS,
+  CARD_CLASSES,
+  TABLE_CLASSES,
+  KPI_ICON_STYLE,
+  CHART_THEME,
+} from '@/lib/design-tokens';
+import {
   ResponsiveContainer,
   AreaChart,
   Area,
@@ -26,10 +33,16 @@ interface DashboardStats {
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
-  estudiosRecientes: { id: string; nombre: string; plan: string; estado: string; creadoEn: string }[];
+  estudiosRecientes: {
+    id: string;
+    nombre: string;
+    plan: string;
+    estado: string;
+    creadoEn: string;
+  }[];
 }
 
-const PIE_COLORS = ['#6366f1', '#22d3ee', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'];
+const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#10b981', '#8b5cf6'];
 
 function formatCurrency(value: number): string {
   return `$${value.toLocaleString('es-AR')}`;
@@ -54,7 +67,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+        <p className="text-gray-500 dark:text-[#a0a3a8]">Cargando...</p>
       </div>
     );
   }
@@ -72,53 +85,48 @@ export default function AdminPage() {
       label: 'Estudios Activos',
       value: stats.kpis.estudiosActivos,
       icon: 'apartment',
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bg: 'bg-indigo-50 dark:bg-indigo-900/30',
     },
     {
       label: 'Usuarios Totales',
       value: stats.kpis.totalUsuarios,
       icon: 'group',
-      color: 'text-cyan-600 dark:text-cyan-400',
-      bg: 'bg-cyan-50 dark:bg-cyan-900/30',
     },
     {
       label: 'MRR',
       value: formatCurrency(stats.kpis.mrr),
       icon: 'payments',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
     },
     {
       label: 'Por Vencer',
       value: stats.kpis.subscripcionesPorVencer,
       icon: 'schedule',
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-50 dark:bg-amber-900/30',
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panel de Administración</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Vista general de la plataforma Numerito.</p>
+        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">
+          Panel de Administración
+        </h1>
+        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">
+          Vista general de la plataforma Numerito.
+        </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <div
-            key={kpi.label}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
+          <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
             <div className="flex items-center gap-3">
-              <div className={`${kpi.bg} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${kpi.color} text-xl`}>{kpi.icon}</span>
+              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
+                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
+                  {kpi.icon}
+                </span>
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpi.value}</p>
+                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
+                <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
               </div>
             </div>
           </div>
@@ -128,27 +136,25 @@ export default function AdminPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Area Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Registros de Estudios</h2>
+        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+            Registros de Estudios
+          </h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.registrosMensuales}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-gray-200 dark:stroke-gray-700"
+                />
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} className="text-gray-500" />
                 <YAxis tick={{ fontSize: 12 }} className="text-gray-500" allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--color-gray-800, #1f2937)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#fff',
-                  }}
-                />
+                <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
                 <Area
                   type="monotone"
                   dataKey="cantidad"
-                  stroke="#6366f1"
-                  fill="#6366f1"
+                  stroke={CHART_THEME.primaryFill}
+                  fill={CHART_THEME.primaryFill}
                   fillOpacity={0.15}
                   strokeWidth={2}
                 />
@@ -158,8 +164,10 @@ export default function AdminPage() {
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Distribución de Planes</h2>
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+            Distribución de Planes
+          </h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -188,10 +196,12 @@ export default function AdminPage() {
       {/* Alerts + Recent Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Alertas */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Alertas del Sistema</h2>
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+            Alertas del Sistema
+          </h2>
           {stats.alertas.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Sin alertas activas.</p>
+            <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">Sin alertas activas.</p>
           ) : (
             <ul className="space-y-3">
               {stats.alertas.map((alerta, i) => (
@@ -206,7 +216,11 @@ export default function AdminPage() {
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg mt-0.5">
-                    {alerta.tipo === 'warning' ? 'warning' : alerta.tipo === 'error' ? 'error' : 'info'}
+                    {alerta.tipo === 'warning'
+                      ? 'warning'
+                      : alerta.tipo === 'error'
+                        ? 'error'
+                        : 'info'}
                   </span>
                   <div>
                     <p className="text-sm font-medium">{alerta.mensaje}</p>
@@ -219,35 +233,49 @@ export default function AdminPage() {
         </div>
 
         {/* Estudios Recientes */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Estudios Recientes</h2>
+        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+            Estudios Recientes
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Nombre</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Plan</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Estado</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Creado</th>
+                <tr className="border-b border-gray-200 dark:border-white/10">
+                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
+                    Nombre
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
+                    Plan
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
+                    Estado
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
+                    Creado
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {stats.estudiosRecientes.map((est) => (
-                  <tr key={est.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td className="py-3 px-2 text-gray-900 dark:text-white font-medium">{est.nombre}</td>
-                    <td className="py-3 px-2 text-gray-600 dark:text-gray-300">{est.plan}</td>
+                  <tr
+                    key={est.id}
+                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
+                  >
+                    <td className="py-3 px-2 text-[#091426] dark:text-white font-medium">
+                      {est.nombre}
+                    </td>
+                    <td className="py-3 px-2 text-[#45474c] dark:text-[#c5c6cd]">{est.plan}</td>
                     <td className="py-3 px-2">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          est.estado === 'Activo'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+                          STATUS_COLORS[est.estado] ??
+                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'
                         }`}
                       >
                         {est.estado}
                       </span>
                     </td>
-                    <td className="py-3 px-2 text-gray-500 dark:text-gray-400">{est.creadoEn}</td>
+                    <td className="py-3 px-2 text-[#45474c] dark:text-[#a0a3a8]">{est.creadoEn}</td>
                   </tr>
                 ))}
               </tbody>

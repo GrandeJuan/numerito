@@ -34,10 +34,13 @@ export function EstudioSelector() {
 
   if (estudios.length === 0) {
     return (
-      <div data-testid="estudio-selector-empty" className="px-3 py-3 border-b border-white/10">
+      <div
+        data-testid="estudio-selector-empty"
+        className="px-3 py-3 border-b border-[#e2e8f0] dark:border-white/10"
+      >
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="material-symbols-outlined text-red-400 text-lg">warning</span>
-          <p className="text-xs text-white/50">Sin estudios asignados</p>
+          <p className="text-xs text-[#091426]/50 dark:text-white/50">Sin estudios asignados</p>
         </div>
       </div>
     );
@@ -46,33 +49,40 @@ export function EstudioSelector() {
   const selected = estudioActual || estudios[0];
 
   return (
-    <div data-testid="estudio-selector" className="px-3 py-3 border-b border-white/10">
+    <div
+      data-testid="estudio-selector"
+      className="px-3 py-3 border-b border-[#e2e8f0] dark:border-white/10"
+    >
       {estudios.length === 1 ? (
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="material-symbols-outlined text-[#4edea3] text-lg">business</span>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{selected.nombre}</p>
-            <p className="text-xs text-white/50">{selected.rol}</p>
+            <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+              {selected.nombre}
+            </p>
+            <p className="text-xs text-[#091426]/50 dark:text-white/50">{selected.rol}</p>
           </div>
         </div>
       ) : (
         <div className="relative">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#091426]/5 dark:hover:bg-white/5 transition-colors"
           >
             <span className="material-symbols-outlined text-[#4edea3] text-lg">business</span>
             <div className="min-w-0 flex-1 text-left">
-              <p className="text-sm font-medium text-white truncate">{selected.nombre}</p>
-              <p className="text-xs text-white/50">{selected.rol}</p>
+              <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                {selected.nombre}
+              </p>
+              <p className="text-xs text-[#091426]/50 dark:text-white/50">{selected.rol}</p>
             </div>
-            <span className="material-symbols-outlined text-white/50 text-lg">
+            <span className="material-symbols-outlined text-[#091426]/50 dark:text-white/50 text-lg">
               {isOpen ? 'expand_less' : 'expand_more'}
             </span>
           </button>
 
           {isOpen && (
-            <div className="absolute left-0 right-0 mt-1 bg-[#0d1f3c] rounded-lg border border-white/10 shadow-xl z-50">
+            <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-[#0d1f3c] rounded-lg border border-[#e2e8f0] dark:border-white/10 shadow-xl z-50">
               {estudios.map((est) => (
                 <button
                   key={est.id}
@@ -80,12 +90,14 @@ export function EstudioSelector() {
                     switchEstudio(est);
                     setIsOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 hover:bg-white/5 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                  className={`w-full text-left px-3 py-2 hover:bg-[#4edea3]/5 dark:hover:bg-white/5 transition-colors first:rounded-t-lg last:rounded-b-lg ${
                     est.id === selected.id ? 'bg-[#4edea3]/10' : ''
                   }`}
                 >
-                  <p className="text-sm font-medium text-white truncate">{est.nombre}</p>
-                  <p className="text-xs text-white/50">{est.rol}</p>
+                  <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                    {est.nombre}
+                  </p>
+                  <p className="text-xs text-[#091426]/50 dark:text-white/50">{est.rol}</p>
                 </button>
               ))}
             </div>

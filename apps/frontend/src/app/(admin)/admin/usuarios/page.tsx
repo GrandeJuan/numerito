@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { ROL_COLORS, CARD_CLASSES, TABLE_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
 
 interface Usuario {
   id: string;
@@ -64,34 +65,37 @@ export default function AdminUsuariosPage() {
   const [rol, setRol] = useState('');
   const [estado, setEstado] = useState('');
 
-  const fetchData = useCallback(async (page = 1) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      params.set('page', String(page));
-      params.set('limit', '20');
-      if (search) params.set('search', search);
-      if (rol) params.set('rol', rol);
-      if (estado) params.set('isActive', estado);
+  const fetchData = useCallback(
+    async (page = 1) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('limit', '20');
+        if (search) params.set('search', search);
+        if (rol) params.set('rol', rol);
+        if (estado) params.set('isActive', estado);
 
-      const [statsRes, listRes] = await Promise.all([
-        apiFetch('/v1/admin/usuarios/stats'),
-        apiFetch(`/v1/admin/usuarios?${params}`),
-      ]);
+        const [statsRes, listRes] = await Promise.all([
+          apiFetch('/v1/admin/usuarios/stats'),
+          apiFetch(`/v1/admin/usuarios?${params}`),
+        ]);
 
-      if (!statsRes.ok || !listRes.ok) throw new Error('Error al cargar usuarios');
+        if (!statsRes.ok || !listRes.ok) throw new Error('Error al cargar usuarios');
 
-      const [statsBody, listBody] = await Promise.all([statsRes.json(), listRes.json()]);
-      setStats(statsBody.data);
-      setUsuarios(listBody.data);
-      setMeta(listBody.meta);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, rol, estado]);
+        const [statsBody, listBody] = await Promise.all([statsRes.json(), listRes.json()]);
+        setStats(statsBody.data);
+        setUsuarios(listBody.data);
+        setMeta(listBody.meta);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search, rol, estado],
+  );
 
   useEffect(() => {
     fetchData();
@@ -102,23 +106,25 @@ export default function AdminUsuariosPage() {
 
   const kpis = stats
     ? [
-        { label: 'Total Usuarios', value: stats.total, icon: 'group', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
-        { label: 'Activos', value: stats.activos, icon: 'person_check', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-        { label: 'Verificados', value: stats.verificados, icon: 'verified_user', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-50 dark:bg-cyan-900/30' },
-        { label: 'Sin Verificar', value: stats.sinVerificar, icon: 'gpp_maybe', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
+        { label: 'Total Usuarios', value: stats.total, icon: 'group' },
+        { label: 'Activos', value: stats.activos, icon: 'person_check' },
+        { label: 'Verificados', value: stats.verificados, icon: 'verified_user' },
+        { label: 'Sin Verificar', value: stats.sinVerificar, icon: 'gpp_maybe' },
       ]
     : [];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Administrar usuarios de la plataforma.</p>
+        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Gestión de Usuarios</h1>
+        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">
+          Administrar usuarios de la plataforma.
+        </p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+          <p className="text-[#45474c] dark:text-[#a0a3a8]">Cargando...</p>
         </div>
       ) : error ? (
         <div className="flex items-center justify-center h-64">
@@ -129,14 +135,16 @@ export default function AdminUsuariosPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {kpis.map((kpi) => (
-              <div key={kpi.label} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
                 <div className="flex items-center gap-3">
-                  <div className={`${kpi.bg} rounded-lg p-2.5`}>
-                    <span className={`material-symbols-outlined ${kpi.color} text-xl`}>{kpi.icon}</span>
+                  <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
+                    <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
+                      {kpi.icon}
+                    </span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpi.value}</p>
+                    <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
+                    <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
                   </div>
                 </div>
               </div>
@@ -144,7 +152,7 @@ export default function AdminUsuariosPage() {
           </div>
 
           {/* Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div className={`${CARD_CLASSES.full} p-4`}>
             <div className="flex flex-wrap gap-3">
               <div className="flex-1 min-w-[200px]">
                 <input
@@ -152,13 +160,13 @@ export default function AdminUsuariosPage() {
                   placeholder="Buscar por nombre o email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm focus:ring-2 focus:ring-[#00a472] focus:border-transparent"
                 />
               </div>
               <select
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
               >
                 <option value="">Todos los roles</option>
                 <option value="SUPERADMIN">Superadmin</option>
@@ -169,7 +177,7 @@ export default function AdminUsuariosPage() {
               <select
                 value={estado}
                 onChange={(e) => setEstado(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
               >
                 <option value="">Todos los estados</option>
                 <option value="true">Activo</option>
@@ -179,47 +187,68 @@ export default function AdminUsuariosPage() {
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className={CARD_CLASSES.full}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nombre</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Email</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Rol</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Provider</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Verificado</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Ultimo Acceso</th>
+                  <tr className="border-b border-gray-200 dark:border-white/10">
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Nombre
+                    </th>
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Email
+                    </th>
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Rol
+                    </th>
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Provider
+                    </th>
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Verificado
+                    </th>
+                    <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
+                      Ultimo Acceso
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {usuarios.map((u) => {
                     const prov = providerIcon(u.provider);
                     return (
-                      <tr key={u.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                        <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                      <tr
+                        key={u.id}
+                        className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
+                      >
+                        <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
                           {u.nombre} {u.apellido}
                         </td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{u.email}</td>
+                        <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">{u.email}</td>
                         <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[u.rol] ?? ROL_COLORS['EMPLEADO']}`}
+                          >
                             {u.rol}
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-300 text-xs">
+                          <span className="inline-flex items-center gap-1 text-[#45474c] dark:text-[#c5c6cd] text-xs">
                             <span className="material-symbols-outlined text-base">{prov.icon}</span>
                             {prov.label}
                           </span>
                         </td>
                         <td className="py-3 px-4">
                           {u.emailVerified ? (
-                            <span className="material-symbols-outlined text-emerald-500 text-lg">check_circle</span>
+                            <span className="material-symbols-outlined text-emerald-500 text-lg">
+                              check_circle
+                            </span>
                           ) : (
-                            <span className="material-symbols-outlined text-gray-400 text-lg">cancel</span>
+                            <span className="material-symbols-outlined text-gray-400 text-lg">
+                              cancel
+                            </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400 text-xs">
+                        <td className="py-3 px-4 text-[#45474c] dark:text-[#a0a3a8] text-xs">
                           {relativeDate(u.updatedAt)}
                         </td>
                       </tr>
@@ -227,7 +256,10 @@ export default function AdminUsuariosPage() {
                   })}
                   {usuarios.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td
+                        colSpan={6}
+                        className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]"
+                      >
                         No se encontraron usuarios.
                       </td>
                     </tr>
@@ -237,22 +269,22 @@ export default function AdminUsuariosPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-white/10">
+              <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
                 Mostrando {start}-{end} de {meta.total} usuarios
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => fetchData(meta.page - 1)}
                   disabled={meta.page <= 1}
-                  className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Anterior
                 </button>
                 <button
                   onClick={() => fetchData(meta.page + 1)}
                   disabled={meta.page >= meta.totalPages}
-                  className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Siguiente
                 </button>

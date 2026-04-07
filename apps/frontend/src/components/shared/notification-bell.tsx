@@ -106,8 +106,8 @@ export function NotificationBell() {
     try {
       const res = await apiFetch(`/v1/notificaciones/${id}/leer`, { method: 'PATCH' });
       if (res.ok) {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch {
       // silent fail
@@ -119,7 +119,7 @@ export function NotificationBell() {
       <button
         aria-label="Notificaciones"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors w-full"
+        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#091426]/70 hover:bg-[#091426]/5 hover:text-[#091426] dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white transition-colors w-full"
       >
         <span className="material-symbols-outlined text-lg">notifications</span>
         Notificaciones
@@ -129,49 +129,56 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notificaciones</h3>
+        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-[#162a4a] rounded-lg shadow-xl border border-[#e2e8f0] dark:border-white/10 z-50 max-h-96 overflow-y-auto">
+          <div className="px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10">
+            <h3 className="text-sm font-semibold text-[#091426] dark:text-gray-100">
+              Notificaciones
+            </h3>
           </div>
 
           {loading && (
-            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="px-4 py-6 text-center text-sm text-[#45474c] dark:text-[#a0a3a8]">
               Cargando...
             </div>
           )}
 
           {!loading && notifications.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="px-4 py-6 text-center text-sm text-[#45474c] dark:text-[#a0a3a8]">
               Sin notificaciones
             </div>
           )}
 
-          {!loading && notifications.map(n => (
-            <div
-              key={n.id}
-              className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-start gap-3 ${
-                n.leida ? 'opacity-60' : ''
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg text-gray-500 dark:text-gray-400 mt-0.5">
-                {tipoIcon(n.tipo)}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-900 dark:text-gray-100 leading-snug">{n.mensaje}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{relativeTime(n.createdAt)}</p>
+          {!loading &&
+            notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`px-4 py-3 border-b border-gray-100 dark:border-white/5 last:border-0 flex items-start gap-3 hover:bg-[#4edea3]/5 ${
+                  n.leida ? 'opacity-60' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg text-[#45474c] dark:text-[#a0a3a8] mt-0.5">
+                  {tipoIcon(n.tipo)}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#091426] dark:text-gray-100 leading-snug">
+                    {n.mensaje}
+                  </p>
+                  <p className="text-xs text-[#45474c] dark:text-[#a0a3a8] mt-1">
+                    {relativeTime(n.createdAt)}
+                  </p>
+                </div>
+                {!n.leida && (
+                  <button
+                    aria-label="Marcar como leida"
+                    onClick={() => handleMarkRead(n.id)}
+                    className="shrink-0 p-1 rounded hover:bg-[#4edea3]/10 dark:hover:bg-white/5 transition-colors"
+                    title="Marcar como leida"
+                  >
+                    <span className="material-symbols-outlined text-sm text-[#4edea3]">done</span>
+                  </button>
+                )}
               </div>
-              {!n.leida && (
-                <button
-                  aria-label="Marcar como leida"
-                  onClick={() => handleMarkRead(n.id)}
-                  className="shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  title="Marcar como leida"
-                >
-                  <span className="material-symbols-outlined text-sm text-[#4edea3]">done</span>
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
         </div>
       )}
     </div>

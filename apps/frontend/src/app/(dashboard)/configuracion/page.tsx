@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 type Tab = 'general' | 'equipo' | 'plan' | 'permisos';
 
@@ -37,17 +38,6 @@ const ROL_LABELS: Record<string, string> = {
   CLIENTE: 'Cliente',
 };
 
-const ROL_COLORS: Record<string, string> = {
-  SOCIO: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  RESPONSABLE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  EMPLEADO: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-};
-
-const ESTADO_COLORS: Record<string, string> = {
-  ACTIVO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  INACTIVO: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-};
-
 const CONDICION_IVA_LABELS: Record<string, string> = {
   RESPONSABLE_INSCRIPTO: 'Responsable Inscripto',
   MONOTRIBUTO: 'Monotributista',
@@ -74,25 +64,41 @@ const ROLES_MATRIX = ['SOCIO', 'RESPONSABLE', 'EMPLEADO'] as const;
 // Default permissions per role (mirrors backend seed)
 const PERMISOS_POR_ROL: Record<string, string[]> = {
   SOCIO: [
-    'GESTIONAR_USUARIOS', 'VER_USUARIOS',
-    'GESTIONAR_CLIENTES', 'VER_CLIENTES',
-    'GESTIONAR_OBLIGACIONES', 'VER_OBLIGACIONES',
-    'GESTIONAR_CONTABILIDAD', 'VER_CONTABILIDAD',
-    'GESTIONAR_NOMINA', 'VER_NOMINA',
-    'GESTIONAR_DOCUMENTOS', 'VER_DOCUMENTOS',
-    'GESTIONAR_TAREAS', 'VER_TAREAS',
-    'GESTIONAR_FACTURACION', 'VER_FACTURACION',
+    'GESTIONAR_USUARIOS',
+    'VER_USUARIOS',
+    'GESTIONAR_CLIENTES',
+    'VER_CLIENTES',
+    'GESTIONAR_OBLIGACIONES',
+    'VER_OBLIGACIONES',
+    'GESTIONAR_CONTABILIDAD',
+    'VER_CONTABILIDAD',
+    'GESTIONAR_NOMINA',
+    'VER_NOMINA',
+    'GESTIONAR_DOCUMENTOS',
+    'VER_DOCUMENTOS',
+    'GESTIONAR_TAREAS',
+    'VER_TAREAS',
+    'GESTIONAR_FACTURACION',
+    'VER_FACTURACION',
     'GESTIONAR_CONFIGURACION',
-    'VER_PROPIOS_DATOS', 'VER_PROPIOS_DOCUMENTOS', 'VER_PROPIOS_VENCIMIENTOS',
+    'VER_PROPIOS_DATOS',
+    'VER_PROPIOS_DOCUMENTOS',
+    'VER_PROPIOS_VENCIMIENTOS',
   ],
   RESPONSABLE: [
     'VER_USUARIOS',
-    'GESTIONAR_CLIENTES', 'VER_CLIENTES',
-    'GESTIONAR_OBLIGACIONES', 'VER_OBLIGACIONES',
-    'GESTIONAR_CONTABILIDAD', 'VER_CONTABILIDAD',
-    'GESTIONAR_NOMINA', 'VER_NOMINA',
-    'GESTIONAR_DOCUMENTOS', 'VER_DOCUMENTOS',
-    'GESTIONAR_TAREAS', 'VER_TAREAS',
+    'GESTIONAR_CLIENTES',
+    'VER_CLIENTES',
+    'GESTIONAR_OBLIGACIONES',
+    'VER_OBLIGACIONES',
+    'GESTIONAR_CONTABILIDAD',
+    'VER_CONTABILIDAD',
+    'GESTIONAR_NOMINA',
+    'VER_NOMINA',
+    'GESTIONAR_DOCUMENTOS',
+    'VER_DOCUMENTOS',
+    'GESTIONAR_TAREAS',
+    'VER_TAREAS',
     'VER_FACTURACION',
   ],
   EMPLEADO: [
@@ -113,7 +119,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 ];
 
 export default function ConfiguracionPage() {
-  const { estudioActual, user } = useAuth();
+  const { estudioActual } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [estudioInfo, setEstudioInfo] = useState<EstudioInfo | null>(null);
   const [equipo, setEquipo] = useState<Miembro[]>([]);
@@ -162,8 +168,10 @@ export default function ConfiguracionPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-gray-500">settings</span>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Cargando estudio...</p>
+          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-[#75777d]">
+            settings
+          </span>
+          <p className="mt-2 text-[#45474c] dark:text-[#a0a3a8]">Cargando estudio...</p>
         </div>
       </div>
     );
@@ -174,8 +182,10 @@ export default function ConfiguracionPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <span className="material-symbols-outlined text-4xl text-red-400">lock</span>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Acceso denegado</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">Solo los socios pueden acceder a la configuracion.</p>
+          <p className="mt-2 text-[#45474c] dark:text-[#a0a3a8]">Acceso denegado</p>
+          <p className="text-sm text-gray-500 dark:text-[#75777d]">
+            Solo los socios pueden acceder a la configuracion.
+          </p>
         </div>
       </div>
     );
@@ -184,7 +194,7 @@ export default function ConfiguracionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+        <p className="text-gray-500 dark:text-[#a0a3a8]">Cargando...</p>
       </div>
     );
   }
@@ -192,12 +202,12 @@ export default function ConfiguracionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuracion</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Ajustes del estudio contable.</p>
+        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Configuracion</h1>
+        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">Ajustes del estudio contable.</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-gray-200 dark:border-white/10">
         <nav className="flex gap-4">
           {TABS.map((tab) => (
             <button
@@ -205,8 +215,8 @@ export default function ConfiguracionPage() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-1.5 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'border-[#4edea3] text-[#091426] dark:text-[#4edea3]'
+                  : 'border-transparent text-gray-500 dark:text-[#a0a3a8] hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               <span className="material-symbols-outlined text-lg">{tab.icon}</span>
@@ -218,65 +228,85 @@ export default function ConfiguracionPage() {
 
       {/* Tab Content */}
       {activeTab === 'general' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informacion del Estudio</h2>
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+            Informacion del Estudio
+          </h2>
           {estudioInfo ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Nombre</label>
-                <p className="text-gray-900 dark:text-white">{estudioInfo.nombre}</p>
+                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                  Nombre
+                </label>
+                <p className="text-[#091426] dark:text-white">{estudioInfo.nombre}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">CUIT</label>
-                <p className="text-gray-900 dark:text-white font-mono">{estudioInfo.cuit}</p>
+                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                  CUIT
+                </label>
+                <p className="text-[#091426] dark:text-white font-mono">{estudioInfo.cuit}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Condicion IVA</label>
-                <p className="text-gray-900 dark:text-white">
+                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                  Condicion IVA
+                </label>
+                <p className="text-[#091426] dark:text-white">
                   {CONDICION_IVA_LABELS[estudioInfo.condicionIva] ?? estudioInfo.condicionIva}
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No se pudo cargar la informacion del estudio.</p>
+            <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
+              No se pudo cargar la informacion del estudio.
+            </p>
           )}
         </div>
       )}
 
       {activeTab === 'equipo' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Miembros del Equipo</h2>
+        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
+          <div className="p-6 border-b border-gray-200 dark:border-white/10">
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+              Miembros del Equipo
+            </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Nombre</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Email</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Rol</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Estado</th>
+                <tr
+                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+                >
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Email</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Rol</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {equipo.map((m) => (
-                  <tr key={m.id} className="border-b border-gray-100 dark:border-gray-700/50">
+                  <tr key={m.id} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
                           {m.nombre.charAt(0)}
                         </div>
-                        <span className="text-gray-900 dark:text-white font-medium">{m.nombre}</span>
+                        <span className="text-[#091426] dark:text-white font-medium">
+                          {m.nombre}
+                        </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{m.email}</td>
+                    <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd]">{m.email}</td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[m.rol] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[m.rol] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
+                      >
                         {ROL_LABELS[m.rol] ?? m.rol}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_COLORS[m.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[m.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
+                      >
                         {m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
@@ -284,7 +314,7 @@ export default function ConfiguracionPage() {
                 ))}
                 {equipo.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={4} className="py-8 text-center text-gray-500 dark:text-[#a0a3a8]">
                       No se encontraron miembros.
                     </td>
                   </tr>
@@ -296,70 +326,92 @@ export default function ConfiguracionPage() {
       )}
 
       {activeTab === 'plan' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Plan Actual</h2>
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">Plan Actual</h2>
           {plan ? (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-2xl text-emerald-500">verified</span>
+                <span className="material-symbols-outlined text-2xl text-emerald-500">
+                  verified
+                </span>
                 <div>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{plan.nombre}</p>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ESTADO_COLORS[plan.estado] ?? 'bg-gray-100 text-gray-800'}`}>
+                  <p className="text-xl font-bold text-[#091426] dark:text-white">{plan.nombre}</p>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[plan.estado] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
                     {plan.estado === 'ACTIVO' ? 'Activo' : plan.estado}
                   </span>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Clientes</p>
+                <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
+                  <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Clientes</p>
                   <div className="flex items-end gap-1">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{plan.clientesActuales}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">/ {plan.clientesMax}</span>
+                    <span className="text-2xl font-bold text-[#091426] dark:text-white">
+                      {plan.clientesActuales}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
+                      / {plan.clientesMax}
+                    </span>
                   </div>
-                  <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full"
-                      style={{ width: `${Math.min((plan.clientesActuales / plan.clientesMax) * 100, 100)}%` }}
+                      style={{
+                        width: `${Math.min((plan.clientesActuales / plan.clientesMax) * 100, 100)}%`,
+                      }}
                     />
                   </div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Usuarios</p>
+                <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
+                  <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Usuarios</p>
                   <div className="flex items-end gap-1">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{plan.usuariosActuales}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">/ {plan.usuariosMax}</span>
+                    <span className="text-2xl font-bold text-[#091426] dark:text-white">
+                      {plan.usuariosActuales}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
+                      / {plan.usuariosMax}
+                    </span>
                   </div>
-                  <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full"
-                      style={{ width: `${Math.min((plan.usuariosActuales / plan.usuariosMax) * 100, 100)}%` }}
+                      style={{
+                        width: `${Math.min((plan.usuariosActuales / plan.usuariosMax) * 100, 100)}%`,
+                      }}
                     />
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No se pudo cargar la informacion del plan.</p>
+            <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
+              No se pudo cargar la informacion del plan.
+            </p>
           )}
         </div>
       )}
 
       {activeTab === 'permisos' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Matriz de Permisos</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
+          <div className="p-6 border-b border-gray-200 dark:border-white/10">
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+              Matriz de Permisos
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mt-1">
               Permisos predeterminados por rol (solo lectura).
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Grupo</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Permiso</th>
+                <tr
+                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+                >
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Grupo</th>
+                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Permiso</th>
                   {ROLES_MATRIX.map((rol) => (
-                    <th key={rol} className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    <th key={rol} className={`text-center py-3 px-4 ${TABLE_CLASSES.headerText}`}>
                       {ROL_LABELS[rol] ?? rol}
                     </th>
                   ))}
@@ -368,17 +420,20 @@ export default function ConfiguracionPage() {
               <tbody>
                 {PERMISSION_GROUPS.map((group) =>
                   group.permisos.map((permiso, idx) => (
-                    <tr key={permiso} className="border-b border-gray-100 dark:border-gray-700/50">
+                    <tr key={permiso} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
                       {idx === 0 && (
                         <td
                           rowSpan={group.permisos.length}
-                          className="py-3 px-4 font-medium text-gray-900 dark:text-white align-top"
+                          className="py-3 px-4 font-medium text-[#091426] dark:text-white align-top"
                         >
                           {group.label}
                         </td>
                       )}
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300 text-xs font-mono">
-                        {permiso.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                      <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd] text-xs font-mono">
+                        {permiso
+                          .replace(/_/g, ' ')
+                          .toLowerCase()
+                          .replace(/\b\w/g, (c) => c.toUpperCase())}
                       </td>
                       {ROLES_MATRIX.map((rol) => (
                         <td key={rol} className="py-3 px-4 text-center">
@@ -386,12 +441,12 @@ export default function ConfiguracionPage() {
                             type="checkbox"
                             checked={PERMISOS_POR_ROL[rol]?.includes(permiso) ?? false}
                             readOnly
-                            className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-0 cursor-default"
+                            className="w-4 h-4 rounded border-[#e2e8f0] text-emerald-500 focus:ring-0 cursor-default"
                           />
                         </td>
                       ))}
                     </tr>
-                  ))
+                  )),
                 )}
               </tbody>
             </table>
