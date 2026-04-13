@@ -17,12 +17,16 @@ describe('AdminDashboardController', () => {
   let controller: AdminDashboardController;
   let mockHandler: jest.Mocked<ObtenerAdminDashboardStatsHandler>;
 
+  const kpiFixture = { value: 0, delta: '+0%', deltaUp: true, sparkline: Array(12).fill(0) };
+
   const mockStats = {
     kpis: {
-      estudiosActivos: 10,
-      totalUsuarios: 50,
-      mrr: 99900,
-      subscripcionesPorVencer: 3,
+      estudiosActivos: { ...kpiFixture, value: 10 },
+      totalUsuarios: { ...kpiFixture, value: 50 },
+      subscripcionesActivas: { ...kpiFixture, value: 8 },
+      mrr: { ...kpiFixture, value: 99900 },
+      churnMensual: { ...kpiFixture, value: 2.4 },
+      uptime: { ...kpiFixture, value: 99.98, delta: 'SLA OK' },
     },
     registrosMensuales: [{ mes: '2026-03', cantidad: 5 }],
     distribucionPlanes: [{ plan: 'Profesional', cantidad: 8 }],

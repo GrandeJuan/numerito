@@ -61,3 +61,6 @@ packages/*/src/**/*.js.map
 
 # Plans
 /plans
+
+# Ralph temp
+.ralph-prompt.tmp

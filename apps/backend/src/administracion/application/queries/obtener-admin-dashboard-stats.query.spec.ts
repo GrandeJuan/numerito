@@ -11,10 +11,55 @@ jest.mock('../../../estudio/infrastructure/persistence/subscripcion.schema', () 
 
 import { ObtenerAdminDashboardStatsHandler } from './obtener-admin-dashboard-stats.query';
 
+function make12Rows(field: string, values: number[]) {
+  const now = new Date();
+  return values.map((v, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+    const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { mes, [field]: String(v) };
+  });
+}
+
+function makeChurnRows(canceladas: number[], activas: number[]) {
+  const now = new Date();
+  return canceladas.map((c, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+    const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { mes, canceladas: String(c), activas_inicio: String(activas[i]) };
+  });
+}
+
 describe('ObtenerAdminDashboardStatsHandler', () => {
   let handler: ObtenerAdminDashboardStatsHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
+
+  function setupDefaultMocks() {
+    // Promise.all calls em.count 3 times and conn.execute 5 times
+    mockEm.count
+      .mockResolvedValueOnce(10)   // estudiosActivos
+      .mockResolvedValueOnce(50)   // totalUsuarios
+      .mockResolvedValueOnce(8)    // subscripcionesActivas
+      .mockResolvedValueOnce(2);   // subscripcionesPorVencer
+
+    const estudiosHist = make12Rows('cantidad', [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10]);
+    const usuariosHist = make12Rows('cantidad', [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50]);
+    const subsHist = make12Rows('cantidad', [2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8]);
+    const mrrHist = make12Rows('mrr', [1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
+    const churnHist = makeChurnRows(
+      [1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+      [10, 12, 14, 15, 16, 18, 20, 20, 22, 24, 25, 27],
+    );
+
+    mockExecute
+      .mockResolvedValueOnce(estudiosHist)        // estudios historico
+      .mockResolvedValueOnce(usuariosHist)         // usuarios historico
+      .mockResolvedValueOnce(subsHist)             // subscripciones historico
+      .mockResolvedValueOnce(mrrHist)              // mrr historico
+      .mockResolvedValueOnce(churnHist)            // churn historico
+      .mockResolvedValueOnce([])                   // registros mensuales
+      .mockResolvedValueOnce([]);                  // distribucion planes
+  }
 
   beforeEach(() => {
     mockExecute = jest.fn().mockResolvedValue([]);
@@ -27,7 +72,7 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return stats with correct shape', async () => {
-    mockExecute.mockResolvedValue([{ mrr: '0' }]);
+    setupDefaultMocks();
 
     const result = await handler.execute();
 
@@ -38,41 +83,112 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     expect(result).toHaveProperty('estudiosRecientes');
   });
 
-  it('should return KPIs with numeric values', async () => {
-    mockEm.count
-      .mockResolvedValueOnce(5)   // estudios activos
-      .mockResolvedValueOnce(20)  // total usuarios
-      .mockResolvedValueOnce(2);  // subscripciones por vencer
-
-    mockExecute
-      .mockResolvedValueOnce([{ mrr: '15000.00' }])  // MRR query
-      .mockResolvedValueOnce([])                       // registros mensuales
-      .mockResolvedValueOnce([]);                      // distribucion planes
+  it('should return 6 KPIs with sparkline data', async () => {
+    setupDefaultMocks();
 
     const result = await handler.execute();
 
-    expect(result.kpis.estudiosActivos).toBe(5);
-    expect(result.kpis.totalUsuarios).toBe(20);
-    expect(result.kpis.subscripcionesPorVencer).toBe(2);
-    expect(result.kpis.mrr).toBe(15000);
+    const kpiKeys = ['estudiosActivos', 'totalUsuarios', 'subscripcionesActivas', 'mrr', 'churnMensual', 'uptime'];
+    for (const key of kpiKeys) {
+      const kpi = (result.kpis as any)[key];
+      expect(kpi).toHaveProperty('value');
+      expect(kpi).toHaveProperty('delta');
+      expect(kpi).toHaveProperty('deltaUp');
+      expect(kpi).toHaveProperty('sparkline');
+      expect(typeof kpi.value).toBe('number');
+      expect(typeof kpi.delta).toBe('string');
+      expect(typeof kpi.deltaUp).toBe('boolean');
+      expect(Array.isArray(kpi.sparkline)).toBe(true);
+      expect(kpi.sparkline).toHaveLength(12);
+    }
   });
 
-  it('should return zero MRR when no subscriptions exist', async () => {
+  it('should calculate KPI values from current counts', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.kpis.estudiosActivos.value).toBe(10);
+    expect(result.kpis.totalUsuarios.value).toBe(50);
+    expect(result.kpis.subscripcionesActivas.value).toBe(8);
+  });
+
+  it('should calculate MRR from sparkline (last month value)', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.kpis.mrr.value).toBe(5000);
+    expect(result.kpis.mrr.sparkline).toEqual([1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
+  });
+
+  it('should calculate churn as (canceladas / activas_inicio) * 100', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    // Last month: 0 canceladas / 27 activas = 0%
+    expect(result.kpis.churnMensual.value).toBe(0);
+    // First month: 1 cancelada / 10 activas = 10%
+    expect(result.kpis.churnMensual.sparkline[0]).toBe(10);
+  });
+
+  it('should calculate delta as percentage change from previous month', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    // Estudios: 10 current, prev sparkline value is 9 → +11.1%
+    expect(result.kpis.estudiosActivos.delta).toBe('+11.1%');
+    expect(result.kpis.estudiosActivos.deltaUp).toBe(true);
+  });
+
+  it('should invert delta direction for churn (lower is better)', async () => {
+    // Set up where churn goes up (bad)
+    mockEm.count
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(50)
+      .mockResolvedValueOnce(8)
+      .mockResolvedValueOnce(0);
+
+    const estudiosHist = make12Rows('cantidad', Array(12).fill(10));
+    const usuariosHist = make12Rows('cantidad', Array(12).fill(50));
+    const subsHist = make12Rows('cantidad', Array(12).fill(8));
+    const mrrHist = make12Rows('mrr', Array(12).fill(5000));
+    const churnHist = makeChurnRows(
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3],
+      [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+    );
+
     mockExecute
-      .mockResolvedValueOnce([{ mrr: null }])
+      .mockResolvedValueOnce(estudiosHist)
+      .mockResolvedValueOnce(usuariosHist)
+      .mockResolvedValueOnce(subsHist)
+      .mockResolvedValueOnce(mrrHist)
+      .mockResolvedValueOnce(churnHist)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
     const result = await handler.execute();
 
-    expect(result.kpis.mrr).toBe(0);
+    // Churn went from 10% to 30% — that's bad, so deltaUp should be false
+    expect(result.kpis.churnMensual.value).toBe(30);
+    expect(result.kpis.churnMensual.deltaUp).toBe(false);
+  });
+
+  it('should return uptime as placeholder (99.98%)', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.kpis.uptime.value).toBe(99.98);
+    expect(result.kpis.uptime.delta).toBe('SLA OK');
+    expect(result.kpis.uptime.sparkline).toHaveLength(12);
+    expect(result.kpis.uptime.sparkline.every((v) => v === 99.98)).toBe(true);
   });
 
   it('should return registrosMensuales as array of 12 months', async () => {
-    mockExecute
-      .mockResolvedValueOnce([{ mrr: '0' }])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    setupDefaultMocks();
 
     const result = await handler.execute();
 
@@ -85,8 +201,22 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return distribucionPlanes from query', async () => {
+    mockEm.count
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(50)
+      .mockResolvedValueOnce(8)
+      .mockResolvedValueOnce(0);
+
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
     mockExecute
-      .mockResolvedValueOnce([{ mrr: '0' }])
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
         { plan: 'Profesional', cantidad: '5' },
@@ -102,10 +232,7 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return estudiosRecientes mapped correctly', async () => {
-    mockExecute
-      .mockResolvedValueOnce([{ mrr: '0' }])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    setupDefaultMocks();
 
     mockEm.find.mockResolvedValue([
       {
@@ -131,12 +258,21 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
 
   it('should include alert when subscriptions are expiring', async () => {
     mockEm.count
-      .mockResolvedValueOnce(0)
-      .mockResolvedValueOnce(0)
-      .mockResolvedValueOnce(3);  // subscripciones por vencer
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(50)
+      .mockResolvedValueOnce(8)
+      .mockResolvedValueOnce(3);  // subscripcionesPorVencer
+
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
 
     mockExecute
-      .mockResolvedValueOnce([{ mrr: '0' }])
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
@@ -148,13 +284,33 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return empty alertas when nothing is expiring', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.alertas).toHaveLength(0);
+  });
+
+  it('should handle zero values gracefully', async () => {
+    mockEm.count.mockResolvedValue(0);
+
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
     mockExecute
-      .mockResolvedValueOnce([{ mrr: '0' }])
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
     const result = await handler.execute();
 
-    expect(result.alertas).toHaveLength(0);
+    expect(result.kpis.estudiosActivos.value).toBe(0);
+    expect(result.kpis.mrr.value).toBe(0);
+    expect(result.kpis.churnMensual.value).toBe(0);
   });
 });
