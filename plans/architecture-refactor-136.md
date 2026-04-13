@@ -38,7 +38,7 @@ Reference impl: `MikroOrmClienteRepository` (clientes context).
 
 ---
 
-## Phase 2: Frontend Data Hook + Page State Guard (Priority 2 — Dev Velocity)
+## Phase 2: Frontend Data Hook + Page State Guard (Priority 2 — Dev Velocity) ✅
 
 **Goal:** One hook for data-fetching with estudio context. One guard component for loading/error/no-estudio states.
 
@@ -47,10 +47,10 @@ Reference impl: `MikroOrmClienteRepository` (clientes context).
 - [ ] Create `useFetchWithEstudio<T>(endpoint, options?)` hook returning `{ data, loading, error, refetch }`
 - [ ] Create `<PageStateGuard>` component (handles no-estudio, loading, error states)
 - [ ] Create `lib/formatters.ts` with `formatCurrency()`, `formatFecha()`, `relativeTime()` — tested
-- [ ] Refactor 1 page as proof (e.g., `/dashboard/clientes`) to use hook + guard
-- [ ] Refactor remaining 7+ pages
-- [ ] Remove duplicate formatter definitions from all pages
-- [ ] Typecheck + tests green
+- [x] Refactor 1 page as proof (`/dashboard/clientes`) to use hook + guard
+- [x] Refactor remaining 9 pages (dashboard home, contabilidad, facturacion, obligaciones, tareas, configuracion, admin, portal)
+- [x] Remove duplicate formatter definitions from all pages + notification-bell component
+- [x] Build + 238 tests green
 
 ---
 
@@ -154,3 +154,4 @@ Already done: `ResponseWrapperInterceptor`, `ApiResponse` types.
 | Date | Phase | What was done |
 |------|-------|---------------|
 | 2026-04-13 | Phase 1 | Migrated all 15 tenant-scoped repos to TenantAwareRepository, 9 global repos to GlobalRepository. Updated all controllers, queries, and 95 test suites. Build + 552 tests green. |
+| 2026-04-13 | Phase 2 | Created useFetchWithEstudio hook, PageStateGuard component, shared formatters. Refactored 10 pages + notification-bell. Removed all duplicate formatters. Build + 238 frontend tests green. |

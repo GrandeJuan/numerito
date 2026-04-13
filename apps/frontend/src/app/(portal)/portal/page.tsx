@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
+import { formatFecha, formatCurrency } from '@/lib/formatters';
 import { STATUS_COLORS, CARD_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
 
 interface PortalStats {
@@ -15,19 +16,6 @@ interface PortalStats {
   vencimientosRecientes: { id: string; obligacion: string; fecha: string; estado: string }[];
   facturasRecientes: { id: string; numero: string; monto: number; estado: string; fecha: string }[];
   documentosRecientes: { id: string; nombre: string; tipo: string; fecha: string }[];
-}
-
-function formatFecha(fecha: string): string {
-  try {
-    const d = new Date(fecha);
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return fecha;
-  }
-}
-
-function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('es-AR')}`;
 }
 
 const DOC_ICONS: Record<string, string> = {

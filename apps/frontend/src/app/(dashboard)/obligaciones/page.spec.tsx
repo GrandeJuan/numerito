@@ -6,7 +6,9 @@ let mockEstudioActual: any = { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO'
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
-    get estudioActual() { return mockEstudioActual; },
+    get estudioActual() {
+      return mockEstudioActual;
+    },
     tienePermiso: mockTienePermiso,
   }),
 }));
@@ -80,7 +82,8 @@ describe('ObligacionesPage', () => {
       if (path.includes('/v1/obligaciones/vencimientos') && !path.includes('presentar')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ data: mockVencimientos, meta: { total: 3, page: 1, limit: 20 } }),
+          json: () =>
+            Promise.resolve({ data: mockVencimientos, meta: { total: 3, page: 1, limit: 20 } }),
         });
       }
       // presentar endpoint
@@ -216,11 +219,12 @@ describe('ObligacionesPage', () => {
   it('should show error on API failure', async () => {
     mockApiFetch = vi.fn().mockResolvedValue({
       ok: false,
+      status: 500,
       json: () => Promise.resolve({ message: 'Error' }),
     });
     render(<ObligacionesPage />);
     await waitFor(() => {
-      expect(screen.getByText('Error al cargar obligaciones')).toBeInTheDocument();
+      expect(screen.getByText('Error 500')).toBeInTheDocument();
     });
   });
 });

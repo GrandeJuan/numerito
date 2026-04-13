@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api-client';
+import { relativeTime } from '@/lib/formatters';
 
 interface NotificacionItem {
   id: string;
@@ -21,19 +22,6 @@ const TIPO_ICONS: Record<string, string> = {
 
 function tipoIcon(tipo: string): string {
   return TIPO_ICONS[tipo] ?? 'notifications';
-}
-
-function relativeTime(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'ahora';
-  if (diffMin < 60) return `hace ${diffMin}m`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `hace ${diffH}h`;
-  const diffD = Math.floor(diffH / 24);
-  return `hace ${diffD}d`;
 }
 
 const POLL_INTERVAL = 60_000; // 1 minute

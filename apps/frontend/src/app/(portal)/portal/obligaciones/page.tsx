@@ -1,5 +1,6 @@
 'use client';
 
+import { formatFecha } from '@/lib/formatters';
 import { STATUS_COLORS, CARD_CLASSES, TABLE_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
 
 interface Obligacion {
@@ -38,18 +39,6 @@ const MOCK_OBLIGACIONES: Obligacion[] = [
   },
   { id: '8', obligacion: 'IVA', periodo: '2026-02', fecha: '2026-02-20', estado: 'Presentada' },
 ];
-
-function formatFecha(fecha: string): string {
-  try {
-    return new Date(fecha).toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch {
-    return fecha;
-  }
-}
 
 const TIMELINE_DOT_COLORS: Record<string, string> = {
   Pendiente: 'bg-amber-400',

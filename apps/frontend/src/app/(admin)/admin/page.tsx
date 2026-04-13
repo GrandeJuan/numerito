@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { formatCurrency } from '@/lib/formatters';
 import {
   STATUS_COLORS,
   CARD_CLASSES,
@@ -43,10 +44,6 @@ interface DashboardStats {
 }
 
 const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#10b981', '#8b5cf6'];
-
-function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('es-AR')}`;
-}
 
 export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);

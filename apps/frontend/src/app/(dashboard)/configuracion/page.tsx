@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api-client';
+import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
+import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 type Tab = 'general' | 'equipo' | 'plan' | 'permisos';
@@ -121,63 +122,20 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 export default function ConfiguracionPage() {
   const { estudioActual } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('general');
-  const [estudioInfo, setEstudioInfo] = useState<EstudioInfo | null>(null);
-  const [equipo, setEquipo] = useState<Miembro[]>([]);
-  const [plan, setPlan] = useState<PlanInfo | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const isSocio = estudioActual?.rol === 'SOCIO';
 
-  useEffect(() => {
-    if (!estudioActual || !isSocio) {
-      setLoading(false);
-      return;
-    }
+  // Pass null to skip fetching when user is not a socio
+  const {
+    data: estudioInfo,
+    loading: loadingEstudio,
+    error: errorEstudio,
+  } = useFetchWithEstudio<EstudioInfo>(isSocio ? '/v1/estudios/me' : null);
+  const { data: equipo } = useFetchWithEstudio<Miembro[]>(isSocio ? '/v1/estudios/equipo' : null);
+  const { data: plan } = useFetchWithEstudio<PlanInfo>(isSocio ? '/v1/estudios/plan' : null);
 
-    const loadData = async () => {
-      try {
-        const [estudioRes, equipoRes, planRes] = await Promise.all([
-          apiFetch('/v1/estudios/me'),
-          apiFetch('/v1/estudios/equipo'),
-          apiFetch('/v1/estudios/plan'),
-        ]);
-
-        if (estudioRes.ok) {
-          const body = await estudioRes.json();
-          setEstudioInfo(body.data);
-        }
-        if (equipoRes.ok) {
-          const body = await equipoRes.json();
-          setEquipo(body.data);
-        }
-        if (planRes.ok) {
-          const body = await planRes.json();
-          setPlan(body.data);
-        }
-      } catch {
-        // silently fail — sections show empty state
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [estudioActual, isSocio]);
-
-  if (!estudioActual) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-4xl text-gray-400 dark:text-[#75777d]">
-            settings
-          </span>
-          <p className="mt-2 text-[#45474c] dark:text-[#a0a3a8]">Cargando estudio...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isSocio) {
+  // Show access denied before PageStateGuard when estudio is loaded but user is not socio
+  if (estudioActual && !isSocio) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -191,268 +149,277 @@ export default function ConfiguracionPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 dark:text-[#a0a3a8]">Cargando...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Configuracion</h1>
-        <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">Ajustes del estudio contable.</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-white/10">
-        <nav className="flex gap-4">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? 'border-[#4edea3] text-[#091426] dark:text-[#4edea3]'
-                  : 'border-transparent text-gray-500 dark:text-[#a0a3a8] hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'general' && (
-        <div className={`${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Informacion del Estudio
-          </h2>
-          {estudioInfo ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
-                  Nombre
-                </label>
-                <p className="text-[#091426] dark:text-white">{estudioInfo.nombre}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
-                  CUIT
-                </label>
-                <p className="text-[#091426] dark:text-white font-mono">{estudioInfo.cuit}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
-                  Condicion IVA
-                </label>
-                <p className="text-[#091426] dark:text-white">
-                  {CONDICION_IVA_LABELS[estudioInfo.condicionIva] ?? estudioInfo.condicionIva}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
-              No se pudo cargar la informacion del estudio.
-            </p>
-          )}
+    <PageStateGuard
+      estudioActual={estudioActual}
+      loading={loadingEstudio}
+      error={errorEstudio}
+      icon="settings"
+    >
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#091426] dark:text-white">Configuracion</h1>
+          <p className="mt-1 text-[#45474c] dark:text-[#a0a3a8]">Ajustes del estudio contable.</p>
         </div>
-      )}
 
-      {activeTab === 'equipo' && (
-        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-          <div className="p-6 border-b border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
-              Miembros del Equipo
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-white/10">
+          <nav className="flex gap-4">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-[#4edea3] text-[#091426] dark:text-[#4edea3]'
+                    : 'border-transparent text-gray-500 dark:text-[#a0a3a8] hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'general' && (
+          <div className={`${CARD_CLASSES.full} p-6`}>
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+              Informacion del Estudio
             </h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                >
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Email</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Rol</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {equipo.map((m) => (
-                  <tr key={m.id} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                          {m.nombre.charAt(0)}
-                        </div>
-                        <span className="text-[#091426] dark:text-white font-medium">
-                          {m.nombre}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd]">{m.email}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[m.rol] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
-                      >
-                        {ROL_LABELS[m.rol] ?? m.rol}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[m.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
-                      >
-                        {m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {equipo.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-gray-500 dark:text-[#a0a3a8]">
-                      No se encontraron miembros.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'plan' && (
-        <div className={`${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">Plan Actual</h2>
-          {plan ? (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-2xl text-emerald-500">
-                  verified
-                </span>
+            {estudioInfo ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-xl font-bold text-[#091426] dark:text-white">{plan.nombre}</p>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[plan.estado] ?? 'bg-gray-100 text-gray-800'}`}
-                  >
-                    {plan.estado === 'ACTIVO' ? 'Activo' : plan.estado}
-                  </span>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                    Nombre
+                  </label>
+                  <p className="text-[#091426] dark:text-white">{estudioInfo.nombre}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                    CUIT
+                  </label>
+                  <p className="text-[#091426] dark:text-white font-mono">{estudioInfo.cuit}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 dark:text-[#a0a3a8] mb-1">
+                    Condicion IVA
+                  </label>
+                  <p className="text-[#091426] dark:text-white">
+                    {CONDICION_IVA_LABELS[estudioInfo.condicionIva] ?? estudioInfo.condicionIva}
+                  </p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
-                  <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Clientes</p>
-                  <div className="flex items-end gap-1">
-                    <span className="text-2xl font-bold text-[#091426] dark:text-white">
-                      {plan.clientesActuales}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
-                      / {plan.clientesMax}
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 rounded-full"
-                      style={{
-                        width: `${Math.min((plan.clientesActuales / plan.clientesMax) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
-                  <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Usuarios</p>
-                  <div className="flex items-end gap-1">
-                    <span className="text-2xl font-bold text-[#091426] dark:text-white">
-                      {plan.usuariosActuales}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
-                      / {plan.usuariosMax}
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{
-                        width: `${Math.min((plan.usuariosActuales / plan.usuariosMax) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
-              No se pudo cargar la informacion del plan.
-            </p>
-          )}
-        </div>
-      )}
+            ) : (
+              <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
+                No se pudo cargar la informacion del estudio.
+              </p>
+            )}
+          </div>
+        )}
 
-      {activeTab === 'permisos' && (
-        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-          <div className="p-6 border-b border-gray-200 dark:border-white/10">
-            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
-              Matriz de Permisos
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mt-1">
-              Permisos predeterminados por rol (solo lectura).
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                >
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Grupo</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Permiso</th>
-                  {ROLES_MATRIX.map((rol) => (
-                    <th key={rol} className={`text-center py-3 px-4 ${TABLE_CLASSES.headerText}`}>
-                      {ROL_LABELS[rol] ?? rol}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {PERMISSION_GROUPS.map((group) =>
-                  group.permisos.map((permiso, idx) => (
-                    <tr key={permiso} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
-                      {idx === 0 && (
-                        <td
-                          rowSpan={group.permisos.length}
-                          className="py-3 px-4 font-medium text-[#091426] dark:text-white align-top"
-                        >
-                          {group.label}
-                        </td>
-                      )}
-                      <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd] text-xs font-mono">
-                        {permiso
-                          .replace(/_/g, ' ')
-                          .toLowerCase()
-                          .replace(/\b\w/g, (c) => c.toUpperCase())}
+        {activeTab === 'equipo' && (
+          <div className={`${CARD_CLASSES.full} overflow-hidden`}>
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+                Miembros del Equipo
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr
+                    className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+                  >
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Email</th>
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Rol</th>
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(equipo ?? []).map((m) => (
+                    <tr key={m.id} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                            {m.nombre.charAt(0)}
+                          </div>
+                          <span className="text-[#091426] dark:text-white font-medium">
+                            {m.nombre}
+                          </span>
+                        </div>
                       </td>
-                      {ROLES_MATRIX.map((rol) => (
-                        <td key={rol} className="py-3 px-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={PERMISOS_POR_ROL[rol]?.includes(permiso) ?? false}
-                            readOnly
-                            className="w-4 h-4 rounded border-[#e2e8f0] text-emerald-500 focus:ring-0 cursor-default"
-                          />
-                        </td>
-                      ))}
+                      <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd]">{m.email}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[m.rol] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
+                        >
+                          {ROL_LABELS[m.rol] ?? m.rol}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[m.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
+                        >
+                          {m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
                     </tr>
-                  )),
-                )}
-              </tbody>
-            </table>
+                  ))}
+                  {(equipo ?? []).length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-8 text-center text-gray-500 dark:text-[#a0a3a8]"
+                      >
+                        No se encontraron miembros.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {activeTab === 'plan' && (
+          <div className={`${CARD_CLASSES.full} p-6`}>
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
+              Plan Actual
+            </h2>
+            {plan ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-2xl text-emerald-500">
+                    verified
+                  </span>
+                  <div>
+                    <p className="text-xl font-bold text-[#091426] dark:text-white">
+                      {plan.nombre}
+                    </p>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[plan.estado] ?? 'bg-gray-100 text-gray-800'}`}
+                    >
+                      {plan.estado === 'ACTIVO' ? 'Activo' : plan.estado}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
+                    <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Clientes</p>
+                    <div className="flex items-end gap-1">
+                      <span className="text-2xl font-bold text-[#091426] dark:text-white">
+                        {plan.clientesActuales}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
+                        / {plan.clientesMax}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full"
+                        style={{
+                          width: `${Math.min((plan.clientesActuales / plan.clientesMax) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-[#f0f4f8] dark:bg-[#162a4a] rounded-lg p-4">
+                    <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-2">Usuarios</p>
+                    <div className="flex items-end gap-1">
+                      <span className="text-2xl font-bold text-[#091426] dark:text-white">
+                        {plan.usuariosActuales}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-[#a0a3a8] mb-0.5">
+                        / {plan.usuariosMax}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-200 dark:bg-[#162a4a] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{
+                          width: `${Math.min((plan.usuariosActuales / plan.usuariosMax) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-[#a0a3a8] text-sm">
+                No se pudo cargar la informacion del plan.
+              </p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'permisos' && (
+          <div className={`${CARD_CLASSES.full} overflow-hidden`}>
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+                Matriz de Permisos
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-[#a0a3a8] mt-1">
+                Permisos predeterminados por rol (solo lectura).
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr
+                    className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
+                  >
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Grupo</th>
+                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Permiso</th>
+                    {ROLES_MATRIX.map((rol) => (
+                      <th key={rol} className={`text-center py-3 px-4 ${TABLE_CLASSES.headerText}`}>
+                        {ROL_LABELS[rol] ?? rol}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PERMISSION_GROUPS.map((group) =>
+                    group.permisos.map((permiso, idx) => (
+                      <tr
+                        key={permiso}
+                        className="border-b border-[#e2e8f0]/50 dark:border-white/5"
+                      >
+                        {idx === 0 && (
+                          <td
+                            rowSpan={group.permisos.length}
+                            className="py-3 px-4 font-medium text-[#091426] dark:text-white align-top"
+                          >
+                            {group.label}
+                          </td>
+                        )}
+                        <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd] text-xs font-mono">
+                          {permiso
+                            .replace(/_/g, ' ')
+                            .toLowerCase()
+                            .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </td>
+                        {ROLES_MATRIX.map((rol) => (
+                          <td key={rol} className="py-3 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={PERMISOS_POR_ROL[rol]?.includes(permiso) ?? false}
+                              readOnly
+                              className="w-4 h-4 rounded border-[#e2e8f0] text-emerald-500 focus:ring-0 cursor-default"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    )),
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </PageStateGuard>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { formatFecha } from '@/lib/formatters';
 import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 interface Estudio {
@@ -170,7 +171,7 @@ export default function AdminEstudiosPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-[#45474c] dark:text-[#a0a3a8]">
-                      {new Date(est.createdAt).toLocaleDateString('es-AR')}
+                      {formatFecha(est.createdAt)}
                     </td>
                     <td className="py-3 px-4 relative">
                       <button

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatFecha } from '@/lib/formatters';
 import { CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
 
 interface Documento {
@@ -63,18 +64,6 @@ const TIPO_COLORS: Record<string, string> = {
   planilla: 'text-green-500 dark:text-green-400',
   otro: 'text-gray-500 dark:text-[#a0a3a8]',
 };
-
-function formatFecha(fecha: string): string {
-  try {
-    return new Date(fecha).toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch {
-    return fecha;
-  }
-}
 
 export default function PortalDocumentosPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
