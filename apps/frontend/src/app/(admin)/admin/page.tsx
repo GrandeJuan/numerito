@@ -29,6 +29,23 @@ interface KpiWithSparkline {
   sparkline: number[];
 }
 
+interface TopTenant {
+  id: string;
+  nombre: string;
+  plan: string;
+  usuarios: number;
+  clientes: number;
+  actividad: number;
+}
+
+interface RegistroReciente {
+  id: string;
+  nombre: string;
+  plan: string;
+  email: string;
+  creadoEn: string;
+}
+
 interface DashboardStats {
   kpis: {
     estudiosActivos: KpiWithSparkline;
@@ -50,6 +67,8 @@ interface DashboardStats {
     estado: string;
     creadoEn: string;
   }[];
+  topTenants: TopTenant[];
+  registrosRecientes: RegistroReciente[];
 }
 
 interface ServiceStatus {
@@ -92,6 +111,42 @@ const STATUS_CONFIG = {
     bgColor: 'bg-red-50 dark:bg-red-900/20',
   },
 } as const;
+
+const PLAN_BADGE_STYLES: Record<string, string> = {
+  Enterprise: 'bg-[#091426] text-white',
+  Profesional: 'bg-[#4edea3]/15 text-[#00a472]',
+  Estudio: 'bg-[#00a472]/10 text-[#00a472]',
+  Trial: 'bg-[#e2e8f0] text-[#75777d]',
+};
+
+function PlanBadge({ plan }: { plan: string }) {
+  return (
+    <span
+      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${PLAN_BADGE_STYLES[plan] ?? PLAN_BADGE_STYLES.Trial}`}
+    >
+      {plan}
+    </span>
+  );
+}
+
+function ActivityBar({ value }: { value: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 flex-1 rounded-full bg-[#e2e8f0] dark:bg-white/10 overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${value}%`,
+            background: value > 90 ? '#4edea3' : value > 70 ? '#00a472' : '#75777d',
+          }}
+        />
+      </div>
+      <span className="text-xs tabular-nums text-[#45474c] dark:text-[#a0a3a8] w-8 text-right">
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -413,6 +468,120 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Top Tenants + Recent Registrations */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Top Tenants by Activity */}
+        <div className={`lg:col-span-3 ${CARD_CLASSES.full} overflow-hidden`}>
+          <div className="p-6 pb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+                Top Estudios por Actividad
+              </h2>
+              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
+                Ordenados por score de actividad
+              </p>
+            </div>
+            <a
+              href="/admin/estudios"
+              className="text-xs text-[#00a472] font-semibold hover:underline"
+            >
+              Ver todos
+            </a>
+          </div>
+          {stats.topTenants.length === 0 ? (
+            <p className="px-6 pb-6 text-sm text-[#75777d] dark:text-[#a0a3a8]">
+              No hay estudios registrados.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-t border-[#e2e8f0] dark:border-white/10">
+                    {['Estudio', 'Plan', 'Usuarios', 'Clientes', 'Actividad'].map((h) => (
+                      <th
+                        key={h}
+                        className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#75777d] dark:text-[#a0a3a8] whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.topTenants.map((t) => (
+                    <tr
+                      key={t.id}
+                      className="border-t border-[#e2e8f0]/60 dark:border-white/5 hover:bg-[#faf8ff] dark:hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-6 py-3">
+                        <span className="text-sm font-medium text-[#091426] dark:text-white">
+                          {t.nombre}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3">
+                        <PlanBadge plan={t.plan} />
+                      </td>
+                      <td className="px-6 py-3 text-sm text-[#45474c] dark:text-[#a0a3a8] tabular-nums">
+                        {t.usuarios}
+                      </td>
+                      <td className="px-6 py-3 text-sm text-[#45474c] dark:text-[#a0a3a8] tabular-nums">
+                        {t.clientes}
+                      </td>
+                      <td className="px-6 py-3 w-36">
+                        <ActivityBar value={t.actividad} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Registrations */}
+        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+              Registros Recientes
+            </h2>
+          </div>
+          {stats.registrosRecientes.length === 0 ? (
+            <p className="text-sm text-[#75777d] dark:text-[#a0a3a8]">
+              No hay registros recientes.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {stats.registrosRecientes.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-start gap-3 pb-3 border-b border-[#e2e8f0]/60 dark:border-white/5 last:border-0 last:pb-0"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#091426]/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]" style={{ fontSize: 16 }}>
+                      domain_add
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                      {r.nombre}
+                    </p>
+                    <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] truncate">
+                      {r.email}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <PlanBadge plan={r.plan} />
+                    <p className="text-[10px] text-[#75777d] dark:text-[#a0a3a8] mt-1">
+                      {r.creadoEn}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Alerts + Recent Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

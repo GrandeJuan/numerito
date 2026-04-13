@@ -22,6 +22,23 @@ export interface RevenueDataPoint {
   arr: number;
 }
 
+export interface TopTenant {
+  id: string;
+  nombre: string;
+  plan: string;
+  usuarios: number;
+  clientes: number;
+  actividad: number;
+}
+
+export interface RegistroReciente {
+  id: string;
+  nombre: string;
+  plan: string;
+  email: string;
+  creadoEn: string;
+}
+
 export interface AdminDashboardStats {
   kpis: {
     estudiosActivos: KpiWithSparkline;
@@ -37,6 +54,8 @@ export interface AdminDashboardStats {
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
   estudiosRecientes: { id: string; nombre: string; plan: string; estado: string; creadoEn: string }[];
+  topTenants: TopTenant[];
+  registrosRecientes: RegistroReciente[];
 }
 
 export class ObtenerAdminDashboardStatsHandler {
@@ -214,6 +233,75 @@ export class ObtenerAdminDashboardStatsHandler {
       creadoEn: e.createdAt.toISOString().split('T')[0],
     }));
 
+    // Top tenants by activity score
+    // Activity score = (usuarios * 3) + (clientes * 2), normalized to 0-100
+    const topTenantsRaw: any[] = await conn.execute(
+      `SELECT
+         e.id,
+         e.nombre,
+         p.nombre as plan,
+         COALESCE(ue.usuarios_count, 0)::int as usuarios,
+         COALESCE(c.clientes_count, 0)::int as clientes,
+         (COALESCE(ue.usuarios_count, 0) * 3 + COALESCE(c.clientes_count, 0) * 2)::int as raw_score
+       FROM estudio e
+       JOIN plan p ON e.plan_id = p.id
+       LEFT JOIN (
+         SELECT estudio_id, COUNT(*)::int as usuarios_count
+         FROM usuario_estudio
+         WHERE is_active = true
+         GROUP BY estudio_id
+       ) ue ON ue.estudio_id = e.id
+       LEFT JOIN (
+         SELECT estudio_id, COUNT(*)::int as clientes_count
+         FROM cliente
+         GROUP BY estudio_id
+       ) c ON c.estudio_id = e.id
+       WHERE e.is_active = true
+       ORDER BY raw_score DESC
+       LIMIT 8`,
+    );
+
+    const maxScore = topTenantsRaw.length > 0
+      ? Math.max(...topTenantsRaw.map((t) => Number(t.raw_score)), 1)
+      : 1;
+
+    const topTenants: TopTenant[] = topTenantsRaw.map((t) => ({
+      id: t.id,
+      nombre: t.nombre,
+      plan: t.plan,
+      usuarios: Number(t.usuarios),
+      clientes: Number(t.clientes),
+      actividad: Math.round((Number(t.raw_score) / maxScore) * 100),
+    }));
+
+    // Recent registrations with contact email (first user of the estudio)
+    const registrosRecientesRaw: any[] = await conn.execute(
+      `SELECT
+         e.id,
+         e.nombre,
+         p.nombre as plan,
+         e.created_at,
+         (
+           SELECT u.email FROM usuario_estudio ue2
+           JOIN usuario u ON u.id = ue2.usuario_id
+           WHERE ue2.estudio_id = e.id
+           ORDER BY ue2.created_at ASC
+           LIMIT 1
+         ) as email
+       FROM estudio e
+       JOIN plan p ON e.plan_id = p.id
+       ORDER BY e.created_at DESC
+       LIMIT 5`,
+    );
+
+    const registrosRecientes: RegistroReciente[] = registrosRecientesRaw.map((r) => ({
+      id: r.id,
+      nombre: r.nombre,
+      plan: r.plan,
+      email: r.email ?? '',
+      creadoEn: new Date(r.created_at).toISOString().split('T')[0],
+    }));
+
     return {
       kpis: {
         estudiosActivos: this.buildKpi(estudiosActivos, estudiosSparkline),
@@ -234,6 +322,8 @@ export class ObtenerAdminDashboardStatsHandler {
       distribucionPlanes,
       alertas,
       estudiosRecientes,
+      topTenants,
+      registrosRecientes,
     };
   }
 

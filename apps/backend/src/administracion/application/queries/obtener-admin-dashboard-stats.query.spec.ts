@@ -58,7 +58,14 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce(mrrHist)              // mrr historico
       .mockResolvedValueOnce(churnHist)            // churn historico
       .mockResolvedValueOnce([])                   // registros mensuales
-      .mockResolvedValueOnce([]);                  // distribucion planes
+      .mockResolvedValueOnce([])                   // distribucion planes
+      .mockResolvedValueOnce([                     // top tenants (sorted by raw_score DESC)
+        { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: '10', clientes: '30', raw_score: '90' },
+        { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: '5', clientes: '20', raw_score: '55' },
+      ])
+      .mockResolvedValueOnce([                     // registros recientes
+        { id: 'r1', nombre: 'Nuevo Estudio', plan: 'Trial', email: 'admin@nuevo.com', created_at: '2026-04-10T00:00:00Z' },
+      ]);
   }
 
   beforeEach(() => {
@@ -83,6 +90,8 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     expect(result).toHaveProperty('distribucionPlanes');
     expect(result).toHaveProperty('alertas');
     expect(result).toHaveProperty('estudiosRecientes');
+    expect(result).toHaveProperty('topTenants');
+    expect(result).toHaveProperty('registrosRecientes');
   });
 
   it('should return 6 KPIs with sparkline data', async () => {
@@ -169,7 +178,9 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce(mrrHist)
       .mockResolvedValueOnce(churnHist)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
 
     const result = await handler.execute();
 
@@ -223,7 +234,9 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce([
         { plan: 'Profesional', cantidad: '5' },
         { plan: 'Starter', cantidad: '3' },
-      ]);
+      ])
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
 
     const result = await handler.execute();
 
@@ -276,7 +289,9 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce(mrrEmpty)
       .mockResolvedValueOnce(churnEmpty)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
 
     const result = await handler.execute();
 
@@ -355,6 +370,104 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       expect(point.mrr).toBe(0);
       expect(point.arr).toBe(0);
     });
+  });
+
+  it('should return topTenants with activity scores normalized to 0-100', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.topTenants).toHaveLength(2);
+    // Highest raw_score (90) should map to 100
+    expect(result.topTenants[0]).toEqual({
+      id: 'e2',
+      nombre: 'Estudio B',
+      plan: 'Enterprise',
+      usuarios: 10,
+      clientes: 30,
+      actividad: 100,
+    });
+    // Lower raw_score (55) should be normalized relative to max (90)
+    expect(result.topTenants[1]).toEqual({
+      id: 'e1',
+      nombre: 'Estudio A',
+      plan: 'Profesional',
+      usuarios: 5,
+      clientes: 20,
+      actividad: 61, // round(55/90 * 100) = 61
+    });
+  });
+
+  it('should return topTenants sorted by raw_score descending from SQL', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    // The SQL already sorts by raw_score DESC, so result order matches SQL order
+    expect(result.topTenants[0].nombre).toBe('Estudio B');
+    expect(result.topTenants[1].nombre).toBe('Estudio A');
+  });
+
+  it('should return empty topTenants when no estudios exist', async () => {
+    mockEm.count.mockResolvedValue(0);
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
+    mockExecute
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
+      .mockResolvedValueOnce([])   // registros mensuales
+      .mockResolvedValueOnce([])   // distribucion planes
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
+
+    const result = await handler.execute();
+
+    expect(result.topTenants).toEqual([]);
+  });
+
+  it('should return registrosRecientes with email and formatted date', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.registrosRecientes).toHaveLength(1);
+    expect(result.registrosRecientes[0]).toEqual({
+      id: 'r1',
+      nombre: 'Nuevo Estudio',
+      plan: 'Trial',
+      email: 'admin@nuevo.com',
+      creadoEn: '2026-04-10',
+    });
+  });
+
+  it('should return empty email when estudio has no users', async () => {
+    mockEm.count.mockResolvedValue(0);
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
+    mockExecute
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([     // registros recientes (no email)
+        { id: 'r2', nombre: 'Sin Usuarios', plan: 'Trial', email: null, created_at: '2026-03-01T00:00:00Z' },
+      ]);
+
+    const result = await handler.execute();
+
+    expect(result.registrosRecientes).toHaveLength(1);
+    expect(result.registrosRecientes[0].email).toBe('');
   });
 
   it('should handle zero values gracefully', async () => {

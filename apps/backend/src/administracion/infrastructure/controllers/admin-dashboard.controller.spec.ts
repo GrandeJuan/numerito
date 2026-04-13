@@ -36,6 +36,12 @@ describe('AdminDashboardController', () => {
     estudiosRecientes: [
       { id: '1', nombre: 'Estudio X', plan: 'Profesional', estado: 'Activo', creadoEn: '2026-01-01' },
     ],
+    topTenants: [
+      { id: '1', nombre: 'Estudio X', plan: 'Profesional', usuarios: 5, clientes: 20, actividad: 100 },
+    ],
+    registrosRecientes: [
+      { id: '1', nombre: 'Estudio X', plan: 'Trial', email: 'test@example.com', creadoEn: '2026-04-10' },
+    ],
   };
 
   beforeEach(() => {
