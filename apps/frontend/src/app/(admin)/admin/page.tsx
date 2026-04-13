@@ -21,12 +21,21 @@ import {
   Legend,
 } from 'recharts';
 
+interface KpiWithSparkline {
+  value: number;
+  delta: string;
+  deltaUp: boolean;
+  sparkline: number[];
+}
+
 interface DashboardStats {
   kpis: {
-    estudiosActivos: number;
-    totalUsuarios: number;
-    mrr: number;
-    subscripcionesPorVencer: number;
+    estudiosActivos: KpiWithSparkline;
+    totalUsuarios: KpiWithSparkline;
+    subscripcionesActivas: KpiWithSparkline;
+    mrr: KpiWithSparkline;
+    churnMensual: KpiWithSparkline;
+    uptime: KpiWithSparkline;
   };
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
@@ -40,19 +49,61 @@ interface DashboardStats {
   }[];
 }
 
+interface ServiceStatus {
+  name: string;
+  status: 'operational' | 'degraded' | 'down';
+  latencyMs: number;
+  lastCheck: string;
+}
+
+interface HealthCheckResult {
+  services: ServiceStatus[];
+  uptimePercent: number;
+}
+
 const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#10b981', '#8b5cf6'];
+
+const STATUS_CONFIG = {
+  operational: {
+    color: 'bg-emerald-500',
+    label: 'Operativo',
+    textColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+  },
+  degraded: {
+    color: 'bg-amber-500',
+    label: 'Degradado',
+    textColor: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+  },
+  down: {
+    color: 'bg-red-500',
+    label: 'Caído',
+    textColor: 'text-red-600 dark:text-red-400',
+    bgColor: 'bg-red-50 dark:bg-red-900/20',
+  },
+} as const;
 
 export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [health, setHealth] = useState<HealthCheckResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch('/v1/admin/dashboard/stats')
-      .then(async (res) => {
+    Promise.all([
+      apiFetch('/v1/admin/dashboard/stats').then(async (res) => {
         if (!res.ok) throw new Error('Error al cargar estadísticas');
-        const body = await res.json();
-        setStats(body.data);
+        return (await res.json()).data as DashboardStats;
+      }),
+      apiFetch('/v1/admin/health').then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()).data as HealthCheckResult;
+      }).catch(() => null),
+    ])
+      .then(([statsData, healthData]) => {
+        setStats(statsData);
+        setHealth(healthData);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -77,23 +128,39 @@ export default function AdminPage() {
   const kpis = [
     {
       label: 'Estudios Activos',
-      value: stats.kpis.estudiosActivos,
-      icon: 'apartment',
+      icon: 'domain',
+      ...stats.kpis.estudiosActivos,
+      displayValue: stats.kpis.estudiosActivos.value.toLocaleString('es-AR'),
     },
     {
       label: 'Usuarios Totales',
-      value: stats.kpis.totalUsuarios,
       icon: 'group',
+      ...stats.kpis.totalUsuarios,
+      displayValue: stats.kpis.totalUsuarios.value.toLocaleString('es-AR'),
+    },
+    {
+      label: 'Suscripciones Activas',
+      icon: 'credit_card',
+      ...stats.kpis.subscripcionesActivas,
+      displayValue: stats.kpis.subscripcionesActivas.value.toLocaleString('es-AR'),
     },
     {
       label: 'MRR',
-      value: formatCurrency(stats.kpis.mrr),
       icon: 'payments',
+      ...stats.kpis.mrr,
+      displayValue: formatCurrency(stats.kpis.mrr.value),
     },
     {
-      label: 'Por Vencer',
-      value: stats.kpis.subscripcionesPorVencer,
-      icon: 'schedule',
+      label: 'Churn Mensual',
+      icon: 'trending_down',
+      ...stats.kpis.churnMensual,
+      displayValue: `${stats.kpis.churnMensual.value}%`,
+    },
+    {
+      label: 'Uptime',
+      icon: 'monitor_heart',
+      ...stats.kpis.uptime,
+      displayValue: `${stats.kpis.uptime.value}%`,
     },
   ];
 
@@ -134,9 +201,17 @@ export default function AdminPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} />
+          <KpiCard
+            key={kpi.label}
+            icon={kpi.icon}
+            label={kpi.label}
+            value={kpi.displayValue}
+            delta={kpi.delta}
+            deltaUp={kpi.deltaUp}
+            sparkline={kpi.sparkline}
+          />
         ))}
       </div>
 
@@ -199,6 +274,49 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* System Status Panel */}
+      {health && (
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+              Estado del Sistema
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#45474c] dark:text-[#a0a3a8]">Uptime:</span>
+              <span className="text-sm font-bold text-[#091426] dark:text-white">
+                {health.uptimePercent}%
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {health.services.map((service) => {
+              const config = STATUS_CONFIG[service.status];
+              return (
+                <div
+                  key={service.name}
+                  className={`flex items-center gap-3 p-3 rounded-lg ${config.bgColor}`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${config.color} shrink-0`} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                      {service.name}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${config.textColor}`}>{config.label}</span>
+                      {service.latencyMs > 0 && (
+                        <span className="text-xs text-[#75777d] dark:text-[#a0a3a8]">
+                          {service.latencyMs}ms
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Alerts + Recent Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
