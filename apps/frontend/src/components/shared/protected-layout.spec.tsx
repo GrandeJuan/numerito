@@ -15,8 +15,10 @@ vi.mock('next/link', () => ({
 
 // Mock next/navigation
 const mockPathname = vi.fn().mockReturnValue('/');
+const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 function fakeJwt(payload: Record<string, unknown>): string {
@@ -61,6 +63,7 @@ describe('ProtectedLayout', () => {
     }));
     Object.defineProperty(document, 'cookie', { writable: true, value: '' });
     mockPathname.mockReturnValue('/');
+    mockPush.mockReset();
   });
 
   afterEach(() => {
@@ -75,20 +78,6 @@ describe('ProtectedLayout', () => {
     });
   });
 
-  it('renders topbar with user email', async () => {
-    renderLayout();
-    await waitFor(() => {
-      expect(screen.getByText('test@example.com')).toBeInTheDocument();
-    });
-  });
-
-  it('renders logout button in topbar', async () => {
-    renderLayout();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument();
-    });
-  });
-
   it('renders children content', async () => {
     renderLayout();
     await waitFor(() => {
@@ -96,22 +85,69 @@ describe('ProtectedLayout', () => {
     });
   });
 
-  it('logout button calls logout', async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+  it('renders role indicator in sidebar', async () => {
+    renderLayout('SOCIO');
+    await waitFor(() => {
+      expect(screen.getByText('SOCIO')).toBeInTheDocument();
+    });
+  });
+
+  it('renders SUPERADMIN role on admin routes', async () => {
+    mockPathname.mockReturnValue('/admin');
+    renderLayout('SUPERADMIN');
+    await waitFor(() => {
+      expect(screen.getByText('SUPERADMIN')).toBeInTheDocument();
+    });
+  });
+
+  it('renders avatar initials in header', async () => {
     renderLayout();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /menú de usuario/i })).toBeInTheDocument();
+    });
+  });
+
+  it('avatar dropdown shows user email and logout option', async () => {
+    renderLayout();
+    const user = userEvent.setup();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /menú de usuario/i })).toBeInTheDocument();
     });
 
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /menú de usuario/i }));
+    });
+
+    // Email should appear in dropdown
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+    // Logout button
+    expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument();
+    // Menu items
+    expect(screen.getByText('Perfil')).toBeInTheDocument();
+    expect(screen.getByText('Configuración')).toBeInTheDocument();
+  });
+
+  it('logout button in dropdown calls logout', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }));
+    renderLayout();
     const user = userEvent.setup();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /menú de usuario/i })).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /menú de usuario/i }));
+    });
+
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /cerrar sesión/i }));
     });
   });
 
   // --- Dark mode toggle ---
-  it('renders dark mode toggle button in topbar', async () => {
+  it('renders dark mode toggle button in header', async () => {
     renderLayout();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /modo oscuro|modo claro/i })).toBeInTheDocument();
@@ -135,7 +171,7 @@ describe('ProtectedLayout', () => {
   });
 
   // --- Breadcrumbs ---
-  it('renders breadcrumbs in topbar', async () => {
+  it('renders breadcrumbs in header', async () => {
     mockPathname.mockReturnValue('/clientes');
     renderLayout();
     await waitFor(() => {
@@ -146,7 +182,7 @@ describe('ProtectedLayout', () => {
   });
 
   // --- Notification bell ---
-  it('renders notification bell in sidebar', async () => {
+  it('renders notification bell in header', async () => {
     renderLayout();
     await waitFor(() => {
       expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument();
@@ -206,6 +242,20 @@ describe('ProtectedLayout', () => {
     expect(screen.queryByTestId('estudio-selector')).toBeNull();
   });
 
+  // --- Admin nav items ---
+  it('admin route shows expanded admin navigation', async () => {
+    mockPathname.mockReturnValue('/admin');
+    renderLayout('SUPERADMIN');
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Estudios')).toBeInTheDocument();
+    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByText('Suscripciones')).toBeInTheDocument();
+    expect(screen.getByText('Métricas')).toBeInTheDocument();
+    expect(screen.getByText('Logs')).toBeInTheDocument();
+  });
+
   // --- Mobile sidebar ---
   it('mobile menu button toggles sidebar', async () => {
     renderLayout();
@@ -242,5 +292,16 @@ describe('ProtectedLayout', () => {
     });
 
     expect(screen.queryByTestId('sidebar-overlay')).toBeNull();
+  });
+
+  // --- Dark sidebar gradient ---
+  it('sidebar has dark gradient background', async () => {
+    renderLayout();
+    await waitFor(() => {
+      expect(screen.getByText('Numerito')).toBeInTheDocument();
+    });
+    const sidebar = screen.getByText('Numerito').closest('aside');
+    expect(sidebar).toBeTruthy();
+    expect(sidebar!.style.background).toContain('radial-gradient');
   });
 });
