@@ -48,7 +48,13 @@ vi.mock('@/lib/api-client', () => ({
       json: () =>
         Promise.resolve({
           data: mockUsuarios,
-          meta: { total: 2, page: 1, limit: 20, totalPages: 1, timestamp: new Date().toISOString() },
+          meta: {
+            total: 2,
+            page: 1,
+            limit: 20,
+            totalPages: 1,
+            timestamp: new Date().toISOString(),
+          },
         }),
     });
   }),
@@ -72,7 +78,13 @@ describe('AdminUsuariosPage', () => {
         json: () =>
           Promise.resolve({
             data: mockUsuarios,
-            meta: { total: 2, page: 1, limit: 20, totalPages: 1, timestamp: new Date().toISOString() },
+            meta: {
+              total: 2,
+              page: 1,
+              limit: 20,
+              totalPages: 1,
+              timestamp: new Date().toISOString(),
+            },
           }),
       });
     });
@@ -130,7 +142,7 @@ describe('AdminUsuariosPage', () => {
     await waitFor(() => {
       expect(screen.getByText('ADMIN')).toBeInTheDocument();
     });
-    expect(screen.getByText('SUPERADMIN')).toBeInTheDocument();
+    expect(screen.getByText('Super Administrador')).toBeInTheDocument();
   });
 
   it('should render table headers', async () => {

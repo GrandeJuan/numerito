@@ -5,13 +5,11 @@ import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { formatCurrency } from '@/lib/formatters';
-import {
-  STATUS_COLORS,
-  CARD_CLASSES,
-  TABLE_CLASSES,
-  KPI_ICON_STYLE,
-  CHART_THEME,
-} from '@/lib/design-tokens';
+import { CARD_CLASSES, KPI_ICON_STYLE, CHART_THEME } from '@/lib/design-tokens';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { ESTADO_FACTURA_LABELS } from '@numerito/shared';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -45,14 +43,6 @@ interface FacturaRow {
   estado: string;
   totalPagado: number;
 }
-
-const ESTADO_LABELS: Record<string, string> = {
-  EMITIDA: 'Emitida',
-  PARCIALMENTE_PAGADA: 'Parcial',
-  PAGADA: 'Pagada',
-  VENCIDA: 'Vencida',
-  ANULADA: 'Anulada',
-};
 
 const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#6b7280'];
 
@@ -93,6 +83,85 @@ export default function FacturacionPage() {
   const start = (meta.page - 1) * meta.limit + 1;
   const end = Math.min(meta.page * meta.limit, meta.total || facturas.length);
 
+  const facturaColumns: Column<FacturaRow>[] = [
+    {
+      key: 'numero',
+      header: 'Numero',
+      render: (f) => (
+        <span className="text-[#091426] dark:text-white font-medium font-mono text-xs">
+          {f.numero}
+        </span>
+      ),
+    },
+    {
+      key: 'cliente',
+      header: 'Cliente',
+      render: (f) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{f.clienteId}</span>,
+    },
+    {
+      key: 'fechaEmision',
+      header: 'Fecha Emision',
+      render: (f) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">
+          {new Date(f.fechaEmision).toLocaleDateString('es-AR')}
+        </span>
+      ),
+    },
+    {
+      key: 'monto',
+      header: 'Monto',
+      align: 'right',
+      render: (f) => (
+        <span className="text-[#091426] dark:text-white font-medium">
+          {formatCurrency(f.total)}
+        </span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (f) => (
+        <StatusBadge
+          status={f.estado}
+          label={ESTADO_FACTURA_LABELS[f.estado as keyof typeof ESTADO_FACTURA_LABELS] ?? f.estado}
+        />
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right',
+      render: () => (
+        <div className="flex items-center justify-end gap-1">
+          <button
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            title="Ver Detalle"
+          >
+            <span className="material-symbols-outlined text-lg">visibility</span>
+          </button>
+          <button
+            className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+            title="Registrar Pago"
+          >
+            <span className="material-symbols-outlined text-lg">payment</span>
+          </button>
+          <button
+            className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+            title="Anular"
+          >
+            <span className="material-symbols-outlined text-lg">block</span>
+          </button>
+          <button
+            className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+            title="Descargar PDF"
+          >
+            <span className="material-symbols-outlined text-lg">download</span>
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <PageStateGuard
       estudioActual={estudioActual}
@@ -110,21 +179,11 @@ export default function FacturacionPage() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  payments
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">Facturado</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">
-                  {formatCurrency(stats?.facturado ?? 0)}
-                </p>
-              </div>
-            </div>
-          </div>
+          <KpiCard
+            icon="payments"
+            label="Facturado"
+            value={formatCurrency(stats?.facturado ?? 0)}
+          />
 
           <div className={`${CARD_CLASSES.full} p-6`}>
             <div className="flex items-center gap-3">
@@ -151,37 +210,12 @@ export default function FacturacionPage() {
             </div>
           </div>
 
-          <div className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  pending
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">Saldo Pendiente</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">
-                  {formatCurrency(stats?.saldoPendiente ?? 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  warning
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">Facturas Vencidas</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">
-                  {stats?.facturasVencidas ?? 0}
-                </p>
-              </div>
-            </div>
-          </div>
+          <KpiCard
+            icon="pending"
+            label="Saldo Pendiente"
+            value={formatCurrency(stats?.saldoPendiente ?? 0)}
+          />
+          <KpiCard icon="warning" label="Facturas Vencidas" value={stats?.facturasVencidas ?? 0} />
         </div>
 
         {/* Charts Row */}
@@ -244,7 +278,11 @@ export default function FacturacionPage() {
                     ))}
                   </Pie>
                   <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
-                  <Legend formatter={(value: string) => ESTADO_LABELS[value] ?? value} />
+                  <Legend
+                    formatter={(value: string) =>
+                      ESTADO_FACTURA_LABELS[value as keyof typeof ESTADO_FACTURA_LABELS] ?? value
+                    }
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -252,106 +290,21 @@ export default function FacturacionPage() {
         </div>
 
         {/* Facturas Table */}
-        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+        <div>
+          <div className="px-6 py-4">
             <h2 className="text-lg font-semibold text-[#091426] dark:text-white">Facturas</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                >
-                  <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Numero
-                  </th>
-                  <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Cliente
-                  </th>
-                  <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Fecha Emision
-                  </th>
-                  <th className={`text-right py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Monto
-                  </th>
-                  <th className={`text-left py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Estado
-                  </th>
-                  <th className={`text-right py-3 px-4 font-medium ${TABLE_CLASSES.headerText}`}>
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {facturas.map((f) => (
-                  <tr
-                    key={f.id}
-                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                  >
-                    <td className="py-3 px-4 text-[#091426] dark:text-white font-medium font-mono text-xs">
-                      {f.numero}
-                    </td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">{f.clienteId}</td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                      {new Date(f.fechaEmision).toLocaleDateString('es-AR')}
-                    </td>
-                    <td className="py-3 px-4 text-right text-[#091426] dark:text-white font-medium">
-                      {formatCurrency(f.total)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[f.estado] ?? ''}`}
-                      >
-                        {ESTADO_LABELS[f.estado] ?? f.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          title="Ver Detalle"
-                        >
-                          <span className="material-symbols-outlined text-lg">visibility</span>
-                        </button>
-                        <button
-                          className="p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400"
-                          title="Registrar Pago"
-                        >
-                          <span className="material-symbols-outlined text-lg">payment</span>
-                        </button>
-                        <button
-                          className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-                          title="Anular"
-                        >
-                          <span className="material-symbols-outlined text-lg">block</span>
-                        </button>
-                        <button
-                          className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                          title="Descargar PDF"
-                        >
-                          <span className="material-symbols-outlined text-lg">download</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {facturas.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
-                      No se encontraron facturas.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-            <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
-              Mostrando {start}-{end} de {meta.total || facturas.length} facturas
-            </p>
-          </div>
+          <DataTable<FacturaRow>
+            columns={facturaColumns}
+            data={facturas}
+            rowKey={(f) => f.id}
+            emptyMessage="No se encontraron facturas."
+            footer={
+              <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
+                Mostrando {start}-{end} de {meta.total || facturas.length} facturas
+              </p>
+            }
+          />
         </div>
       </div>
     </PageStateGuard>

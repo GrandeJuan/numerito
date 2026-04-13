@@ -54,19 +54,19 @@ Reference impl: `MikroOrmClienteRepository` (clientes context).
 
 ---
 
-## Phase 3: Shared UI Primitives (Priority 3 — Consistency)
+## Phase 3: Shared UI Primitives (Priority 3 — Consistency) ✅
 
 **Goal:** Reusable components for repeated UI patterns, backed by design tokens.
 
 ### Tracer bullet
 
-- [ ] `<KpiCard icon label value />` — unit tested
-- [ ] `<DataTable columns data emptyMessage />` — unit tested
-- [ ] `<StatusBadge status />`, `<RolBadge rol />`, `<PrioridadBadge prioridad />` — unit tested
-- [ ] `<FilterBar>` with `<SearchInput>` + `<FilterSelect>` — unit tested
-- [ ] Move `ESTADO_LABELS`, `ROL_LABELS`, `PRIORIDAD_LABELS` to `@numerito/shared`
-- [ ] Refactor all pages to use new components (remove inline Tailwind duplication)
-- [ ] Typecheck + tests green
+- [x] `<KpiCard icon label value />` — unit tested
+- [x] `<DataTable columns data rowKey emptyMessage footer />` — unit tested
+- [x] `<StatusBadge status label? />`, `<RolBadge rol label? />`, `<PrioridadBadge prioridad label? />` — unit tested
+- [x] `<FilterBar>` with `<SearchInput>` + `<FilterSelect>` — unit tested
+- [x] Added labels to `@numerito/shared`: PRIORIDAD_LABELS, ESTADO_VENCIMIENTO_LABELS, ESTADO_FACTURA_LABELS, ESTADO_TAREA_LABELS, TIPO_CLIENTE_LABELS
+- [x] Refactored 12 pages to use new components (removed inline Tailwind duplication)
+- [x] Build + 255 tests green
 
 ---
 
@@ -155,3 +155,4 @@ Already done: `ResponseWrapperInterceptor`, `ApiResponse` types.
 |------|-------|---------------|
 | 2026-04-13 | Phase 1 | Migrated all 15 tenant-scoped repos to TenantAwareRepository, 9 global repos to GlobalRepository. Updated all controllers, queries, and 95 test suites. Build + 552 tests green. |
 | 2026-04-13 | Phase 2 | Created useFetchWithEstudio hook, PageStateGuard component, shared formatters. Refactored 10 pages + notification-bell. Removed all duplicate formatters. Build + 238 frontend tests green. |
+| 2026-04-13 | Phase 3 | Created KpiCard, DataTable, StatusBadge, RolBadge, PrioridadBadge, FilterBar/SearchInput/FilterSelect. Added 5 label sets to @numerito/shared. Refactored 12 pages. Build + 255 tests green. |

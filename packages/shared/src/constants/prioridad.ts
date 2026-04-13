@@ -6,3 +6,10 @@ export const PRIORIDAD = {
 } as const;
 
 export type Prioridad = (typeof PRIORIDAD)[keyof typeof PRIORIDAD];
+
+export const PRIORIDAD_LABELS: Record<Prioridad, string> = {
+  BAJA: 'Baja',
+  MEDIA: 'Media',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
+};

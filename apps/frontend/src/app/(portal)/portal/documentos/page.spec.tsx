@@ -27,8 +27,10 @@ describe('PortalDocumentosPage', () => {
 
   it('should render filter dropdowns', () => {
     render(<PortalDocumentosPage />);
-    expect(screen.getByLabelText('Filtrar por tipo')).toBeInTheDocument();
-    expect(screen.getByLabelText('Filtrar por periodo')).toBeInTheDocument();
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBe(2);
+    expect(screen.getByText('Todos los tipos')).toBeInTheDocument();
+    expect(screen.getByText('Todos los periodos')).toBeInTheDocument();
   });
 
   it('should render document cards with names', () => {

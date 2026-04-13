@@ -6,7 +6,11 @@ import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { formatFecha } from '@/lib/formatters';
-import { STATUS_COLORS, CARD_CLASSES, TABLE_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
+import { CARD_CLASSES } from '@/lib/design-tokens';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { ESTADO_VENCIMIENTO_LABELS } from '@numerito/shared';
 
 interface VencimientoRow {
   id: string;
@@ -25,12 +29,6 @@ interface ObligacionesKpis {
   presentadosEsteMes: number;
   proximoVencimiento: string | null;
 }
-
-const ESTADO_LABELS: Record<string, string> = {
-  PENDIENTE: 'Pendiente',
-  PRESENTADO: 'Presentado',
-  VENCIDO: 'Vencido',
-};
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 
@@ -133,6 +131,63 @@ export default function ObligacionesPage() {
   const start = (meta.page - 1) * meta.limit + 1;
   const end = Math.min(meta.page * meta.limit, vencimientos.length);
 
+  const vencimientoColumns: Column<VencimientoRow>[] = [
+    {
+      key: 'cliente',
+      header: 'Cliente',
+      render: (v) => (
+        <span className="text-[#091426] dark:text-white font-medium">{v.cliente}</span>
+      ),
+    },
+    {
+      key: 'tipoObligacion',
+      header: 'Obligacion',
+      render: (v) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{v.tipoObligacion}</span>,
+    },
+    {
+      key: 'periodo',
+      header: 'Periodo',
+      render: (v) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{v.periodo}</span>,
+    },
+    {
+      key: 'fecha',
+      header: 'Fecha',
+      render: (v) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">
+          {formatFecha(v.fechaVencimiento)}
+        </span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (v) => (
+        <StatusBadge
+          status={v.estado}
+          label={
+            ESTADO_VENCIMIENTO_LABELS[v.estado as keyof typeof ESTADO_VENCIMIENTO_LABELS] ??
+            v.estado
+          }
+        />
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      align: 'right' as const,
+      render: (v) =>
+        v.estado === 'PENDIENTE' ? (
+          <button
+            onClick={() => handlePresentar(v.id)}
+            disabled={presentando === v.id}
+            className="px-3 py-1 text-xs bg-[#091426] text-white font-bold rounded-xl shadow-lg shadow-[#091426]/20 hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {presentando === v.id ? 'Presentando...' : 'Presentar'}
+          </button>
+        ) : null,
+    },
+  ];
+
   const kpiCards = [
     {
       label: 'Pendientes',
@@ -169,19 +224,7 @@ export default function ObligacionesPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map((kpi) => (
-            <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
-              <div className="flex items-center gap-3">
-                <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                  <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                    {kpi.icon}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
-                  <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
-                </div>
-              </div>
-            </div>
+            <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} />
           ))}
         </div>
 
@@ -258,77 +301,21 @@ export default function ObligacionesPage() {
         </div>
 
         {/* Vencimientos Table */}
-        <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+        <div>
+          <div className="px-6 py-4">
             <h2 className="text-lg font-semibold text-[#091426] dark:text-white">Vencimientos</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                >
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Cliente</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Obligacion</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Periodo</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Fecha</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                  <th className={`text-right py-3 px-4 ${TABLE_CLASSES.headerText}`}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vencimientos.map((v) => (
-                  <tr
-                    key={v.id}
-                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                  >
-                    <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
-                      {v.cliente}
-                    </td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                      {v.tipoObligacion}
-                    </td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">{v.periodo}</td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                      {formatFecha(v.fechaVencimiento)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[v.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'}`}
-                      >
-                        {ESTADO_LABELS[v.estado] ?? v.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {v.estado === 'PENDIENTE' && (
-                        <button
-                          onClick={() => handlePresentar(v.id)}
-                          disabled={presentando === v.id}
-                          className="px-3 py-1 text-xs bg-[#091426] text-white font-bold rounded-xl shadow-lg shadow-[#091426]/20 hover:opacity-90 disabled:opacity-50 transition-all"
-                        >
-                          {presentando === v.id ? 'Presentando...' : 'Presentar'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {vencimientos.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
-                      No hay vencimientos.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-            <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
-              Mostrando {start}-{end} de {vencimientos.length} vencimientos
-            </p>
-          </div>
+          <DataTable<VencimientoRow>
+            columns={vencimientoColumns}
+            data={vencimientos}
+            rowKey={(v) => v.id}
+            emptyMessage="No hay vencimientos."
+            footer={
+              <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
+                Mostrando {start}-{end} de {vencimientos.length} vencimientos
+              </p>
+            }
+          />
         </div>
       </div>
     </PageStateGuard>

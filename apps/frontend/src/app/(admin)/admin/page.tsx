@@ -3,13 +3,10 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/formatters';
-import {
-  STATUS_COLORS,
-  CARD_CLASSES,
-  TABLE_CLASSES,
-  KPI_ICON_STYLE,
-  CHART_THEME,
-} from '@/lib/design-tokens';
+import { CARD_CLASSES, CHART_THEME } from '@/lib/design-tokens';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -100,6 +97,31 @@ export default function AdminPage() {
     },
   ];
 
+  const estudiosRecientesColumns: Column<DashboardStats['estudiosRecientes'][number]>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (est) => (
+        <span className="text-[#091426] dark:text-white font-medium">{est.nombre}</span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      render: (est) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{est.plan}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (est) => <StatusBadge status={est.estado} />,
+    },
+    {
+      key: 'creadoEn',
+      header: 'Creado',
+      render: (est) => <span className="text-[#45474c] dark:text-[#a0a3a8]">{est.creadoEn}</span>,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -114,19 +136,7 @@ export default function AdminPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  {kpi.icon}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
-              </div>
-            </div>
-          </div>
+          <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} />
         ))}
       </div>
 
@@ -230,54 +240,13 @@ export default function AdminPage() {
         </div>
 
         {/* Estudios Recientes */}
-        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Estudios Recientes
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-white/10">
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Nombre
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Plan
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Estado
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Creado
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.estudiosRecientes.map((est) => (
-                  <tr
-                    key={est.id}
-                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                  >
-                    <td className="py-3 px-2 text-[#091426] dark:text-white font-medium">
-                      {est.nombre}
-                    </td>
-                    <td className="py-3 px-2 text-[#45474c] dark:text-[#c5c6cd]">{est.plan}</td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          STATUS_COLORS[est.estado] ??
-                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'
-                        }`}
-                      >
-                        {est.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-[#45474c] dark:text-[#a0a3a8]">{est.creadoEn}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className={`lg:col-span-2`}>
+          <DataTable
+            columns={estudiosRecientesColumns}
+            data={stats.estudiosRecientes}
+            rowKey={(est) => est.id}
+            emptyMessage="No hay estudios recientes."
+          />
         </div>
       </div>
     </div>

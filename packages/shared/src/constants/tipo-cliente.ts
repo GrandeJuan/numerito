@@ -5,3 +5,9 @@ export const TIPO_CLIENTE = {
 } as const;
 
 export type TipoCliente = (typeof TIPO_CLIENTE)[keyof typeof TIPO_CLIENTE];
+
+export const TIPO_CLIENTE_LABELS: Record<TipoCliente, string> = {
+  PERSONA_FISICA: 'Persona Fisica',
+  PERSONA_JURIDICA: 'Persona Juridica',
+  SOCIEDAD: 'Sociedad',
+};

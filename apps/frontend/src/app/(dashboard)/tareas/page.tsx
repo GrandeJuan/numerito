@@ -5,7 +5,11 @@ import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { formatFecha } from '@/lib/formatters';
-import { PRIORIDAD_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { PrioridadBadge } from '@/components/shared/prioridad-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { FilterBar, FilterSelect } from '@/components/shared/filter-bar';
+import { ESTADO_TAREA_LABELS, PRIORIDAD_LABELS } from '@numerito/shared';
 
 interface TareaRow {
   id: string;
@@ -17,19 +21,6 @@ interface TareaRow {
   fechaVencimiento: string | null;
   horasRegistradas: number;
 }
-
-const ESTADO_LABELS: Record<string, string> = {
-  PENDIENTE: 'Pendiente',
-  EN_PROGRESO: 'En Progreso',
-  COMPLETADO: 'Completada',
-};
-
-const PRIORIDAD_LABELS: Record<string, string> = {
-  BAJA: 'Baja',
-  MEDIA: 'Media',
-  ALTA: 'Alta',
-  URGENTE: 'Urgente',
-};
 
 const ESTADO_COLUMN_COLORS: Record<string, string> = {
   PENDIENTE: 'border-yellow-400',
@@ -60,11 +51,12 @@ function TaskCard({ tarea }: { tarea: TareaRow }) {
         <h4 className="text-sm font-medium text-[#091426] dark:text-white leading-tight">
           {tarea.titulo}
         </h4>
-        <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${PRIORIDAD_COLORS[tarea.prioridad] ?? ''}`}
-        >
-          {PRIORIDAD_LABELS[tarea.prioridad] ?? tarea.prioridad}
-        </span>
+        <PrioridadBadge
+          prioridad={tarea.prioridad}
+          label={
+            PRIORIDAD_LABELS[tarea.prioridad as keyof typeof PRIORIDAD_LABELS] ?? tarea.prioridad
+          }
+        />
       </div>
 
       {tarea.clienteNombre && (
@@ -141,6 +133,76 @@ export default function TareasPage() {
     return map;
   }, [filtered]);
 
+  const tareaColumns: Column<TareaRow>[] = [
+    {
+      key: 'titulo',
+      header: 'Titulo',
+      render: (t) => <span className="text-[#091426] dark:text-white font-medium">{t.titulo}</span>,
+    },
+    {
+      key: 'cliente',
+      header: 'Cliente',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">{t.clienteNombre ?? '-'}</span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (t) => (
+        <StatusBadge
+          status={t.estado}
+          label={ESTADO_TAREA_LABELS[t.estado as keyof typeof ESTADO_TAREA_LABELS] ?? t.estado}
+        />
+      ),
+    },
+    {
+      key: 'prioridad',
+      header: 'Prioridad',
+      render: (t) => (
+        <PrioridadBadge
+          prioridad={t.prioridad}
+          label={PRIORIDAD_LABELS[t.prioridad as keyof typeof PRIORIDAD_LABELS] ?? t.prioridad}
+        />
+      ),
+    },
+    {
+      key: 'responsable',
+      header: 'Responsable',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">
+          {t.responsableNombre ?? 'Sin asignar'}
+        </span>
+      ),
+    },
+    {
+      key: 'vencimiento',
+      header: 'Vencimiento',
+      render: (t) => {
+        const overdue = t.estado !== 'COMPLETADO' && isOverdue(t.fechaVencimiento);
+        return (
+          <span
+            className={
+              overdue
+                ? 'text-red-600 dark:text-red-400 font-medium'
+                : 'text-[#45474c] dark:text-[#c5c6cd]'
+            }
+          >
+            {t.fechaVencimiento ? formatFecha(t.fechaVencimiento) : '-'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'horas',
+      header: 'Horas',
+      align: 'right',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">{t.horasRegistradas}h</span>
+      ),
+    },
+  ];
+
   return (
     <PageStateGuard estudioActual={estudioActual} loading={loading} error={error} icon="task_alt">
       <div className="space-y-6">
@@ -174,33 +236,25 @@ export default function TareasPage() {
         </div>
 
         {/* Filters */}
-        <div className={`${CARD_CLASSES.full} p-4`}>
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={prioridadFilter}
-              onChange={(e) => setPrioridadFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-[#e2e8f0] dark:border-white/10 rounded-lg bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white"
-            >
-              <option value="">Todas las prioridades</option>
-              <option value="BAJA">Baja</option>
-              <option value="MEDIA">Media</option>
-              <option value="ALTA">Alta</option>
-              <option value="URGENTE">Urgente</option>
-            </select>
-            <select
-              value={responsableFilter}
-              onChange={(e) => setResponsableFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-[#e2e8f0] dark:border-white/10 rounded-lg bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white"
-            >
-              <option value="">Todos los responsables</option>
-              {responsables.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <FilterBar>
+          <FilterSelect
+            value={prioridadFilter}
+            onChange={setPrioridadFilter}
+            placeholder="Todas las prioridades"
+            options={[
+              { value: 'BAJA', label: 'Baja' },
+              { value: 'MEDIA', label: 'Media' },
+              { value: 'ALTA', label: 'Alta' },
+              { value: 'URGENTE', label: 'Urgente' },
+            ]}
+          />
+          <FilterSelect
+            value={responsableFilter}
+            onChange={setResponsableFilter}
+            placeholder="Todos los responsables"
+            options={responsables.map((r) => ({ value: r, label: r }))}
+          />
+        </FilterBar>
 
         {/* Kanban View */}
         {view === 'kanban' && (
@@ -236,80 +290,12 @@ export default function TareasPage() {
 
         {/* List View */}
         {view === 'list' && (
-          <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr
-                    className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                  >
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Titulo</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Cliente</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Prioridad</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>
-                      Responsable
-                    </th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>
-                      Vencimiento
-                    </th>
-                    <th className={`text-right py-3 px-4 ${TABLE_CLASSES.headerText}`}>Horas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((t) => {
-                    const overdue = t.estado !== 'COMPLETADO' && isOverdue(t.fechaVencimiento);
-                    return (
-                      <tr
-                        key={t.id}
-                        className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                      >
-                        <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
-                          {t.titulo}
-                        </td>
-                        <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                          {t.clienteNombre ?? '-'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]">
-                            {ESTADO_LABELS[t.estado] ?? t.estado}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORIDAD_COLORS[t.prioridad] ?? ''}`}
-                          >
-                            {PRIORIDAD_LABELS[t.prioridad] ?? t.prioridad}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                          {t.responsableNombre ?? 'Sin asignar'}
-                        </td>
-                        <td
-                          className={`py-3 px-4 ${overdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-[#45474c] dark:text-[#c5c6cd]'}`}
-                        >
-                          {t.fechaVencimiento ? formatFecha(t.fechaVencimiento) : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-right text-[#45474c] dark:text-[#c5c6cd]">
-                          {t.horasRegistradas}h
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {filtered.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]"
-                      >
-                        No se encontraron tareas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <DataTable<TareaRow>
+            columns={tareaColumns}
+            data={filtered}
+            rowKey={(t) => t.id}
+            emptyMessage="No se encontraron tareas."
+          />
         )}
       </div>
     </PageStateGuard>

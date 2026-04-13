@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { formatFecha } from '@/lib/formatters';
-import { CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
+import { CARD_CLASSES } from '@/lib/design-tokens';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { FilterBar, FilterSelect } from '@/components/shared/filter-bar';
 
 interface Documento {
   id: string;
@@ -70,6 +72,55 @@ export default function PortalDocumentosPage() {
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
   const [periodoFilter, setPeriodoFilter] = useState<string>('todos');
 
+  const docListColumns: Column<Documento>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (doc) => (
+        <div className="flex items-center gap-2">
+          <span className={`material-symbols-outlined text-lg ${TIPO_COLORS[doc.tipo]}`}>
+            {TIPO_ICONS[doc.tipo]}
+          </span>
+          <span className="text-[#091426] dark:text-white">{doc.nombre}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'tipo',
+      header: 'Tipo',
+      render: (doc) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd] capitalize">{doc.tipo}</span>
+      ),
+    },
+    {
+      key: 'fecha',
+      header: 'Fecha',
+      render: (doc) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">{formatFecha(doc.fecha)}</span>
+      ),
+    },
+    {
+      key: 'tamano',
+      header: 'Tamano',
+      render: (doc) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{doc.tamano}</span>,
+    },
+    {
+      key: 'acciones',
+      header: '',
+      align: 'right' as const,
+      render: () => (
+        <button
+          aria-label="Descargar"
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          <span className="material-symbols-outlined text-gray-600 dark:text-[#c5c6cd] text-lg">
+            download
+          </span>
+        </button>
+      ),
+    },
+  ];
+
   const filtered = MOCK_DOCUMENTOS.filter((d) => {
     if (tipoFilter !== 'todos' && d.tipo !== tipoFilter) return false;
     if (periodoFilter !== 'todos') {
@@ -114,32 +165,29 @@ export default function PortalDocumentosPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <select
-          value={tipoFilter}
-          onChange={(e) => setTipoFilter(e.target.value)}
-          aria-label="Filtrar por tipo"
-          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-sm text-[#091426] dark:text-white"
-        >
-          <option value="todos">Todos los tipos</option>
-          <option value="PDF">PDF</option>
-          <option value="imagen">Imagen</option>
-          <option value="planilla">Planilla</option>
-          <option value="otro">Otro</option>
-        </select>
-
-        <select
-          value={periodoFilter}
-          onChange={(e) => setPeriodoFilter(e.target.value)}
-          aria-label="Filtrar por periodo"
-          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-sm text-[#091426] dark:text-white"
-        >
-          <option value="todos">Todos los periodos</option>
-          <option value="2026-03">Marzo 2026</option>
-          <option value="2026-02">Febrero 2026</option>
-          <option value="2026-01">Enero 2026</option>
-        </select>
-      </div>
+      <FilterBar>
+        <FilterSelect
+          value={tipoFilter === 'todos' ? '' : tipoFilter}
+          onChange={(v) => setTipoFilter(v || 'todos')}
+          placeholder="Todos los tipos"
+          options={[
+            { value: 'PDF', label: 'PDF' },
+            { value: 'imagen', label: 'Imagen' },
+            { value: 'planilla', label: 'Planilla' },
+            { value: 'otro', label: 'Otro' },
+          ]}
+        />
+        <FilterSelect
+          value={periodoFilter === 'todos' ? '' : periodoFilter}
+          onChange={(v) => setPeriodoFilter(v || 'todos')}
+          placeholder="Todos los periodos"
+          options={[
+            { value: '2026-03', label: 'Marzo 2026' },
+            { value: '2026-02', label: 'Febrero 2026' },
+            { value: '2026-01', label: 'Enero 2026' },
+          ]}
+        />
+      </FilterBar>
 
       {/* Documents */}
       {filtered.length === 0 ? (
@@ -186,63 +234,12 @@ export default function PortalDocumentosPage() {
           ))}
         </div>
       ) : (
-        <div className={`${CARD_CLASSES.full}`}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-white/10">
-                <th className="text-left py-3 px-4 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                  Nombre
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                  Tipo
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                  Fecha
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                  Tamano
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-[#45474c] dark:text-[#a0a3a8]"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className={`border-b border-[#e2e8f0]/50 dark:border-white/5 last:border-0 ${TABLE_CLASSES.rowHover}`}
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`material-symbols-outlined text-lg ${TIPO_COLORS[doc.tipo]}`}
-                      >
-                        {TIPO_ICONS[doc.tipo]}
-                      </span>
-                      <span className="text-[#091426] dark:text-white">{doc.nombre}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd] capitalize">
-                    {doc.tipo}
-                  </td>
-                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">
-                    {formatFecha(doc.fecha)}
-                  </td>
-                  <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd]">{doc.tamano}</td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      aria-label="Descargar"
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-gray-600 dark:text-[#c5c6cd] text-lg">
-                        download
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={docListColumns}
+          data={filtered}
+          rowKey={(doc) => doc.id}
+          emptyMessage="No se encontraron documentos."
+        />
       )}
     </div>
   );

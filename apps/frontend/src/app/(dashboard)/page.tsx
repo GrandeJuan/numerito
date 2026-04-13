@@ -3,15 +3,12 @@
 import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { formatCurrency, formatFecha } from '@/lib/formatters';
 import { Can } from '@/components/shared/can';
-import {
-  STATUS_COLORS,
-  KPI_ICON_STYLE,
-  CARD_CLASSES,
-  TABLE_CLASSES,
-  CHART_THEME,
-} from '@/lib/design-tokens';
+import { CARD_CLASSES, CHART_THEME } from '@/lib/design-tokens';
 import {
   ResponsiveContainer,
   BarChart,
@@ -52,26 +49,32 @@ export default function DashboardPage() {
     error,
   } = useFetchWithEstudio<DashboardStats>('/v1/dashboard/stats');
 
-  const kpis = stats
-    ? [
-        { label: 'Clientes', value: stats.kpis.clientes, icon: 'group' },
-        {
-          label: 'Vencimientos Proximos',
-          value: stats.kpis.vencimientosProximos,
-          icon: 'schedule',
-        },
-        ...(stats.kpis.facturacionMes !== undefined
-          ? [
-              {
-                label: 'Facturacion Mes',
-                value: formatCurrency(stats.kpis.facturacionMes),
-                icon: 'payments',
-              },
-            ]
-          : []),
-        { label: 'Tareas Activas', value: stats.kpis.tareasActivas, icon: 'task_alt' },
-      ]
-    : [];
+  type VencimientoRow = DashboardStats['proximosVencimientos'][number];
+
+  const vencimientoColumns: Column<VencimientoRow>[] = [
+    {
+      key: 'cliente',
+      header: 'Cliente',
+      render: (v) => <span className="text-[#091426] dark:text-white">{v.cliente}</span>,
+    },
+    {
+      key: 'obligacion',
+      header: 'Obligacion',
+      render: (v) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{v.obligacion}</span>,
+    },
+    {
+      key: 'fecha',
+      header: 'Fecha',
+      render: (v) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd]">{formatFecha(v.fecha)}</span>
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (v) => <StatusBadge status={v.estado} />,
+    },
+  ];
 
   return (
     <PageStateGuard estudioActual={estudioActual} loading={loading} error={error} icon="dashboard">
@@ -86,23 +89,24 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
-              <div className="flex items-center gap-3">
-                <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                  <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                    {kpi.icon}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
-                  <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard icon="group" label="Clientes" value={stats.kpis.clientes} />
+            <KpiCard
+              icon="schedule"
+              label="Vencimientos Proximos"
+              value={stats.kpis.vencimientosProximos}
+            />
+            {stats.kpis.facturacionMes !== undefined && (
+              <KpiCard
+                icon="payments"
+                label="Facturacion Mes"
+                value={formatCurrency(stats.kpis.facturacionMes)}
+              />
+            )}
+            <KpiCard icon="task_alt" label="Tareas Activas" value={stats.kpis.tareasActivas} />
+          </div>
+        )}
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -186,43 +190,12 @@ export default function DashboardPage() {
                 Sin vencimientos proximos.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className={TABLE_CLASSES.rowBorder}>
-                      <th className={`text-left py-2 px-2 ${TABLE_CLASSES.headerText}`}>Cliente</th>
-                      <th className={`text-left py-2 px-2 ${TABLE_CLASSES.headerText}`}>
-                        Obligacion
-                      </th>
-                      <th className={`text-left py-2 px-2 ${TABLE_CLASSES.headerText}`}>Fecha</th>
-                      <th className={`text-left py-2 px-2 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats?.proximosVencimientos.map((v) => (
-                      <tr
-                        key={v.id}
-                        className={`${TABLE_CLASSES.rowBorder} ${TABLE_CLASSES.rowHover}`}
-                      >
-                        <td className="py-2 px-2 text-[#091426] dark:text-white">{v.cliente}</td>
-                        <td className="py-2 px-2 text-[#45474c] dark:text-[#c5c6cd]">
-                          {v.obligacion}
-                        </td>
-                        <td className="py-2 px-2 text-[#45474c] dark:text-[#c5c6cd]">
-                          {formatFecha(v.fecha)}
-                        </td>
-                        <td className="py-2 px-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[v.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'}`}
-                          >
-                            {v.estado}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable<VencimientoRow>
+                columns={vencimientoColumns}
+                data={stats?.proximosVencimientos ?? []}
+                rowKey={(v) => v.id}
+                emptyMessage="Sin vencimientos proximos."
+              />
             )}
           </div>
 

@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
-import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
+import { CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
+import { RolBadge } from '@/components/shared/rol-badge';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { ROL_LABELS, CONDICION_IVA_LABELS } from '@numerito/shared';
 
 type Tab = 'general' | 'equipo' | 'plan' | 'permisos';
 
@@ -30,22 +34,6 @@ interface PlanInfo {
   usuariosActuales: number;
   usuariosMax: number;
 }
-
-const ROL_LABELS: Record<string, string> = {
-  SUPERADMIN: 'Super Admin',
-  SOCIO: 'Socio',
-  RESPONSABLE: 'Responsable',
-  EMPLEADO: 'Empleado',
-  CLIENTE: 'Cliente',
-};
-
-const CONDICION_IVA_LABELS: Record<string, string> = {
-  RESPONSABLE_INSCRIPTO: 'Responsable Inscripto',
-  MONOTRIBUTO: 'Monotributista',
-  EXENTO: 'Exento',
-  NO_RESPONSABLE: 'No Responsable',
-  CONSUMIDOR_FINAL: 'Consumidor Final',
-};
 
 // Permission groups for the matrix (mirrors backend permisos-default.seed.ts)
 const PERMISSION_GROUPS = [
@@ -134,6 +122,40 @@ export default function ConfiguracionPage() {
   const { data: equipo } = useFetchWithEstudio<Miembro[]>(isSocio ? '/v1/estudios/equipo' : null);
   const { data: plan } = useFetchWithEstudio<PlanInfo>(isSocio ? '/v1/estudios/plan' : null);
 
+  const equipoColumns: Column<Miembro>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (m) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            {m.nombre.charAt(0)}
+          </div>
+          <span className="text-[#091426] dark:text-white font-medium">{m.nombre}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      render: (m) => <span className="text-gray-600 dark:text-[#c5c6cd]">{m.email}</span>,
+    },
+    {
+      key: 'rol',
+      header: 'Rol',
+      render: (m) => (
+        <RolBadge rol={m.rol} label={ROL_LABELS[m.rol as keyof typeof ROL_LABELS] ?? m.rol} />
+      ),
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (m) => (
+        <StatusBadge status={m.estado} label={m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'} />
+      ),
+    },
+  ];
+
   // Show access denied before PageStateGuard when estudio is loaded but user is not socio
   if (estudioActual && !isSocio) {
     return (
@@ -207,7 +229,9 @@ export default function ConfiguracionPage() {
                     Condicion IVA
                   </label>
                   <p className="text-[#091426] dark:text-white">
-                    {CONDICION_IVA_LABELS[estudioInfo.condicionIva] ?? estudioInfo.condicionIva}
+                    {CONDICION_IVA_LABELS[
+                      estudioInfo.condicionIva as keyof typeof CONDICION_IVA_LABELS
+                    ] ?? estudioInfo.condicionIva}
                   </p>
                 </div>
               </div>
@@ -220,68 +244,12 @@ export default function ConfiguracionPage() {
         )}
 
         {activeTab === 'equipo' && (
-          <div className={`${CARD_CLASSES.full} overflow-hidden`}>
-            <div className="p-6 border-b border-gray-200 dark:border-white/10">
-              <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
-                Miembros del Equipo
-              </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr
-                    className={`border-b border-gray-200 dark:border-white/10 ${TABLE_CLASSES.header}`}
-                  >
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Email</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Rol</th>
-                    <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(equipo ?? []).map((m) => (
-                    <tr key={m.id} className="border-b border-[#e2e8f0]/50 dark:border-white/5">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                            {m.nombre.charAt(0)}
-                          </div>
-                          <span className="text-[#091426] dark:text-white font-medium">
-                            {m.nombre}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-[#c5c6cd]">{m.email}</td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS[m.rol] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
-                        >
-                          {ROL_LABELS[m.rol] ?? m.rol}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[m.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#c5c6cd]'}`}
-                        >
-                          {m.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {(equipo ?? []).length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="py-8 text-center text-gray-500 dark:text-[#a0a3a8]"
-                      >
-                        No se encontraron miembros.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <DataTable
+            columns={equipoColumns}
+            data={equipo ?? []}
+            rowKey={(m) => m.id}
+            emptyMessage="No se encontraron miembros."
+          />
         )}
 
         {activeTab === 'plan' && (
@@ -299,11 +267,10 @@ export default function ConfiguracionPage() {
                     <p className="text-xl font-bold text-[#091426] dark:text-white">
                       {plan.nombre}
                     </p>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[plan.estado] ?? 'bg-gray-100 text-gray-800'}`}
-                    >
-                      {plan.estado === 'ACTIVO' ? 'Activo' : plan.estado}
-                    </span>
+                    <StatusBadge
+                      status={plan.estado}
+                      label={plan.estado === 'ACTIVO' ? 'Activo' : plan.estado}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -375,7 +342,7 @@ export default function ConfiguracionPage() {
                     <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Permiso</th>
                     {ROLES_MATRIX.map((rol) => (
                       <th key={rol} className={`text-center py-3 px-4 ${TABLE_CLASSES.headerText}`}>
-                        {ROL_LABELS[rol] ?? rol}
+                        {ROL_LABELS[rol as keyof typeof ROL_LABELS] ?? rol}
                       </th>
                     ))}
                   </tr>

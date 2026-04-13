@@ -3,7 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 
 // Mock recharts to avoid canvas issues in tests
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+  ResponsiveContainer: ({ children }: any) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
   AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
   Area: () => <div />,
   XAxis: () => <div />,
@@ -31,11 +33,15 @@ const mockStats = {
     { plan: 'Profesional', cantidad: 8 },
     { plan: 'Starter', cantidad: 4 },
   ],
-  alertas: [
-    { tipo: 'warning', mensaje: '3 subscripciones por vencer', fecha: '2026-04-01' },
-  ],
+  alertas: [{ tipo: 'warning', mensaje: '3 subscripciones por vencer', fecha: '2026-04-01' }],
   estudiosRecientes: [
-    { id: '1', nombre: 'Estudio Contable X', plan: 'Profesional', estado: 'Activo', creadoEn: '2026-01-15' },
+    {
+      id: '1',
+      nombre: 'Estudio Contable X',
+      plan: 'Profesional',
+      estado: 'Activo',
+      creadoEn: '2026-01-15',
+    },
   ],
 };
 
@@ -106,9 +112,9 @@ describe('AdminPage', () => {
     render(<AdminPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Estudios Recientes')).toBeInTheDocument();
+      expect(screen.getByText('Estudio Contable X')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Estudio Contable X')).toBeInTheDocument();
+    expect(screen.getByText('Profesional')).toBeInTheDocument();
   });
 });
