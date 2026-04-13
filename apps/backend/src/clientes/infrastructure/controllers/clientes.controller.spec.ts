@@ -4,15 +4,20 @@ import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
 
-const makeCliente = (overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {}) =>
-  Cliente.create({
-    cuit: Cuit.create(overrides.cuit ?? '20-12345678-6'),
-    razonSocial: RazonSocial.create(overrides.razonSocial ?? 'Empresa Test'),
-    condicionIva: 'RESPONSABLE_INSCRIPTO',
-    tipo: 'PERSONA_JURIDICA',
-    regimen: 'GENERAL',
-    estudioId: overrides.estudioId ?? 'estudio-1',
-  }, overrides.id);
+const makeCliente = (
+  overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {},
+) =>
+  Cliente.create(
+    {
+      cuit: Cuit.create(overrides.cuit ?? '20-12345678-6'),
+      razonSocial: RazonSocial.create(overrides.razonSocial ?? 'Empresa Test'),
+      condicionIva: 'RESPONSABLE_INSCRIPTO',
+      tipo: 'PERSONA_JURIDICA',
+      regimen: 'GENERAL',
+      estudioId: overrides.estudioId ?? 'estudio-1',
+    },
+    overrides.id,
+  );
 
 describe('ClientesController', () => {
   let controller: ClientesController;
@@ -23,31 +28,30 @@ describe('ClientesController', () => {
     mockClienteRepo = {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       findByCuit: jest.fn().mockResolvedValue(null),
       findByResponsableId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    crearClienteHandler = new CrearClienteHandler(mockClienteRepo);
+    crearClienteHandler = new CrearClienteHandler(mockClienteRepo, { estudioId: 'estudio-1' });
     controller = new ClientesController(mockClienteRepo, crearClienteHandler);
   });
 
   describe('list', () => {
     it('should return paginated clientes for estudio', async () => {
       const clientes = [makeCliente(), makeCliente({ cuit: '27-12345678-0' })];
-      mockClienteRepo.findByEstudioId.mockResolvedValue(clientes);
+      mockClienteRepo.findAll.mockResolvedValue(clientes);
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockClienteRepo.findByEstudioId.mockResolvedValue([]);
+      mockClienteRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list();
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -55,22 +59,19 @@ describe('ClientesController', () => {
 
   describe('summary', () => {
     it('should return total and condicion IVA breakdown', async () => {
-      const clientes = [
-        makeCliente(),
-        makeCliente({ cuit: '27-12345678-0' }),
-      ];
-      mockClienteRepo.findByEstudioId.mockResolvedValue(clientes);
+      const clientes = [makeCliente(), makeCliente({ cuit: '27-12345678-0' })];
+      mockClienteRepo.findAll.mockResolvedValue(clientes);
 
-      const result = await controller.summary('estudio-1');
+      const result = await controller.summary();
       expect(result.data.total).toBe(2);
       expect(result.data.porCondicionIva).toBeDefined();
       expect(result.data.porCondicionIva['RESPONSABLE_INSCRIPTO']).toBe(2);
     });
 
     it('should return empty breakdown when no clientes', async () => {
-      mockClienteRepo.findByEstudioId.mockResolvedValue([]);
+      mockClienteRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.summary('estudio-1');
+      const result = await controller.summary();
       expect(result.data.total).toBe(0);
       expect(result.data.porCondicionIva).toEqual({});
     });
@@ -101,7 +102,7 @@ describe('ClientesController', () => {
         tipo: 'PERSONA_JURIDICA',
         regimen: 'GENERAL',
       };
-      const result = await controller.create(dto, 'estudio-1');
+      const result = await controller.create(dto);
       expect(result.id).toBeDefined();
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -119,7 +120,9 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.update('bad-id', { razonSocial: 'X' })).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.update('bad-id', { razonSocial: 'X' })).rejects.toThrow(
+        'Cliente no encontrado',
+      );
     });
 
     it('should update condicionIva', async () => {

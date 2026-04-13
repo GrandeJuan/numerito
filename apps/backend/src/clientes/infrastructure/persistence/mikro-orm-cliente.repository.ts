@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Cliente, type TipoCliente, type Regimen } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { ClienteEntity } from './cliente.schema';
 import { CondicionIvaEntity } from '../../../shared/infrastructure/persistence/condicion-iva.schema';
 import { TipoClienteEntity } from '../../../shared/infrastructure/persistence/tipo-cliente.schema';
@@ -13,50 +18,76 @@ import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.s
 import type { CondicionIVA } from '@numerito/shared';
 
 @Injectable()
-export class MikroOrmClienteRepository implements ClienteRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmClienteRepository
+  extends TenantAwareRepository<Cliente>
+  implements ClienteRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<Cliente | null> {
-    const entity = await this.em.findOne(ClienteEntity, { id }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      ClienteEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByCuit(cuit: Cuit, estudioId: string): Promise<Cliente | null> {
-    const entity = await this.em.findOne(ClienteEntity, {
-      cuit: cuit.raw,
-      estudio: { id: estudioId },
-    }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
-    });
+  async findByCuit(cuit: Cuit): Promise<Cliente | null> {
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      ClienteEntity,
+      {
+        cuit: cuit.raw,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
-  }
-
-  async findByEstudioId(estudioId: string): Promise<Cliente[]> {
-    const entities = await this.em.find(ClienteEntity, { estudio: { id: estudioId } }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByResponsableId(responsableId: string, estudioId: string): Promise<Cliente[]> {
-    const entities = await this.em.find(ClienteEntity, {
-      responsable: { id: responsableId },
-      estudio: { id: estudioId },
-    }, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
-    });
-    return entities.map(e => this.toDomain(e));
   }
 
   async findAll(): Promise<Cliente[]> {
-    const entities = await this.em.findAll(ClienteEntity, {
-      populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      ClienteEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
+  }
+
+  async findByResponsableId(responsableId: string): Promise<Cliente[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      ClienteEntity,
+      {
+        responsable: { id: responsableId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(cliente: Cliente): Promise<void> {
@@ -65,7 +96,7 @@ export class MikroOrmClienteRepository implements ClienteRepository {
       this.em.findOneOrFail(TipoClienteEntity, { codigo: cliente.tipo }),
       this.em.findOneOrFail(RegimenEntity, { codigo: cliente.regimen }),
     ]);
-    const estudio =this.em.getReference(EstudioEntity, cliente.estudioId);
+    const estudio = this.em.getReference(EstudioEntity, cliente.estudioId);
     const responsable = cliente.responsableId
       ? this.em.getReference(UsuarioEntity, cliente.responsableId)
       : undefined;
@@ -107,13 +138,16 @@ export class MikroOrmClienteRepository implements ClienteRepository {
   }
 
   private toDomain(entity: ClienteEntity): Cliente {
-    return Cliente.create({
-      cuit: Cuit.create(entity.cuit),
-      razonSocial: RazonSocial.create(entity.razonSocial),
-      condicionIva: entity.condicionIva.codigo as CondicionIVA,
-      tipo: entity.tipoCliente.codigo as TipoCliente,
-      regimen: entity.regimen.codigo as Regimen,
-      estudioId: entity.estudio.id,
-    }, entity.id);
+    return Cliente.create(
+      {
+        cuit: Cuit.create(entity.cuit),
+        razonSocial: RazonSocial.create(entity.razonSocial),
+        condicionIva: entity.condicionIva.codigo as CondicionIVA,
+        tipo: entity.tipoCliente.codigo as TipoCliente,
+        regimen: entity.regimen.codigo as Regimen,
+        estudioId: entity.estudio.id,
+      },
+      entity.id,
+    );
   }
 }

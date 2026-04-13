@@ -4,6 +4,7 @@ import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente, type TipoCliente, type Regimen } from '../../domain/entities/cliente.entity';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { CuitDuplicadoError } from '../../../shared/domain/exceptions';
+import type { TenantContext } from '../../../shared/domain/tenant-context';
 
 export interface CrearClienteCommand {
   cuit: string;
@@ -11,18 +12,25 @@ export interface CrearClienteCommand {
   condicionIva: CondicionIVA;
   tipo: TipoCliente;
   regimen: Regimen;
-  estudioId: string;
 }
 
 export class CrearClienteHandler {
-  constructor(private readonly clienteRepo: ClienteRepository) {}
+  constructor(
+    private readonly clienteRepo: ClienteRepository,
+    private readonly context: TenantContext,
+  ) {}
 
   async execute(command: CrearClienteCommand): Promise<{ id: string }> {
     const cuit = Cuit.create(command.cuit);
 
-    const existing = await this.clienteRepo.findByCuit(cuit, command.estudioId);
+    const existing = await this.clienteRepo.findByCuit(cuit);
     if (existing) {
       throw new CuitDuplicadoError();
+    }
+
+    const estudioId = this.context.estudioId;
+    if (!estudioId) {
+      throw new Error('Tenant context not available');
     }
 
     const cliente = Cliente.create({
@@ -31,7 +39,7 @@ export class CrearClienteHandler {
       condicionIva: command.condicionIva,
       tipo: command.tipo,
       regimen: command.regimen,
-      estudioId: command.estudioId,
+      estudioId,
     });
 
     await this.clienteRepo.save(cliente);
