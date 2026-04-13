@@ -1,4 +1,8 @@
 export { BaseEntity } from './base.entity';
 export { BaseRepository } from './base.repository';
+export { TenantAwareRepository } from './tenant-aware.repository';
+export { GlobalRepository } from './global.repository';
+export type { TenantContext } from './tenant-context';
+export { TENANT_CONTEXT } from './tenant-context';
 export { DomainEvent } from './domain-event';
 export { ValueObject } from './value-object';

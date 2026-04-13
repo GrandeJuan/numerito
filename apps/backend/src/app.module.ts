@@ -4,6 +4,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import mikroOrmConfig from './mikro-orm.config';
 import { AppController } from './app.controller';
 import { CrossContextModule } from './shared/infrastructure/cross-context.module';
+import { RequestContextModule } from './shared/infrastructure/request-context.module';
 import { IamModule } from './iam/iam.module';
 import { EstudioModule } from './estudio/estudio.module';
 import { ClientesModule } from './clientes/clientes.module';
@@ -23,6 +24,7 @@ import { PortalModule } from './portal/portal.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MikroOrmModule.forRoot(mikroOrmConfig),
+    RequestContextModule,
     CrossContextModule,
     IamModule,
     EstudioModule,

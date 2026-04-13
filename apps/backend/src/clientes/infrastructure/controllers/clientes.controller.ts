@@ -3,11 +3,13 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearClienteDto } from '../../application/dtos/crear-cliente.dto';
 import { ActualizarClienteDto } from '../../application/dtos/actualizar-cliente.dto';
 import { AsignarResponsableDto } from '../../application/dtos/asignar-responsable.dto';
-import { CrearClienteHandler, type CrearClienteCommand } from '../../application/commands/crear-cliente.command';
+import {
+  CrearClienteHandler,
+  type CrearClienteCommand,
+} from '../../application/commands/crear-cliente.command';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { CondicionIVA } from '@numerito/shared';
@@ -23,19 +25,15 @@ export class ClientesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar clientes del estudio' })
-  async list(
-    @EstudioId() estudioId: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
-    const clientes = await this.clienteRepo.findByEstudioId(estudioId);
+  async list(@Query('page') page = 1, @Query('limit') limit = 20) {
+    const clientes = await this.clienteRepo.findAll();
     return successResponse(clientes, { total: clientes.length, page: +page, limit: +limit });
   }
 
   @Get('summary')
   @ApiOperation({ summary: 'Resumen de clientes del estudio' })
-  async summary(@EstudioId() estudioId: string) {
-    const clientes = await this.clienteRepo.findByEstudioId(estudioId);
+  async summary() {
+    const clientes = await this.clienteRepo.findAll();
     const porCondicionIva: Record<string, number> = {};
     for (const c of clientes) {
       const key = String(c.condicionIva);
@@ -54,8 +52,8 @@ export class ClientesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body() dto: CrearClienteDto, @EstudioId() estudioId: string) {
-    return this.crearClienteHandler.execute({ ...dto, estudioId } as CrearClienteCommand);
+  async create(@Body() dto: CrearClienteDto) {
+    return this.crearClienteHandler.execute(dto as CrearClienteCommand);
   }
 
   @Put(':id')
