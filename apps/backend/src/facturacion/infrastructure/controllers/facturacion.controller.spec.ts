@@ -62,7 +62,7 @@ describe('FacturacionController', () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
       mockFacturaRepo.findAll.mockResolvedValue(facturas);
 
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.facturado).toBeDefined();
       expect(result.data.cobrado).toBeDefined();
       expect(result.data.porEstado).toBeDefined();
@@ -70,7 +70,7 @@ describe('FacturacionController', () => {
     });
 
     it('should return zero stats when no facturas', async () => {
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.facturado).toBe(0);
     });
   });
