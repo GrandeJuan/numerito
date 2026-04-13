@@ -24,20 +24,16 @@ export class ContabilidadController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Estadisticas de contabilidad del estudio' })
-  async stats(@EstudioId() estudioId: string) {
+  async stats() {
     const query = new ContabilidadStatsQuery(this.libroRepo, this.asientoRepo);
-    const stats = await query.execute(estudioId);
+    const stats = await query.execute();
     return successResponse(stats);
   }
 
   @Get('libros')
   @ApiOperation({ summary: 'Listar libros contables del estudio' })
-  async listLibros(
-    @EstudioId() estudioId: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
-    const libros = await this.libroRepo.findByEstudioId(estudioId);
+  async listLibros(@Query('page') page = 1, @Query('limit') limit = 20) {
+    const libros = await this.libroRepo.findAll();
     return successResponse(libros, { total: libros.length, page: +page, limit: +limit });
   }
 

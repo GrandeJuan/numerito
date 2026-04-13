@@ -9,17 +9,14 @@ export class NotificacionVencimientoService {
     private readonly mailSender: MailSenderPort,
   ) {}
 
-  async notificarProximos(estudioId: string): Promise<number> {
-    const config = await this.alertaConfigRepo.findByEstudioId(estudioId);
+  async notificarProximos(): Promise<number> {
+    const config = await this.alertaConfigRepo.findConfig();
 
     if (!config || !config.activa) {
       return 0;
     }
 
-    const vencimientos = await this.vencimientoRepo.findProximosAVencer(
-      config.diasAnticipacion,
-      estudioId,
-    );
+    const vencimientos = await this.vencimientoRepo.findProximosAVencer(config.diasAnticipacion);
 
     for (const vencimiento of vencimientos) {
       const subject = `Vencimiento próximo: ${vencimiento.descripcion}`;
@@ -31,7 +28,7 @@ export class NotificacionVencimientoService {
         `- Tipo: ${vencimiento.tipoObligacion}`,
       ].join('\n');
 
-      await this.mailSender.send(estudioId, subject, body);
+      await this.mailSender.send(config.estudioId, subject, body);
     }
 
     return vencimientos.length;

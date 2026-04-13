@@ -1,11 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
-import type { OrganismoFiscalRepository, OrganismoFiscalData } from '../../domain/repositories/organismo-fiscal.repository';
+import { GlobalRepository } from '../../../shared/domain';
+import type {
+  OrganismoFiscalRepository,
+  OrganismoFiscalData,
+} from '../../domain/repositories/organismo-fiscal.repository';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
 
 @Injectable()
-export class MikroOrmOrganismoFiscalRepository implements OrganismoFiscalRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmOrganismoFiscalRepository
+  extends GlobalRepository<OrganismoFiscalData>
+  implements OrganismoFiscalRepository
+{
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
+
+  async findById(_id: string): Promise<OrganismoFiscalData | null> {
+    throw new Error('Not implemented');
+  }
+
+  async delete(_entity: OrganismoFiscalData): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   async findByCodigo(codigo: string): Promise<OrganismoFiscalData | null> {
     const entity = await this.em.findOne(OrganismoFiscalEntity, { codigo });
@@ -15,12 +32,12 @@ export class MikroOrmOrganismoFiscalRepository implements OrganismoFiscalReposit
 
   async findAll(): Promise<OrganismoFiscalData[]> {
     const entities = await this.em.findAll(OrganismoFiscalEntity);
-    return entities.map(e => this.toData(e));
+    return entities.map((e) => this.toData(e));
   }
 
   async findActivos(): Promise<OrganismoFiscalData[]> {
     const entities = await this.em.find(OrganismoFiscalEntity, { activo: true });
-    return entities.map(e => this.toData(e));
+    return entities.map((e) => this.toData(e));
   }
 
   async save(organismo: OrganismoFiscalData): Promise<void> {

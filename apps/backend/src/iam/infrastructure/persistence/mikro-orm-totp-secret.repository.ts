@@ -1,13 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { randomUUID } from 'crypto';
-import type { TotpSecretRepository, TotpSecretData } from '../../domain/repositories/totp-secret.repository';
+import { GlobalRepository } from '../../../shared/domain';
+import type {
+  TotpSecretRepository,
+  TotpSecretData,
+} from '../../domain/repositories/totp-secret.repository';
 import { TotpSecretEntity } from './totp-secret.schema';
 import { UsuarioEntity } from './usuario.schema';
 
 @Injectable()
-export class MikroOrmTotpSecretRepository implements TotpSecretRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmTotpSecretRepository
+  extends GlobalRepository<TotpSecretData>
+  implements TotpSecretRepository
+{
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
+
+  async findById(_id: string): Promise<TotpSecretData | null> {
+    throw new Error('Not implemented');
+  }
+
+  async findAll(): Promise<TotpSecretData[]> {
+    throw new Error('Not implemented');
+  }
+
+  async delete(_entity: TotpSecretData): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   async save(data: TotpSecretData): Promise<void> {
     const existing = await this.em.findOne(TotpSecretEntity, { usuario: { id: data.usuarioId } });
@@ -29,7 +50,11 @@ export class MikroOrmTotpSecretRepository implements TotpSecretRepository {
   }
 
   async findByUsuarioId(usuarioId: string): Promise<TotpSecretData | null> {
-    const entity = await this.em.findOne(TotpSecretEntity, { usuario: { id: usuarioId } }, { populate: ['usuario'] });
+    const entity = await this.em.findOne(
+      TotpSecretEntity,
+      { usuario: { id: usuarioId } },
+      { populate: ['usuario'] },
+    );
     if (!entity) return null;
     return {
       usuarioId: entity.usuario.id,

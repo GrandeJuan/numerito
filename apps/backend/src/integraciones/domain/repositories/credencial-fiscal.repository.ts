@@ -15,11 +15,14 @@ export interface CredencialFiscalData {
 }
 
 export interface CredencialFiscalRepository {
-  findByClienteId(clienteId: string, estudioId: string): Promise<CredencialFiscalData[]>;
-  findByOrganismo(organismo: string, estudioId: string): Promise<CredencialFiscalData[]>;
+  findById(id: string): Promise<CredencialFiscalData | null>;
+  findAll(): Promise<CredencialFiscalData[]>;
+  findByClienteId(clienteId: string): Promise<CredencialFiscalData[]>;
+  findByOrganismo(organismo: string): Promise<CredencialFiscalData[]>;
   findAllActivas(): Promise<CredencialFiscalData[]>;
   save(credencial: CredencialFiscalData): Promise<void>;
   updateEstado(id: string, estado: string, ultimaSincronizacion?: Date): Promise<void>;
+  delete(credencial: CredencialFiscalData): Promise<void>;
 }
 
 export const CREDENCIAL_FISCAL_REPOSITORY = Symbol('CredencialFiscalRepository');

@@ -1,17 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { GlobalRepository } from '../../../shared/domain';
 import type { SesionRepository } from '../../domain/repositories/sesion.repository';
 import { Sesion } from '../../domain/entities/sesion.entity';
 import { SesionEntity } from './sesion.schema';
 import { UsuarioEntity } from './usuario.schema';
 
 @Injectable()
-export class MikroOrmSesionRepository implements SesionRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmSesionRepository extends GlobalRepository<Sesion> implements SesionRepository {
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
+
+  async findById(_id: string): Promise<Sesion | null> {
+    throw new Error('Not implemented');
+  }
+
+  async findAll(): Promise<Sesion[]> {
+    throw new Error('Not implemented');
+  }
+
+  async delete(_entity: Sesion): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   async findByUsuarioId(usuarioId: string): Promise<Sesion[]> {
     const entities = await this.em.find(SesionEntity, { usuario: { id: usuarioId } });
-    return entities.map(e => this.toDomain(e));
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findByRefreshToken(refreshToken: string): Promise<Sesion | null> {
@@ -43,7 +58,10 @@ export class MikroOrmSesionRepository implements SesionRepository {
   }
 
   async revokeAllByUsuarioId(usuarioId: string): Promise<void> {
-    const entities = await this.em.find(SesionEntity, { usuario: { id: usuarioId }, isActive: true });
+    const entities = await this.em.find(SesionEntity, {
+      usuario: { id: usuarioId },
+      isActive: true,
+    });
     for (const entity of entities) {
       entity.isActive = false;
     }
@@ -51,12 +69,15 @@ export class MikroOrmSesionRepository implements SesionRepository {
   }
 
   private toDomain(entity: SesionEntity): Sesion {
-    return Sesion.create({
-      usuarioId: entity.usuario.id,
-      refreshToken: entity.refreshToken,
-      ipAddress: entity.ipAddress,
-      userAgent: entity.userAgent,
-      expiresAt: entity.expiresAt,
-    }, entity.id);
+    return Sesion.create(
+      {
+        usuarioId: entity.usuario.id,
+        refreshToken: entity.refreshToken,
+        ipAddress: entity.ipAddress,
+        userAgent: entity.userAgent,
+        expiresAt: entity.expiresAt,
+      },
+      entity.id,
+    );
   }
 }

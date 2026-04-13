@@ -1,46 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { LibroContableRepository } from '../../domain/repositories/libro-contable.repository';
 import { LibroContable, type TipoLibro } from '../../domain/entities/libro-contable.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { LibroContableEntity } from './libro-contable.schema';
 import { TipoLibroEntity } from '../../../shared/infrastructure/persistence/tipo-libro.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
-export class MikroOrmLibroContableRepository implements LibroContableRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmLibroContableRepository
+  extends TenantAwareRepository<LibroContable>
+  implements LibroContableRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<LibroContable | null> {
-    const entity = await this.em.findOne(LibroContableEntity, { id }, {
-      populate: ['tipoLibro', 'cliente', 'estudio'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      LibroContableEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['tipoLibro', 'cliente', 'estudio'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, estudioId: string): Promise<LibroContable[]> {
-    const entities = await this.em.find(LibroContableEntity, {
-      cliente: { id: clienteId },
-      estudio: { id: estudioId },
-    }, {
-      populate: ['tipoLibro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByEstudioId(estudioId: string): Promise<LibroContable[]> {
-    const entities = await this.em.find(LibroContableEntity, { estudio: { id: estudioId } }, {
-      populate: ['tipoLibro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+  async findByClienteId(clienteId: string): Promise<LibroContable[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      LibroContableEntity,
+      {
+        cliente: { id: clienteId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['tipoLibro', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findAll(): Promise<LibroContable[]> {
-    const entities = await this.em.findAll(LibroContableEntity, {
-      populate: ['tipoLibro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      LibroContableEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['tipoLibro', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(libro: LibroContable): Promise<void> {
@@ -81,11 +107,14 @@ export class MikroOrmLibroContableRepository implements LibroContableRepository 
   }
 
   private toDomain(entity: LibroContableEntity): LibroContable {
-    return LibroContable.create({
-      clienteId: entity.cliente.id,
-      estudioId: entity.estudio.id,
-      tipo: entity.tipoLibro.codigo as TipoLibro,
-      periodo: entity.periodo,
-    }, entity.id);
+    return LibroContable.create(
+      {
+        clienteId: entity.cliente.id,
+        estudioId: entity.estudio.id,
+        tipo: entity.tipoLibro.codigo as TipoLibro,
+        periodo: entity.periodo,
+      },
+      entity.id,
+    );
   }
 }

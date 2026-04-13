@@ -1,9 +1,12 @@
-import { Controller, Get, Patch, Param, Query, Headers, Req, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, Req, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
 import { NOTIFICACION_REPOSITORY } from '../../domain/repositories/notificacion.repository';
 import type { NotificacionRepository } from '../../domain/repositories/notificacion.repository';
-import { RecursoNoEncontradoError, OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import {
+  RecursoNoEncontradoError,
+  OperacionInvalidaError,
+} from '../../../shared/domain/exceptions';
 
 @ApiTags('Notificaciones')
 @Controller({ path: 'notificaciones', version: '1' })
@@ -17,7 +20,6 @@ export class NotificacionesController {
   @ApiOperation({ summary: 'Listar notificaciones del usuario (paginado)' })
   async findAll(
     @Req() req: any,
-    @Headers('x-estudio-id') estudioId: string,
     @Query('leida') leida?: string,
     @Query('limit') limit = 20,
     @Query('offset') offset = 0,
@@ -25,14 +27,14 @@ export class NotificacionesController {
     const usuarioId = req.user.sub;
     const leidaFilter = leida === 'true' ? true : leida === 'false' ? false : undefined;
 
-    const result = await this.notificacionRepo.findByUsuarioAndEstudio(
-      usuarioId,
-      estudioId,
-      { leida: leidaFilter, limit: Number(limit), offset: Number(offset) },
-    );
+    const result = await this.notificacionRepo.findByUsuario(usuarioId, {
+      leida: leidaFilter,
+      limit: Number(limit),
+      offset: Number(offset),
+    });
 
     return {
-      data: result.data.map(n => ({
+      data: result.data.map((n) => ({
         id: n.id,
         tipo: n.tipo,
         mensaje: n.mensaje,
@@ -65,12 +67,9 @@ export class NotificacionesController {
 
   @Get('unread-count')
   @ApiOperation({ summary: 'Cantidad de notificaciones no leidas' })
-  async unreadCount(
-    @Req() req: any,
-    @Headers('x-estudio-id') estudioId: string,
-  ) {
+  async unreadCount(@Req() req: any) {
     const usuarioId = req.user.sub;
-    const count = await this.notificacionRepo.countUnread(usuarioId, estudioId);
+    const count = await this.notificacionRepo.countUnread(usuarioId);
     return { count };
   }
 }

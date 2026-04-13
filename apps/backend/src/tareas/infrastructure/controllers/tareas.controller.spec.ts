@@ -2,13 +2,16 @@ import { TareasController } from './tareas.controller';
 import { Tarea } from '../../domain/entities/tarea.entity';
 
 const makeTarea = (overrides: Partial<{ id: string; estudioId: string; clienteId: string }> = {}) =>
-  Tarea.create({
-    titulo: 'Preparar balance',
-    descripcion: 'Balance mensual cliente X',
-    clienteId: overrides.clienteId ?? 'cliente-1',
-    estudioId: overrides.estudioId ?? 'estudio-1',
-    prioridad: 'MEDIA',
-  }, overrides.id);
+  Tarea.create(
+    {
+      titulo: 'Preparar balance',
+      descripcion: 'Balance mensual cliente X',
+      clienteId: overrides.clienteId ?? 'cliente-1',
+      estudioId: overrides.estudioId ?? 'estudio-1',
+      prioridad: 'MEDIA',
+    },
+    overrides.id,
+  );
 
 describe('TareasController', () => {
   let controller: TareasController;
@@ -18,7 +21,6 @@ describe('TareasController', () => {
     mockRepo = {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       findByResponsableId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
@@ -29,18 +31,18 @@ describe('TareasController', () => {
   describe('list', () => {
     it('should return paginated tareas for estudio', async () => {
       const tareas = [makeTarea(), makeTarea({ clienteId: 'cliente-2' })];
-      mockRepo.findByEstudioId.mockResolvedValue(tareas);
+      mockRepo.findAll.mockResolvedValue(tareas);
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockRepo.findByEstudioId.mockResolvedValue([]);
+      mockRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list();
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -50,24 +52,24 @@ describe('TareasController', () => {
       tarea.asignar('user-1');
       mockRepo.findByResponsableId.mockResolvedValue([tarea]);
 
-      const result = await controller.list('estudio-1', 1, 20, undefined, 'user-1');
+      const result = await controller.list(1, 20, undefined, 'user-1');
       expect(result.data).toHaveLength(1);
-      expect(mockRepo.findByResponsableId).toHaveBeenCalledWith('user-1', 'estudio-1');
+      expect(mockRepo.findByResponsableId).toHaveBeenCalledWith('user-1');
     });
 
     it('should filter by estado when provided', async () => {
       const tareas = [makeTarea(), makeTarea()];
-      mockRepo.findByEstudioId.mockResolvedValue(tareas);
+      mockRepo.findAll.mockResolvedValue(tareas);
 
-      const result = await controller.list('estudio-1', 1, 20, 'PENDIENTE');
+      const result = await controller.list(1, 20, 'PENDIENTE');
       expect(result.data).toHaveLength(2);
     });
 
     it('should filter by clienteId when provided', async () => {
       const tareas = [makeTarea({ clienteId: 'cliente-1' })];
-      mockRepo.findByEstudioId.mockResolvedValue(tareas);
+      mockRepo.findAll.mockResolvedValue(tareas);
 
-      const result = await controller.list('estudio-1', 1, 20, undefined, undefined, 'cliente-1');
+      const result = await controller.list(1, 20, undefined, undefined, 'cliente-1');
       expect(result.data).toHaveLength(1);
     });
   });
@@ -133,9 +135,9 @@ describe('TareasController', () => {
 
     it('should throw when tarea not found', async () => {
       mockRepo.findById.mockResolvedValue(null);
-      await expect(
-        controller.asignar('bad-id', { responsableId: 'user-1' }),
-      ).rejects.toThrow('Tarea no encontrad');
+      await expect(controller.asignar('bad-id', { responsableId: 'user-1' })).rejects.toThrow(
+        'Tarea no encontrad',
+      );
     });
   });
 
@@ -144,7 +146,10 @@ describe('TareasController', () => {
       const tarea = makeTarea();
       mockRepo.findById.mockResolvedValue(tarea);
 
-      const result = await controller.registrarHoras(tarea.id, { horas: 2.5, descripcion: 'Trabajo en balance' });
+      const result = await controller.registrarHoras(tarea.id, {
+        horas: 2.5,
+        descripcion: 'Trabajo en balance',
+      });
       expect(result.data.horasRegistradas).toBe(2.5);
       expect(mockRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -162,7 +167,10 @@ describe('TareasController', () => {
       const tarea = makeTarea();
       mockRepo.findById.mockResolvedValue(tarea);
 
-      const result = await controller.agregarComentario(tarea.id, { autorId: 'user-1', texto: 'Avanzando bien' });
+      const result = await controller.agregarComentario(tarea.id, {
+        autorId: 'user-1',
+        texto: 'Avanzando bien',
+      });
       expect(result.data.comentarios).toHaveLength(1);
       expect(result.data.comentarios[0].texto).toBe('Avanzando bien');
       expect(mockRepo.save).toHaveBeenCalledTimes(1);

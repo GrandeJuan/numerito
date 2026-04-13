@@ -24,20 +24,16 @@ export class FacturacionController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Estadisticas de facturacion del estudio' })
-  async stats(@EstudioId() estudioId: string) {
+  async stats() {
     const query = new FacturacionStatsQuery(this.facturaRepo);
-    const stats = await query.execute(estudioId);
+    const stats = await query.execute();
     return successResponse(stats);
   }
 
   @Get('facturas')
   @ApiOperation({ summary: 'Listar facturas del estudio' })
-  async list(
-    @EstudioId() estudioId: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
-    const facturas = await this.facturaRepo.findByEstudioId(estudioId);
+  async list(@EstudioId() estudioId: string, @Query('page') page = 1, @Query('limit') limit = 20) {
+    const facturas = await this.facturaRepo.findAll();
     return successResponse(facturas, { total: facturas.length, page: +page, limit: +limit });
   }
 
@@ -45,7 +41,7 @@ export class FacturacionController {
   @ApiOperation({ summary: 'Crear factura' })
   async create(@Body() dto: CrearFacturaDto, @EstudioId() estudioId: string) {
     const tempId = 'temp';
-    const lineas = dto.lineas.map(l =>
+    const lineas = dto.lineas.map((l) =>
       LineaFactura.create({
         facturaId: tempId,
         descripcion: l.descripcion,
@@ -122,7 +118,7 @@ export class FacturacionController {
     @Query('page') page = 1,
     @Query('limit') limit = 20,
   ) {
-    const facturas = await this.facturaRepo.findByClienteId(clienteId, estudioId);
+    const facturas = await this.facturaRepo.findByClienteId(clienteId);
     return successResponse(facturas, { total: facturas.length, page: +page, limit: +limit });
   }
 }

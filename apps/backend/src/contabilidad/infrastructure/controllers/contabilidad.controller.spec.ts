@@ -3,12 +3,15 @@ import { LibroContable } from '../../domain/entities/libro-contable.entity';
 import { AsientoContable, LineaAsiento } from '../../domain/entities/asiento-contable.entity';
 
 const makeLibro = (overrides: Partial<{ id: string; estudioId: string }> = {}) =>
-  LibroContable.create({
-    clienteId: 'cliente-1',
-    estudioId: overrides.estudioId ?? 'estudio-1',
-    tipo: 'DIARIO',
-    periodo: '2026-01',
-  }, overrides.id);
+  LibroContable.create(
+    {
+      clienteId: 'cliente-1',
+      estudioId: overrides.estudioId ?? 'estudio-1',
+      tipo: 'DIARIO',
+      periodo: '2026-01',
+    },
+    overrides.id,
+  );
 
 const balancedLineas: LineaAsiento[] = [
   { cuentaId: 'c1', debe: 1000, haber: 0, descripcion: 'Debe' },
@@ -21,14 +24,17 @@ const unbalancedLineas: LineaAsiento[] = [
 ];
 
 const makeAsiento = (overrides: Partial<{ id: string; libroId: string }> = {}) =>
-  AsientoContable.create({
-    libroId: overrides.libroId ?? 'libro-1',
-    clienteId: 'cliente-1',
-    estudioId: 'estudio-1',
-    fecha: new Date('2026-03-01'),
-    descripcion: 'Asiento test',
-    lineas: balancedLineas,
-  }, overrides.id);
+  AsientoContable.create(
+    {
+      libroId: overrides.libroId ?? 'libro-1',
+      clienteId: 'cliente-1',
+      estudioId: 'estudio-1',
+      fecha: new Date('2026-03-01'),
+      descripcion: 'Asiento test',
+      lineas: balancedLineas,
+    },
+    overrides.id,
+  );
 
 describe('ContabilidadController', () => {
   let controller: ContabilidadController;
@@ -40,7 +46,6 @@ describe('ContabilidadController', () => {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
       findByClienteId: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
@@ -59,19 +64,19 @@ describe('ContabilidadController', () => {
     it('should return contabilidad stats', async () => {
       const libros = [makeLibro(), makeLibro({ id: 'l2' })];
       const asientos = [makeAsiento()];
-      mockLibroRepo.findByEstudioId.mockResolvedValue(libros);
-      mockAsientoRepo.findByEstudioId = jest.fn().mockResolvedValue(asientos);
+      mockLibroRepo.findAll.mockResolvedValue(libros);
+      mockAsientoRepo.findAll.mockResolvedValue(asientos);
 
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.asientosDelPeriodo).toBe(1);
       expect(result.data.totalLibros).toBe(2);
       expect(result.data.balanceCuadrado).toBe(true);
     });
 
     it('should return zero stats when no data', async () => {
-      mockAsientoRepo.findByEstudioId = jest.fn().mockResolvedValue([]);
+      mockAsientoRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.asientosDelPeriodo).toBe(0);
       expect(result.data.totalLibros).toBe(0);
     });
@@ -80,18 +85,18 @@ describe('ContabilidadController', () => {
   describe('listLibros', () => {
     it('should return paginated libros for estudio', async () => {
       const libros = [makeLibro(), makeLibro()];
-      mockLibroRepo.findByEstudioId.mockResolvedValue(libros);
+      mockLibroRepo.findAll.mockResolvedValue(libros);
 
-      const result = await controller.listLibros('estudio-1', 1, 20);
+      const result = await controller.listLibros(1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockLibroRepo.findByEstudioId.mockResolvedValue([]);
+      mockLibroRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.listLibros('estudio-1');
+      const result = await controller.listLibros();
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });

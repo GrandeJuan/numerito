@@ -2,14 +2,21 @@ import { EstudioController } from './estudio.controller';
 import { Estudio } from '../../domain/entities/estudio.entity';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import { PlanSubscripcion } from '../../domain/value-objects/plan-subscripcion.vo';
-import { Subscripcion, EstadoSubscripcion, CicloFacturacion } from '../../domain/entities/subscripcion.entity';
+import {
+  Subscripcion,
+  EstadoSubscripcion,
+  CicloFacturacion,
+} from '../../domain/entities/subscripcion.entity';
 
 const makeEstudio = (id?: string) =>
-  Estudio.create({
-    nombre: NombreEstudio.create('Estudio Test'),
-    plan: PlanSubscripcion.create('PROFESIONAL', 50, 5),
-    cuit: '20-12345678-6',
-  }, id);
+  Estudio.create(
+    {
+      nombre: NombreEstudio.create('Estudio Test'),
+      plan: PlanSubscripcion.create('PROFESIONAL', 50, 5),
+      cuit: '20-12345678-6',
+    },
+    id,
+  );
 
 const makeSubscripcion = (estudioId: string) =>
   Subscripcion.create({
@@ -36,7 +43,7 @@ describe('EstudioController', () => {
       delete: jest.fn(),
     };
     mockSubscripcionRepo = {
-      findByEstudioId: jest.fn().mockResolvedValue([]),
+      findAll: jest.fn().mockResolvedValue([]),
       findActiva: jest.fn().mockResolvedValue(null),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
@@ -73,7 +80,9 @@ describe('EstudioController', () => {
     it('should throw when not found', async () => {
       mockEstudioRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.update('bad', { nombre: 'X' })).rejects.toThrow('Estudio no encontrado');
+      await expect(controller.update('bad', { nombre: 'X' })).rejects.toThrow(
+        'Estudio no encontrado',
+      );
     });
 
     it('should save without changes when dto has no nombre', async () => {
@@ -100,7 +109,9 @@ describe('EstudioController', () => {
     it('should throw when no active subscripcion', async () => {
       mockSubscripcionRepo.findActiva.mockResolvedValue(null);
 
-      await expect(controller.getSubscripcion('est-1')).rejects.toThrow('Subscripcion no encontrad');
+      await expect(controller.getSubscripcion('est-1')).rejects.toThrow(
+        'Subscripcion no encontrad',
+      );
     });
   });
 
@@ -117,7 +128,9 @@ describe('EstudioController', () => {
     it('should throw when no active subscripcion', async () => {
       mockSubscripcionRepo.findActiva.mockResolvedValue(null);
 
-      await expect(controller.cambiarPlan('est-1', { planId: '3' })).rejects.toThrow('Subscripcion no encontrad');
+      await expect(controller.cambiarPlan('est-1', { planId: '3' })).rejects.toThrow(
+        'Subscripcion no encontrad',
+      );
     });
   });
 });

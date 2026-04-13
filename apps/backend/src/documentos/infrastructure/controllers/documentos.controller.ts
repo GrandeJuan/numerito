@@ -12,9 +12,7 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 @ApiTags('Documentos')
 @Controller({ path: 'documentos', version: '1' })
 export class DocumentosController {
-  constructor(
-    @Inject(DOCUMENTO_REPOSITORY) private readonly documentoRepo: DocumentoRepository,
-  ) {}
+  constructor(@Inject(DOCUMENTO_REPOSITORY) private readonly documentoRepo: DocumentoRepository) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar documentos del estudio' })
@@ -25,8 +23,8 @@ export class DocumentosController {
     @Query('clienteId') clienteId?: string,
   ) {
     const documentos = clienteId
-      ? await this.documentoRepo.findByClienteId(clienteId, estudioId)
-      : await this.documentoRepo.findByEstudioId(estudioId);
+      ? await this.documentoRepo.findByClienteId(clienteId)
+      : await this.documentoRepo.findAll();
     return successResponse(documentos, { total: documentos.length, page: +page, limit: +limit });
   }
 

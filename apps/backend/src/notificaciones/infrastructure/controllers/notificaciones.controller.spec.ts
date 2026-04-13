@@ -2,12 +2,15 @@ import { NotificacionesController } from './notificaciones.controller';
 import { Notificacion, TipoNotificacion } from '../../domain/entities/notificacion.entity';
 
 const makeNotif = (id?: string, leida = false) => {
-  const n = Notificacion.create({
-    usuarioId: 'user-1',
-    estudioId: 'est-1',
-    tipo: TipoNotificacion.VENCIMIENTO_PROXIMO,
-    mensaje: 'Vencimiento IVA en 3 dias',
-  }, id);
+  const n = Notificacion.create(
+    {
+      usuarioId: 'user-1',
+      estudioId: 'est-1',
+      tipo: TipoNotificacion.VENCIMIENTO_PROXIMO,
+      mensaje: 'Vencimiento IVA en 3 dias',
+    },
+    id,
+  );
   if (leida) n.marcarLeida();
   return n;
 };
@@ -20,7 +23,7 @@ describe('NotificacionesController', () => {
     mockRepo = {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
-      findByUsuarioAndEstudio: jest.fn().mockResolvedValue({ data: [], total: 0 }),
+      findByUsuario: jest.fn().mockResolvedValue({ data: [], total: 0 }),
       countUnread: jest.fn().mockResolvedValue(0),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
@@ -31,37 +34,43 @@ describe('NotificacionesController', () => {
   describe('GET /notificaciones', () => {
     it('should return paginated notificaciones', async () => {
       const notifs = [makeNotif('n-1'), makeNotif('n-2')];
-      mockRepo.findByUsuarioAndEstudio.mockResolvedValue({ data: notifs, total: 2 });
+      mockRepo.findByUsuario.mockResolvedValue({ data: notifs, total: 2 });
 
       const req = { user: { sub: 'user-1' } } as any;
-      const result = await controller.findAll(req, 'est-1', undefined, 20, 0);
+      const result = await controller.findAll(req, undefined, 20, 0);
 
       expect(result).toEqual({ data: expect.any(Array), total: 2 });
-      expect(mockRepo.findByUsuarioAndEstudio).toHaveBeenCalledWith(
-        'user-1', 'est-1', { leida: undefined, limit: 20, offset: 0 },
-      );
+      expect(mockRepo.findByUsuario).toHaveBeenCalledWith('user-1', {
+        leida: undefined,
+        limit: 20,
+        offset: 0,
+      });
     });
 
     it('should filter by leida=true', async () => {
-      mockRepo.findByUsuarioAndEstudio.mockResolvedValue({ data: [], total: 0 });
+      mockRepo.findByUsuario.mockResolvedValue({ data: [], total: 0 });
 
       const req = { user: { sub: 'user-1' } } as any;
-      await controller.findAll(req, 'est-1', 'true', 20, 0);
+      await controller.findAll(req, 'true', 20, 0);
 
-      expect(mockRepo.findByUsuarioAndEstudio).toHaveBeenCalledWith(
-        'user-1', 'est-1', { leida: true, limit: 20, offset: 0 },
-      );
+      expect(mockRepo.findByUsuario).toHaveBeenCalledWith('user-1', {
+        leida: true,
+        limit: 20,
+        offset: 0,
+      });
     });
 
     it('should filter by leida=false', async () => {
-      mockRepo.findByUsuarioAndEstudio.mockResolvedValue({ data: [], total: 0 });
+      mockRepo.findByUsuario.mockResolvedValue({ data: [], total: 0 });
 
       const req = { user: { sub: 'user-1' } } as any;
-      await controller.findAll(req, 'est-1', 'false', 20, 0);
+      await controller.findAll(req, 'false', 20, 0);
 
-      expect(mockRepo.findByUsuarioAndEstudio).toHaveBeenCalledWith(
-        'user-1', 'est-1', { leida: false, limit: 20, offset: 0 },
-      );
+      expect(mockRepo.findByUsuario).toHaveBeenCalledWith('user-1', {
+        leida: false,
+        limit: 20,
+        offset: 0,
+      });
     });
   });
 
@@ -82,7 +91,9 @@ describe('NotificacionesController', () => {
       mockRepo.findById.mockResolvedValue(null);
 
       const req = { user: { sub: 'user-1' } } as any;
-      await expect(controller.marcarLeida(req, 'bad-id')).rejects.toThrow('Notificacion no encontrad');
+      await expect(controller.marcarLeida(req, 'bad-id')).rejects.toThrow(
+        'Notificacion no encontrad',
+      );
     });
 
     it('should throw when notificacion belongs to another user', async () => {
@@ -99,10 +110,10 @@ describe('NotificacionesController', () => {
       mockRepo.countUnread.mockResolvedValue(5);
 
       const req = { user: { sub: 'user-1' } } as any;
-      const result = await controller.unreadCount(req, 'est-1');
+      const result = await controller.unreadCount(req);
 
       expect(result).toEqual({ count: 5 });
-      expect(mockRepo.countUnread).toHaveBeenCalledWith('user-1', 'est-1');
+      expect(mockRepo.countUnread).toHaveBeenCalledWith('user-1');
     });
   });
 });

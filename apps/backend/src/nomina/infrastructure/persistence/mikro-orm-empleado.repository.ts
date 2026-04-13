@@ -1,45 +1,71 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { EmpleadoRepository } from '../../domain/repositories/empleado.repository';
 import { Empleado } from '../../domain/entities/empleado.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { EmpleadoEntity } from './empleado.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
-export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmEmpleadoRepository
+  extends TenantAwareRepository<Empleado>
+  implements EmpleadoRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<Empleado | null> {
-    const entity = await this.em.findOne(EmpleadoEntity, { id }, {
-      populate: ['cliente', 'estudio'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      EmpleadoEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['cliente', 'estudio'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, estudioId: string): Promise<Empleado[]> {
-    const entities = await this.em.find(EmpleadoEntity, {
-      cliente: { id: clienteId },
-      estudio: { id: estudioId },
-    }, {
-      populate: ['cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByEstudioId(estudioId: string): Promise<Empleado[]> {
-    const entities = await this.em.find(EmpleadoEntity, { estudio: { id: estudioId } }, {
-      populate: ['cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+  async findByClienteId(clienteId: string): Promise<Empleado[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      EmpleadoEntity,
+      {
+        cliente: { id: clienteId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findAll(): Promise<Empleado[]> {
-    const entities = await this.em.findAll(EmpleadoEntity, {
-      populate: ['cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      EmpleadoEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(empleado: Empleado): Promise<void> {
@@ -87,15 +113,18 @@ export class MikroOrmEmpleadoRepository implements EmpleadoRepository {
   }
 
   private toDomain(entity: EmpleadoEntity): Empleado {
-    return Empleado.create({
-      clienteId: entity.cliente.id,
-      estudioId: entity.estudio.id,
-      nombre: entity.nombre,
-      apellido: entity.apellido,
-      cuil: entity.cuil,
-      fechaIngreso: entity.fechaIngreso,
-      sueldoBasico: entity.sueldoBasico,
-      categoriaConvenio: entity.categoriaConvenio,
-    }, entity.id);
+    return Empleado.create(
+      {
+        clienteId: entity.cliente.id,
+        estudioId: entity.estudio.id,
+        nombre: entity.nombre,
+        apellido: entity.apellido,
+        cuil: entity.cuil,
+        fechaIngreso: entity.fechaIngreso,
+        sueldoBasico: entity.sueldoBasico,
+        categoriaConvenio: entity.categoriaConvenio,
+      },
+      entity.id,
+    );
   }
 }

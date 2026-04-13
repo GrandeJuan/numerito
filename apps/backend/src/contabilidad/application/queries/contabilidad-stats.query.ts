@@ -40,14 +40,14 @@ export class ContabilidadStatsQuery {
     private readonly asientoRepo: AsientoContableRepository,
   ) {}
 
-  async execute(estudioId: string): Promise<ContabilidadStats> {
+  async execute(): Promise<ContabilidadStats> {
     const [libros, asientos] = await Promise.all([
-      this.libroRepo.findByEstudioId(estudioId),
-      this.asientoRepo.findByEstudioId(estudioId),
+      this.libroRepo.findAll(),
+      this.asientoRepo.findAll(),
     ]);
 
     const asientosDelPeriodo = asientos.length;
-    const librosRubricados = libros.filter(l => l.isRubricado).length;
+    const librosRubricados = libros.filter((l) => l.isRubricado).length;
     const totalLibros = libros.length;
 
     // Balance is cuadrado if total debe === total haber across all asientos
@@ -55,7 +55,7 @@ export class ContabilidadStatsQuery {
     const totalHaber = asientos.reduce((sum, a) => sum + a.totalHaber, 0);
     const balanceCuadrado = Math.abs(totalDebe - totalHaber) < 0.01;
 
-    const librosInfo: LibroInfo[] = libros.map(l => ({
+    const librosInfo: LibroInfo[] = libros.map((l) => ({
       id: l.id,
       tipo: l.tipo,
       periodo: l.periodo,
@@ -80,7 +80,7 @@ export class ContabilidadStatsQuery {
     const asientosRecientes: AsientoReciente[] = [...asientos]
       .sort((a, b) => b.fecha.getTime() - a.fecha.getTime())
       .slice(0, 10)
-      .map(a => ({
+      .map((a) => ({
         id: a.id,
         fecha: a.fecha,
         descripcion: a.descripcion,

@@ -1,57 +1,87 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { AsientoContableRepository } from '../../domain/repositories/asiento-contable.repository';
 import { AsientoContable, type LineaAsiento } from '../../domain/entities/asiento-contable.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { AsientoContableEntity } from './asiento-contable.schema';
 import { LibroContableEntity } from './libro-contable.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
-export class MikroOrmAsientoContableRepository implements AsientoContableRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmAsientoContableRepository
+  extends TenantAwareRepository<AsientoContable>
+  implements AsientoContableRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<AsientoContable | null> {
-    const entity = await this.em.findOne(AsientoContableEntity, { id }, {
-      populate: ['libro', 'cliente', 'estudio'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      AsientoContableEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['libro', 'cliente', 'estudio'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
   async findByLibroId(libroId: string): Promise<AsientoContable[]> {
-    const entities = await this.em.find(AsientoContableEntity, {
-      libro: { id: libroId },
-    }, {
-      populate: ['libro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      AsientoContableEntity,
+      {
+        libro: { id: libroId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['libro', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
-  async findByClienteId(clienteId: string, estudioId: string): Promise<AsientoContable[]> {
-    const entities = await this.em.find(AsientoContableEntity, {
-      cliente: { id: clienteId },
-      estudio: { id: estudioId },
-    }, {
-      populate: ['libro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByEstudioId(estudioId: string): Promise<AsientoContable[]> {
-    const entities = await this.em.find(AsientoContableEntity, {
-      estudio: { id: estudioId },
-    }, {
-      populate: ['libro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+  async findByClienteId(clienteId: string): Promise<AsientoContable[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      AsientoContableEntity,
+      {
+        cliente: { id: clienteId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['libro', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findAll(): Promise<AsientoContable[]> {
-    const entities = await this.em.findAll(AsientoContableEntity, {
-      populate: ['libro', 'cliente', 'estudio'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      AsientoContableEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['libro', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(asiento: AsientoContable): Promise<void> {
@@ -92,13 +122,16 @@ export class MikroOrmAsientoContableRepository implements AsientoContableReposit
   }
 
   private toDomain(entity: AsientoContableEntity): AsientoContable {
-    return AsientoContable.create({
-      libroId: entity.libro.id,
-      clienteId: entity.cliente.id,
-      estudioId: entity.estudio.id,
-      fecha: entity.fecha,
-      descripcion: entity.descripcion,
-      lineas: entity.lineas as LineaAsiento[],
-    }, entity.id);
+    return AsientoContable.create(
+      {
+        libroId: entity.libro.id,
+        clienteId: entity.cliente.id,
+        estudioId: entity.estudio.id,
+        fecha: entity.fecha,
+        descripcion: entity.descripcion,
+        lineas: entity.lineas as LineaAsiento[],
+      },
+      entity.id,
+    );
   }
 }

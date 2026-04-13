@@ -13,18 +13,12 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 @ApiTags('Nomina')
 @Controller({ path: 'nomina', version: '1' })
 export class NominaController {
-  constructor(
-    @Inject(EMPLEADO_REPOSITORY) private readonly empleadoRepo: EmpleadoRepository,
-  ) {}
+  constructor(@Inject(EMPLEADO_REPOSITORY) private readonly empleadoRepo: EmpleadoRepository) {}
 
   @Get('empleados')
   @ApiOperation({ summary: 'Listar empleados del estudio' })
-  async list(
-    @EstudioId() estudioId: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ) {
-    const empleados = await this.empleadoRepo.findByEstudioId(estudioId);
+  async list(@Query('page') page = 1, @Query('limit') limit = 20) {
+    const empleados = await this.empleadoRepo.findAll();
     return successResponse(empleados, { total: empleados.length, page: +page, limit: +limit });
   }
 

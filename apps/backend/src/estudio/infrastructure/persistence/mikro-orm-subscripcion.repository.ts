@@ -1,8 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { randomUUID } from 'crypto';
 import type { SubscripcionRepository } from '../../domain/repositories/subscripcion.repository';
-import { Subscripcion, EstadoSubscripcion, CicloFacturacion } from '../../domain/entities/subscripcion.entity';
+import {
+  Subscripcion,
+  EstadoSubscripcion,
+  CicloFacturacion,
+} from '../../domain/entities/subscripcion.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { SubscripcionEntity } from './subscripcion.schema';
 import { EstudioEntity } from './estudio.schema';
 import { PlanEntity } from '../../../shared/infrastructure/persistence/plan.schema';
@@ -10,21 +18,61 @@ import { EstadoSubscripcionEntity } from '../../../shared/infrastructure/persist
 import { CicloFacturacionEntity } from '../../../shared/infrastructure/persistence/ciclo-facturacion.schema';
 
 @Injectable()
-export class MikroOrmSubscripcionRepository implements SubscripcionRepository {
-  constructor(private readonly em: EntityManager) {}
-
-  async findByEstudioId(estudioId: string): Promise<Subscripcion[]> {
-    const entities = await this.em.find(SubscripcionEntity, { estudio: { id: estudioId } }, {
-      populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
-    });
-    return entities.map(e => this.toDomain(e));
+export class MikroOrmSubscripcionRepository
+  extends TenantAwareRepository<Subscripcion>
+  implements SubscripcionRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
   }
 
-  async findActiva(estudioId: string): Promise<Subscripcion | null> {
-    const entity = await this.em.findOne(SubscripcionEntity, {
-      estudio: { id: estudioId },
-      estadoSubscripcion: { codigo: { $in: [EstadoSubscripcion.ACTIVA, EstadoSubscripcion.TRIAL] } },
-    }, { populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'] });
+  async findById(id: string): Promise<Subscripcion | null> {
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      SubscripcionEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
+      },
+    );
+    if (!entity) return null;
+    return this.toDomain(entity);
+  }
+
+  async findAll(): Promise<Subscripcion[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      SubscripcionEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
+  }
+
+  async findActiva(): Promise<Subscripcion | null> {
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      SubscripcionEntity,
+      {
+        estudio: { id: tenantId },
+        estadoSubscripcion: {
+          codigo: { $in: [EstadoSubscripcion.ACTIVA, EstadoSubscripcion.TRIAL] },
+        },
+      },
+      {
+        populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
@@ -32,8 +80,12 @@ export class MikroOrmSubscripcionRepository implements SubscripcionRepository {
   async save(subscripcion: Subscripcion): Promise<void> {
     const existing = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id });
     const plan = await this.em.findOneOrFail(PlanEntity, { id: Number(subscripcion.planId) });
-    const estado = await this.em.findOneOrFail(EstadoSubscripcionEntity, { codigo: subscripcion.estado });
-    const ciclo = await this.em.findOneOrFail(CicloFacturacionEntity, { codigo: subscripcion.cicloFacturacion });
+    const estado = await this.em.findOneOrFail(EstadoSubscripcionEntity, {
+      codigo: subscripcion.estado,
+    });
+    const ciclo = await this.em.findOneOrFail(CicloFacturacionEntity, {
+      codigo: subscripcion.cicloFacturacion,
+    });
 
     if (existing) {
       existing.plan = plan;
@@ -68,14 +120,17 @@ export class MikroOrmSubscripcionRepository implements SubscripcionRepository {
   }
 
   private toDomain(entity: SubscripcionEntity): Subscripcion {
-    return Subscripcion.create({
-      estudioId: entity.estudio.id,
-      planId: String(entity.plan.id),
-      fechaInicio: entity.fechaInicio,
-      fechaFin: entity.fechaFin,
-      estado: entity.estadoSubscripcion.codigo as EstadoSubscripcion,
-      cicloFacturacion: entity.cicloFacturacion.codigo as CicloFacturacion,
-      autoRenovacion: entity.autoRenovacion,
-    }, entity.id);
+    return Subscripcion.create(
+      {
+        estudioId: entity.estudio.id,
+        planId: String(entity.plan.id),
+        fechaInicio: entity.fechaInicio,
+        fechaFin: entity.fechaFin,
+        estado: entity.estadoSubscripcion.codigo as EstadoSubscripcion,
+        cicloFacturacion: entity.cicloFacturacion.codigo as CicloFacturacion,
+        autoRenovacion: entity.autoRenovacion,
+      },
+      entity.id,
+    );
   }
 }

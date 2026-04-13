@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { GlobalRepository } from '../../../shared/domain';
 import type { PlanRepository, PlanData } from '../../domain/repositories/plan.repository';
 import type { Plan } from '../../domain/value-objects/plan-subscripcion.vo';
 import { PlanEntity } from '../../../shared/infrastructure/persistence/plan.schema';
 
 @Injectable()
-export class MikroOrmPlanRepository implements PlanRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmPlanRepository extends GlobalRepository<PlanData> implements PlanRepository {
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
 
   async findByPlan(plan: Plan): Promise<PlanData | null> {
     const entity = await this.em.findOne(PlanEntity, { codigo: plan });
@@ -16,7 +19,7 @@ export class MikroOrmPlanRepository implements PlanRepository {
 
   async findAll(): Promise<PlanData[]> {
     const entities = await this.em.findAll(PlanEntity);
-    return entities.map(e => this.toData(e));
+    return entities.map((e) => this.toData(e));
   }
 
   async save(data: PlanData): Promise<void> {
@@ -37,6 +40,14 @@ export class MikroOrmPlanRepository implements PlanRepository {
       });
     }
     await this.em.flush();
+  }
+
+  async findById(_id: string): Promise<PlanData | null> {
+    throw new Error('Not implemented');
+  }
+
+  async delete(_entity: PlanData): Promise<void> {
+    throw new Error('Not implemented');
   }
 
   private toData(entity: PlanEntity): PlanData {
