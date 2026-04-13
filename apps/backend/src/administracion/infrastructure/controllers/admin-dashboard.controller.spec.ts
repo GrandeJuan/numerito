@@ -28,6 +28,8 @@ describe('AdminDashboardController', () => {
       churnMensual: { ...kpiFixture, value: 2.4 },
       uptime: { ...kpiFixture, value: 99.98, delta: 'SLA OK' },
     },
+    growthData: [{ mes: '2026-03', usuarios: 50, estudios: 10 }],
+    revenueData: [{ mes: '2026-03', mrr: 99900, arr: 1198800 }],
     registrosMensuales: [{ mes: '2026-03', cantidad: 5 }],
     distribucionPlanes: [{ plan: 'Profesional', cantidad: 8 }],
     alertas: [{ tipo: 'warning', mensaje: 'Test alerta', fecha: '2026-04-01' }],

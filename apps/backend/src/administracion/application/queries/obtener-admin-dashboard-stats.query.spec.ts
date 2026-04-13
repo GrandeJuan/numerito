@@ -77,6 +77,8 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     const result = await handler.execute();
 
     expect(result).toHaveProperty('kpis');
+    expect(result).toHaveProperty('growthData');
+    expect(result).toHaveProperty('revenueData');
     expect(result).toHaveProperty('registrosMensuales');
     expect(result).toHaveProperty('distribucionPlanes');
     expect(result).toHaveProperty('alertas');
@@ -289,6 +291,70 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     const result = await handler.execute();
 
     expect(result.alertas).toHaveLength(0);
+  });
+
+  it('should return growthData with 12 months of usuarios and estudios', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.growthData).toHaveLength(12);
+    result.growthData.forEach((point) => {
+      expect(point).toHaveProperty('mes');
+      expect(point).toHaveProperty('usuarios');
+      expect(point).toHaveProperty('estudios');
+      expect(typeof point.usuarios).toBe('number');
+      expect(typeof point.estudios).toBe('number');
+    });
+    // Verify data matches sparkline values
+    expect(result.growthData[0].estudios).toBe(3);
+    expect(result.growthData[0].usuarios).toBe(20);
+    expect(result.growthData[11].estudios).toBe(10);
+    expect(result.growthData[11].usuarios).toBe(50);
+  });
+
+  it('should return revenueData with MRR and ARR (ARR = MRR x 12)', async () => {
+    setupDefaultMocks();
+
+    const result = await handler.execute();
+
+    expect(result.revenueData).toHaveLength(12);
+    result.revenueData.forEach((point) => {
+      expect(point).toHaveProperty('mes');
+      expect(point).toHaveProperty('mrr');
+      expect(point).toHaveProperty('arr');
+      expect(point.arr).toBe(point.mrr * 12);
+    });
+    // First month: MRR 1000, ARR 12000
+    expect(result.revenueData[0].mrr).toBe(1000);
+    expect(result.revenueData[0].arr).toBe(12000);
+    // Last month: MRR 5000, ARR 60000
+    expect(result.revenueData[11].mrr).toBe(5000);
+    expect(result.revenueData[11].arr).toBe(60000);
+  });
+
+  it('should return zero revenue when no subscriptions exist', async () => {
+    mockEm.count.mockResolvedValue(0);
+
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
+    mockExecute
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const result = await handler.execute();
+
+    result.revenueData.forEach((point) => {
+      expect(point.mrr).toBe(0);
+      expect(point.arr).toBe(0);
+    });
   });
 
   it('should handle zero values gracefully', async () => {

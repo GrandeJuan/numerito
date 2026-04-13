@@ -11,6 +11,8 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -18,7 +20,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts';
 
 interface KpiWithSparkline {
@@ -37,6 +38,8 @@ interface DashboardStats {
     churnMensual: KpiWithSparkline;
     uptime: KpiWithSparkline;
   };
+  growthData: { mes: string; usuarios: number; estudios: number }[];
+  revenueData: { mes: string; mrr: number; arr: number }[];
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
@@ -61,7 +64,13 @@ interface HealthCheckResult {
   uptimePercent: number;
 }
 
-const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#10b981', '#8b5cf6'];
+const PIE_COLORS = ['#4edea3', '#00a472', '#091426', '#75777d', '#10b981', '#8b5cf6'];
+
+function formatARS(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
+  return `$${value}`;
+}
 
 const STATUS_CONFIG = {
   operational: {
@@ -215,42 +224,67 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Charts Row: Growth + Plan Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Area Chart */}
+        {/* Growth Area Chart (dual series) */}
         <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Registros de Estudios
-          </h2>
-          <div className="h-72">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+                Crecimiento de Usuarios y Estudios
+              </h2>
+              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
+                Últimos 12 meses
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3]" />
+                <span className="text-[#45474c] dark:text-[#a0a3a8]">Usuarios</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#091426] dark:bg-white" />
+                <span className="text-[#45474c] dark:text-[#a0a3a8]">Estudios</span>
+              </span>
+            </div>
+          </div>
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.registrosMensuales}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  className="stroke-gray-200 dark:stroke-gray-700"
+              <AreaChart data={stats.growthData}>
+                <defs>
+                  <linearGradient id="gradUsuarios" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4edea3" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#4edea3" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradEstudios" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#091426" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#091426" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
+                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} width={45} />
+                <Tooltip
+                  contentStyle={CHART_THEME.tooltipStyle}
+                  itemStyle={{ color: 'white' }}
+                  labelStyle={{ color: '#4edea3', fontWeight: 600 }}
                 />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} className="text-gray-500" />
-                <YAxis tick={{ fontSize: 12 }} className="text-gray-500" allowDecimals={false} />
-                <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="cantidad"
-                  stroke={CHART_THEME.primaryFill}
-                  fill={CHART_THEME.primaryFill}
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
+                <Area type="monotone" dataKey="usuarios" stroke="#4edea3" strokeWidth={2} fill="url(#gradUsuarios)" />
+                <Area type="monotone" dataKey="estudios" stroke="#091426" strokeWidth={2} fill="url(#gradEstudios)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Pie Chart */}
+        {/* Plan Distribution Donut */}
         <div className={`${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Distribución de Planes
+          <h2 className="text-sm font-bold text-[#091426] dark:text-white mb-1">
+            Distribución por Plan
           </h2>
-          <div className="h-72">
+          <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mb-4">
+            {stats.distribucionPlanes.reduce((a, b) => a + b.cantidad, 0)} estudios activos
+          </p>
+          <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -259,19 +293,81 @@ export default function AdminPage() {
                   nameKey="plan"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
+                  innerRadius={55}
                   outerRadius={80}
-                  paddingAngle={4}
+                  paddingAngle={3}
+                  strokeWidth={0}
                 >
                   {stats.distribucionPlanes.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          <div className="space-y-2 mt-2">
+            {stats.distribucionPlanes.map((p, i) => (
+              <div key={p.plan} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                  />
+                  <span className="text-xs text-[#45474c] dark:text-[#a0a3a8]">{p.plan}</span>
+                </div>
+                <span className="text-xs font-semibold text-[#091426] dark:text-white tabular-nums">
+                  {p.cantidad}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue Bar Chart */}
+      <div className={`${CARD_CLASSES.full} p-6`}>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+              Revenue: MRR y ARR
+            </h2>
+            <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
+              Evolución en pesos argentinos
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3]" />
+              <span className="text-[#45474c] dark:text-[#a0a3a8]">MRR</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#091426] dark:bg-white" />
+              <span className="text-[#45474c] dark:text-[#a0a3a8]">ARR</span>
+            </span>
+          </div>
+        </div>
+        <div className="h-[240px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.revenueData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#75777d' }}
+                axisLine={false}
+                tickLine={false}
+                width={55}
+                tickFormatter={formatARS}
+              />
+              <Tooltip
+                contentStyle={CHART_THEME.tooltipStyle}
+                formatter={(value: number) => [formatARS(value), '']}
+                labelStyle={{ color: '#4edea3', fontWeight: 600 }}
+              />
+              <Bar dataKey="mrr" fill="#4edea3" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="arr" fill="#091426" radius={[6, 6, 0, 0]} maxBarSize={32} opacity={0.7} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

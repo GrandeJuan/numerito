@@ -10,6 +10,18 @@ export interface KpiWithSparkline {
   sparkline: number[];
 }
 
+export interface GrowthDataPoint {
+  mes: string;
+  usuarios: number;
+  estudios: number;
+}
+
+export interface RevenueDataPoint {
+  mes: string;
+  mrr: number;
+  arr: number;
+}
+
 export interface AdminDashboardStats {
   kpis: {
     estudiosActivos: KpiWithSparkline;
@@ -19,6 +31,8 @@ export interface AdminDashboardStats {
     churnMensual: KpiWithSparkline;
     uptime: KpiWithSparkline;
   };
+  growthData: GrowthDataPoint[];
+  revenueData: RevenueDataPoint[];
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
@@ -138,6 +152,20 @@ export class ObtenerAdminDashboardStatsHandler {
     const currentMrr = mrrSparkline[mrrSparkline.length - 1] ?? 0;
     const currentChurn = churnSparkline[churnSparkline.length - 1] ?? 0;
 
+    // Build growth data (dual series: usuarios + estudios per month)
+    const months = this.buildMonthLabels();
+    const growthData: GrowthDataPoint[] = months.map((mes, i) => ({
+      mes,
+      usuarios: usuariosSparkline[i] ?? 0,
+      estudios: estudiosSparkline[i] ?? 0,
+    }));
+
+    // Build revenue data (MRR + ARR per month)
+    const revenueData: RevenueDataPoint[] = months.map((mes, i) => {
+      const mrr = mrrSparkline[i] ?? 0;
+      return { mes, mrr, arr: mrr * 12 };
+    });
+
     // Monthly registrations (last 12 months) — keep for charts
     const registrosRaw = await conn.execute(
       `SELECT TO_CHAR(created_at, 'YYYY-MM') as mes, COUNT(*)::int as cantidad
@@ -200,6 +228,8 @@ export class ObtenerAdminDashboardStatsHandler {
           sparkline: Array(12).fill(99.98),
         },
       },
+      growthData,
+      revenueData,
       registrosMensuales,
       distribucionPlanes,
       alertas,
@@ -225,6 +255,16 @@ export class ObtenerAdminDashboardStatsHandler {
 
   private extractSparkline(rows: any[], field: string): number[] {
     return rows.map((r: any) => Number(r[field]) || 0);
+  }
+
+  private buildMonthLabels(): string[] {
+    const labels: string[] = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return labels;
   }
 
   private addDays(date: Date, days: number): Date {
