@@ -7,13 +7,14 @@ import {
   CrearClienteHandler,
   type CrearClienteCommand,
 } from '../../application/commands/crear-cliente.command';
+import {
+  ActualizarClienteHandler,
+  type ActualizarClienteCommand,
+} from '../../application/commands/actualizar-cliente.command';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
-import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import type { CondicionIVA } from '@numerito/shared';
-import type { Regimen } from '../../domain/entities/cliente.entity';
 
 @ApiTags('Clientes')
 @Controller({ path: 'clientes', version: '1' })
@@ -21,6 +22,7 @@ export class ClientesController {
   constructor(
     @Inject(CLIENTE_REPOSITORY) private readonly clienteRepo: ClienteRepository,
     private readonly crearClienteHandler: CrearClienteHandler,
+    private readonly actualizarClienteHandler: ActualizarClienteHandler,
   ) {}
 
   @Get()
@@ -59,21 +61,7 @@ export class ClientesController {
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar cliente' })
   async update(@Param('id') id: string, @Body() dto: ActualizarClienteDto) {
-    const cliente = await this.clienteRepo.findById(id);
-    if (!cliente) throw new RecursoNoEncontradoError('Cliente');
-
-    if (dto.razonSocial) {
-      cliente.updateRazonSocial(RazonSocial.create(dto.razonSocial));
-    }
-    if (dto.condicionIva) {
-      cliente.changeCondicionIva(dto.condicionIva as CondicionIVA);
-    }
-    if (dto.regimen) {
-      cliente.changeRegimen(dto.regimen as Regimen);
-    }
-
-    await this.clienteRepo.save(cliente);
-    return cliente;
+    return this.actualizarClienteHandler.execute({ id, ...dto } as ActualizarClienteCommand);
   }
 
   @Patch(':id/desactivar')

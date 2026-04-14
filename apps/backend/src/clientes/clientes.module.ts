@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientesController } from './infrastructure/controllers/clientes.controller';
 import { CrearClienteHandler } from './application/commands/crear-cliente.command';
+import { ActualizarClienteHandler } from './application/commands/actualizar-cliente.command';
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
@@ -17,6 +18,12 @@ import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-conte
       useFactory: (repo: ClienteRepository, context: TenantContext) =>
         new CrearClienteHandler(repo, context),
       inject: [CLIENTE_REPOSITORY, REQUEST_CONTEXT],
+    },
+    {
+      provide: ActualizarClienteHandler,
+      useFactory: (repo: ClienteRepository) =>
+        new ActualizarClienteHandler(repo),
+      inject: [CLIENTE_REPOSITORY],
     },
   ],
   exports: [CLIENTE_REPOSITORY],

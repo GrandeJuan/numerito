@@ -3,6 +3,7 @@ import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
+import { ActualizarClienteHandler } from '../../application/commands/actualizar-cliente.command';
 
 const makeCliente = (
   overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {},
@@ -23,6 +24,7 @@ describe('ClientesController', () => {
   let controller: ClientesController;
   let mockClienteRepo: any;
   let crearClienteHandler: CrearClienteHandler;
+  let actualizarClienteHandler: ActualizarClienteHandler;
 
   beforeEach(() => {
     mockClienteRepo = {
@@ -34,7 +36,8 @@ describe('ClientesController', () => {
       delete: jest.fn(),
     };
     crearClienteHandler = new CrearClienteHandler(mockClienteRepo, { estudioId: 'estudio-1' });
-    controller = new ClientesController(mockClienteRepo, crearClienteHandler);
+    actualizarClienteHandler = new ActualizarClienteHandler(mockClienteRepo);
+    controller = new ClientesController(mockClienteRepo, crearClienteHandler, actualizarClienteHandler);
   });
 
   describe('list', () => {
@@ -109,11 +112,12 @@ describe('ClientesController', () => {
   });
 
   describe('update', () => {
-    it('should update cliente razonSocial', async () => {
+    it('should delegate to ActualizarClienteHandler', async () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      await controller.update(cliente.id, { razonSocial: 'Nuevo Nombre SRL' });
+      const result = await controller.update(cliente.id, { razonSocial: 'Nuevo Nombre SRL' });
+      expect(result.razonSocial).toBe('Nuevo Nombre SRL');
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
 
@@ -125,29 +129,18 @@ describe('ClientesController', () => {
       );
     });
 
-    it('should update condicionIva', async () => {
+    it('should pass all dto fields to handler', async () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      await controller.update(cliente.id, { condicionIva: 'MONOTRIBUTO' });
+      await controller.update(cliente.id, {
+        razonSocial: 'Actualizada',
+        condicionIva: 'MONOTRIBUTO',
+        regimen: 'MONOTRIBUTO',
+      });
       expect(cliente.condicionIva).toBe('MONOTRIBUTO');
-      expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
-    });
-
-    it('should save without changes when dto is empty', async () => {
-      const cliente = makeCliente();
-      mockClienteRepo.findById.mockResolvedValue(cliente);
-
-      await controller.update(cliente.id, {});
-      expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
-    });
-
-    it('should update regimen', async () => {
-      const cliente = makeCliente();
-      mockClienteRepo.findById.mockResolvedValue(cliente);
-
-      await controller.update(cliente.id, { regimen: 'MONOTRIBUTO' });
       expect(cliente.regimen).toBe('MONOTRIBUTO');
+      expect(cliente.razonSocial).toBe('Actualizada');
     });
   });
 
