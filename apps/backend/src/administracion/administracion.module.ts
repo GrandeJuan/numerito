@@ -7,7 +7,6 @@ import { AdminDashboardController } from './infrastructure/controllers/admin-das
 import { AdminUsuariosController } from './infrastructure/controllers/admin-usuarios.controller';
 import { AdminHealthController } from './infrastructure/controllers/admin-health.controller';
 import { HealthCheckHandler } from './application/queries/health-check.query';
-import { SuperAdminGuard } from './infrastructure/guards/superadmin.guard';
 import { ADMIN_PLAN_REPOSITORY } from './domain/repositories/admin-plan.repository';
 import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-orm-admin-plan.repository';
 import { ObtenerAdminDashboardStatsHandler } from './application/queries/obtener-admin-dashboard-stats.query';
@@ -39,7 +38,6 @@ import { IamModule } from '../iam/iam.module';
       useFactory: (em: EntityManager) => new HealthCheckHandler(em),
       inject: [EntityManager],
     },
-    SuperAdminGuard,
   ],
 })
 export class AdministracionModule {}

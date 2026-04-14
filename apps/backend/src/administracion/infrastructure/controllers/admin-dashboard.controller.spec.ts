@@ -11,7 +11,7 @@ jest.mock('../../../estudio/infrastructure/persistence/subscripcion.schema', () 
 
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { ObtenerAdminDashboardStatsHandler } from '../../application/queries/obtener-admin-dashboard-stats.query';
-import { SuperAdminGuard } from '../guards/superadmin.guard';
+import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 
 describe('AdminDashboardController', () => {
   let controller: AdminDashboardController;
@@ -61,9 +61,9 @@ describe('AdminDashboardController', () => {
     });
   });
 
-  it('should have SuperAdminGuard applied', () => {
+  it('should have AdminGuard applied', () => {
     const guards = Reflect.getMetadata('__guards__', AdminDashboardController);
     expect(guards).toBeDefined();
-    expect(guards).toContain(SuperAdminGuard);
+    expect(guards).toContain(AdminGuard);
   });
 });

@@ -1,13 +1,12 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
-import { SuperAdminGuard } from '../guards/superadmin.guard';
+import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 import { ObtenerAdminUsuariosHandler } from '../../application/queries/obtener-admin-usuarios.query';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Usuarios')
 @Controller({ path: 'admin/usuarios', version: '1' })
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(AdminGuard)
 export class AdminUsuariosController {
   constructor(private readonly handler: ObtenerAdminUsuariosHandler) {}
 

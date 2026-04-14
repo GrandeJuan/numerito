@@ -2,8 +2,7 @@ import { Controller, Get, Post, Put, Patch, Param, Body, Inject, UseGuards, Pars
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ADMIN_PLAN_REPOSITORY } from '../../domain/repositories/admin-plan.repository';
 import type { AdminPlanRepository } from '../../domain/repositories/admin-plan.repository';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
-import { SuperAdminGuard } from '../guards/superadmin.guard';
+import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 import { CrearPlanDto } from '../../application/dtos/crear-plan.dto';
 import { ActualizarPlanDto } from '../../application/dtos/actualizar-plan.dto';
 import { RecursoNoEncontradoError, OperacionInvalidaError } from '../../../shared/domain/exceptions';
@@ -11,7 +10,7 @@ import { successResponse } from '../../../shared/infrastructure/responses/api-re
 
 @ApiTags('Admin — Planes')
 @Controller({ path: 'admin/planes', version: '1' })
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(AdminGuard)
 export class AdminPlanesController {
   constructor(
     @Inject(ADMIN_PLAN_REPOSITORY) private readonly planRepo: AdminPlanRepository,

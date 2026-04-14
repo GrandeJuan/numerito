@@ -1,6 +1,6 @@
 import { AdminHealthController } from './admin-health.controller';
 import { HealthCheckHandler } from '../../application/queries/health-check.query';
-import { SuperAdminGuard } from '../guards/superadmin.guard';
+import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 
 describe('AdminHealthController', () => {
   let controller: AdminHealthController;
@@ -34,9 +34,9 @@ describe('AdminHealthController', () => {
     });
   });
 
-  it('should have SuperAdminGuard applied', () => {
+  it('should have AdminGuard applied', () => {
     const guards = Reflect.getMetadata('__guards__', AdminHealthController);
     expect(guards).toBeDefined();
-    expect(guards).toContain(SuperAdminGuard);
+    expect(guards).toContain(AdminGuard);
   });
 });

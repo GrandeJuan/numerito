@@ -1,13 +1,12 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
-import { SuperAdminGuard } from '../guards/superadmin.guard';
+import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 import { HealthCheckHandler } from '../../application/queries/health-check.query';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Health')
 @Controller({ path: 'admin/health', version: '1' })
-@UseGuards(JwtAuthGuard, SuperAdminGuard)
+@UseGuards(AdminGuard)
 export class AdminHealthController {
   constructor(private readonly healthHandler: HealthCheckHandler) {}
 
