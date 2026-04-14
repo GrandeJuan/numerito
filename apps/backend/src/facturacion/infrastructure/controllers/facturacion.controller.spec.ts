@@ -21,6 +21,7 @@ describe('FacturacionController', () => {
   let controller: FacturacionController;
   let mockFacturaRepo: any;
   let mockPagoRepo: any;
+  let mockCrearFacturaHandler: any;
 
   beforeEach(() => {
     mockFacturaRepo = {
@@ -37,7 +38,10 @@ describe('FacturacionController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    controller = new FacturacionController(mockFacturaRepo, mockPagoRepo);
+    mockCrearFacturaHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'factura-new' }),
+    };
+    controller = new FacturacionController(mockFacturaRepo, mockPagoRepo, mockCrearFacturaHandler);
   });
 
   describe('stats', () => {
@@ -84,7 +88,7 @@ describe('FacturacionController', () => {
   });
 
   describe('create', () => {
-    it('should create a factura with lineas', async () => {
+    it('should dispatch to CrearFacturaHandler', async () => {
       const dto = {
         clienteId: 'cliente-1',
         numero: 'FAC-001',
@@ -96,29 +100,13 @@ describe('FacturacionController', () => {
         ],
       };
 
-      const result = await controller.create(dto as any, 'estudio-1');
-      expect(result.data.id).toBeDefined();
-      expect(mockFacturaRepo.save).toHaveBeenCalledTimes(1);
+      const result = await controller.create(dto as any);
+      expect(result.data.id).toBe('factura-new');
+      expect(mockCrearFacturaHandler.execute).toHaveBeenCalledTimes(1);
+      expect(mockCrearFacturaHandler.execute).toHaveBeenCalledWith(dto);
     });
 
-    it('should wire correct facturaId on line items', async () => {
-      const dto = {
-        clienteId: 'cliente-1',
-        numero: 'FAC-003',
-        fechaEmision: '2026-01-01',
-        fechaVencimiento: '2026-02-01',
-        concepto: 'Honorarios',
-        lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 }],
-      };
-
-      await controller.create(dto as any, 'estudio-1');
-      const savedFactura = mockFacturaRepo.save.mock.calls[0][0];
-      for (const linea of savedFactura.lineas) {
-        expect(linea.facturaId).toBe(savedFactura.id);
-      }
-    });
-
-    it('should pass estudioId from decorator', async () => {
+    it('should not call repository directly', async () => {
       const dto = {
         clienteId: 'cliente-1',
         numero: 'FAC-002',
@@ -128,9 +116,8 @@ describe('FacturacionController', () => {
         lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 }],
       };
 
-      await controller.create(dto as any, 'estudio-99');
-      const savedFactura = mockFacturaRepo.save.mock.calls[0][0];
-      expect(savedFactura.estudioId).toBe('estudio-99');
+      await controller.create(dto as any);
+      expect(mockFacturaRepo.save).not.toHaveBeenCalled();
     });
   });
 

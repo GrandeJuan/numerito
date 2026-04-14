@@ -3,11 +3,14 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearFacturaDto } from '../../application/dtos/crear-factura.dto';
 import { RegistrarPagoDto } from '../../application/dtos/registrar-pago.dto';
 import { FacturacionStatsQuery } from '../../application/queries/facturacion-stats.query';
+import {
+  CrearFacturaHandler,
+  type CrearFacturaCommand,
+} from '../../application/commands/crear-factura.command';
 import { FACTURA_REPOSITORY } from '../../domain/repositories/factura.repository';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { PAGO_REPOSITORY } from '../../domain/repositories/pago.repository';
 import type { PagoRepository } from '../../domain/repositories/pago.repository';
-import { Factura } from '../../domain/entities/factura.entity';
 import { Pago } from '../../domain/entities/pago.entity';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
@@ -19,6 +22,7 @@ export class FacturacionController {
   constructor(
     @Inject(FACTURA_REPOSITORY) private readonly facturaRepo: FacturaRepository,
     @Inject(PAGO_REPOSITORY) private readonly pagoRepo: PagoRepository,
+    private readonly crearFacturaHandler: CrearFacturaHandler,
   ) {}
 
   @Get('stats')
@@ -38,19 +42,9 @@ export class FacturacionController {
 
   @Post('facturas')
   @ApiOperation({ summary: 'Crear factura' })
-  async create(@Body() dto: CrearFacturaDto, @EstudioId() estudioId: string) {
-    const factura = Factura.create({
-      clienteId: dto.clienteId,
-      estudioId,
-      numero: dto.numero,
-      fechaEmision: new Date(dto.fechaEmision),
-      fechaVencimiento: new Date(dto.fechaVencimiento),
-      concepto: dto.concepto,
-      lineas: dto.lineas,
-    });
-
-    await this.facturaRepo.save(factura);
-    return successResponse(factura);
+  async create(@Body() dto: CrearFacturaDto) {
+    const result = await this.crearFacturaHandler.execute(dto as CrearFacturaCommand);
+    return successResponse(result);
   }
 
   @Get('facturas/:id')
