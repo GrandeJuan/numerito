@@ -1,21 +1,9 @@
 import { ValueObject } from '../../../shared/domain';
 import { InvalidCuitError } from '../../../shared/domain/exceptions';
+import { validarCuit } from '@numerito/shared';
 
 interface CuitProps {
   value: string;
-}
-
-const MULT = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-
-function validarCuit(raw: string): boolean {
-  if (raw.length !== 11 || !/^\d{11}$/.test(raw)) return false;
-  let sum = 0;
-  for (let i = 0; i < 10; i++) {
-    sum += parseInt(raw[i]) * MULT[i];
-  }
-  const remainder = sum % 11;
-  const checkDigit = remainder === 0 ? 0 : remainder === 1 ? 9 : 11 - remainder;
-  return checkDigit === parseInt(raw[10]);
 }
 
 function formatCuit(raw: string): string {

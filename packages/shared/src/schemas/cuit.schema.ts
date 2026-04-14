@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 
-function validarCuit(cuit: string): boolean {
+export function validarCuit(cuit: string): boolean {
   const clean = cuit.replace(/-/g, '');
   if (clean.length !== 11 || !/^\d{11}$/.test(clean)) return false;
 
