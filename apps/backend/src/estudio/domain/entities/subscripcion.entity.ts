@@ -1,5 +1,9 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import { SubscripcionCreada } from '../events/subscripcion-creada.event';
+import { SubscripcionRenovada } from '../events/subscripcion-renovada.event';
+import { SubscripcionCancelada } from '../events/subscripcion-cancelada.event';
+import { SubscripcionVencida } from '../events/subscripcion-vencida.event';
 
 export enum EstadoSubscripcion {
   TRIAL = 'TRIAL',
@@ -45,7 +49,9 @@ export class Subscripcion extends BaseEntity {
   }
 
   static create(props: CreateSubscripcionProps, id?: string): Subscripcion {
-    return new Subscripcion(props, id);
+    const sub = new Subscripcion(props, id);
+    sub.addDomainEvent(new SubscripcionCreada(sub.id, props.estudioId, props.planId));
+    return sub;
   }
 
   get estudioId(): string { return this._estudioId; }
@@ -63,6 +69,7 @@ export class Subscripcion extends BaseEntity {
     this._fechaFin = nuevaFechaFin;
     this._estado = EstadoSubscripcion.ACTIVA;
     this.updatedAt = new Date();
+    this.addDomainEvent(new SubscripcionRenovada(this.id, this._estudioId, nuevaFechaFin));
   }
 
   cancelar(): void {
@@ -71,6 +78,7 @@ export class Subscripcion extends BaseEntity {
     }
     this._estado = EstadoSubscripcion.CANCELADA;
     this.updatedAt = new Date();
+    this.addDomainEvent(new SubscripcionCancelada(this.id, this._estudioId));
   }
 
   suspender(): void {
@@ -95,6 +103,7 @@ export class Subscripcion extends BaseEntity {
     }
     this._estado = EstadoSubscripcion.VENCIDA;
     this.updatedAt = new Date();
+    this.addDomainEvent(new SubscripcionVencida(this.id, this._estudioId));
   }
 
   cambiarPlan(nuevoPlanId: string): void {

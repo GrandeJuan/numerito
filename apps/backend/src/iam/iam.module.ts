@@ -42,6 +42,8 @@ import type { TotpSecretRepository } from './domain/repositories/totp-secret.rep
 import { MikroOrmTotpSecretRepository } from './infrastructure/persistence/mikro-orm-totp-secret.repository';
 import { SESION_REPOSITORY } from './domain/repositories/sesion.repository';
 import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm-sesion.repository';
+import { EVENT_BUS } from '../shared/domain/event-bus';
+import type { EventBus } from '../shared/domain/event-bus';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
@@ -56,8 +58,8 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
     { provide: ROL_PERMISO_REPOSITORY, useClass: MikroOrmRolPermisoRepository },
     {
       provide: RegistrarUsuarioHandler,
-      useFactory: (repo: UsuarioRepository) => new RegistrarUsuarioHandler(repo),
-      inject: [USUARIO_REPOSITORY],
+      useFactory: (repo: UsuarioRepository, eventBus: EventBus) => new RegistrarUsuarioHandler(repo, eventBus),
+      inject: [USUARIO_REPOSITORY, EVENT_BUS],
     },
     {
       provide: IniciarSesionHandler,

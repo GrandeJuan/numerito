@@ -12,6 +12,8 @@ import { ADMIN_PLAN_REPOSITORY } from './domain/repositories/admin-plan.reposito
 import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-orm-admin-plan.repository';
 import { ObtenerAdminDashboardStatsHandler } from './application/queries/obtener-admin-dashboard-stats.query';
 import { ObtenerAdminUsuariosHandler } from './application/queries/obtener-admin-usuarios.query';
+import { DashboardStatsListener } from './application/listeners/dashboard-stats.listener';
+import { DashboardStatsProjection } from './application/services/dashboard-stats-projection';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
 
@@ -20,6 +22,8 @@ import { IamModule } from '../iam/iam.module';
   controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController, AdminHealthController],
   providers: [
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
+    DashboardStatsProjection,
+    DashboardStatsListener,
     {
       provide: ObtenerAdminDashboardStatsHandler,
       useFactory: (em: EntityManager) => new ObtenerAdminDashboardStatsHandler(em),

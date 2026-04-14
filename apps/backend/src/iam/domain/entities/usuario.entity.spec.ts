@@ -2,6 +2,7 @@ import { Usuario } from './usuario.entity';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
 import { ROL } from '@numerito/shared';
+import { UsuarioRegistrado } from '../events/usuario-registrado.event';
 
 describe('Usuario Entity', () => {
   const createUsuario = async () => {
@@ -58,5 +59,23 @@ describe('Usuario Entity', () => {
     const newPassword = await Password.create('NewSecure456!');
     await usuario.changePassword(newPassword);
     expect(usuario.password).toBe(newPassword);
+  });
+
+  describe('domain events', () => {
+    it('should emit UsuarioRegistrado on create', async () => {
+      const usuario = await createUsuario();
+      const events = usuario.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(UsuarioRegistrado);
+      expect((events[0] as UsuarioRegistrado).usuarioId).toBe(usuario.id);
+      expect((events[0] as UsuarioRegistrado).email).toBe('usuario@test.com');
+    });
+
+    it('should clear domain events', async () => {
+      const usuario = await createUsuario();
+      expect(usuario.getDomainEvents()).toHaveLength(1);
+      usuario.clearDomainEvents();
+      expect(usuario.getDomainEvents()).toHaveLength(0);
+    });
   });
 });

@@ -3,6 +3,7 @@ import { Email } from '../../domain/value-objects/email.vo';
 import { Password } from '../../domain/value-objects/password.vo';
 import { Usuario } from '../../domain/entities/usuario.entity';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
+import type { EventBus } from '../../../shared/domain/event-bus';
 import { EmailYaRegistradoError } from '../../../shared/domain/exceptions';
 
 export interface RegistrarUsuarioCommand {
@@ -19,7 +20,10 @@ export interface RegistrarUsuarioResult {
 }
 
 export class RegistrarUsuarioHandler {
-  constructor(private readonly usuarioRepo: UsuarioRepository) {}
+  constructor(
+    private readonly usuarioRepo: UsuarioRepository,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(command: RegistrarUsuarioCommand): Promise<RegistrarUsuarioResult> {
     const email = Email.create(command.email);
@@ -40,6 +44,9 @@ export class RegistrarUsuarioHandler {
     });
 
     await this.usuarioRepo.save(usuario);
+
+    this.eventBus.publishAll(usuario.getDomainEvents());
+    usuario.clearDomainEvents();
 
     return {
       id: usuario.id,

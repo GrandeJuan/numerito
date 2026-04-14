@@ -2,6 +2,7 @@ import { RegistrarUsuarioHandler } from './registrar-usuario.command';
 import { Email } from '../../domain/value-objects/email.vo';
 import { Usuario } from '../../domain/entities/usuario.entity';
 import { ROL } from '@numerito/shared';
+import type { EventBus } from '../../../shared/domain/event-bus';
 
 describe('RegistrarUsuario Command', () => {
   let handler: RegistrarUsuarioHandler;
@@ -12,6 +13,7 @@ describe('RegistrarUsuario Command', () => {
     save: jest.Mock;
     delete: jest.Mock;
   };
+  let mockEventBus: EventBus;
 
   beforeEach(() => {
     mockUsuarioRepo = {
@@ -21,7 +23,11 @@ describe('RegistrarUsuario Command', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    handler = new RegistrarUsuarioHandler(mockUsuarioRepo);
+    mockEventBus = {
+      publish: jest.fn(),
+      publishAll: jest.fn(),
+    };
+    handler = new RegistrarUsuarioHandler(mockUsuarioRepo, mockEventBus);
   });
 
   it('should register a new usuario', async () => {
@@ -38,6 +44,23 @@ describe('RegistrarUsuario Command', () => {
     expect(mockUsuarioRepo.save).toHaveBeenCalledTimes(1);
     const savedUsuario = mockUsuarioRepo.save.mock.calls[0][0];
     expect(savedUsuario).toBeInstanceOf(Usuario);
+  });
+
+  it('should publish domain events after save', async () => {
+    await handler.execute({
+      email: 'nuevo@test.com',
+      password: 'SecurePass123!',
+      nombre: 'Juan',
+      apellido: 'Perez',
+      rol: ROL.SOCIO,
+    });
+
+    expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
+    const events = (mockEventBus.publishAll as jest.Mock).mock.calls[0][0];
+    expect(events).toHaveLength(1);
+    expect(events[0].eventName).toBe('iam.usuario-registrado');
+    expect(events[0].usuarioId).toBeDefined();
+    expect(events[0].email).toBe('nuevo@test.com');
   });
 
   it('should throw if email already exists', async () => {

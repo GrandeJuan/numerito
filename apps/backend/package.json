@@ -21,6 +21,7 @@
     "@mikro-orm/postgresql": "^7.0.7",
     "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^4.0.3",
+    "@nestjs/event-emitter": "^3.0.0",
     "@nestjs/core": "^11.1.17",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",

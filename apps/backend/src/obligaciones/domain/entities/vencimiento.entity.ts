@@ -2,6 +2,8 @@ import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { ESTADO_VENCIMIENTO } from '@numerito/shared';
 import type { TipoObligacion, EstadoVencimiento } from '@numerito/shared';
+import { VencimientoCumplido } from '../events/vencimiento-cumplido.event';
+import { VencimientoVencido } from '../events/vencimiento-vencido.event';
 
 export { ESTADO_VENCIMIENTO };
 export type { EstadoVencimiento };
@@ -56,11 +58,17 @@ export class Vencimiento extends BaseEntity {
     }
     this._estado = ESTADO_VENCIMIENTO.PRESENTADO;
     this.updatedAt = new Date();
+    this.addDomainEvent(
+      new VencimientoCumplido(this.id, this._clienteId, this._tipoObligacion, this._periodo),
+    );
   }
 
   marcarVencido(): void {
     this._estado = ESTADO_VENCIMIENTO.VENCIDO;
     this.updatedAt = new Date();
+    this.addDomainEvent(
+      new VencimientoVencido(this.id, this._clienteId, this._tipoObligacion, this._periodo),
+    );
   }
 
   isProximoAVencer(diasAnticipacion: number): boolean {

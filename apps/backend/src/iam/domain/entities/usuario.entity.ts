@@ -1,6 +1,7 @@
 import { BaseEntity } from '../../../shared/domain';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
+import { UsuarioRegistrado } from '../events/usuario-registrado.event';
 import type { Rol } from '@numerito/shared';
 
 export type AuthProvider = 'google' | 'microsoft' | null;
@@ -43,7 +44,9 @@ export class Usuario extends BaseEntity {
   }
 
   static create(props: CreateUsuarioProps, id?: string): Usuario {
-    return new Usuario(props, id);
+    const usuario = new Usuario(props, id);
+    usuario.addDomainEvent(new UsuarioRegistrado(usuario.id, props.email.value));
+    return usuario;
   }
 
   get email(): Email {
