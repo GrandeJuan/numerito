@@ -13,16 +13,10 @@ jest.mock('../../../tareas/infrastructure/persistence/tarea.schema', () => ({
 }));
 
 import { ObtenerDashboardStatsHandler } from './obtener-dashboard-stats.query';
-import type { UsuarioEstudioRepository } from '../../../iam/domain/repositories/usuario-estudio.repository';
-import type { RolPermisoRepository } from '../../../iam/domain/repositories/rol-permiso.repository';
-import { UsuarioEstudio } from '../../../iam/domain/entities/usuario-estudio.entity';
-import { Permiso } from '../../../iam/domain/value-objects/permiso.vo';
 
 describe('ObtenerDashboardStatsHandler', () => {
   let handler: ObtenerDashboardStatsHandler;
   let mockEm: any;
-  let mockUeRepo: jest.Mocked<UsuarioEstudioRepository>;
-  let mockRpRepo: jest.Mocked<RolPermisoRepository>;
   let mockExecute: jest.Mock;
 
   const estudioId = 'estudio-uuid';
@@ -35,33 +29,32 @@ describe('ObtenerDashboardStatsHandler', () => {
       find: jest.fn().mockResolvedValue([]),
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
-    mockUeRepo = {
-      findByUsuarioAndEstudio: jest.fn(),
-      findByUsuarioId: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      save: jest.fn(),
-      delete: jest.fn(),
-    };
-    mockRpRepo = {
-      findPermisosByRol: jest.fn().mockResolvedValue([]),
-      asignarPermiso: jest.fn(),
-      revocarPermiso: jest.fn(),
-      tienePermiso: jest.fn(),
-    };
   });
 
   function createHandler() {
-    handler = new ObtenerDashboardStatsHandler(mockEm, mockUeRepo, mockRpRepo);
+    handler = new ObtenerDashboardStatsHandler(mockEm);
   }
 
-  function createMembership(rol: string) {
-    return UsuarioEstudio.create({ usuarioId, estudioId, rol: rol as any });
+  function mockMembership(rol: string) {
+    mockExecute.mockResolvedValueOnce([{ is_active: true, rol }]);
+  }
+
+  function mockPermisos(permisos: string[]) {
+    mockExecute.mockResolvedValueOnce(permisos.map((codigo) => ({ codigo })));
   }
 
   describe('when user has no membership', () => {
     it('should throw error', async () => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(null);
+      mockExecute.mockResolvedValueOnce([]);
+      createHandler();
+
+      await expect(handler.execute({ estudioId, usuarioId })).rejects.toThrow();
+    });
+  });
+
+  describe('when membership is inactive', () => {
+    it('should throw error', async () => {
+      mockExecute.mockResolvedValueOnce([{ is_active: false, rol: 'SOCIO' }]);
       createHandler();
 
       await expect(handler.execute({ estudioId, usuarioId })).rejects.toThrow();
@@ -70,18 +63,13 @@ describe('ObtenerDashboardStatsHandler', () => {
 
   describe('SOCIO role', () => {
     beforeEach(() => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('SOCIO'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([
-        Permiso.VER_FACTURACION,
-        Permiso.VER_CLIENTES,
-        Permiso.VER_TAREAS,
-      ]);
-      // facturacion mensual query
-      mockExecute.mockResolvedValue([]);
       createHandler();
     });
 
     it('should return all stats including facturacion and cargaTrabajo', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION', 'VER_CLIENTES', 'VER_TAREAS']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result).toHaveProperty('kpis');
@@ -94,7 +82,10 @@ describe('ObtenerDashboardStatsHandler', () => {
     });
 
     it('should count all clientes in the estudio', async () => {
-      mockEm.count.mockResolvedValueOnce(15); // clientes
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION', 'VER_CLIENTES', 'VER_TAREAS']);
+      mockEm.count.mockResolvedValueOnce(15);
+
       const result = await handler.execute({ estudioId, usuarioId });
       expect(result.kpis.clientes).toBe(15);
     });
@@ -102,12 +93,13 @@ describe('ObtenerDashboardStatsHandler', () => {
 
   describe('RESPONSABLE role without VER_FACTURACION', () => {
     beforeEach(() => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('RESPONSABLE'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([Permiso.VER_CLIENTES, Permiso.VER_TAREAS]);
       createHandler();
     });
 
     it('should return cargaTrabajo but not facturacion', async () => {
+      mockMembership('RESPONSABLE');
+      mockPermisos(['VER_CLIENTES', 'VER_TAREAS']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result.cargaTrabajo).toBeDefined();
@@ -118,17 +110,13 @@ describe('ObtenerDashboardStatsHandler', () => {
 
   describe('RESPONSABLE role with VER_FACTURACION', () => {
     beforeEach(() => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('RESPONSABLE'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([
-        Permiso.VER_CLIENTES,
-        Permiso.VER_TAREAS,
-        Permiso.VER_FACTURACION,
-      ]);
-      mockExecute.mockResolvedValue([]);
       createHandler();
     });
 
     it('should include facturacion and cargaTrabajo', async () => {
+      mockMembership('RESPONSABLE');
+      mockPermisos(['VER_CLIENTES', 'VER_TAREAS', 'VER_FACTURACION']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result.facturacionMensual).toBeDefined();
@@ -139,12 +127,13 @@ describe('ObtenerDashboardStatsHandler', () => {
 
   describe('EMPLEADO role', () => {
     beforeEach(() => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('EMPLEADO'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([Permiso.VER_CLIENTES, Permiso.VER_TAREAS]);
       createHandler();
     });
 
     it('should not return facturacion or cargaTrabajo', async () => {
+      mockMembership('EMPLEADO');
+      mockPermisos(['VER_CLIENTES', 'VER_TAREAS']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result.facturacionMensual).toBeUndefined();
@@ -153,6 +142,9 @@ describe('ObtenerDashboardStatsHandler', () => {
     });
 
     it('should return basic stats', async () => {
+      mockMembership('EMPLEADO');
+      mockPermisos(['VER_CLIENTES', 'VER_TAREAS']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result).toHaveProperty('kpis');
@@ -167,13 +159,13 @@ describe('ObtenerDashboardStatsHandler', () => {
 
   describe('defaults when tables are empty', () => {
     beforeEach(() => {
-      mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('SOCIO'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([Permiso.VER_FACTURACION]);
-      mockExecute.mockResolvedValue([]);
       createHandler();
     });
 
     it('should return zero KPIs', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result.kpis.clientes).toBe(0);
@@ -183,6 +175,9 @@ describe('ObtenerDashboardStatsHandler', () => {
     });
 
     it('should return empty arrays', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+
       const result = await handler.execute({ estudioId, usuarioId });
 
       expect(result.vencimientosPorEstado).toEqual([]);

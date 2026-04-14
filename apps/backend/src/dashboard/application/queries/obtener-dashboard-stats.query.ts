@@ -2,9 +2,6 @@ import { EntityManager } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { VencimientoEntity } from '../../../obligaciones/infrastructure/persistence/vencimiento.schema';
 import { TareaEntity } from '../../../tareas/infrastructure/persistence/tarea.schema';
-import type { UsuarioEstudioRepository } from '../../../iam/domain/repositories/usuario-estudio.repository';
-import type { RolPermisoRepository } from '../../../iam/domain/repositories/rol-permiso.repository';
-import { Permiso } from '../../../iam/domain/value-objects/permiso.vo';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
 
@@ -16,22 +13,35 @@ export interface DashboardStatsQuery {
 }
 
 export class ObtenerDashboardStatsHandler {
-  constructor(
-    private readonly em: EntityManager,
-    private readonly usuarioEstudioRepo: UsuarioEstudioRepository,
-    private readonly rolPermisoRepo: RolPermisoRepository,
-  ) {}
+  constructor(private readonly em: EntityManager) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
-    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(query.usuarioId);
+    const conn = this.em.getConnection();
 
-    if (!membership || !membership.isActive) {
+    const [membership] = await conn.execute(
+      `SELECT ue.is_active, r.codigo as rol
+       FROM usuario_estudio ue
+       JOIN rol r ON ue.rol_id = r.id
+       WHERE ue.usuario_id = ? AND ue.estudio_id = ?
+       LIMIT 1`,
+      [query.usuarioId, query.estudioId],
+    );
+
+    if (!membership || !membership.is_active) {
       throw new RecursoNoEncontradoError('Membresía en estudio');
     }
 
-    const rol = membership.rol;
-    const permisos = await this.rolPermisoRepo.findPermisosByRol(rol);
-    const tieneFacturacion = permisos.includes(Permiso.VER_FACTURACION);
+    const rol: string = membership.rol;
+    const permisosRaw = await conn.execute(
+      `SELECT p.codigo
+       FROM rol_permiso rp
+       JOIN rol r ON rp.rol_id = r.id
+       JOIN permiso p ON rp.permiso_id = p.id
+       WHERE r.codigo = ?`,
+      [rol],
+    );
+    const permisos: string[] = permisosRaw.map((r: any) => r.codigo);
+    const tieneFacturacion = permisos.includes('VER_FACTURACION');
     const esEmpleado = rol === 'EMPLEADO';
     const esSocioOResponsable = rol === 'SOCIO' || rol === 'RESPONSABLE';
 
@@ -62,7 +72,6 @@ export class ObtenerDashboardStatsHandler {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-      const conn = this.em.getConnection();
       const [row] = await conn.execute(
         `SELECT COALESCE(SUM(total), 0) as total
          FROM factura
@@ -75,7 +84,6 @@ export class ObtenerDashboardStatsHandler {
     }
 
     // Vencimientos por estado (last 6 months)
-    const conn = this.em.getConnection();
     const vencimientosPorEstadoRaw = await conn.execute(
       `SELECT ev.nombre as estado, COUNT(*)::int as cantidad
        FROM vencimiento v

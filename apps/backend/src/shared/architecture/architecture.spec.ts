@@ -423,8 +423,13 @@ describe('Architecture rules', () => {
       return null;
     }
 
-    it('read-model contexts must not import domain entities from other contexts', () => {
+    it('read-model contexts must not import from domain layer of other contexts', () => {
       const violations: string[] = [];
+      const forbiddenDomainPaths = [
+        '/domain/entities/',
+        '/domain/value-objects/',
+        '/domain/events/',
+      ];
 
       for (const ctx of READ_MODEL_CONTEXTS) {
         const ctxDir = path.join(SRC_DIR, ctx);
@@ -436,10 +441,12 @@ describe('Architecture rules', () => {
             const targetCtx = resolveImportContext(file, imp);
             if (!targetCtx) continue;
 
-            if (imp.includes('/domain/entities/')) {
-              violations.push(
-                `${relativeTo(file)} imports domain entity from "${targetCtx}" via "${imp}" — read-model contexts must use infrastructure/persistence schemas instead`,
-              );
+            for (const forbidden of forbiddenDomainPaths) {
+              if (imp.includes(forbidden)) {
+                violations.push(
+                  `${relativeTo(file)} imports from "${targetCtx}"${forbidden} via "${imp}" — read-model contexts must use infrastructure/persistence schemas or raw SQL instead`,
+                );
+              }
             }
           }
         }
