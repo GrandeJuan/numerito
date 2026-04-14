@@ -21,6 +21,7 @@ import {
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Inject } from '@nestjs/common';
+import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -65,8 +66,8 @@ export class ClientesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body(new ZodValidationPipe(crearClienteDtoSchema)) dto: CrearClienteDto) {
-    return this.crearClienteHandler.execute(dto as CrearClienteCommand);
+  async create(@Body(new ZodValidationPipe(crearClienteDtoSchema)) dto: CrearClienteDto, @EstudioId() estudioId: string) {
+    return this.crearClienteHandler.execute({ ...dto, estudioId } as CrearClienteCommand);
   }
 
   @Put(':id')

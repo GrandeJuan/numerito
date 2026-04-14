@@ -18,7 +18,6 @@ export class DocumentosController {
   @Get()
   @ApiOperation({ summary: 'Listar documentos del estudio' })
   async list(
-    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('clienteId') clienteId?: string,

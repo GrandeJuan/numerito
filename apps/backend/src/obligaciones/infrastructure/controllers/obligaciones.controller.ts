@@ -10,6 +10,7 @@ import {
 } from '../../application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
+import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
@@ -88,8 +89,8 @@ export class ObligacionesController {
 
   @Post('vencimientos')
   @ApiOperation({ summary: 'Crear vencimiento' })
-  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto) {
-    const result = await this.crearVencimientoHandler.execute(dto as CrearVencimientoCommand);
+  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto, @EstudioId() estudioId: string) {
+    const result = await this.crearVencimientoHandler.execute({ ...dto, estudioId } as CrearVencimientoCommand);
     return result;
   }
 

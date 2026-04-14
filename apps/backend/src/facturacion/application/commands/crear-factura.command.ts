@@ -1,7 +1,6 @@
 import type { LineaFacturaInput } from '../../domain/entities/linea-factura.entity';
 import { Factura } from '../../domain/entities/factura.entity';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
-import type { TenantContext } from '../../../shared/domain/tenant-context';
 
 export interface CrearFacturaCommand {
   clienteId: string;
@@ -10,23 +9,18 @@ export interface CrearFacturaCommand {
   fechaVencimiento: string;
   concepto: string;
   lineas: LineaFacturaInput[];
+  estudioId: string;
 }
 
 export class CrearFacturaHandler {
   constructor(
     private readonly facturaRepo: FacturaRepository,
-    private readonly context: TenantContext,
   ) {}
 
   async execute(command: CrearFacturaCommand): Promise<{ id: string }> {
-    const estudioId = this.context.estudioId;
-    if (!estudioId) {
-      throw new Error('Tenant context not available');
-    }
-
     const factura = Factura.create({
       clienteId: command.clienteId,
-      estudioId,
+      estudioId: command.estudioId,
       numero: command.numero,
       fechaEmision: new Date(command.fechaEmision),
       fechaVencimiento: new Date(command.fechaVencimiento),

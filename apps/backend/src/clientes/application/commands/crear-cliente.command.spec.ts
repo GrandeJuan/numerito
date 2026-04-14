@@ -4,7 +4,6 @@ import { CONDICION_IVA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 describe('CrearCliente Command', () => {
   let handler: CrearClienteHandler;
   let mockRepo: any;
-  let context: { estudioId?: string };
 
   beforeEach(() => {
     mockRepo = {
@@ -15,8 +14,7 @@ describe('CrearCliente Command', () => {
       delete: jest.fn(),
       findByResponsableId: jest.fn(),
     };
-    context = { estudioId: 'estudio-1' };
-    handler = new CrearClienteHandler(mockRepo, context);
+    handler = new CrearClienteHandler(mockRepo);
   });
 
   it('should create a new cliente', async () => {
@@ -26,6 +24,7 @@ describe('CrearCliente Command', () => {
       condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
       tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
       regimen: REGIMEN.GENERAL,
+      estudioId: 'estudio-1',
     });
 
     expect(result.id).toBeDefined();
@@ -42,21 +41,22 @@ describe('CrearCliente Command', () => {
         condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
         tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
         regimen: REGIMEN.GENERAL,
+        estudioId: 'estudio-1',
       }),
     ).rejects.toThrow('CUIT ya registrado en este estudio');
   });
 
-  it('should throw if tenant context is not available', async () => {
-    context.estudioId = undefined;
+  it('should use estudioId from command', async () => {
+    await handler.execute({
+      cuit: '20-12345678-6',
+      razonSocial: 'Test S.A.',
+      condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+      tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+      regimen: REGIMEN.GENERAL,
+      estudioId: 'estudio-99',
+    });
 
-    await expect(
-      handler.execute({
-        cuit: '20-12345678-6',
-        razonSocial: 'Test S.A.',
-        condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
-        tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
-        regimen: REGIMEN.GENERAL,
-      }),
-    ).rejects.toThrow('Tenant context not available');
+    const savedCliente = mockRepo.save.mock.calls[0][0];
+    expect(savedCliente.estudioId).toBe('estudio-99');
   });
 });

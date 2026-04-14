@@ -9,8 +9,6 @@ import { FacturacionController } from './infrastructure/controllers/facturacion.
 import { CrearFacturaHandler } from './application/commands/crear-factura.command';
 import { RegistrarPagoHandler } from './application/commands/registrar-pago.command';
 import { AnularFacturaHandler } from './application/commands/anular-factura.command';
-import type { TenantContext } from '../shared/domain/tenant-context';
-import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-context.service';
 
 @Module({
   controllers: [FacturacionController],
@@ -19,9 +17,9 @@ import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-conte
     { provide: PAGO_REPOSITORY, useClass: MikroOrmPagoRepository },
     {
       provide: CrearFacturaHandler,
-      useFactory: (repo: FacturaRepository, context: TenantContext) =>
-        new CrearFacturaHandler(repo, context),
-      inject: [FACTURA_REPOSITORY, REQUEST_CONTEXT],
+      useFactory: (repo: FacturaRepository) =>
+        new CrearFacturaHandler(repo),
+      inject: [FACTURA_REPOSITORY],
     },
     {
       provide: RegistrarPagoHandler,

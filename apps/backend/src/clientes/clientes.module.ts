@@ -8,8 +8,6 @@ import { AsignarResponsableHandler } from './application/commands/asignar-respon
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
-import type { TenantContext } from '../shared/domain/tenant-context';
-import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-context.service';
 
 @Module({
   imports: [],
@@ -18,9 +16,9 @@ import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-conte
     { provide: CLIENTE_REPOSITORY, useClass: MikroOrmClienteRepository },
     {
       provide: CrearClienteHandler,
-      useFactory: (repo: ClienteRepository, context: TenantContext) =>
-        new CrearClienteHandler(repo, context),
-      inject: [CLIENTE_REPOSITORY, REQUEST_CONTEXT],
+      useFactory: (repo: ClienteRepository) =>
+        new CrearClienteHandler(repo),
+      inject: [CLIENTE_REPOSITORY],
     },
     {
       provide: ActualizarClienteHandler,

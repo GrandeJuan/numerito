@@ -40,15 +40,15 @@ export class FacturacionController {
 
   @Get('facturas')
   @ApiOperation({ summary: 'Listar facturas del estudio' })
-  async list(@EstudioId() estudioId: string, @Query('page') page = 1, @Query('limit') limit = 20) {
+  async list(@Query('page') page = 1, @Query('limit') limit = 20) {
     const facturas = await this.facturaRepo.findAll();
     return successResponse(facturas, { total: facturas.length, page: +page, limit: +limit });
   }
 
   @Post('facturas')
   @ApiOperation({ summary: 'Crear factura' })
-  async create(@Body(new ZodValidationPipe(crearFacturaDtoSchema)) dto: CrearFacturaDto) {
-    const result = await this.crearFacturaHandler.execute(dto as CrearFacturaCommand);
+  async create(@Body(new ZodValidationPipe(crearFacturaDtoSchema)) dto: CrearFacturaDto, @EstudioId() estudioId: string) {
+    const result = await this.crearFacturaHandler.execute({ ...dto, estudioId } as CrearFacturaCommand);
     return successResponse(result);
   }
 
@@ -88,7 +88,6 @@ export class FacturacionController {
   @ApiOperation({ summary: 'Cuenta corriente de un cliente' })
   async cuentaCorriente(
     @Param('clienteId') clienteId: string,
-    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
   ) {

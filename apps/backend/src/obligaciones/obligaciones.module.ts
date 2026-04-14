@@ -6,8 +6,6 @@ import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikr
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
-import type { TenantContext } from '../shared/domain/tenant-context';
-import { REQUEST_CONTEXT } from '../shared/infrastructure/services/request-context.service';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -18,9 +16,9 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
     {
       provide: CrearVencimientoHandler,
-      useFactory: (repo: VencimientoRepository, context: TenantContext) =>
-        new CrearVencimientoHandler(repo, context),
-      inject: [VENCIMIENTO_REPOSITORY, REQUEST_CONTEXT],
+      useFactory: (repo: VencimientoRepository) =>
+        new CrearVencimientoHandler(repo),
+      inject: [VENCIMIENTO_REPOSITORY],
     },
     {
       provide: PresentarVencimientoHandler,

@@ -3,7 +3,6 @@ import { CrearVencimientoHandler, type CrearVencimientoCommand } from './crear-v
 describe('CrearVencimiento Command', () => {
   let handler: CrearVencimientoHandler;
   let mockRepo: any;
-  let context: { estudioId?: string };
 
   const validCommand: CrearVencimientoCommand = {
     clienteId: 'cliente-1',
@@ -11,6 +10,7 @@ describe('CrearVencimiento Command', () => {
     periodo: '2026-04',
     fechaVencimiento: '2026-12-20',
     descripcion: 'DDJJ IVA abril',
+    estudioId: 'estudio-1',
   };
 
   beforeEach(() => {
@@ -24,8 +24,7 @@ describe('CrearVencimiento Command', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    context = { estudioId: 'estudio-1' };
-    handler = new CrearVencimientoHandler(mockRepo, context);
+    handler = new CrearVencimientoHandler(mockRepo);
   });
 
   it('should create a vencimiento and return its id', async () => {
@@ -35,10 +34,8 @@ describe('CrearVencimiento Command', () => {
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  it('should use estudioId from tenant context', async () => {
-    context.estudioId = 'estudio-99';
-
-    await handler.execute(validCommand);
+  it('should use estudioId from command', async () => {
+    await handler.execute({ ...validCommand, estudioId: 'estudio-99' });
 
     const saved = mockRepo.save.mock.calls[0][0];
     expect(saved.estudioId).toBe('estudio-99');
@@ -53,13 +50,6 @@ describe('CrearVencimiento Command', () => {
     expect(saved.periodo).toBe('2026-04');
     expect(saved.descripcion).toBe('DDJJ IVA abril');
     expect(saved.estado).toBe('PENDIENTE');
-  });
-
-  it('should throw if tenant context is not available', async () => {
-    context.estudioId = undefined;
-
-    await expect(handler.execute(validCommand)).rejects.toThrow('Tenant context not available');
-    expect(mockRepo.save).not.toHaveBeenCalled();
   });
 
   it('should throw if fechaVencimiento is in the past', async () => {
