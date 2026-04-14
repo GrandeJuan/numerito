@@ -9,6 +9,7 @@ import { EstudioSelector } from './estudio-selector';
 import { Breadcrumbs } from './breadcrumbs';
 import { Can } from './can';
 import { NotificationBell } from './notification-bell';
+import { GlobalSearch } from './global-search';
 
 interface NavItem {
   label: string;
@@ -287,8 +288,14 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Right side: notification bell + dark mode + avatar dropdown */}
+          {/* Right side: search + notification bell + dark mode + avatar dropdown */}
           <div className="flex items-center gap-2">
+            {pathname.startsWith('/admin') && (
+              <div className="hidden md:block">
+                <GlobalSearch />
+              </div>
+            )}
+
             <NotificationBell />
 
             <button

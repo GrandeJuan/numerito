@@ -6,7 +6,9 @@ import { AdminEstudiosController } from './infrastructure/controllers/admin-estu
 import { AdminDashboardController } from './infrastructure/controllers/admin-dashboard.controller';
 import { AdminUsuariosController } from './infrastructure/controllers/admin-usuarios.controller';
 import { AdminHealthController } from './infrastructure/controllers/admin-health.controller';
+import { AdminSearchController } from './infrastructure/controllers/admin-search.controller';
 import { HealthCheckHandler } from './application/queries/health-check.query';
+import { AdminSearchHandler } from './application/queries/admin-search.query';
 import { ADMIN_PLAN_REPOSITORY } from './domain/repositories/admin-plan.repository';
 import type { AdminPlanRepository } from './domain/repositories/admin-plan.repository';
 import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-orm-admin-plan.repository';
@@ -21,7 +23,7 @@ import { IamModule } from '../iam/iam.module';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
-  controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController, AdminHealthController],
+  controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController, AdminHealthController, AdminSearchController],
   providers: [
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
     DashboardStatsProjection,
@@ -49,6 +51,11 @@ import { IamModule } from '../iam/iam.module';
     {
       provide: HealthCheckHandler,
       useFactory: (em: EntityManager) => new HealthCheckHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: AdminSearchHandler,
+      useFactory: (em: EntityManager) => new AdminSearchHandler(em),
       inject: [EntityManager],
     },
   ],
