@@ -1,10 +1,8 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { iniciarSesionSchema, type IniciarSesionInput } from '@numerito/shared';
 
-export class IniciarSesionDto {
-  @IsEmail()
+export const iniciarSesionDtoSchema = iniciarSesionSchema;
+
+export class IniciarSesionDto implements IniciarSesionInput {
   email!: string;
-
-  @IsString()
-  @IsNotEmpty()
   password!: string;
 }

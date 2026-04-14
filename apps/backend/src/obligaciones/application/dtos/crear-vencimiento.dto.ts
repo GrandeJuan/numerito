@@ -1,22 +1,11 @@
-import { IsNotEmpty, IsString, IsDateString } from 'class-validator';
+import { crearVencimientoSchema, type CrearVencimientoInput } from '@numerito/shared';
 
-export class CrearVencimientoDto {
-  @IsString()
-  @IsNotEmpty()
+export const crearVencimientoDtoSchema = crearVencimientoSchema;
+
+export class CrearVencimientoDto implements CrearVencimientoInput {
   clienteId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   tipoObligacion!: string;
-
-  @IsString()
-  @IsNotEmpty()
   periodo!: string;
-
-  @IsDateString()
   fechaVencimiento!: string;
-
-  @IsString()
-  @IsNotEmpty()
   descripcion!: string;
 }

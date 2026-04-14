@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearFacturaDto } from '../../application/dtos/crear-factura.dto';
+import { CrearFacturaDto, crearFacturaDtoSchema } from '../../application/dtos/crear-factura.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { RegistrarPagoDto } from '../../application/dtos/registrar-pago.dto';
 import { FacturacionStatsQuery } from '../../application/queries/facturacion-stats.query';
 import {
@@ -42,7 +43,7 @@ export class FacturacionController {
 
   @Post('facturas')
   @ApiOperation({ summary: 'Crear factura' })
-  async create(@Body() dto: CrearFacturaDto) {
+  async create(@Body(new ZodValidationPipe(crearFacturaDtoSchema)) dto: CrearFacturaDto) {
     const result = await this.crearFacturaHandler.execute(dto as CrearFacturaCommand);
     return successResponse(result);
   }

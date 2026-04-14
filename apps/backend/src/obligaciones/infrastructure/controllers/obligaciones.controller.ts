@@ -2,7 +2,8 @@ import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestj
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VENCIMIENTO_REPOSITORY } from '../../domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
-import { CrearVencimientoDto } from '../../application/dtos/crear-vencimiento.dto';
+import { CrearVencimientoDto, crearVencimientoDtoSchema } from '../../application/dtos/crear-vencimiento.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import {
   CrearVencimientoHandler,
   type CrearVencimientoCommand,
@@ -87,7 +88,7 @@ export class ObligacionesController {
 
   @Post('vencimientos')
   @ApiOperation({ summary: 'Crear vencimiento' })
-  async create(@Body() dto: CrearVencimientoDto) {
+  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto) {
     const result = await this.crearVencimientoHandler.execute(dto as CrearVencimientoCommand);
     return result;
   }

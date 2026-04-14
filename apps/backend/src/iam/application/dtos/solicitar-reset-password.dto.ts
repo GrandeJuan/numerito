@@ -1,6 +1,7 @@
-import { IsEmail } from 'class-validator';
+import { solicitarResetPasswordSchema, type SolicitarResetPasswordInput } from '@numerito/shared';
 
-export class SolicitarResetPasswordDto {
-  @IsEmail()
+export const solicitarResetPasswordDtoSchema = solicitarResetPasswordSchema;
+
+export class SolicitarResetPasswordDto implements SolicitarResetPasswordInput {
   email!: string;
 }

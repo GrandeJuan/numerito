@@ -1,23 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { registrarUsuarioSchema, type RegistrarUsuarioInput } from '@numerito/shared';
 
-export class RegistrarUsuarioDto {
-  @IsEmail()
-  @IsNotEmpty()
+export const registrarUsuarioDtoSchema = registrarUsuarioSchema;
+
+export class RegistrarUsuarioDto implements RegistrarUsuarioInput {
   email!: string;
-
-  @IsString()
-  @MinLength(8)
   password!: string;
-
-  @IsString()
-  @IsNotEmpty()
   nombre!: string;
-
-  @IsString()
-  @IsNotEmpty()
   apellido!: string;
-
-  @IsString()
-  @IsNotEmpty()
   rol!: string;
 }

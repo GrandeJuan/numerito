@@ -1,11 +1,8 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { resetearPasswordSchema, type ResetearPasswordInput } from '@numerito/shared';
 
-export class ResetearPasswordDto {
-  @IsString()
-  @IsNotEmpty()
+export const resetearPasswordDtoSchema = resetearPasswordSchema;
+
+export class ResetearPasswordDto implements ResetearPasswordInput {
   token!: string;
-
-  @IsString()
-  @MinLength(8)
   newPassword!: string;
 }

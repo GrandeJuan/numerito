@@ -14,12 +14,13 @@ import { TOKEN_SERVICE } from '../../application/services/token.service';
 import type { TokenService } from '../../application/services/token.service';
 import { TOTP_SECRET_REPOSITORY } from '../../domain/repositories/totp-secret.repository';
 import type { TotpSecretRepository } from '../../domain/repositories/totp-secret.repository';
-import { RegistrarUsuarioDto } from '../../application/dtos/registrar-usuario.dto';
-import { IniciarSesionDto } from '../../application/dtos/iniciar-sesion.dto';
-import { SolicitarResetPasswordDto } from '../../application/dtos/solicitar-reset-password.dto';
-import { ResetearPasswordDto } from '../../application/dtos/resetear-password.dto';
-import { RefreshTokenDto } from '../../application/dtos/refresh-token.dto';
-import { Verificar2FADto } from '../../application/dtos/verificar-2fa.dto';
+import { RegistrarUsuarioDto, registrarUsuarioDtoSchema } from '../../application/dtos/registrar-usuario.dto';
+import { IniciarSesionDto, iniciarSesionDtoSchema } from '../../application/dtos/iniciar-sesion.dto';
+import { SolicitarResetPasswordDto, solicitarResetPasswordDtoSchema } from '../../application/dtos/solicitar-reset-password.dto';
+import { ResetearPasswordDto, resetearPasswordDtoSchema } from '../../application/dtos/resetear-password.dto';
+import { RefreshTokenDto, refreshTokenDtoSchema } from '../../application/dtos/refresh-token.dto';
+import { Verificar2FADto, verificar2FADtoSchema } from '../../application/dtos/verificar-2fa.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { Public } from '../decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { Rol } from '@numerito/shared';
@@ -43,7 +44,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
-  async register(@Body() dto: RegistrarUsuarioDto) {
+  async register(@Body(new ZodValidationPipe(registrarUsuarioDtoSchema)) dto: RegistrarUsuarioDto) {
     return this.registrarHandler.execute({
       ...dto,
       rol: dto.rol as Rol,
@@ -54,7 +55,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar sesión' })
-  async login(@Body() dto: IniciarSesionDto) {
+  async login(@Body(new ZodValidationPipe(iniciarSesionDtoSchema)) dto: IniciarSesionDto) {
     return this.iniciarSesionHandler.execute(dto);
   }
 
@@ -62,7 +63,7 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Solicitar reset de contraseña' })
-  async forgotPassword(@Body() dto: SolicitarResetPasswordDto) {
+  async forgotPassword(@Body(new ZodValidationPipe(solicitarResetPasswordDtoSchema)) dto: SolicitarResetPasswordDto) {
     return this.solicitarResetHandler.execute(dto);
   }
 
@@ -70,7 +71,7 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resetear contraseña con token' })
-  async resetPassword(@Body() dto: ResetearPasswordDto) {
+  async resetPassword(@Body(new ZodValidationPipe(resetearPasswordDtoSchema)) dto: ResetearPasswordDto) {
     return this.resetearPasswordHandler.execute(dto);
   }
 
@@ -78,7 +79,7 @@ export class AuthController {
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refrescar access token' })
-  async refreshToken(@Body() dto: RefreshTokenDto) {
+  async refreshToken(@Body(new ZodValidationPipe(refreshTokenDtoSchema)) dto: RefreshTokenDto) {
     const payload = this.tokenService.verifyRefreshToken(dto.refreshToken);
 
     const accessToken = this.tokenService.generateAccessToken(payload);
@@ -157,7 +158,7 @@ export class AuthController {
   @Post('2fa/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verificar código 2FA' })
-  async verify2FA(@Param('usuarioId') usuarioId: string, @Body() dto: Verificar2FADto) {
+  async verify2FA(@Param('usuarioId') usuarioId: string, @Body(new ZodValidationPipe(verificar2FADtoSchema)) dto: Verificar2FADto) {
     return this.verificar2FAHandler.execute({ usuarioId, code: dto.code });
   }
 }

@@ -34,3 +34,34 @@ export const registrarUsuarioSchema = z.object({
 });
 
 export type RegistrarUsuarioInput = z.infer<typeof registrarUsuarioSchema>;
+
+// ── Reset password ─────────────────────────────────────────────────────
+
+export const solicitarResetPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export type SolicitarResetPasswordInput = z.infer<typeof solicitarResetPasswordSchema>;
+
+export const resetearPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+export type ResetearPasswordInput = z.infer<typeof resetearPasswordSchema>;
+
+// ── Refresh token ──────────────────────────────────────────────────────
+
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+
+// ── 2FA ────────────────────────────────────────────────────────────────
+
+export const verificar2FASchema = z.object({
+  code: z.string().length(6),
+});
+
+export type Verificar2FAInput = z.infer<typeof verificar2FASchema>;

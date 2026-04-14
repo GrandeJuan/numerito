@@ -1,7 +1,7 @@
-import { IsString, Length } from 'class-validator';
+import { verificar2FASchema, type Verificar2FAInput } from '@numerito/shared';
 
-export class Verificar2FADto {
-  @IsString()
-  @Length(6, 6)
+export const verificar2FADtoSchema = verificar2FASchema;
+
+export class Verificar2FADto implements Verificar2FAInput {
   code!: string;
 }

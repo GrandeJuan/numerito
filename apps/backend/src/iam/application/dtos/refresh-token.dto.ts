@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { refreshTokenSchema, type RefreshTokenInput } from '@numerito/shared';
 
-export class RefreshTokenDto {
-  @IsString()
-  @IsNotEmpty()
+export const refreshTokenDtoSchema = refreshTokenSchema;
+
+export class RefreshTokenDto implements RefreshTokenInput {
   refreshToken!: string;
 }

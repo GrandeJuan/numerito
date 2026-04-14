@@ -1,57 +1,25 @@
-import { IsString, IsDateString, IsArray, ValidateNested, IsNumber, Min, IsNotEmpty, ArrayMinSize } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  crearFacturaSchema,
+  lineaFacturaSchema,
+  type CrearFacturaInput,
+  type LineaFacturaInput,
+} from '@numerito/shared';
 
-export class LineaFacturaDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+export const crearFacturaDtoSchema = crearFacturaSchema;
+export const lineaFacturaDtoSchema = lineaFacturaSchema;
+
+export class LineaFacturaDto implements LineaFacturaInput {
   descripcion!: string;
-
-  @ApiProperty()
-  @IsNumber()
-  @Min(1)
   cantidad!: number;
-
-  @ApiProperty()
-  @IsNumber()
-  @Min(0)
   precioUnitario!: number;
-
-  @ApiProperty()
-  @IsNumber()
-  @Min(0)
   alicuotaIva!: number;
 }
 
-export class CrearFacturaDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+export class CrearFacturaDto implements CrearFacturaInput {
   clienteId!: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
   numero!: string;
-
-  @ApiProperty()
-  @IsDateString()
   fechaEmision!: string;
-
-  @ApiProperty()
-  @IsDateString()
   fechaVencimiento!: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
   concepto!: string;
-
-  @ApiProperty({ type: [LineaFacturaDto] })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => LineaFacturaDto)
   lineas!: LineaFacturaDto[];
 }
