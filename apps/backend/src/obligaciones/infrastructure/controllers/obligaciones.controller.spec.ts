@@ -19,8 +19,9 @@ const makeVencimiento = (
 describe('ObligacionesController', () => {
   let controller: ObligacionesController;
   let mockVencimientoRepo: any;
-  let mockEventBus: any;
   let mockCrearVencimientoHandler: any;
+  let mockPresentarVencimientoHandler: any;
+  let mockMarcarVencidoHandler: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
@@ -33,14 +34,21 @@ describe('ObligacionesController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    mockEventBus = {
-      publish: jest.fn(),
-      publishAll: jest.fn(),
-    };
     mockCrearVencimientoHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'new-vencimiento-id' }),
     };
-    controller = new ObligacionesController(mockVencimientoRepo, mockEventBus, mockCrearVencimientoHandler);
+    mockPresentarVencimientoHandler = {
+      execute: jest.fn().mockResolvedValue(makeVencimiento()),
+    };
+    mockMarcarVencidoHandler = {
+      execute: jest.fn().mockResolvedValue(makeVencimiento()),
+    };
+    controller = new ObligacionesController(
+      mockVencimientoRepo,
+      mockCrearVencimientoHandler,
+      mockPresentarVencimientoHandler,
+      mockMarcarVencidoHandler,
+    );
   });
 
   describe('kpis', () => {
@@ -133,52 +141,22 @@ describe('ObligacionesController', () => {
   });
 
   describe('presentar', () => {
-    it('should mark vencimiento as presentado and publish events', async () => {
-      const v = makeVencimiento();
-      mockVencimientoRepo.findById.mockResolvedValue(v);
+    it('should delegate to PresentarVencimientoHandler', async () => {
+      await controller.presentar('vencimiento-1');
 
-      await controller.presentar(v.id);
-      expect(v.estado).toBe('PRESENTADO');
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
-      expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
-      const publishedEvents = mockEventBus.publishAll.mock.calls[0][0];
-      expect(publishedEvents).toHaveLength(1);
-      expect(publishedEvents[0].eventName).toBe('obligaciones.vencimiento-cumplido');
-    });
-
-    it('should throw when not found', async () => {
-      mockVencimientoRepo.findById.mockResolvedValue(null);
-
-      await expect(controller.presentar('bad-id')).rejects.toThrow('Vencimiento no encontrado');
-    });
-
-    it('should throw when already vencido', async () => {
-      const v = makeVencimiento();
-      v.marcarVencido();
-      mockVencimientoRepo.findById.mockResolvedValue(v);
-
-      await expect(controller.presentar(v.id)).rejects.toThrow();
+      expect(mockPresentarVencimientoHandler.execute).toHaveBeenCalledWith({
+        vencimientoId: 'vencimiento-1',
+      });
     });
   });
 
   describe('marcarVencido', () => {
-    it('should mark vencimiento as vencido and publish events', async () => {
-      const v = makeVencimiento();
-      mockVencimientoRepo.findById.mockResolvedValue(v);
+    it('should delegate to MarcarVencidoHandler', async () => {
+      await controller.marcarVencido('vencimiento-1');
 
-      await controller.marcarVencido(v.id);
-      expect(v.estado).toBe('VENCIDO');
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
-      expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
-      const publishedEvents = mockEventBus.publishAll.mock.calls[0][0];
-      expect(publishedEvents).toHaveLength(1);
-      expect(publishedEvents[0].eventName).toBe('obligaciones.vencimiento-vencido');
-    });
-
-    it('should throw when not found', async () => {
-      mockVencimientoRepo.findById.mockResolvedValue(null);
-
-      await expect(controller.marcarVencido('bad-id')).rejects.toThrow('Vencimiento no encontrado');
+      expect(mockMarcarVencidoHandler.execute).toHaveBeenCalledWith({
+        vencimientoId: 'vencimiento-1',
+      });
     });
   });
 

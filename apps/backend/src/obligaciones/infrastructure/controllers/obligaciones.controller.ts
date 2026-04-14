@@ -7,10 +7,10 @@ import {
   CrearVencimientoHandler,
   type CrearVencimientoCommand,
 } from '../../application/commands/crear-vencimiento.command';
+import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
+import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import { EVENT_BUS } from '../../../shared/domain/event-bus';
-import type { EventBus } from '../../../shared/domain/event-bus';
 import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
 @ApiTags('Obligaciones')
@@ -18,8 +18,9 @@ import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity
 export class ObligacionesController {
   constructor(
     @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
-    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
     private readonly crearVencimientoHandler: CrearVencimientoHandler,
+    private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
+    private readonly marcarVencidoHandler: MarcarVencidoHandler,
   ) {}
 
   @Get('kpis')
@@ -94,27 +95,13 @@ export class ObligacionesController {
   @Patch('vencimientos/:id/presentar')
   @ApiOperation({ summary: 'Marcar vencimiento como presentado' })
   async presentar(@Param('id') id: string) {
-    const vencimiento = await this.vencimientoRepo.findById(id);
-    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
-
-    vencimiento.presentar();
-    await this.vencimientoRepo.save(vencimiento);
-    this.eventBus.publishAll(vencimiento.getDomainEvents());
-    vencimiento.clearDomainEvents();
-    return vencimiento;
+    return this.presentarVencimientoHandler.execute({ vencimientoId: id });
   }
 
   @Patch('vencimientos/:id/vencido')
   @ApiOperation({ summary: 'Marcar vencimiento como vencido' })
   async marcarVencido(@Param('id') id: string) {
-    const vencimiento = await this.vencimientoRepo.findById(id);
-    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
-
-    vencimiento.marcarVencido();
-    await this.vencimientoRepo.save(vencimiento);
-    this.eventBus.publishAll(vencimiento.getDomainEvents());
-    vencimiento.clearDomainEvents();
-    return vencimiento;
+    return this.marcarVencidoHandler.execute({ vencimientoId: id });
   }
 
   @Get('calendario/:periodo')

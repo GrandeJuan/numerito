@@ -275,7 +275,6 @@ describe('Architecture rules', () => {
       ],
       'obligaciones/infrastructure/controllers/obligaciones.controller.ts': [
         'domain/entities/vencimiento.entity',
-        'shared/domain/event-bus',
       ],
       'tareas/infrastructure/controllers/tareas.controller.ts': [
         'domain/entities/tarea.entity',
