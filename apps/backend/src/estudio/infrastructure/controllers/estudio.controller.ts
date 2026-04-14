@@ -8,6 +8,8 @@ import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import { ActualizarEstudioDto } from '../../application/dtos/actualizar-estudio.dto';
 import { CambiarPlanDto } from '../../application/dtos/cambiar-plan.dto';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { EVENT_BUS } from '../../../shared/domain/event-bus';
+import type { EventBus } from '../../../shared/domain/event-bus';
 
 @ApiTags('Estudios')
 @Controller({ path: 'estudios', version: '1' })
@@ -15,6 +17,7 @@ export class EstudioController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     @Inject(SUBSCRIPCION_REPOSITORY) private readonly subscripcionRepo: SubscripcionRepository,
+    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
   ) {}
 
   @Get(':id')
@@ -55,6 +58,8 @@ export class EstudioController {
 
     subscripcion.cambiarPlan(dto.planId);
     await this.subscripcionRepo.save(subscripcion);
+    this.eventBus.publishAll(subscripcion.getDomainEvents());
+    subscripcion.clearDomainEvents();
     return subscripcion;
   }
 }

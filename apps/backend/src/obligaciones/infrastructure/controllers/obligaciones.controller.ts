@@ -7,6 +7,8 @@ import { CrearVencimientoDto } from '../../application/dtos/crear-vencimiento.dt
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { EVENT_BUS } from '../../../shared/domain/event-bus';
+import type { EventBus } from '../../../shared/domain/event-bus';
 import type { TipoObligacion } from '@numerito/shared';
 import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
@@ -15,6 +17,7 @@ import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity
 export class ObligacionesController {
   constructor(
     @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
+    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
   ) {}
 
   @Get('kpis')
@@ -102,6 +105,8 @@ export class ObligacionesController {
 
     vencimiento.presentar();
     await this.vencimientoRepo.save(vencimiento);
+    this.eventBus.publishAll(vencimiento.getDomainEvents());
+    vencimiento.clearDomainEvents();
     return vencimiento;
   }
 
@@ -113,6 +118,8 @@ export class ObligacionesController {
 
     vencimiento.marcarVencido();
     await this.vencimientoRepo.save(vencimiento);
+    this.eventBus.publishAll(vencimiento.getDomainEvents());
+    vencimiento.clearDomainEvents();
     return vencimiento;
   }
 

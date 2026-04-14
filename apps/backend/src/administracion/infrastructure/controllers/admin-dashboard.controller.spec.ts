@@ -1,21 +1,12 @@
-// Mock entities to avoid ESM import issues
-jest.mock('../../../estudio/infrastructure/persistence/estudio.schema', () => ({
-  EstudioEntity: class EstudioEntity {},
-}));
-jest.mock('../../../iam/infrastructure/persistence/usuario.schema', () => ({
-  UsuarioEntity: class UsuarioEntity {},
-}));
-jest.mock('../../../estudio/infrastructure/persistence/subscripcion.schema', () => ({
-  SubscripcionEntity: class SubscripcionEntity {},
-}));
-
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { ObtenerAdminDashboardStatsHandler } from '../../application/queries/obtener-admin-dashboard-stats.query';
+import { DashboardStatsProjection } from '../../application/services/dashboard-stats-projection';
 import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 
 describe('AdminDashboardController', () => {
   let controller: AdminDashboardController;
   let mockHandler: jest.Mocked<ObtenerAdminDashboardStatsHandler>;
+  let projection: DashboardStatsProjection;
 
   const kpiFixture = { value: 0, delta: '+0%', deltaUp: true, sparkline: Array(12).fill(0) };
 
@@ -48,16 +39,31 @@ describe('AdminDashboardController', () => {
     mockHandler = {
       execute: jest.fn().mockResolvedValue(mockStats),
     } as any;
-    controller = new AdminDashboardController(mockHandler);
+    projection = new DashboardStatsProjection();
+    controller = new AdminDashboardController(mockHandler, projection);
   });
 
   describe('getStats', () => {
-    it('should call handler and return wrapped response', async () => {
+    it('should call handler and return wrapped response with realTimeDeltas', async () => {
       const result = await controller.getStats();
 
       expect(mockHandler.execute).toHaveBeenCalledTimes(1);
-      expect(result.data).toEqual(mockStats);
+      expect(result.data).toHaveProperty('kpis');
+      expect(result.data).toHaveProperty('realTimeDeltas');
+      expect(result.data.realTimeDeltas).toEqual(projection.getDeltas());
       expect(result.meta).toHaveProperty('timestamp');
+    });
+
+    it('should include projection deltas reflecting event-driven updates', async () => {
+      projection.incrementUsuarios();
+      projection.incrementSubscripciones();
+      projection.incrementChurn();
+
+      const result = await controller.getStats();
+
+      expect(result.data.realTimeDeltas.usuariosRegistrados).toBe(1);
+      expect(result.data.realTimeDeltas.subscripcionesCreadas).toBe(1);
+      expect(result.data.realTimeDeltas.churnEvents).toBe(1);
     });
   });
 

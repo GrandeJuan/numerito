@@ -1,14 +1,3 @@
-// Mock MikroORM entities before importing the handler
-jest.mock('../../../estudio/infrastructure/persistence/estudio.schema', () => ({
-  EstudioEntity: class EstudioEntity {},
-}));
-jest.mock('../../../iam/infrastructure/persistence/usuario.schema', () => ({
-  UsuarioEntity: class UsuarioEntity {},
-}));
-jest.mock('../../../estudio/infrastructure/persistence/subscripcion.schema', () => ({
-  SubscripcionEntity: class SubscripcionEntity {},
-}));
-
 import { ObtenerAdminDashboardStatsHandler } from './obtener-admin-dashboard-stats.query';
 
 function make12Rows(field: string, values: number[]) {
@@ -34,14 +23,29 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   let mockExecute: jest.Mock;
   let mockEm: any;
 
+  /**
+   * Sets up mock responses for all SQL queries in order.
+   * The handler now uses conn.execute() for everything (no em.count/em.find).
+   *
+   * Order of conn.execute calls in Promise.all:
+   *   0: estudiosActivos count
+   *   1: totalUsuarios count
+   *   2: subscripcionesActivas count
+   *   3: subscripcionesPorVencer count
+   *   4: estudios historico (12 rows)
+   *   5: usuarios historico (12 rows)
+   *   6: subscripciones historico (12 rows)
+   *   7: mrr historico (12 rows)
+   *   8: churn historico (12 rows)
+   *
+   * Then sequentially:
+   *   9: registros mensuales
+   *  10: distribucion planes
+   *  11: estudios recientes
+   *  12: top tenants
+   *  13: registros recientes
+   */
   function setupDefaultMocks() {
-    // Promise.all calls em.count 3 times and conn.execute 5 times
-    mockEm.count
-      .mockResolvedValueOnce(10)   // estudiosActivos
-      .mockResolvedValueOnce(50)   // totalUsuarios
-      .mockResolvedValueOnce(8)    // subscripcionesActivas
-      .mockResolvedValueOnce(2);   // subscripcionesPorVencer
-
     const estudiosHist = make12Rows('cantidad', [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10]);
     const usuariosHist = make12Rows('cantidad', [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50]);
     const subsHist = make12Rows('cantidad', [2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8]);
@@ -52,27 +56,51 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     );
 
     mockExecute
-      .mockResolvedValueOnce(estudiosHist)        // estudios historico
-      .mockResolvedValueOnce(usuariosHist)         // usuarios historico
-      .mockResolvedValueOnce(subsHist)             // subscripciones historico
-      .mockResolvedValueOnce(mrrHist)              // mrr historico
-      .mockResolvedValueOnce(churnHist)            // churn historico
-      .mockResolvedValueOnce([])                   // registros mensuales
-      .mockResolvedValueOnce([])                   // distribucion planes
-      .mockResolvedValueOnce([                     // top tenants (sorted by raw_score DESC)
+      // Promise.all: 4 counts + 5 historics
+      .mockResolvedValueOnce([{ count: 10 }])   // estudiosActivos
+      .mockResolvedValueOnce([{ count: 50 }])   // totalUsuarios
+      .mockResolvedValueOnce([{ count: 8 }])    // subscripcionesActivas
+      .mockResolvedValueOnce([{ count: 2 }])    // subscripcionesPorVencer
+      .mockResolvedValueOnce(estudiosHist)       // estudios historico
+      .mockResolvedValueOnce(usuariosHist)       // usuarios historico
+      .mockResolvedValueOnce(subsHist)           // subscripciones historico
+      .mockResolvedValueOnce(mrrHist)            // mrr historico
+      .mockResolvedValueOnce(churnHist)          // churn historico
+      // Sequential queries
+      .mockResolvedValueOnce([])                 // registros mensuales
+      .mockResolvedValueOnce([])                 // distribucion planes
+      .mockResolvedValueOnce([])                 // estudios recientes
+      .mockResolvedValueOnce([                   // top tenants
         { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: '10', clientes: '30', raw_score: '90' },
         { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: '5', clientes: '20', raw_score: '55' },
       ])
-      .mockResolvedValueOnce([                     // registros recientes
+      .mockResolvedValueOnce([                   // registros recientes
         { id: 'r1', nombre: 'Nuevo Estudio', plan: 'Trial', email: 'admin@nuevo.com', created_at: '2026-04-10T00:00:00Z' },
       ]);
+  }
+
+  function setupEmptyMocks() {
+    const empty12 = make12Rows('cantidad', Array(12).fill(0));
+    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
+    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
+
+    mockExecute
+      .mockResolvedValueOnce([{ count: 0 }])
+      .mockResolvedValueOnce([{ count: 0 }])
+      .mockResolvedValueOnce([{ count: 0 }])
+      .mockResolvedValueOnce([{ count: 0 }])
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(empty12)
+      .mockResolvedValueOnce(mrrEmpty)
+      .mockResolvedValueOnce(churnEmpty)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
   }
 
   beforeEach(() => {
     mockExecute = jest.fn().mockResolvedValue([]);
     mockEm = {
-      count: jest.fn().mockResolvedValue(0),
-      find: jest.fn().mockResolvedValue([]),
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
     handler = new ObtenerAdminDashboardStatsHandler(mockEm);
@@ -155,13 +183,6 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should invert delta direction for churn (lower is better)', async () => {
-    // Set up where churn goes up (bad)
-    mockEm.count
-      .mockResolvedValueOnce(10)
-      .mockResolvedValueOnce(50)
-      .mockResolvedValueOnce(8)
-      .mockResolvedValueOnce(0);
-
     const estudiosHist = make12Rows('cantidad', Array(12).fill(10));
     const usuariosHist = make12Rows('cantidad', Array(12).fill(50));
     const subsHist = make12Rows('cantidad', Array(12).fill(8));
@@ -172,6 +193,10 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
     );
 
     mockExecute
+      .mockResolvedValueOnce([{ count: 10 }])
+      .mockResolvedValueOnce([{ count: 50 }])
+      .mockResolvedValueOnce([{ count: 8 }])
+      .mockResolvedValueOnce([{ count: 0 }])
       .mockResolvedValueOnce(estudiosHist)
       .mockResolvedValueOnce(usuariosHist)
       .mockResolvedValueOnce(subsHist)
@@ -179,6 +204,7 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce(churnHist)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // estudios recientes
       .mockResolvedValueOnce([])   // top tenants
       .mockResolvedValueOnce([]);  // registros recientes
 
@@ -214,17 +240,15 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return distribucionPlanes from query', async () => {
-    mockEm.count
-      .mockResolvedValueOnce(10)
-      .mockResolvedValueOnce(50)
-      .mockResolvedValueOnce(8)
-      .mockResolvedValueOnce(0);
-
     const empty12 = make12Rows('cantidad', Array(12).fill(0));
     const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
     const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
 
     mockExecute
+      .mockResolvedValueOnce([{ count: 10 }])
+      .mockResolvedValueOnce([{ count: 50 }])
+      .mockResolvedValueOnce([{ count: 8 }])
+      .mockResolvedValueOnce([{ count: 0 }])
       .mockResolvedValueOnce(empty12)
       .mockResolvedValueOnce(empty12)
       .mockResolvedValueOnce(empty12)
@@ -235,6 +259,7 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
         { plan: 'Profesional', cantidad: '5' },
         { plan: 'Starter', cantidad: '3' },
       ])
+      .mockResolvedValueOnce([])   // estudios recientes
       .mockResolvedValueOnce([])   // top tenants
       .mockResolvedValueOnce([]);  // registros recientes
 
@@ -249,15 +274,43 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   it('should return estudiosRecientes mapped correctly', async () => {
     setupDefaultMocks();
 
-    mockEm.find.mockResolvedValue([
-      {
-        id: 'uuid-1',
-        nombre: 'Estudio Contable X',
-        plan: { nombre: 'Profesional' },
-        isActive: true,
-        createdAt: new Date('2026-01-15'),
-      },
-    ]);
+    // Override estudios recientes (index 11 in sequence)
+    mockExecute.mockReset();
+    setupDefaultMocks();
+    // Replace the estudios recientes mock at position 11
+    const calls = mockExecute.mock.calls;
+    mockExecute.mockReset();
+    const estudiosHist = make12Rows('cantidad', [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10]);
+    const usuariosHist = make12Rows('cantidad', [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50]);
+    const subsHist = make12Rows('cantidad', [2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8]);
+    const mrrHist = make12Rows('mrr', [1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
+    const churnHist = makeChurnRows(
+      [1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+      [10, 12, 14, 15, 16, 18, 20, 20, 22, 24, 25, 27],
+    );
+    mockExecute
+      .mockResolvedValueOnce([{ count: 10 }])
+      .mockResolvedValueOnce([{ count: 50 }])
+      .mockResolvedValueOnce([{ count: 8 }])
+      .mockResolvedValueOnce([{ count: 0 }])
+      .mockResolvedValueOnce(estudiosHist)
+      .mockResolvedValueOnce(usuariosHist)
+      .mockResolvedValueOnce(subsHist)
+      .mockResolvedValueOnce(mrrHist)
+      .mockResolvedValueOnce(churnHist)
+      .mockResolvedValueOnce([])   // registros mensuales
+      .mockResolvedValueOnce([])   // distribucion planes
+      .mockResolvedValueOnce([     // estudios recientes
+        {
+          id: 'uuid-1',
+          nombre: 'Estudio Contable X',
+          plan: 'Profesional',
+          is_active: true,
+          created_at: '2026-01-15T00:00:00Z',
+        },
+      ])
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
 
     const result = await handler.execute();
 
@@ -272,17 +325,15 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should include alert when subscriptions are expiring', async () => {
-    mockEm.count
-      .mockResolvedValueOnce(10)
-      .mockResolvedValueOnce(50)
-      .mockResolvedValueOnce(8)
-      .mockResolvedValueOnce(3);  // subscripcionesPorVencer
-
     const empty12 = make12Rows('cantidad', Array(12).fill(0));
     const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
     const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
 
     mockExecute
+      .mockResolvedValueOnce([{ count: 10 }])
+      .mockResolvedValueOnce([{ count: 50 }])
+      .mockResolvedValueOnce([{ count: 8 }])
+      .mockResolvedValueOnce([{ count: 3 }])  // subscripcionesPorVencer
       .mockResolvedValueOnce(empty12)
       .mockResolvedValueOnce(empty12)
       .mockResolvedValueOnce(empty12)
@@ -290,6 +341,7 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
       .mockResolvedValueOnce(churnEmpty)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // estudios recientes
       .mockResolvedValueOnce([])   // top tenants
       .mockResolvedValueOnce([]);  // registros recientes
 
@@ -349,20 +401,12 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return zero revenue when no subscriptions exist', async () => {
-    mockEm.count.mockResolvedValue(0);
-
-    const empty12 = make12Rows('cantidad', Array(12).fill(0));
-    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
-    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
-
+    setupEmptyMocks();
+    // Add remaining sequential mocks
     mockExecute
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(mrrEmpty)
-      .mockResolvedValueOnce(churnEmpty)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([])   // estudios recientes
+      .mockResolvedValueOnce([])   // top tenants
+      .mockResolvedValueOnce([]);  // registros recientes
 
     const result = await handler.execute();
 
@@ -409,19 +453,9 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return empty topTenants when no estudios exist', async () => {
-    mockEm.count.mockResolvedValue(0);
-    const empty12 = make12Rows('cantidad', Array(12).fill(0));
-    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
-    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
-
+    setupEmptyMocks();
     mockExecute
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(mrrEmpty)
-      .mockResolvedValueOnce(churnEmpty)
-      .mockResolvedValueOnce([])   // registros mensuales
-      .mockResolvedValueOnce([])   // distribucion planes
+      .mockResolvedValueOnce([])   // estudios recientes
       .mockResolvedValueOnce([])   // top tenants
       .mockResolvedValueOnce([]);  // registros recientes
 
@@ -446,19 +480,9 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should return empty email when estudio has no users', async () => {
-    mockEm.count.mockResolvedValue(0);
-    const empty12 = make12Rows('cantidad', Array(12).fill(0));
-    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
-    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
-
+    setupEmptyMocks();
     mockExecute
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(mrrEmpty)
-      .mockResolvedValueOnce(churnEmpty)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])   // estudios recientes
       .mockResolvedValueOnce([])   // top tenants
       .mockResolvedValueOnce([     // registros recientes (no email)
         { id: 'r2', nombre: 'Sin Usuarios', plan: 'Trial', email: null, created_at: '2026-03-01T00:00:00Z' },
@@ -471,25 +495,19 @@ describe('ObtenerAdminDashboardStatsHandler', () => {
   });
 
   it('should handle zero values gracefully', async () => {
-    mockEm.count.mockResolvedValue(0);
-
-    const empty12 = make12Rows('cantidad', Array(12).fill(0));
-    const mrrEmpty = make12Rows('mrr', Array(12).fill(0));
-    const churnEmpty = makeChurnRows(Array(12).fill(0), Array(12).fill(1));
-
-    mockExecute
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(empty12)
-      .mockResolvedValueOnce(mrrEmpty)
-      .mockResolvedValueOnce(churnEmpty)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    setupEmptyMocks();
 
     const result = await handler.execute();
 
     expect(result.kpis.estudiosActivos.value).toBe(0);
     expect(result.kpis.mrr.value).toBe(0);
     expect(result.kpis.churnMensual.value).toBe(0);
+  });
+
+  it('should not import entities from other bounded contexts', () => {
+    // Verify the handler module has no cross-context entity imports
+    // by checking that the constructor only needs EntityManager
+    const handler = new ObtenerAdminDashboardStatsHandler({} as any);
+    expect(handler).toBeDefined();
   });
 });

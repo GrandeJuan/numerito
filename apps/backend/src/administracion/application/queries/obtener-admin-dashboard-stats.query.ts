@@ -1,7 +1,4 @@
 import { EntityManager } from '@mikro-orm/core';
-import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
-import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
-import { SubscripcionEntity } from '../../../estudio/infrastructure/persistence/subscripcion.schema';
 
 export interface KpiWithSparkline {
   value: number;
@@ -58,6 +55,13 @@ export interface AdminDashboardStats {
   registrosRecientes: RegistroReciente[];
 }
 
+/**
+ * Dashboard stats query handler.
+ *
+ * Uses raw SQL via EntityManager.getConnection() to avoid importing entities
+ * from other bounded contexts. The administracion context only depends on
+ * public event interfaces from other contexts — never their infrastructure.
+ */
 export class ObtenerAdminDashboardStatsHandler {
   constructor(private readonly em: EntityManager) {}
 
@@ -65,24 +69,28 @@ export class ObtenerAdminDashboardStatsHandler {
     const conn = this.em.getConnection();
 
     const [
-      estudiosActivos,
-      totalUsuarios,
-      subscripcionesActivas,
-      subscripcionesPorVencer,
+      [{ count: estudiosActivosCount }],
+      [{ count: totalUsuariosCount }],
+      [{ count: subscripcionesActivasCount }],
+      [{ count: subscripcionesPorVencerCount }],
       estudiosHistorico,
       usuariosHistorico,
       subscripcionesHistorico,
       mrrHistorico,
       churnHistorico,
     ] = await Promise.all([
-      this.em.count(EstudioEntity, { isActive: true }),
-      this.em.count(UsuarioEntity, {}),
-      this.em.count(SubscripcionEntity, {
-        estado: { codigo: 'ACTIVA' },
-      }),
-      this.em.count(SubscripcionEntity, {
-        fechaFin: { $gte: new Date(), $lte: this.addDays(new Date(), 30) },
-      }),
+      // Current counts via raw SQL — no entity imports from other contexts
+      conn.execute(`SELECT COUNT(*)::int as count FROM estudio WHERE is_active = true`),
+      conn.execute(`SELECT COUNT(*)::int as count FROM usuario`),
+      conn.execute(
+        `SELECT COUNT(*)::int as count FROM subscripcion s
+         JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
+         WHERE es.codigo = 'ACTIVA'`,
+      ),
+      conn.execute(
+        `SELECT COUNT(*)::int as count FROM subscripcion
+         WHERE fecha_fin >= NOW() AND fecha_fin <= NOW() + INTERVAL '30 days'`,
+      ),
       // Monthly active estudios (cumulative count at end of each month)
       conn.execute(
         `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
@@ -158,6 +166,11 @@ export class ObtenerAdminDashboardStatsHandler {
       ),
     ]);
 
+    const estudiosActivos = Number(estudiosActivosCount);
+    const totalUsuarios = Number(totalUsuariosCount);
+    const subscripcionesActivas = Number(subscripcionesActivasCount);
+    const subscripcionesPorVencer = Number(subscripcionesPorVencerCount);
+
     // Build sparkline arrays from historical data
     const estudiosSparkline = this.extractSparkline(estudiosHistorico, 'cantidad');
     const usuariosSparkline = this.extractSparkline(usuariosHistorico, 'cantidad');
@@ -220,17 +233,19 @@ export class ObtenerAdminDashboardStatsHandler {
     }
 
     // Recent estudios
-    const estudiosRecientesRaw = await this.em.find(
-      EstudioEntity,
-      {},
-      { orderBy: { createdAt: 'DESC' }, limit: 10, populate: ['plan'] },
+    const estudiosRecientesRaw: any[] = await conn.execute(
+      `SELECT e.id, e.nombre, p.nombre as plan, e.is_active, e.created_at
+       FROM estudio e
+       JOIN plan p ON e.plan_id = p.id
+       ORDER BY e.created_at DESC
+       LIMIT 10`,
     );
-    const estudiosRecientes = estudiosRecientesRaw.map((e) => ({
+    const estudiosRecientes = estudiosRecientesRaw.map((e: any) => ({
       id: e.id,
       nombre: e.nombre,
-      plan: e.plan?.nombre ?? 'Sin plan',
-      estado: e.isActive ? 'Activo' : 'Inactivo',
-      creadoEn: e.createdAt.toISOString().split('T')[0],
+      plan: e.plan ?? 'Sin plan',
+      estado: e.is_active ? 'Activo' : 'Inactivo',
+      creadoEn: new Date(e.created_at).toISOString().split('T')[0],
     }));
 
     // Top tenants by activity score
@@ -355,12 +370,6 @@ export class ObtenerAdminDashboardStatsHandler {
       labels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
     return labels;
-  }
-
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
   }
 
   private fillMonths(raw: any[]): { mes: string; cantidad: number }[] {

@@ -33,6 +33,7 @@ describe('EstudioController', () => {
   let controller: EstudioController;
   let mockEstudioRepo: any;
   let mockSubscripcionRepo: any;
+  let mockEventBus: any;
 
   beforeEach(() => {
     mockEstudioRepo = {
@@ -48,7 +49,11 @@ describe('EstudioController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    controller = new EstudioController(mockEstudioRepo, mockSubscripcionRepo);
+    mockEventBus = {
+      publish: jest.fn(),
+      publishAll: jest.fn(),
+    };
+    controller = new EstudioController(mockEstudioRepo, mockSubscripcionRepo, mockEventBus);
   });
 
   describe('getById', () => {
