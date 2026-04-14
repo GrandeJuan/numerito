@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { cambiarPlanSchema, type CambiarPlanInput } from '@numerito/shared';
 
-export class CambiarPlanDto {
-  @IsString()
-  @IsNotEmpty()
+export const cambiarPlanDtoSchema = cambiarPlanSchema;
+
+export class CambiarPlanDto implements CambiarPlanInput {
   planId!: string;
 }

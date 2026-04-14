@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsDateString } from 'class-validator';
+import { renovarSubscripcionSchema, type RenovarSubscripcionInput } from '@numerito/shared';
 
-export class RenovarSubscripcionDto {
-  @IsDateString()
-  @IsNotEmpty()
+export const renovarSubscripcionDtoSchema = renovarSubscripcionSchema;
+
+export class RenovarSubscripcionDto implements RenovarSubscripcionInput {
   nuevaFechaFin!: string;
 }

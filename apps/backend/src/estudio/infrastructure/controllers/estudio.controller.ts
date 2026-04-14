@@ -3,9 +3,10 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ESTUDIO_REPOSITORY } from '../../domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../domain/repositories/estudio.repository';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
-import { ActualizarEstudioDto } from '../../application/dtos/actualizar-estudio.dto';
-import { CambiarPlanDto } from '../../application/dtos/cambiar-plan.dto';
-import { RenovarSubscripcionDto } from '../../application/dtos/renovar-subscripcion.dto';
+import { ActualizarEstudioDto, actualizarEstudioDtoSchema } from '../../application/dtos/actualizar-estudio.dto';
+import { CambiarPlanDto, cambiarPlanDtoSchema } from '../../application/dtos/cambiar-plan.dto';
+import { RenovarSubscripcionDto, renovarSubscripcionDtoSchema } from '../../application/dtos/renovar-subscripcion.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import { RenovarSubscripcionHandler } from '../../application/commands/renovar-subscripcion.command';
 import { CancelarSubscripcionHandler } from '../../application/commands/cancelar-subscripcion.command';
@@ -36,7 +37,7 @@ export class EstudioController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar estudio' })
-  async update(@Param('id') id: string, @Body() dto: ActualizarEstudioDto) {
+  async update(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarEstudioDtoSchema)) dto: ActualizarEstudioDto) {
     const estudio = await this.estudioRepo.findById(id);
     if (!estudio) throw new RecursoNoEncontradoError('Estudio');
 
@@ -58,13 +59,13 @@ export class EstudioController {
 
   @Post(':id/subscripcion/cambiar-plan')
   @ApiOperation({ summary: 'Cambiar plan de subscripcion' })
-  async cambiarPlan(@Param('id') _id: string, @Body() dto: CambiarPlanDto) {
+  async cambiarPlan(@Param('id') _id: string, @Body(new ZodValidationPipe(cambiarPlanDtoSchema)) dto: CambiarPlanDto) {
     return this.cambiarPlanHandler.execute({ planId: dto.planId });
   }
 
   @Post(':id/subscripcion/renovar')
   @ApiOperation({ summary: 'Renovar subscripcion' })
-  async renovar(@Param('id') _id: string, @Body() dto: RenovarSubscripcionDto) {
+  async renovar(@Param('id') _id: string, @Body(new ZodValidationPipe(renovarSubscripcionDtoSchema)) dto: RenovarSubscripcionDto) {
     return this.renovarHandler.execute({ nuevaFechaFin: dto.nuevaFechaFin });
   }
 

@@ -1,8 +1,7 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { actualizarEstudioSchema, type ActualizarEstudioInput } from '@numerito/shared';
 
-export class ActualizarEstudioDto {
-  @IsOptional()
-  @IsString()
-  @MinLength(3)
+export const actualizarEstudioDtoSchema = actualizarEstudioSchema;
+
+export class ActualizarEstudioDto implements ActualizarEstudioInput {
   nombre?: string;
 }

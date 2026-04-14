@@ -4,3 +4,4 @@ export * from './auth.schema';
 export * from './cliente.schema';
 export * from './factura.schema';
 export * from './vencimiento.schema';
+export * from './estudio.schema';
