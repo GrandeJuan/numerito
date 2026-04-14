@@ -18,6 +18,11 @@ interface CreateLibroContableProps {
   periodo: string;
 }
 
+interface ReconstituteLibroContableProps extends CreateLibroContableProps {
+  isRubricado: boolean;
+  numeroRubrica?: string;
+}
+
 export class LibroContable extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -37,6 +42,21 @@ export class LibroContable extends BaseEntity {
 
   static create(props: CreateLibroContableProps, id?: string): LibroContable {
     return new LibroContable(props, id);
+  }
+
+  static reconstitute(props: ReconstituteLibroContableProps, id: string): LibroContable {
+    const instance = Object.create(LibroContable.prototype) as LibroContable;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._tipo = props.tipo;
+    instance._periodo = props.periodo;
+    instance._isRubricado = props.isRubricado;
+    instance._numeroRubrica = props.numeroRubrica;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }

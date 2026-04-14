@@ -18,6 +18,11 @@ interface CreateNotificacionFiscalProps {
   fechaNotificacion: Date;
 }
 
+interface ReconstituteNotificacionFiscalProps extends CreateNotificacionFiscalProps {
+  estado: EstadoNotificacion;
+  notaGestion?: string;
+}
+
 export class NotificacionFiscal extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -43,6 +48,24 @@ export class NotificacionFiscal extends BaseEntity {
 
   static create(props: CreateNotificacionFiscalProps, id?: string): NotificacionFiscal {
     return new NotificacionFiscal(props, id);
+  }
+
+  static reconstitute(props: ReconstituteNotificacionFiscalProps, id: string): NotificacionFiscal {
+    const instance = Object.create(NotificacionFiscal.prototype) as NotificacionFiscal;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._organismoId = props.organismoId;
+    instance._cuitCliente = props.cuitCliente;
+    instance._asunto = props.asunto;
+    instance._contenido = props.contenido;
+    instance._fechaNotificacion = props.fechaNotificacion;
+    instance._estado = props.estado;
+    instance._notaGestion = props.notaGestion;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }

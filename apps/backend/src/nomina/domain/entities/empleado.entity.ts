@@ -12,6 +12,11 @@ interface CreateEmpleadoProps {
   categoriaConvenio: string;
 }
 
+interface ReconstituteEmpleadoProps extends CreateEmpleadoProps {
+  isActive: boolean;
+  fechaEgreso?: Date;
+}
+
 export class Empleado extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -45,6 +50,25 @@ export class Empleado extends BaseEntity {
 
   static create(props: CreateEmpleadoProps, id?: string): Empleado {
     return new Empleado(props, id);
+  }
+
+  static reconstitute(props: ReconstituteEmpleadoProps, id: string): Empleado {
+    const instance = Object.create(Empleado.prototype) as Empleado;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._nombre = props.nombre;
+    instance._apellido = props.apellido;
+    instance._cuil = props.cuil;
+    instance._fechaIngreso = props.fechaIngreso;
+    instance._fechaEgreso = props.fechaEgreso;
+    instance._sueldoBasico = props.sueldoBasico;
+    instance._categoriaConvenio = props.categoriaConvenio;
+    instance._isActive = props.isActive;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }

@@ -115,7 +115,7 @@ export class MikroOrmEmpleadoRepository
   }
 
   private toDomain(entity: EmpleadoEntity): Empleado {
-    return Empleado.create(
+    return Empleado.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
@@ -123,8 +123,10 @@ export class MikroOrmEmpleadoRepository
         apellido: entity.apellido,
         cuil: entity.cuil,
         fechaIngreso: entity.fechaIngreso,
+        fechaEgreso: entity.fechaEgreso,
         sueldoBasico: entity.sueldoBasico,
         categoriaConvenio: entity.categoriaConvenio,
+        isActive: entity.isActive,
       },
       entity.id,
     );

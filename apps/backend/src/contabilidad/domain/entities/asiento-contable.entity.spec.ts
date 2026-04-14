@@ -82,4 +82,72 @@ describe('AsientoContable Entity', () => {
     // lineas returns a copy
     expect(asiento.lineas).not.toBe(asiento.lineas);
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields', () => {
+      const lineas = [
+        { cuentaId: 'cuenta-1', debe: 10000, haber: 0, descripcion: 'Deudores' },
+        { cuentaId: 'cuenta-2', debe: 0, haber: 10000, descripcion: 'Ventas' },
+      ];
+      const fecha = new Date('2026-03-31');
+      const asiento = AsientoContable.reconstitute(
+        {
+          libroId: 'libro-1',
+          clienteId: 'c1',
+          estudioId: 'e1',
+          fecha,
+          descripcion: 'Venta servicios',
+          lineas,
+        },
+        'existing-id',
+      );
+
+      expect(asiento.id).toBe('existing-id');
+      expect(asiento.libroId).toBe('libro-1');
+      expect(asiento.clienteId).toBe('c1');
+      expect(asiento.estudioId).toBe('e1');
+      expect(asiento.fecha).toBe(fecha);
+      expect(asiento.descripcion).toBe('Venta servicios');
+      expect(asiento.lineas).toEqual(lineas);
+      expect(asiento.isBalanceado).toBe(true);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const asiento = AsientoContable.reconstitute(
+        {
+          libroId: 'libro-1',
+          clienteId: 'c1',
+          estudioId: 'e1',
+          fecha: new Date(),
+          descripcion: 'Test',
+          lineas: [
+            { cuentaId: 'c1', debe: 1000, haber: 0, descripcion: 'D' },
+            { cuentaId: 'c2', debe: 0, haber: 1000, descripcion: 'H' },
+          ],
+        },
+        'id-1',
+      );
+
+      expect(asiento.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should bypass creation invariants', () => {
+      expect(() =>
+        AsientoContable.reconstitute(
+          {
+            libroId: 'libro-1',
+            clienteId: 'c1',
+            estudioId: 'e1',
+            fecha: new Date(),
+            descripcion: 'Unbalanced from DB',
+            lineas: [
+              { cuentaId: 'c1', debe: 10000, haber: 0, descripcion: 'D' },
+              { cuentaId: 'c2', debe: 0, haber: 5000, descripcion: 'H' },
+            ],
+          },
+          'id-1',
+        ),
+      ).not.toThrow();
+    });
+  });
 });

@@ -20,6 +20,13 @@ interface CreateTareaProps {
   descripcion?: string;
 }
 
+interface ReconstituteTareaProps extends CreateTareaProps {
+  estado: EstadoTarea;
+  responsableId?: string;
+  horasRegistradas: number;
+  comentarios: Comentario[];
+}
+
 export class Tarea extends BaseEntity {
   private _titulo: string;
   private _descripcion?: string;
@@ -45,6 +52,24 @@ export class Tarea extends BaseEntity {
 
   static create(props: CreateTareaProps, id?: string): Tarea {
     return new Tarea(props, id);
+  }
+
+  static reconstitute(props: ReconstituteTareaProps, id: string): Tarea {
+    const instance = Object.create(Tarea.prototype) as Tarea;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._titulo = props.titulo;
+    instance._descripcion = props.descripcion;
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._estado = props.estado;
+    instance._prioridad = props.prioridad;
+    instance._responsableId = props.responsableId;
+    instance._horasRegistradas = props.horasRegistradas;
+    instance._comentarios = props.comentarios;
+    return instance;
   }
 
   get titulo(): string { return this._titulo; }

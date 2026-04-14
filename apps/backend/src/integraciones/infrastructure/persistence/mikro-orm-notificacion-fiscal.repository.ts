@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { NotificacionFiscalRepository } from '../../domain/repositories/notificacion-fiscal.repository';
-import { NotificacionFiscal } from '../../domain/entities/notificacion-fiscal.entity';
+import { NotificacionFiscal, type EstadoNotificacion } from '../../domain/entities/notificacion-fiscal.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -117,7 +117,7 @@ export class MikroOrmNotificacionFiscalRepository
   }
 
   private toDomain(entity: NotificacionFiscalEntity): NotificacionFiscal {
-    return NotificacionFiscal.create(
+    return NotificacionFiscal.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
@@ -126,6 +126,8 @@ export class MikroOrmNotificacionFiscalRepository
         asunto: entity.asunto,
         contenido: entity.contenido,
         fechaNotificacion: entity.fechaNotificacion,
+        estado: entity.estado as EstadoNotificacion,
+        notaGestion: entity.notaGestion,
       },
       entity.id,
     );

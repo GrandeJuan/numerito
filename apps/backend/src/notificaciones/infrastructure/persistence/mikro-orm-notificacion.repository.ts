@@ -103,20 +103,15 @@ export class MikroOrmNotificacionRepository
   }
 
   private toDomain(entity: NotificacionEntity): Notificacion {
-    const notif = Notificacion.create(
+    return Notificacion.reconstitute(
       {
         usuarioId: entity.usuarioId,
         estudioId: entity.estudioId || undefined,
         tipo: entity.tipo as TipoNotificacion,
         mensaje: entity.mensaje,
+        leida: entity.leida,
       },
       entity.id,
     );
-
-    if (entity.leida) {
-      notif.marcarLeida();
-    }
-
-    return notif;
   }
 }

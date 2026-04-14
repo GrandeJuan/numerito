@@ -115,7 +115,7 @@ export class MikroOrmDocumentoRepository
   }
 
   private toDomain(entity: DocumentoEntity): Documento {
-    return Documento.create(
+    return Documento.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
@@ -124,6 +124,7 @@ export class MikroOrmDocumentoRepository
         s3Key: entity.s3Key,
         mimeType: entity.mimeType,
         sizeBytes: entity.sizeBytes,
+        version: entity.version,
       },
       entity.id,
     );

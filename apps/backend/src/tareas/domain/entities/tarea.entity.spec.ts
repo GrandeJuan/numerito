@@ -95,4 +95,73 @@ describe('Tarea Entity', () => {
     expect(t.clienteId).toBeUndefined();
     expect(t.descripcion).toBeUndefined();
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields including persisted state', () => {
+      const comentarios = [
+        { usuarioId: 'user-1', texto: 'Avance parcial', fecha: new Date('2026-03-20') },
+      ];
+      const t = Tarea.reconstitute(
+        {
+          titulo: 'Preparar DDJJ IVA',
+          descripcion: 'Descripcion test',
+          clienteId: 'c1',
+          estudioId: 'e1',
+          prioridad: PRIORIDAD.ALTA,
+          estado: ESTADO_TAREA.EN_PROGRESO,
+          responsableId: 'user-42',
+          horasRegistradas: 5.5,
+          comentarios,
+        },
+        'existing-id',
+      );
+
+      expect(t.id).toBe('existing-id');
+      expect(t.titulo).toBe('Preparar DDJJ IVA');
+      expect(t.descripcion).toBe('Descripcion test');
+      expect(t.clienteId).toBe('c1');
+      expect(t.estudioId).toBe('e1');
+      expect(t.prioridad).toBe(PRIORIDAD.ALTA);
+      expect(t.estado).toBe(ESTADO_TAREA.EN_PROGRESO);
+      expect(t.responsableId).toBe('user-42');
+      expect(t.horasRegistradas).toBe(5.5);
+      expect(t.comentarios).toEqual(comentarios);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const t = Tarea.reconstitute(
+        {
+          titulo: 'Test',
+          estudioId: 'e1',
+          prioridad: PRIORIDAD.MEDIA,
+          estado: ESTADO_TAREA.PENDIENTE,
+          horasRegistradas: 0,
+          comentarios: [],
+        },
+        'id-1',
+      );
+
+      expect(t.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const t = Tarea.reconstitute(
+        {
+          titulo: 'Test',
+          estudioId: 'e1',
+          prioridad: PRIORIDAD.ALTA,
+          estado: ESTADO_TAREA.EN_PROGRESO,
+          horasRegistradas: 2,
+          comentarios: [],
+        },
+        'id-1',
+      );
+
+      t.completar();
+      expect(t.estado).toBe(ESTADO_TAREA.COMPLETADO);
+
+      t.registrarHoras(1.5);
+      expect(t.horasRegistradas).toBe(3.5);
+    });
+  });
 });

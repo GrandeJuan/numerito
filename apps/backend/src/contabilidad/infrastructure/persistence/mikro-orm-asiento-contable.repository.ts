@@ -124,7 +124,7 @@ export class MikroOrmAsientoContableRepository
   }
 
   private toDomain(entity: AsientoContableEntity): AsientoContable {
-    return AsientoContable.create(
+    return AsientoContable.reconstitute(
       {
         libroId: entity.libro.id,
         clienteId: entity.cliente.id,

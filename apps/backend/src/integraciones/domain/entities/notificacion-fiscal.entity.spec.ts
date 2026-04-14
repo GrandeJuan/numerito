@@ -67,4 +67,76 @@ describe('NotificacionFiscal Entity', () => {
     expect(n.estado).toBe(ESTADO_NOTIFICACION.PENDIENTE);
     expect(n.notaGestion).toBeUndefined();
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields including persisted state', () => {
+      const fecha = new Date('2026-03-28');
+      const n = NotificacionFiscal.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          organismoId: 'org-arca-1',
+          cuitCliente: '20-12345678-6',
+          asunto: 'Intimación',
+          contenido: 'Se intima...',
+          fechaNotificacion: fecha,
+          estado: ESTADO_NOTIFICACION.GESTIONADA,
+          notaGestion: 'Se presentó la DDJJ',
+        },
+        'existing-id',
+      );
+
+      expect(n.id).toBe('existing-id');
+      expect(n.clienteId).toBe('c1');
+      expect(n.estudioId).toBe('e1');
+      expect(n.organismoId).toBe('org-arca-1');
+      expect(n.cuitCliente).toBe('20-12345678-6');
+      expect(n.asunto).toBe('Intimación');
+      expect(n.contenido).toBe('Se intima...');
+      expect(n.fechaNotificacion).toBe(fecha);
+      expect(n.estado).toBe(ESTADO_NOTIFICACION.GESTIONADA);
+      expect(n.notaGestion).toBe('Se presentó la DDJJ');
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const n = NotificacionFiscal.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          organismoId: 'org-1',
+          cuitCliente: '20-12345678-6',
+          asunto: 'Test',
+          contenido: 'Test',
+          fechaNotificacion: new Date(),
+          estado: ESTADO_NOTIFICACION.PENDIENTE,
+        },
+        'id-1',
+      );
+
+      expect(n.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const n = NotificacionFiscal.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          organismoId: 'org-1',
+          cuitCliente: '20-12345678-6',
+          asunto: 'Test',
+          contenido: 'Test',
+          fechaNotificacion: new Date(),
+          estado: ESTADO_NOTIFICACION.PENDIENTE,
+        },
+        'id-1',
+      );
+
+      n.marcarLeida();
+      expect(n.estado).toBe(ESTADO_NOTIFICACION.LEIDA);
+
+      n.marcarGestionada('Resuelto');
+      expect(n.estado).toBe(ESTADO_NOTIFICACION.GESTIONADA);
+      expect(n.notaGestion).toBe('Resuelto');
+    });
+  });
 });

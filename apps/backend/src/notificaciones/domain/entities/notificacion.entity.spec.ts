@@ -58,4 +58,55 @@ describe('Notificacion', () => {
     expect(TipoNotificacion.PAGO_RECIBIDO).toBe('PAGO_RECIBIDO');
     expect(TipoNotificacion.SISTEMA).toBe('SISTEMA');
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields including leida state', () => {
+      const notif = Notificacion.reconstitute(
+        {
+          usuarioId: 'user-1',
+          estudioId: 'est-1',
+          tipo: TipoNotificacion.PAGO_RECIBIDO,
+          mensaje: 'Pago registrado',
+          leida: true,
+        },
+        'existing-id',
+      );
+
+      expect(notif.id).toBe('existing-id');
+      expect(notif.usuarioId).toBe('user-1');
+      expect(notif.estudioId).toBe('est-1');
+      expect(notif.tipo).toBe(TipoNotificacion.PAGO_RECIBIDO);
+      expect(notif.mensaje).toBe('Pago registrado');
+      expect(notif.leida).toBe(true);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const notif = Notificacion.reconstitute(
+        {
+          usuarioId: 'user-1',
+          tipo: TipoNotificacion.SISTEMA,
+          mensaje: 'Test',
+          leida: false,
+        },
+        'id-1',
+      );
+
+      expect(notif.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const notif = Notificacion.reconstitute(
+        {
+          usuarioId: 'user-1',
+          tipo: TipoNotificacion.TAREA_ASIGNADA,
+          mensaje: 'Tarea asignada',
+          leida: false,
+        },
+        'id-1',
+      );
+
+      notif.marcarLeida();
+      expect(notif.leida).toBe(true);
+    });
+  });
 });

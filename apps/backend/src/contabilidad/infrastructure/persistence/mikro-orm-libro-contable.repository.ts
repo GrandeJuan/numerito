@@ -109,12 +109,14 @@ export class MikroOrmLibroContableRepository
   }
 
   private toDomain(entity: LibroContableEntity): LibroContable {
-    return LibroContable.create(
+    return LibroContable.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
         tipo: entity.tipoLibro.codigo as TipoLibro,
         periodo: entity.periodo,
+        isRubricado: entity.isRubricado,
+        numeroRubrica: entity.numeroRubrica,
       },
       entity.id,
     );

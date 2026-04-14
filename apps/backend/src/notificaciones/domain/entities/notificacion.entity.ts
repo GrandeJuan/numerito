@@ -14,6 +14,10 @@ interface CreateNotificacionProps {
   mensaje: string;
 }
 
+interface ReconstituteNotificacionProps extends CreateNotificacionProps {
+  leida: boolean;
+}
+
 export class Notificacion extends BaseEntity {
   private _usuarioId: string;
   private _estudioId?: string;
@@ -32,6 +36,20 @@ export class Notificacion extends BaseEntity {
 
   static create(props: CreateNotificacionProps, id?: string): Notificacion {
     return new Notificacion(props, id);
+  }
+
+  static reconstitute(props: ReconstituteNotificacionProps, id: string): Notificacion {
+    const instance = Object.create(Notificacion.prototype) as Notificacion;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._usuarioId = props.usuarioId;
+    instance._estudioId = props.estudioId;
+    instance._tipo = props.tipo;
+    instance._mensaje = props.mensaje;
+    instance._leida = props.leida;
+    return instance;
   }
 
   get usuarioId(): string { return this._usuarioId; }

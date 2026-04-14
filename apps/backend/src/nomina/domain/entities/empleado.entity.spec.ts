@@ -103,4 +103,101 @@ describe('Empleado Entity', () => {
     expect(emp.categoriaConvenio).toBe('Administrativo A');
     expect(emp.isActive).toBe(true);
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields including persisted state', () => {
+      const fechaEgreso = new Date('2026-02-28');
+      const emp = Empleado.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          nombre: 'Maria',
+          apellido: 'Garcia',
+          cuil: '27-98765432-1',
+          fechaIngreso: new Date('2020-06-01'),
+          sueldoBasico: 800000,
+          categoriaConvenio: 'Profesional B',
+          isActive: false,
+          fechaEgreso,
+        },
+        'existing-id',
+      );
+
+      expect(emp.id).toBe('existing-id');
+      expect(emp.clienteId).toBe('c1');
+      expect(emp.estudioId).toBe('e1');
+      expect(emp.nombre).toBe('Maria');
+      expect(emp.apellido).toBe('Garcia');
+      expect(emp.cuil).toBe('27-98765432-1');
+      expect(emp.fechaIngreso).toEqual(new Date('2020-06-01'));
+      expect(emp.sueldoBasico).toBe(800000);
+      expect(emp.categoriaConvenio).toBe('Profesional B');
+      expect(emp.isActive).toBe(false);
+      expect(emp.fechaEgreso).toBe(fechaEgreso);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const emp = Empleado.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          cuil: '20-12345678-6',
+          fechaIngreso: new Date('2024-01-15'),
+          sueldoBasico: 500000,
+          categoriaConvenio: 'Administrativo A',
+          isActive: true,
+        },
+        'id-1',
+      );
+
+      expect(emp.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should bypass creation invariants', () => {
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+      expect(() =>
+        Empleado.reconstitute(
+          {
+            clienteId: 'c1',
+            estudioId: 'e1',
+            nombre: 'Test',
+            apellido: 'Test',
+            cuil: '20-00000000-0',
+            fechaIngreso: futureDate,
+            sueldoBasico: 0,
+            categoriaConvenio: 'Test',
+            isActive: true,
+          },
+          'id-1',
+        ),
+      ).not.toThrow();
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const emp = Empleado.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          cuil: '20-12345678-6',
+          fechaIngreso: new Date('2024-01-15'),
+          sueldoBasico: 500000,
+          categoriaConvenio: 'Administrativo A',
+          isActive: true,
+        },
+        'id-1',
+      );
+
+      emp.actualizarSueldo(600000);
+      expect(emp.sueldoBasico).toBe(600000);
+
+      emp.darDeBaja(new Date('2026-03-31'));
+      expect(emp.isActive).toBe(false);
+    });
+  });
 });

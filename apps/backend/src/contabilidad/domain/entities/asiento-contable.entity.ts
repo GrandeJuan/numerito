@@ -18,6 +18,8 @@ interface CreateAsientoContableProps {
   lineas: LineaAsiento[];
 }
 
+type ReconstituteAsientoContableProps = CreateAsientoContableProps;
+
 export class AsientoContable extends BaseEntity {
   private _libroId: string;
   private _clienteId: string;
@@ -46,6 +48,21 @@ export class AsientoContable extends BaseEntity {
 
   static create(props: CreateAsientoContableProps, id?: string): AsientoContable {
     return new AsientoContable(props, id);
+  }
+
+  static reconstitute(props: ReconstituteAsientoContableProps, id: string): AsientoContable {
+    const instance = Object.create(AsientoContable.prototype) as AsientoContable;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._libroId = props.libroId;
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._fecha = props.fecha;
+    instance._descripcion = props.descripcion;
+    instance._lineas = props.lineas;
+    return instance;
   }
 
   get libroId(): string { return this._libroId; }

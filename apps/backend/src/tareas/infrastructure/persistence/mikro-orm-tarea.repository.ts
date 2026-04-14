@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
-import { Tarea, type Prioridad } from '../../domain/entities/tarea.entity';
+import { Tarea, type Prioridad, type EstadoTarea } from '../../domain/entities/tarea.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -133,13 +133,21 @@ export class MikroOrmTareaRepository
   }
 
   private toDomain(entity: TareaEntity): Tarea {
-    return Tarea.create(
+    return Tarea.reconstitute(
       {
         titulo: entity.titulo,
         descripcion: entity.descripcion,
         clienteId: entity.cliente?.id,
         estudioId: entity.estudio.id,
         prioridad: entity.prioridad.codigo as Prioridad,
+        estado: entity.estado.codigo as EstadoTarea,
+        responsableId: entity.responsable?.id,
+        horasRegistradas: entity.horasRegistradas,
+        comentarios: (entity.comentarios ?? []).map((c: { usuarioId: string; texto: string; fecha: string }) => ({
+          usuarioId: c.usuarioId,
+          texto: c.texto,
+          fecha: new Date(c.fecha),
+        })),
       },
       entity.id,
     );

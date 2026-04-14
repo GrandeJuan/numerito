@@ -13,6 +13,10 @@ interface CreateDocumentoProps {
   sizeBytes: number;
 }
 
+interface ReconstituteDocumentoProps extends CreateDocumentoProps {
+  version: number;
+}
+
 export class Documento extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -37,6 +41,23 @@ export class Documento extends BaseEntity {
 
   static create(props: CreateDocumentoProps, id?: string): Documento {
     return new Documento(props, id);
+  }
+
+  static reconstitute(props: ReconstituteDocumentoProps, id: string): Documento {
+    const instance = Object.create(Documento.prototype) as Documento;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._tipo = props.tipo;
+    instance._nombre = props.nombre;
+    instance._s3Key = props.s3Key;
+    instance._mimeType = props.mimeType;
+    instance._sizeBytes = props.sizeBytes;
+    instance._version = props.version;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }
