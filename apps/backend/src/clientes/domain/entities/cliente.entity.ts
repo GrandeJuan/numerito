@@ -15,6 +15,11 @@ interface CreateClienteProps {
   provincias?: Provincia[];
 }
 
+interface ReconstituteClienteProps extends CreateClienteProps {
+  isActive: boolean;
+  responsableId?: string;
+}
+
 export class Cliente extends BaseEntity {
   private _cuit: Cuit;
   private _razonSocial: RazonSocial;
@@ -40,6 +45,24 @@ export class Cliente extends BaseEntity {
 
   static create(props: CreateClienteProps, id?: string): Cliente {
     return new Cliente(props, id);
+  }
+
+  static reconstitute(props: ReconstituteClienteProps, id: string): Cliente {
+    const instance = Object.create(Cliente.prototype) as Cliente;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._cuit = props.cuit;
+    instance._razonSocial = props.razonSocial;
+    instance._condicionIva = props.condicionIva;
+    instance._tipo = props.tipo;
+    instance._regimen = props.regimen;
+    instance._estudioId = props.estudioId;
+    instance._isActive = props.isActive;
+    instance._responsableId = props.responsableId;
+    instance._provincias = props.provincias ?? [];
+    return instance;
   }
 
   get cuit(): Cuit { return this._cuit; }

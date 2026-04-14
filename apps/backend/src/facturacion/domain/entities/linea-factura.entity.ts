@@ -17,6 +17,8 @@ interface CreateLineaFacturaProps {
   alicuotaIva: number;
 }
 
+interface ReconstituteLineaFacturaProps extends CreateLineaFacturaProps {}
+
 export class LineaFactura extends BaseEntity {
   private _facturaId: string;
   private _descripcion: string;
@@ -44,6 +46,20 @@ export class LineaFactura extends BaseEntity {
 
   static create(props: CreateLineaFacturaProps, id?: string): LineaFactura {
     return new LineaFactura(props, id);
+  }
+
+  static reconstitute(props: ReconstituteLineaFacturaProps, id: string): LineaFactura {
+    const instance = Object.create(LineaFactura.prototype) as LineaFactura;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._facturaId = props.facturaId;
+    instance._descripcion = props.descripcion;
+    instance._cantidad = props.cantidad;
+    instance._precioUnitario = props.precioUnitario;
+    instance._alicuotaIva = props.alicuotaIva;
+    return instance;
   }
 
   get facturaId(): string { return this._facturaId; }

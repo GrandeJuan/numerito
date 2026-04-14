@@ -106,7 +106,7 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
   }
 
   private toDomain(entity: PagoEntity): Pago {
-    return Pago.create(
+    return Pago.reconstitute(
       {
         facturaId: entity.factura.id,
         estudioId: entity.estudio.id,

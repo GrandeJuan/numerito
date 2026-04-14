@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { Factura } from '../../domain/entities/factura.entity';
+import { LineaFactura } from '../../domain/entities/linea-factura.entity';
+import type { EstadoFactura } from '@numerito/shared';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -153,7 +155,20 @@ export class MikroOrmFacturaRepository
   }
 
   private toDomain(entity: FacturaEntity): Factura {
-    const factura = Factura.create(
+    const lineas = entity.lineas.getItems().map((l) =>
+      LineaFactura.reconstitute(
+        {
+          facturaId: entity.id,
+          descripcion: l.descripcion,
+          cantidad: l.cantidad,
+          precioUnitario: l.precioUnitario,
+          alicuotaIva: l.alicuotaIva,
+        },
+        l.id,
+      ),
+    );
+
+    return Factura.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
@@ -161,22 +176,11 @@ export class MikroOrmFacturaRepository
         fechaEmision: entity.fechaEmision,
         fechaVencimiento: entity.fechaVencimiento,
         concepto: entity.concepto,
-        lineas: entity.lineas.getItems().map((l) => ({
-          descripcion: l.descripcion,
-          cantidad: l.cantidad,
-          precioUnitario: l.precioUnitario,
-          alicuotaIva: l.alicuotaIva,
-          id: l.id,
-        })),
+        lineas,
+        estado: entity.estado.codigo as EstadoFactura,
+        totalPagado: entity.totalPagado,
       },
       entity.id,
     );
-
-    // Restore totalPagado from DB
-    if (entity.totalPagado > 0) {
-      factura.registrarPagoExterno(entity.totalPagado);
-    }
-
-    return factura;
   }
 }

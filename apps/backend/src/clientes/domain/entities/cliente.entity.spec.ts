@@ -79,4 +79,66 @@ describe('Cliente Entity (Aggregate Root)', () => {
     cliente.updateRazonSocial(newRazonSocial);
     expect(cliente.razonSocial.value).toBe('Perez & Cia S.R.L.');
   });
+
+  describe('reconstitute', () => {
+    it('should preserve all fields including persisted state', () => {
+      const cliente = Cliente.reconstitute({
+        cuit: Cuit.create('20-12345678-6'),
+        razonSocial: RazonSocial.create('Grande & Asociados S.A.'),
+        condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+        tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+        regimen: REGIMEN.GENERAL,
+        estudioId: 'estudio-1',
+        isActive: false,
+        responsableId: 'user-42',
+        provincias: [PROVINCIA.BUENOS_AIRES, PROVINCIA.CABA],
+      }, 'existing-id');
+
+      expect(cliente.id).toBe('existing-id');
+      expect(cliente.cuit.raw).toBe('20123456786');
+      expect(cliente.razonSocial.value).toBe('Grande & Asociados S.A.');
+      expect(cliente.condicionIva).toBe(CONDICION_IVA.RESPONSABLE_INSCRIPTO);
+      expect(cliente.tipo).toBe(TIPO_CLIENTE.PERSONA_JURIDICA);
+      expect(cliente.regimen).toBe(REGIMEN.GENERAL);
+      expect(cliente.estudioId).toBe('estudio-1');
+      expect(cliente.isActive).toBe(false);
+      expect(cliente.responsableId).toBe('user-42');
+      expect(cliente.provincias).toEqual([PROVINCIA.BUENOS_AIRES, PROVINCIA.CABA]);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const cliente = Cliente.reconstitute({
+        cuit: Cuit.create('20-12345678-6'),
+        razonSocial: RazonSocial.create('Test S.A.'),
+        condicionIva: CONDICION_IVA.MONOTRIBUTO,
+        tipo: TIPO_CLIENTE.PERSONA_FISICA,
+        regimen: REGIMEN.MONOTRIBUTO,
+        estudioId: 'e1',
+        isActive: true,
+      }, 'id-1');
+
+      expect(cliente.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const cliente = Cliente.reconstitute({
+        cuit: Cuit.create('20-12345678-6'),
+        razonSocial: RazonSocial.create('Test S.A.'),
+        condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+        tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+        regimen: REGIMEN.GENERAL,
+        estudioId: 'e1',
+        isActive: true,
+      }, 'id-1');
+
+      cliente.changeCondicionIva(CONDICION_IVA.MONOTRIBUTO);
+      expect(cliente.condicionIva).toBe(CONDICION_IVA.MONOTRIBUTO);
+
+      cliente.deactivate();
+      expect(cliente.isActive).toBe(false);
+
+      cliente.assignResponsable('user-99');
+      expect(cliente.responsableId).toBe('user-99');
+    });
+  });
 });

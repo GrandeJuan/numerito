@@ -1,4 +1,5 @@
 import { Factura } from './factura.entity';
+import { LineaFactura } from './linea-factura.entity';
 import { ESTADO_FACTURA } from '@numerito/shared';
 import type { LineaFacturaInput } from './linea-factura.entity';
 
@@ -160,5 +161,93 @@ describe('Factura Entity', () => {
     expect(f.estado).toBe(ESTADO_FACTURA.EMITIDA);
     expect(f.totalPagado).toBe(0);
     expect(f.saldoPendiente).toBe(121000);
+  });
+
+  describe('reconstitute', () => {
+    const makeLinea = (id: string, facturaId: string) =>
+      LineaFactura.reconstitute({
+        facturaId,
+        descripcion: 'Servicio',
+        cantidad: 1,
+        precioUnitario: 100000,
+        alicuotaIva: 21,
+      }, id);
+
+    it('should preserve all fields including estado and totalPagado', () => {
+      const lineas = [makeLinea('l1', 'f1')];
+      const f = Factura.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        numero: 'FAC-0001',
+        fechaEmision: new Date('2026-03-15'),
+        fechaVencimiento: new Date('2026-04-15'),
+        concepto: 'Honorarios',
+        lineas,
+        estado: ESTADO_FACTURA.PARCIALMENTE_PAGADA,
+        totalPagado: 50000,
+      }, 'f1');
+
+      expect(f.id).toBe('f1');
+      expect(f.clienteId).toBe('c1');
+      expect(f.estudioId).toBe('e1');
+      expect(f.numero).toBe('FAC-0001');
+      expect(f.estado).toBe(ESTADO_FACTURA.PARCIALMENTE_PAGADA);
+      expect(f.totalPagado).toBe(50000);
+      expect(f.subtotal).toBe(100000);
+      expect(f.iva).toBe(21000);
+      expect(f.total).toBe(121000);
+      expect(f.saldoPendiente).toBe(71000);
+      expect(f.lineas).toHaveLength(1);
+    });
+
+    it('should not emit domain events on reconstitute', () => {
+      const f = Factura.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        numero: 'FAC-0001',
+        fechaEmision: new Date('2026-03-15'),
+        fechaVencimiento: new Date('2026-04-15'),
+        concepto: 'Test',
+        lineas: [makeLinea('l1', 'f1')],
+        estado: ESTADO_FACTURA.EMITIDA,
+        totalPagado: 0,
+      }, 'f1');
+
+      expect(f.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const f = Factura.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        numero: 'FAC-0001',
+        fechaEmision: new Date('2026-03-15'),
+        fechaVencimiento: new Date('2026-04-15'),
+        concepto: 'Test',
+        lineas: [makeLinea('l1', 'f1')],
+        estado: ESTADO_FACTURA.EMITIDA,
+        totalPagado: 0,
+      }, 'f1');
+
+      f.anular();
+      expect(f.estado).toBe(ESTADO_FACTURA.ANULADA);
+    });
+
+    it('should bypass creation invariants (fechaEmision > fechaVencimiento)', () => {
+      const f = Factura.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        numero: 'FAC-OLD',
+        fechaEmision: new Date('2026-05-15'),
+        fechaVencimiento: new Date('2026-04-15'),
+        concepto: 'Historical data',
+        lineas: [makeLinea('l1', 'f-old')],
+        estado: ESTADO_FACTURA.ANULADA,
+        totalPagado: 0,
+      }, 'f-old');
+
+      expect(f.id).toBe('f-old');
+      expect(f.estado).toBe(ESTADO_FACTURA.ANULADA);
+    });
   });
 });

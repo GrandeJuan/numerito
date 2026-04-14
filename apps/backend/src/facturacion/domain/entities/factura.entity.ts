@@ -18,6 +18,18 @@ interface CreateFacturaProps {
   lineas: LineaFacturaInput[];
 }
 
+interface ReconstituteFacturaProps {
+  clienteId: string;
+  estudioId: string;
+  numero: string;
+  fechaEmision: Date;
+  fechaVencimiento: Date;
+  concepto: string;
+  lineas: LineaFactura[];
+  estado: EstadoFactura;
+  totalPagado: number;
+}
+
 export class Factura extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -61,6 +73,24 @@ export class Factura extends BaseEntity {
 
   static create(props: CreateFacturaProps, id?: string): Factura {
     return new Factura(props, id);
+  }
+
+  static reconstitute(props: ReconstituteFacturaProps, id: string): Factura {
+    const instance = Object.create(Factura.prototype) as Factura;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._numero = props.numero;
+    instance._fechaEmision = props.fechaEmision;
+    instance._fechaVencimiento = props.fechaVencimiento;
+    instance._concepto = props.concepto;
+    instance._lineas = props.lineas;
+    instance._estado = props.estado;
+    instance._totalPagado = props.totalPagado;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }

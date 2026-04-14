@@ -140,7 +140,7 @@ export class MikroOrmClienteRepository
   }
 
   private toDomain(entity: ClienteEntity): Cliente {
-    return Cliente.create(
+    return Cliente.reconstitute(
       {
         cuit: Cuit.create(entity.cuit),
         razonSocial: RazonSocial.create(entity.razonSocial),
@@ -148,6 +148,8 @@ export class MikroOrmClienteRepository
         tipo: entity.tipoCliente.codigo as TipoCliente,
         regimen: entity.regimen.codigo as Regimen,
         estudioId: entity.estudio.id,
+        isActive: entity.isActive,
+        responsableId: entity.responsable?.id,
       },
       entity.id,
     );

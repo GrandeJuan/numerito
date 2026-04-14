@@ -10,6 +10,8 @@ interface CreatePagoProps {
   referencia?: string;
 }
 
+interface ReconstitutePagoProps extends CreatePagoProps {}
+
 export class Pago extends BaseEntity {
   private _facturaId: string;
   private _estudioId: string;
@@ -33,6 +35,21 @@ export class Pago extends BaseEntity {
 
   static create(props: CreatePagoProps, id?: string): Pago {
     return new Pago(props, id);
+  }
+
+  static reconstitute(props: ReconstitutePagoProps, id: string): Pago {
+    const instance = Object.create(Pago.prototype) as Pago;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._facturaId = props.facturaId;
+    instance._estudioId = props.estudioId;
+    instance._fecha = props.fecha;
+    instance._monto = props.monto;
+    instance._medioPagoId = props.medioPagoId;
+    instance._referencia = props.referencia;
+    return instance;
   }
 
   get facturaId(): string { return this._facturaId; }
