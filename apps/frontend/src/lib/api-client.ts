@@ -46,8 +46,9 @@ function setCookie(name: string, value: string, maxAge: number): void {
 
 function buildHeaders(init?: RequestInit): Headers {
   const headers = new Headers(init?.headers);
+  const isFormData = init?.body instanceof FormData;
 
-  if (!headers.has('Content-Type')) {
+  if (!isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 

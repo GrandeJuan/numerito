@@ -8,6 +8,9 @@ export interface AuthUser {
   id: string;
   email: string;
   rol: string;
+  nombre?: string;
+  apellido?: string;
+  avatarUrl?: string | null;
 }
 
 export interface EstudioInfo {
@@ -26,9 +29,11 @@ interface AuthContextValue {
   logout: () => void;
   switchEstudio: (estudio: EstudioInfo) => void;
   tienePermiso: (permiso: string) => boolean;
+  updateUserProfile: (updates: Partial<Pick<AuthUser, 'nombre' | 'apellido' | 'avatarUrl'>>) => void;
 }
 
 const ESTUDIO_STORAGE_KEY = 'numerito_estudio_actual';
+const USER_PROFILE_KEY = 'numerito_user_profile';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -92,10 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token) {
       const payload = decodeJwtPayload(token);
       if (payload && payload.exp && Date.now() < (payload.exp as number) * 1000) {
+        // Restore profile data from localStorage (nombre, apellido, avatarUrl)
+        let profile: Partial<AuthUser> = {};
+        try {
+          const stored = localStorage.getItem(USER_PROFILE_KEY);
+          if (stored) profile = JSON.parse(stored);
+        } catch { /* ignore */ }
+
         setUser({
           id: payload.sub as string,
           email: payload.email as string,
           rol: payload.rol as string,
+          nombre: profile.nombre,
+          apellido: profile.apellido,
+          avatarUrl: profile.avatarUrl,
         });
 
         // Restore estudio from localStorage
@@ -125,7 +140,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await parseApiResponse<{
       accessToken: string;
       refreshToken: string;
-      usuario: { id: string; email: string; rol: string; themePreference?: string };
+      usuario: {
+        id: string;
+        email: string;
+        nombre: string;
+        apellido: string;
+        rol: string;
+        themePreference?: string;
+        avatarUrl?: string | null;
+      };
     }>(res);
     setCookie('access_token', data.accessToken, 900);
     setCookie('refresh_token', data.refreshToken, 604800);
@@ -134,8 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: data.usuario.id,
       email: data.usuario.email,
       rol: data.usuario.rol,
+      nombre: data.usuario.nombre,
+      apellido: data.usuario.apellido,
+      avatarUrl: data.usuario.avatarUrl,
     };
     setUser(authUser);
+
+    // Persist profile data for hydration (JWT doesn't carry these)
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify({
+      nombre: data.usuario.nombre,
+      apellido: data.usuario.apellido,
+      avatarUrl: data.usuario.avatarUrl,
+    }));
 
     // Apply theme preference from server
     if (data.usuario.themePreference) {
@@ -145,11 +178,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authUser;
   }, []);
 
+  const updateUserProfile = useCallback((updates: Partial<Pick<AuthUser, 'nombre' | 'apellido' | 'avatarUrl'>>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem(USER_PROFILE_KEY, JSON.stringify({
+        nombre: updated.nombre,
+        apellido: updated.apellido,
+        avatarUrl: updated.avatarUrl,
+      }));
+      return updated;
+    });
+  }, []);
+
   const logout = useCallback(() => {
     apiFetch('/v1/auth/logout', { method: 'POST' }).catch(() => {});
     deleteCookie('access_token');
     deleteCookie('refresh_token');
     localStorage.removeItem(ESTUDIO_STORAGE_KEY);
+    localStorage.removeItem(USER_PROFILE_KEY);
     setUser(null);
     setEstudioActual(null);
     setEstudioId(null);
@@ -172,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deleteCookie('access_token');
       deleteCookie('refresh_token');
       localStorage.removeItem(ESTUDIO_STORAGE_KEY);
+      localStorage.removeItem(USER_PROFILE_KEY);
       setUser(null);
       setEstudioActual(null);
       setEstudioId(null);
@@ -192,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       switchEstudio,
       tienePermiso,
+      updateUserProfile,
     }}>
       {children}
     </AuthContext>

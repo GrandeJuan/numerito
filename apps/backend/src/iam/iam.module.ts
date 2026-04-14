@@ -46,11 +46,18 @@ import { SESION_REPOSITORY } from './domain/repositories/sesion.repository';
 import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm-sesion.repository';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 import type { EventBus } from '../shared/domain/event-bus';
+import { AVATAR_STORAGE } from './domain/ports/avatar-storage.port';
+import { LocalAvatarStorageAdapter } from './infrastructure/adapters/local-avatar-storage.adapter';
+import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-storage.adapter';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
   controllers: [AuthController, UsuarioController],
   providers: [
+    {
+      provide: AVATAR_STORAGE,
+      useClass: process.env.AWS_S3_BUCKET ? S3AvatarStorageAdapter : LocalAvatarStorageAdapter,
+    },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: USUARIO_REPOSITORY, useClass: MikroOrmUsuarioRepository },
     { provide: RESET_TOKEN_REPOSITORY, useClass: MikroOrmResetTokenRepository },

@@ -10,6 +10,7 @@ import { Breadcrumbs } from './breadcrumbs';
 import { Can } from './can';
 import { NotificationBell } from './notification-bell';
 import { GlobalSearch } from './global-search';
+import { UserAvatar } from './user-avatar';
 
 interface NavItem {
   label: string;
@@ -108,27 +109,19 @@ function NavItemLink({
   return link;
 }
 
-/* ── Avatar initials circle ── */
-function AvatarInitials({ email }: { email: string }) {
-  const initials = email
-    .split('@')[0]
-    .split(/[._-]/)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase() ?? '')
-    .join('');
-
-  return (
-    <div className="w-8 h-8 rounded-full bg-[#4edea3] flex items-center justify-center text-[#091426] text-xs font-bold select-none">
-      {initials || '?'}
-    </div>
-  );
+/* ── User dropdown menu ── */
+interface UserDropdownProps {
+  user: { email: string; nombre?: string; apellido?: string; avatarUrl?: string | null };
+  onLogout: () => void;
 }
 
-/* ── User dropdown menu ── */
-function UserDropdown({ email, onLogout }: { email: string; onLogout: () => void }) {
+function UserDropdown({ user, onLogout }: UserDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const displayName = user.nombre
+    ? `${user.nombre} ${user.apellido ?? ''}`.trim()
+    : user.email;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -149,19 +142,28 @@ function UserDropdown({ email, onLogout }: { email: string; onLogout: () => void
         className="flex items-center gap-2 p-1 rounded-lg hover:bg-[#091426]/5 dark:hover:bg-white/5 transition-colors"
         aria-label="Menú de usuario"
       >
-        <AvatarInitials email={email} />
+        <UserAvatar
+          nombre={user.nombre}
+          apellido={user.apellido}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+          size="sm"
+        />
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#162a4a] rounded-xl shadow-xl border border-[#e2e8f0] dark:border-white/10 z-50 py-1">
-          <div className="px-4 py-2 border-b border-[#e2e8f0] dark:border-white/10">
-            <p className="text-sm font-medium text-[#091426] dark:text-white truncate">{email}</p>
+          <div className="px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10">
+            <p className="text-sm font-medium text-[#091426] dark:text-white truncate">{displayName}</p>
+            {user.nombre && (
+              <p className="text-xs text-[#45474c] dark:text-[#c5c6cd] truncate mt-0.5">{user.email}</p>
+            )}
           </div>
 
           <button
             onClick={() => {
               setOpen(false);
-              router.push('/configuracion');
+              router.push('/perfil');
             }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#45474c] dark:text-[#c5c6cd] hover:bg-[#f0f4f8] dark:hover:bg-white/5 transition-colors"
           >
@@ -263,6 +265,29 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               />
             ))}
           </nav>
+
+          {/* Sidebar footer — user info */}
+          {user && (
+            <div className="px-4 py-3 border-t border-white/10">
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  nombre={user.nombre}
+                  apellido={user.apellido}
+                  email={user.email}
+                  avatarUrl={user.avatarUrl}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user.nombre ? `${user.nombre} ${user.apellido ?? ''}`.trim() : user.email}
+                  </p>
+                  {user.nombre && (
+                    <p className="text-xs text-white/50 truncate">{user.email}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -308,7 +333,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               </span>
             </button>
 
-            {user && <UserDropdown email={user.email} onLogout={logout} />}
+            {user && <UserDropdown user={user} onLogout={logout} />}
           </div>
         </header>
 

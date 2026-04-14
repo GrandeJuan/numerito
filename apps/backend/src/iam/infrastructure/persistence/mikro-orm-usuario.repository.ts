@@ -54,6 +54,7 @@ export class MikroOrmUsuarioRepository
       existing.provider = usuario.provider;
       existing.providerId = usuario.providerId;
       existing.themePreference = usuario.themePreference;
+      existing.avatarUrl = usuario.avatarUrl;
     } else {
       this.em.create(UsuarioEntity, {
         id: usuario.id,
@@ -67,6 +68,7 @@ export class MikroOrmUsuarioRepository
         provider: usuario.provider,
         providerId: usuario.providerId,
         themePreference: usuario.themePreference,
+        avatarUrl: usuario.avatarUrl,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -93,6 +95,7 @@ export class MikroOrmUsuarioRepository
         provider: entity.provider as AuthProvider,
         providerId: entity.providerId,
         themePreference: (entity.themePreference as 'light' | 'dark') ?? 'light',
+        avatarUrl: entity.avatarUrl,
       },
       entity.id,
     );

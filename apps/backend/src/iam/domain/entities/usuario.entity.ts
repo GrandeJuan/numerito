@@ -15,6 +15,7 @@ interface CreateUsuarioProps {
   provider?: AuthProvider;
   providerId?: string | null;
   themePreference?: 'light' | 'dark';
+  avatarUrl?: string | null;
 }
 
 export class Usuario extends BaseEntity {
@@ -28,6 +29,7 @@ export class Usuario extends BaseEntity {
   private _provider: AuthProvider;
   private _providerId: string | null;
   private _themePreference: 'light' | 'dark';
+  private _avatarUrl: string | null;
 
   private constructor(props: CreateUsuarioProps, id?: string) {
     super(id);
@@ -41,6 +43,7 @@ export class Usuario extends BaseEntity {
     this._provider = props.provider ?? null;
     this._providerId = props.providerId ?? null;
     this._themePreference = props.themePreference ?? 'light';
+    this._avatarUrl = props.avatarUrl ?? null;
   }
 
   static create(props: CreateUsuarioProps, id?: string): Usuario {
@@ -87,6 +90,20 @@ export class Usuario extends BaseEntity {
 
   get themePreference(): 'light' | 'dark' {
     return this._themePreference;
+  }
+
+  get avatarUrl(): string | null {
+    return this._avatarUrl;
+  }
+
+  updateAvatarUrl(url: string): void {
+    this._avatarUrl = url;
+    this.updatedAt = new Date();
+  }
+
+  removeAvatar(): void {
+    this._avatarUrl = null;
+    this.updatedAt = new Date();
   }
 
   changeThemePreference(theme: 'light' | 'dark'): void {

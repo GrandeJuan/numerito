@@ -18,6 +18,7 @@ export interface IniciarSesionResult {
     apellido: string;
     rol: string;
     themePreference: string;
+    avatarUrl: string | null;
   };
 }
 
@@ -63,6 +64,7 @@ export class IniciarSesionHandler {
         apellido: usuario.apellido,
         rol: usuario.rol,
         themePreference: usuario.themePreference,
+        avatarUrl: usuario.avatarUrl,
       },
     };
   }
