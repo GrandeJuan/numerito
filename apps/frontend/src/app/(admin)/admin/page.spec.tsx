@@ -15,6 +15,8 @@ vi.mock('recharts', () => ({
   ),
   AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
   Area: () => <div />,
+  BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
+  Bar: () => <div />,
   XAxis: () => <div />,
   YAxis: () => <div />,
   Tooltip: () => <div />,
@@ -36,6 +38,14 @@ const mockStats = {
     churnMensual: { value: 2.4, delta: '-0.3%', deltaUp: true, sparkline: sparkline12 },
     uptime: { value: 99.98, delta: 'SLA OK', deltaUp: true, sparkline: Array(12).fill(99.98) },
   },
+  growthData: [
+    { mes: '2026-03', usuarios: 40, estudios: 10 },
+    { mes: '2026-04', usuarios: 48, estudios: 12 },
+  ],
+  revenueData: [
+    { mes: '2026-03', mrr: 100000, arr: 1200000 },
+    { mes: '2026-04', mrr: 125000, arr: 1500000 },
+  ],
   registrosMensuales: [
     { mes: '2026-03', cantidad: 5 },
     { mes: '2026-04', cantidad: 8 },
@@ -53,6 +63,14 @@ const mockStats = {
       estado: 'Activo',
       creadoEn: '2026-01-15',
     },
+  ],
+  topTenants: [
+    { id: 't1', nombre: 'Estudio Alpha', plan: 'Enterprise', usuarios: 15, clientes: 80, actividad: 95 },
+    { id: 't2', nombre: 'Estudio Beta', plan: 'Profesional', usuarios: 8, clientes: 40, actividad: 60 },
+  ],
+  registrosRecientes: [
+    { id: 'r1', nombre: 'Estudio Nuevo', plan: 'Trial', email: 'nuevo@test.com', creadoEn: '2026-04-13' },
+    { id: 'r2', nombre: 'Estudio Reciente', plan: 'Profesional', email: 'reciente@test.com', creadoEn: '2026-04-12' },
   ],
 };
 
@@ -87,6 +105,11 @@ import AdminPage from './page';
 describe('AdminPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('should render loading state initially', () => {
+    render(<AdminPage />);
+    expect(screen.getByText('Cargando...')).toBeInTheDocument();
   });
 
   it('should render KPI cards with data', async () => {
@@ -125,39 +148,34 @@ describe('AdminPage', () => {
     expect(screen.getByText('SLA OK')).toBeInTheDocument();
   });
 
-  it('should render loading state initially', () => {
-    render(<AdminPage />);
-    expect(screen.getByText('Cargando...')).toBeInTheDocument();
-  });
-
-  it('should render chart sections', async () => {
+  it('should render growth chart section', async () => {
     render(<AdminPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Registros de Estudios')).toBeInTheDocument();
+      expect(screen.getByText('Crecimiento de Usuarios y Estudios')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Distribución de Planes')).toBeInTheDocument();
+    expect(screen.getByText('Últimos 12 meses')).toBeInTheDocument();
   });
 
-  it('should render alertas section', async () => {
+  it('should render plan distribution donut chart', async () => {
     render(<AdminPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Alertas del Sistema')).toBeInTheDocument();
+      expect(screen.getByText('Distribución por Plan')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('3 subscripciones por vencer')).toBeInTheDocument();
+    expect(screen.getByText('12 estudios activos')).toBeInTheDocument();
   });
 
-  it('should render estudios recientes table', async () => {
+  it('should render revenue chart section', async () => {
     render(<AdminPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Estudio Contable X')).toBeInTheDocument();
+      expect(screen.getByText('Revenue: MRR y ARR')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Profesional')).toBeInTheDocument();
+    expect(screen.getByText('Evolución en pesos argentinos')).toBeInTheDocument();
   });
 
   it('should render system status panel with service names', async () => {
@@ -252,5 +270,167 @@ describe('AdminPage', () => {
     expect(screen.getByText('tune')).toBeInTheDocument();
     expect(screen.getByText('mail')).toBeInTheDocument();
     expect(screen.getByText('database')).toBeInTheDocument();
+  });
+
+  it('should render alertas section', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Alertas del Sistema')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('3 subscripciones por vencer')).toBeInTheDocument();
+  });
+
+  it('should render estudios recientes table', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Contable X')).toBeInTheDocument();
+    });
+  });
+
+  it('should render top tenants table with activity bars', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Estudio Beta')).toBeInTheDocument();
+    // Activity scores
+    expect(screen.getByText('95')).toBeInTheDocument();
+    expect(screen.getByText('60')).toBeInTheDocument();
+  });
+
+  it('should render top tenants plan badges', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Enterprise')).toBeInTheDocument();
+  });
+
+  it('should render top tenants user and client counts', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('80')).toBeInTheDocument();
+  });
+
+  it('should render recent registrations with name and email', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Nuevo')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('nuevo@test.com')).toBeInTheDocument();
+    expect(screen.getByText('Estudio Reciente')).toBeInTheDocument();
+    expect(screen.getByText('reciente@test.com')).toBeInTheDocument();
+  });
+
+  it('should render recent registrations with plan and date', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Nuevo')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Trial')).toBeInTheDocument();
+    expect(screen.getByText('2026-04-13')).toBeInTheDocument();
+    expect(screen.getByText('2026-04-12')).toBeInTheDocument();
+  });
+
+  it('should render chart legends for growth chart', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Crecimiento de Usuarios y Estudios')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByText('Estudios')).toBeInTheDocument();
+  });
+
+  it('should render chart legends for revenue chart', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Revenue: MRR y ARR')).toBeInTheDocument();
+    });
+
+    // MRR and ARR legends (text content in legend spans)
+    const mrrElements = screen.getAllByText('MRR');
+    expect(mrrElements.length).toBeGreaterThanOrEqual(2); // KPI label + chart legend
+    const arrElements = screen.getAllByText('ARR');
+    expect(arrElements.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should render page title and subtitle', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Panel de Administración')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Vista general de la plataforma Numerito.')).toBeInTheDocument();
+  });
+
+  it('should show error state on fetch failure', async () => {
+    const { apiFetch } = await import('@/lib/api-client');
+    (apiFetch as any).mockRejectedValue(new Error('Network error'));
+
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Network error')).toBeInTheDocument();
+    });
+  });
+
+  it('should handle health check failure gracefully', async () => {
+    const { apiFetch } = await import('@/lib/api-client');
+    (apiFetch as any).mockImplementation((url: string) => {
+      if (url.includes('/health')) {
+        return Promise.reject(new Error('Health check unavailable'));
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ data: mockStats }),
+      });
+    });
+
+    render(<AdminPage />);
+
+    // Dashboard should still load without health data
+    await waitFor(() => {
+      expect(screen.getByText('Panel de Administración')).toBeInTheDocument();
+    });
+
+    // Health panel should not be visible
+    expect(screen.queryByText('Estado del Sistema')).not.toBeInTheDocument();
+  });
+
+  it('should render plan distribution legend entries', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Distribución por Plan')).toBeInTheDocument();
+    });
+
+    // Plan names in legend
+    const profEntries = screen.getAllByText('Profesional');
+    expect(profEntries.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Starter')).toBeInTheDocument();
+
+    // Plan counts in legend
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
   });
 });
