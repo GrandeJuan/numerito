@@ -20,6 +20,7 @@ describe('ObligacionesController', () => {
   let controller: ObligacionesController;
   let mockVencimientoRepo: any;
   let mockEventBus: any;
+  let mockCrearVencimientoHandler: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
@@ -36,7 +37,10 @@ describe('ObligacionesController', () => {
       publish: jest.fn(),
       publishAll: jest.fn(),
     };
-    controller = new ObligacionesController(mockVencimientoRepo, mockEventBus);
+    mockCrearVencimientoHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'new-vencimiento-id' }),
+    };
+    controller = new ObligacionesController(mockVencimientoRepo, mockEventBus, mockCrearVencimientoHandler);
   });
 
   describe('kpis', () => {
@@ -113,7 +117,7 @@ describe('ObligacionesController', () => {
   });
 
   describe('create', () => {
-    it('should create a vencimiento', async () => {
+    it('should delegate to CrearVencimientoHandler', async () => {
       const dto = {
         clienteId: 'cliente-1',
         tipoObligacion: 'IVA',
@@ -122,9 +126,9 @@ describe('ObligacionesController', () => {
         descripcion: 'DDJJ IVA',
       };
 
-      const result = await controller.create(dto, 'estudio-1');
-      expect(result.id).toBeDefined();
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+      const result = await controller.create(dto);
+      expect(result.id).toBe('new-vencimiento-id');
+      expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith(dto);
     });
   });
 

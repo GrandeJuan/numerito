@@ -2,14 +2,15 @@ import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestj
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VENCIMIENTO_REPOSITORY } from '../../domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
-import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 import { CrearVencimientoDto } from '../../application/dtos/crear-vencimiento.dto';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import {
+  CrearVencimientoHandler,
+  type CrearVencimientoCommand,
+} from '../../application/commands/crear-vencimiento.command';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import { EVENT_BUS } from '../../../shared/domain/event-bus';
 import type { EventBus } from '../../../shared/domain/event-bus';
-import type { TipoObligacion } from '@numerito/shared';
 import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
 @ApiTags('Obligaciones')
@@ -18,6 +19,7 @@ export class ObligacionesController {
   constructor(
     @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
     @Inject(EVENT_BUS) private readonly eventBus: EventBus,
+    private readonly crearVencimientoHandler: CrearVencimientoHandler,
   ) {}
 
   @Get('kpis')
@@ -84,17 +86,9 @@ export class ObligacionesController {
 
   @Post('vencimientos')
   @ApiOperation({ summary: 'Crear vencimiento' })
-  async create(@Body() dto: CrearVencimientoDto, @EstudioId() estudioId: string) {
-    const vencimiento = Vencimiento.create({
-      clienteId: dto.clienteId,
-      estudioId, // entity still needs estudioId for persistence
-      tipoObligacion: dto.tipoObligacion as TipoObligacion,
-      periodo: dto.periodo,
-      fechaVencimiento: new Date(dto.fechaVencimiento),
-      descripcion: dto.descripcion,
-    });
-    await this.vencimientoRepo.save(vencimiento);
-    return { id: vencimiento.id };
+  async create(@Body() dto: CrearVencimientoDto) {
+    const result = await this.crearVencimientoHandler.execute(dto as CrearVencimientoCommand);
+    return result;
   }
 
   @Patch('vencimientos/:id/presentar')
