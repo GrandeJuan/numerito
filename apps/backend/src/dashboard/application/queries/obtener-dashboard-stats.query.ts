@@ -6,30 +6,13 @@ import type { UsuarioEstudioRepository } from '../../../iam/domain/repositories/
 import type { RolPermisoRepository } from '../../../iam/domain/repositories/rol-permiso.repository';
 import { Permiso } from '../../../iam/domain/value-objects/permiso.vo';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import type { DashboardStats } from '@numerito/shared';
+
+export type { DashboardStats };
 
 export interface DashboardStatsQuery {
   estudioId: string;
   usuarioId: string;
-}
-
-export interface DashboardStats {
-  kpis: {
-    clientes: number;
-    vencimientosProximos: number;
-    facturacionMes?: number;
-    tareasActivas: number;
-  };
-  vencimientosPorEstado: { estado: string; cantidad: number }[];
-  facturacionMensual?: { mes: string; monto: number }[];
-  proximosVencimientos: {
-    id: string;
-    cliente: string;
-    obligacion: string;
-    fecha: string;
-    estado: string;
-  }[];
-  actividadReciente: { tipo: string; descripcion: string; fecha: string; usuario?: string }[];
-  cargaTrabajo?: { usuario: string; tareas: number }[];
 }
 
 export class ObtenerDashboardStatsHandler {

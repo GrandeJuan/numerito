@@ -16,3 +16,5 @@ export interface ApiError {
   message: string;
   error?: string;
 }
+
+export type { DashboardStats } from './dashboard.types';
