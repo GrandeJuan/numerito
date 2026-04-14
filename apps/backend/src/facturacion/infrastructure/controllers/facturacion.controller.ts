@@ -8,7 +8,6 @@ import type { FacturaRepository } from '../../domain/repositories/factura.reposi
 import { PAGO_REPOSITORY } from '../../domain/repositories/pago.repository';
 import type { PagoRepository } from '../../domain/repositories/pago.repository';
 import { Factura } from '../../domain/entities/factura.entity';
-import { LineaFactura } from '../../domain/entities/linea-factura.entity';
 import { Pago } from '../../domain/entities/pago.entity';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
@@ -40,17 +39,6 @@ export class FacturacionController {
   @Post('facturas')
   @ApiOperation({ summary: 'Crear factura' })
   async create(@Body() dto: CrearFacturaDto, @EstudioId() estudioId: string) {
-    const tempId = 'temp';
-    const lineas = dto.lineas.map((l) =>
-      LineaFactura.create({
-        facturaId: tempId,
-        descripcion: l.descripcion,
-        cantidad: l.cantidad,
-        precioUnitario: l.precioUnitario,
-        alicuotaIva: l.alicuotaIva,
-      }),
-    );
-
     const factura = Factura.create({
       clienteId: dto.clienteId,
       estudioId,
@@ -58,7 +46,7 @@ export class FacturacionController {
       fechaEmision: new Date(dto.fechaEmision),
       fechaVencimiento: new Date(dto.fechaVencimiento),
       concepto: dto.concepto,
-      lineas,
+      lineas: dto.lineas,
     });
 
     await this.facturaRepo.save(factura);

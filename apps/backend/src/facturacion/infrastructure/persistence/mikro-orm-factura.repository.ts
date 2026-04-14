@@ -2,7 +2,6 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { Factura } from '../../domain/entities/factura.entity';
-import { LineaFactura } from '../../domain/entities/linea-factura.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -154,19 +153,6 @@ export class MikroOrmFacturaRepository
   }
 
   private toDomain(entity: FacturaEntity): Factura {
-    const lineas = entity.lineas.getItems().map((l) =>
-      LineaFactura.create(
-        {
-          facturaId: entity.id,
-          descripcion: l.descripcion,
-          cantidad: l.cantidad,
-          precioUnitario: l.precioUnitario,
-          alicuotaIva: l.alicuotaIva,
-        },
-        l.id,
-      ),
-    );
-
     const factura = Factura.create(
       {
         clienteId: entity.cliente.id,
@@ -175,7 +161,13 @@ export class MikroOrmFacturaRepository
         fechaEmision: entity.fechaEmision,
         fechaVencimiento: entity.fechaVencimiento,
         concepto: entity.concepto,
-        lineas,
+        lineas: entity.lineas.getItems().map((l) => ({
+          descripcion: l.descripcion,
+          cantidad: l.cantidad,
+          precioUnitario: l.precioUnitario,
+          alicuotaIva: l.alicuotaIva,
+          id: l.id,
+        })),
       },
       entity.id,
     );

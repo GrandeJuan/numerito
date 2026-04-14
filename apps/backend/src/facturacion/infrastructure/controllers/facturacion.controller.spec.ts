@@ -1,22 +1,5 @@
 import { FacturacionController } from './facturacion.controller';
 import { Factura } from '../../domain/entities/factura.entity';
-import { LineaFactura } from '../../domain/entities/linea-factura.entity';
-
-const makeLinea = (
-  overrides: Partial<{
-    descripcion: string;
-    cantidad: number;
-    precioUnitario: number;
-    alicuotaIva: number;
-  }> = {},
-) =>
-  LineaFactura.create({
-    facturaId: 'factura-1',
-    descripcion: overrides.descripcion ?? 'Servicio contable',
-    cantidad: overrides.cantidad ?? 1,
-    precioUnitario: overrides.precioUnitario ?? 1000,
-    alicuotaIva: overrides.alicuotaIva ?? 21,
-  });
 
 const makeFactura = (
   overrides: Partial<{ id: string; clienteId: string; estudioId: string; numero: string }> = {},
@@ -29,7 +12,7 @@ const makeFactura = (
       fechaEmision: new Date('2026-01-01'),
       fechaVencimiento: new Date('2026-02-01'),
       concepto: 'Honorarios enero',
-      lineas: [makeLinea()],
+      lineas: [{ descripcion: 'Servicio contable', cantidad: 1, precioUnitario: 1000, alicuotaIva: 21 }],
     },
     overrides.id,
   );
@@ -116,6 +99,23 @@ describe('FacturacionController', () => {
       const result = await controller.create(dto as any, 'estudio-1');
       expect(result.data.id).toBeDefined();
       expect(mockFacturaRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should wire correct facturaId on line items', async () => {
+      const dto = {
+        clienteId: 'cliente-1',
+        numero: 'FAC-003',
+        fechaEmision: '2026-01-01',
+        fechaVencimiento: '2026-02-01',
+        concepto: 'Honorarios',
+        lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 }],
+      };
+
+      await controller.create(dto as any, 'estudio-1');
+      const savedFactura = mockFacturaRepo.save.mock.calls[0][0];
+      for (const linea of savedFactura.lineas) {
+        expect(linea.facturaId).toBe(savedFactura.id);
+      }
     });
 
     it('should pass estudioId from decorator', async () => {

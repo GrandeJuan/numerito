@@ -1,6 +1,14 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
+export interface LineaFacturaInput {
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+  alicuotaIva: number;
+  id?: string;
+}
+
 interface CreateLineaFacturaProps {
   facturaId: string;
   descripcion: string;

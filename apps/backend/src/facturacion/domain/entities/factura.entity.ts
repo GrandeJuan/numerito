@@ -1,6 +1,7 @@
 import { BaseEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { LineaFactura } from './linea-factura.entity';
+import type { LineaFacturaInput } from './linea-factura.entity';
 import { ESTADO_FACTURA } from '@numerito/shared';
 import type { EstadoFactura } from '@numerito/shared';
 
@@ -14,7 +15,7 @@ interface CreateFacturaProps {
   fechaEmision: Date;
   fechaVencimiento: Date;
   concepto: string;
-  lineas: LineaFactura[];
+  lineas: LineaFacturaInput[];
 }
 
 export class Factura extends BaseEntity {
@@ -42,7 +43,18 @@ export class Factura extends BaseEntity {
     this._fechaEmision = props.fechaEmision;
     this._fechaVencimiento = props.fechaVencimiento;
     this._concepto = props.concepto;
-    this._lineas = props.lineas;
+    this._lineas = props.lineas.map((l) =>
+      LineaFactura.create(
+        {
+          facturaId: this.id,
+          descripcion: l.descripcion,
+          cantidad: l.cantidad,
+          precioUnitario: l.precioUnitario,
+          alicuotaIva: l.alicuotaIva,
+        },
+        l.id,
+      ),
+    );
     this._estado = ESTADO_FACTURA.EMITIDA;
     this._totalPagado = 0;
   }

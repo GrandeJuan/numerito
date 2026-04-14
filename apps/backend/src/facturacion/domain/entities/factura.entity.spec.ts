@@ -1,21 +1,16 @@
 import { Factura } from './factura.entity';
 import { ESTADO_FACTURA } from '@numerito/shared';
-import { LineaFactura } from './linea-factura.entity';
+import type { LineaFacturaInput } from './linea-factura.entity';
 
 describe('Factura Entity', () => {
-  const createLinea = (cantidad: number, precioUnitario: number, alicuotaIva: number) =>
-    LineaFactura.create({
-      facturaId: 'placeholder',
-      descripcion: 'Servicio',
-      cantidad,
-      precioUnitario,
-      alicuotaIva,
-    });
+  const createLineaInput = (cantidad: number, precioUnitario: number, alicuotaIva: number): LineaFacturaInput => ({
+    descripcion: 'Servicio',
+    cantidad,
+    precioUnitario,
+    alicuotaIva,
+  });
 
   const createFactura = () => {
-    const lineas = [
-      createLinea(1, 100000, 21), // subtotal 100000, iva 21000
-    ];
     return Factura.create({
       clienteId: 'c1',
       estudioId: 'e1',
@@ -23,7 +18,7 @@ describe('Factura Entity', () => {
       fechaEmision: new Date('2026-03-15'),
       fechaVencimiento: new Date('2026-04-15'),
       concepto: 'Honorarios profesionales Marzo 2026',
-      lineas,
+      lineas: [createLineaInput(1, 100000, 21)],
     });
   };
 
@@ -37,11 +32,6 @@ describe('Factura Entity', () => {
   });
 
   it('should calculate from multiple lineas with different alicuotas', () => {
-    const lineas = [
-      createLinea(2, 50000, 21),   // subtotal 100000, iva 21000
-      createLinea(1, 10000, 10.5), // subtotal 10000, iva 1050
-      createLinea(3, 5000, 0),     // subtotal 15000, iva 0
-    ];
     const f = Factura.create({
       clienteId: 'c1',
       estudioId: 'e1',
@@ -49,7 +39,11 @@ describe('Factura Entity', () => {
       fechaEmision: new Date('2026-03-15'),
       fechaVencimiento: new Date('2026-04-15'),
       concepto: 'Varios servicios',
-      lineas,
+      lineas: [
+        createLineaInput(2, 50000, 21),   // subtotal 100000, iva 21000
+        createLineaInput(1, 10000, 10.5), // subtotal 10000, iva 1050
+        createLineaInput(3, 5000, 0),     // subtotal 15000, iva 0
+      ],
     });
     expect(f.subtotal).toBe(125000);
     expect(f.iva).toBe(22050);
@@ -124,7 +118,7 @@ describe('Factura Entity', () => {
       fechaEmision: new Date('2026-05-15'),
       fechaVencimiento: new Date('2026-04-15'),
       concepto: 'Test',
-      lineas: [createLinea(1, 100, 21)],
+      lineas: [createLineaInput(1, 100, 21)],
     })).toThrow('La fecha de emision no puede ser posterior a la fecha de vencimiento');
   });
 
@@ -132,6 +126,27 @@ describe('Factura Entity', () => {
     const f = createFactura();
     expect(f.lineas).toHaveLength(1);
     expect(f.lineas[0].subtotal).toBe(100000);
+  });
+
+  it('should wire correct facturaId on line items', () => {
+    const f = createFactura();
+    for (const linea of f.lineas) {
+      expect(linea.facturaId).toBe(f.id);
+    }
+  });
+
+  it('should preserve line item ids when provided', () => {
+    const f = Factura.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      numero: 'FAC-0003',
+      fechaEmision: new Date('2026-03-15'),
+      fechaVencimiento: new Date('2026-04-15'),
+      concepto: 'Test',
+      lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 100, alicuotaIva: 21, id: 'linea-1' }],
+    });
+    expect(f.lineas[0].id).toBe('linea-1');
+    expect(f.lineas[0].facturaId).toBe(f.id);
   });
 
   it('should expose all getters', () => {
