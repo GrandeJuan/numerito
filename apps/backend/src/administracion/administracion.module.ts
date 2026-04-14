@@ -8,11 +8,14 @@ import { AdminUsuariosController } from './infrastructure/controllers/admin-usua
 import { AdminHealthController } from './infrastructure/controllers/admin-health.controller';
 import { HealthCheckHandler } from './application/queries/health-check.query';
 import { ADMIN_PLAN_REPOSITORY } from './domain/repositories/admin-plan.repository';
+import type { AdminPlanRepository } from './domain/repositories/admin-plan.repository';
 import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-orm-admin-plan.repository';
 import { ObtenerAdminDashboardStatsHandler } from './application/queries/obtener-admin-dashboard-stats.query';
 import { ObtenerAdminUsuariosHandler } from './application/queries/obtener-admin-usuarios.query';
 import { DashboardStatsListener } from './application/listeners/dashboard-stats.listener';
 import { DashboardStatsProjection } from './application/services/dashboard-stats-projection';
+import { AdminEstudiosService } from './application/services/admin-estudios.service';
+import { AdminPlanesService } from './application/services/admin-planes.service';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
 
@@ -23,6 +26,16 @@ import { IamModule } from '../iam/iam.module';
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
     DashboardStatsProjection,
     DashboardStatsListener,
+    {
+      provide: AdminEstudiosService,
+      useFactory: (em: EntityManager) => new AdminEstudiosService(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: AdminPlanesService,
+      useFactory: (planRepo: AdminPlanRepository) => new AdminPlanesService(planRepo),
+      inject: [ADMIN_PLAN_REPOSITORY],
+    },
     {
       provide: ObtenerAdminDashboardStatsHandler,
       useFactory: (em: EntityManager) => new ObtenerAdminDashboardStatsHandler(em),
