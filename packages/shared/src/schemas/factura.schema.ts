@@ -19,3 +19,11 @@ export const crearFacturaSchema = z.object({
 });
 
 export type CrearFacturaInput = z.infer<typeof crearFacturaSchema>;
+
+export const registrarPagoSchema = z.object({
+  monto: z.number().min(0.01),
+  medioPagoId: z.number().int().min(1),
+  referencia: z.string().optional(),
+});
+
+export type RegistrarPagoInput = z.infer<typeof registrarPagoSchema>;

@@ -15,3 +15,17 @@ export const crearClienteSchema = z.object({
 });
 
 export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
+
+export const actualizarClienteSchema = z.object({
+  razonSocial: z.string().min(3).optional(),
+  condicionIva: z.string().min(1).optional(),
+  regimen: z.string().min(1).optional(),
+});
+
+export type ActualizarClienteInput = z.infer<typeof actualizarClienteSchema>;
+
+export const asignarResponsableSchema = z.object({
+  responsableId: z.string().min(1),
+});
+
+export type AsignarResponsableInput = z.infer<typeof asignarResponsableSchema>;

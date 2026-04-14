@@ -1,19 +1,9 @@
-import { IsNumber, Min, IsInt, IsOptional, IsString } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { registrarPagoSchema, type RegistrarPagoInput } from '@numerito/shared';
 
-export class RegistrarPagoDto {
-  @ApiProperty()
-  @IsNumber()
-  @Min(0.01)
+export const registrarPagoDtoSchema = registrarPagoSchema;
+
+export class RegistrarPagoDto implements RegistrarPagoInput {
   monto!: number;
-
-  @ApiProperty()
-  @IsInt()
-  @Min(1)
   medioPagoId!: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
   referencia?: string;
 }

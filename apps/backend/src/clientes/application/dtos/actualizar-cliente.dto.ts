@@ -1,16 +1,9 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { actualizarClienteSchema, type ActualizarClienteInput } from '@numerito/shared';
 
-export class ActualizarClienteDto {
-  @IsOptional()
-  @IsString()
-  @MinLength(3)
+export const actualizarClienteDtoSchema = actualizarClienteSchema;
+
+export class ActualizarClienteDto implements ActualizarClienteInput {
   razonSocial?: string;
-
-  @IsOptional()
-  @IsString()
   condicionIva?: string;
-
-  @IsOptional()
-  @IsString()
   regimen?: string;
 }

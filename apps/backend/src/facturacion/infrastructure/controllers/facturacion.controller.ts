@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearFacturaDto, crearFacturaDtoSchema } from '../../application/dtos/crear-factura.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { RegistrarPagoDto } from '../../application/dtos/registrar-pago.dto';
+import { RegistrarPagoDto, registrarPagoDtoSchema } from '../../application/dtos/registrar-pago.dto';
 import { FacturacionStatsQuery } from '../../application/queries/facturacion-stats.query';
 import {
   CrearFacturaHandler,
@@ -64,7 +64,7 @@ export class FacturacionController {
   @ApiOperation({ summary: 'Registrar pago en factura' })
   async registrarPago(
     @Param('id') id: string,
-    @Body() dto: RegistrarPagoDto,
+    @Body(new ZodValidationPipe(registrarPagoDtoSchema)) dto: RegistrarPagoDto,
     @EstudioId() estudioId: string,
   ) {
     const result = await this.registrarPagoHandler.execute({

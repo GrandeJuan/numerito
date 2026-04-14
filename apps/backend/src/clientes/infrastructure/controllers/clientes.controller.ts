@@ -2,8 +2,8 @@ import { Controller, Get, Post, Put, Patch, Param, Body, Query } from '@nestjs/c
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearClienteDto, crearClienteDtoSchema } from '../../application/dtos/crear-cliente.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { ActualizarClienteDto } from '../../application/dtos/actualizar-cliente.dto';
-import { AsignarResponsableDto } from '../../application/dtos/asignar-responsable.dto';
+import { ActualizarClienteDto, actualizarClienteDtoSchema } from '../../application/dtos/actualizar-cliente.dto';
+import { AsignarResponsableDto, asignarResponsableDtoSchema } from '../../application/dtos/asignar-responsable.dto';
 import {
   CrearClienteHandler,
   type CrearClienteCommand,
@@ -71,7 +71,7 @@ export class ClientesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar cliente' })
-  async update(@Param('id') id: string, @Body() dto: ActualizarClienteDto) {
+  async update(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarClienteDtoSchema)) dto: ActualizarClienteDto) {
     return this.actualizarClienteHandler.execute({ id, ...dto } as ActualizarClienteCommand);
   }
 
@@ -89,7 +89,7 @@ export class ClientesController {
 
   @Patch(':id/responsable')
   @ApiOperation({ summary: 'Asignar responsable al cliente' })
-  async assignResponsable(@Param('id') id: string, @Body() dto: AsignarResponsableDto) {
+  async assignResponsable(@Param('id') id: string, @Body(new ZodValidationPipe(asignarResponsableDtoSchema)) dto: AsignarResponsableDto) {
     return this.asignarResponsableHandler.execute({ id, responsableId: dto.responsableId } as AsignarResponsableCommand);
   }
 }
