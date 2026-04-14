@@ -245,4 +245,92 @@ describe('Architecture rules', () => {
       expect(violations).toEqual([]);
     });
   });
+
+  describe('Controller layer restrictions', () => {
+    // Controllers that still embed domain logic — tracked here so new violations fail immediately.
+    // Each entry is removed when the corresponding handler extraction is done.
+    const KNOWN_CONTROLLER_VIOLATIONS: Record<string, string[]> = {
+      'contabilidad/infrastructure/controllers/contabilidad.controller.ts': [
+        'domain/entities/libro-contable.entity',
+        'domain/entities/asiento-contable.entity',
+      ],
+      'documentos/infrastructure/controllers/documentos.controller.ts': [
+        'domain/entities/documento.entity',
+      ],
+      'estudio/infrastructure/controllers/estudio.controller.ts': [
+        'domain/value-objects/nombre-estudio.vo',
+        'shared/domain/event-bus',
+      ],
+      'facturacion/infrastructure/controllers/facturacion.controller.ts': [
+        'domain/entities/pago.entity',
+      ],
+      'nomina/infrastructure/controllers/nomina.controller.ts': [
+        'domain/entities/empleado.entity',
+      ],
+      'obligaciones/infrastructure/controllers/obligaciones.controller.ts': [
+        'domain/entities/vencimiento.entity',
+        'shared/domain/event-bus',
+      ],
+      'tareas/infrastructure/controllers/tareas.controller.ts': [
+        'domain/entities/tarea.entity',
+      ],
+    };
+
+    function isViolatingImport(imp: string): boolean {
+      if (/domain\/(entities|value-objects|events)\//.test(imp)) return true;
+      if (imp.includes('shared/domain/event-bus')) return true;
+      return false;
+    }
+
+    function isKnownViolation(controllerRel: string, imp: string): boolean {
+      const known = KNOWN_CONTROLLER_VIOLATIONS[controllerRel];
+      if (!known) return false;
+      return known.some((pattern) => imp.includes(pattern));
+    }
+
+    it('controllers must not import domain entities or event bus (new violations)', () => {
+      const violations: string[] = [];
+
+      for (const ctx of BOUNDED_CONTEXTS) {
+        const controllersDir = path.join(SRC_DIR, ctx, 'infrastructure', 'controllers');
+        const controllerFiles = findFiles(controllersDir, /\.controller\.ts$/, SPEC_PATTERN);
+
+        for (const file of controllerFiles) {
+          const rel = relativeTo(file);
+          const imports = extractImports(file);
+
+          for (const imp of imports) {
+            if (!isViolatingImport(imp)) continue;
+            if (isKnownViolation(rel, imp)) continue;
+
+            violations.push(`${rel} imports "${imp}" — domain entities/events/event-bus are forbidden in controllers`);
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
+    });
+
+    it('known violations list stays in sync (remove entries when controllers are cleaned up)', () => {
+      const staleEntries: string[] = [];
+
+      for (const [controllerRel, patterns] of Object.entries(KNOWN_CONTROLLER_VIOLATIONS)) {
+        const filePath = path.join(SRC_DIR, controllerRel);
+        if (!fs.existsSync(filePath)) {
+          staleEntries.push(`${controllerRel} — file no longer exists`);
+          continue;
+        }
+
+        const imports = extractImports(filePath);
+        for (const pattern of patterns) {
+          const stillPresent = imports.some((imp) => imp.includes(pattern));
+          if (!stillPresent) {
+            staleEntries.push(`${controllerRel} no longer imports "${pattern}" — remove from KNOWN_CONTROLLER_VIOLATIONS`);
+          }
+        }
+      }
+
+      expect(staleEntries).toEqual([]);
+    });
+  });
 });
