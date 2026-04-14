@@ -166,7 +166,7 @@ export class MikroOrmVencimientoRepository
   }
 
   private toDomain(entity: VencimientoEntity): Vencimiento {
-    return Vencimiento.create(
+    return Vencimiento.reconstitute(
       {
         clienteId: entity.cliente.id,
         estudioId: entity.estudio.id,
@@ -174,6 +174,7 @@ export class MikroOrmVencimientoRepository
         periodo: entity.periodo,
         fechaVencimiento: entity.fechaVencimiento,
         descripcion: entity.descripcion,
+        estado: entity.estado.codigo as EstadoVencimiento,
       },
       entity.id,
     );

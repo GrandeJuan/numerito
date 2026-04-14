@@ -17,6 +17,10 @@ interface CreateVencimientoProps {
   descripcion: string;
 }
 
+interface ReconstituteVencimientoProps extends CreateVencimientoProps {
+  estado: EstadoVencimiento;
+}
+
 export class Vencimiento extends BaseEntity {
   private _clienteId: string;
   private _estudioId: string;
@@ -42,6 +46,22 @@ export class Vencimiento extends BaseEntity {
 
   static create(props: CreateVencimientoProps, id?: string): Vencimiento {
     return new Vencimiento(props, id);
+  }
+
+  static reconstitute(props: ReconstituteVencimientoProps, id: string): Vencimiento {
+    const instance = Object.create(Vencimiento.prototype) as Vencimiento;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._clienteId = props.clienteId;
+    instance._estudioId = props.estudioId;
+    instance._tipoObligacion = props.tipoObligacion;
+    instance._periodo = props.periodo;
+    instance._fechaVencimiento = props.fechaVencimiento;
+    instance._descripcion = props.descripcion;
+    instance._estado = props.estado;
+    return instance;
   }
 
   get clienteId(): string { return this._clienteId; }

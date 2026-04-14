@@ -94,6 +94,62 @@ describe('Vencimiento Entity', () => {
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
   });
 
+  describe('reconstitute', () => {
+    it('should reconstitute with a past fechaVencimiento without throwing', () => {
+      const pastDate = new Date('2020-01-01');
+      const v = Vencimiento.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2020-01',
+        fechaVencimiento: pastDate,
+        descripcion: 'IVA viejo',
+        estado: ESTADO_VENCIMIENTO.VENCIDO,
+      }, 'existing-id');
+
+      expect(v.id).toBe('existing-id');
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+      expect(v.fechaVencimiento).toEqual(pastDate);
+    });
+
+    it('should preserve all fields on reconstitute', () => {
+      const v = Vencimiento.reconstitute({
+        clienteId: 'cliente-1',
+        estudioId: 'estudio-1',
+        tipoObligacion: TIPO_OBLIGACION.MONOTRIBUTO,
+        periodo: '2025-06',
+        fechaVencimiento: new Date('2025-06-20'),
+        descripcion: 'Monotributo Junio',
+        estado: ESTADO_VENCIMIENTO.PRESENTADO,
+      }, 'reconstituted-id');
+
+      expect(v.id).toBe('reconstituted-id');
+      expect(v.clienteId).toBe('cliente-1');
+      expect(v.estudioId).toBe('estudio-1');
+      expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.MONOTRIBUTO);
+      expect(v.periodo).toBe('2025-06');
+      expect(v.descripcion).toBe('Monotributo Junio');
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const v = Vencimiento.reconstitute({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2020-01',
+        fechaVencimiento: new Date('2020-01-15'),
+        descripcion: 'IVA',
+        estado: ESTADO_VENCIMIENTO.PENDIENTE,
+      }, 'some-id');
+
+      v.marcarVencido();
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+      expect(v.getDomainEvents()).toHaveLength(1);
+      expect(v.getDomainEvents()[0]).toBeInstanceOf(VencimientoVencido);
+    });
+  });
+
   describe('domain events', () => {
     it('should emit VencimientoCumplido on presentar', () => {
       const v = createVencimiento();
