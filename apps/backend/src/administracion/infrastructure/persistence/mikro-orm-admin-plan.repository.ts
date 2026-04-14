@@ -1,19 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { GlobalRepository } from '../../../shared/domain';
 import { PlanEntity } from '../../../shared/infrastructure/persistence/plan.schema';
-import type { AdminPlanData, AdminPlanRepository } from '../../domain/repositories/admin-plan.repository';
+import type {
+  AdminPlanData,
+  AdminPlanRepository,
+} from '../../domain/repositories/admin-plan.repository';
 
 @Injectable()
-export class MikroOrmAdminPlanRepository implements AdminPlanRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmAdminPlanRepository
+  extends GlobalRepository<AdminPlanData>
+  implements AdminPlanRepository
+{
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
 
   async findAll(): Promise<AdminPlanData[]> {
     const plans = await this.em.findAll(PlanEntity, { orderBy: { id: 'ASC' } });
     return plans.map(this.toData);
   }
 
-  async findById(id: number): Promise<AdminPlanData | null> {
-    const plan = await this.em.findOne(PlanEntity, { id });
+  async findById(id: string | number): Promise<AdminPlanData | null> {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const plan = await this.em.findOne(PlanEntity, { id: numericId });
     return plan ? this.toData(plan) : null;
   }
 
@@ -22,7 +32,7 @@ export class MikroOrmAdminPlanRepository implements AdminPlanRepository {
     return plan ? this.toData(plan) : null;
   }
 
-  async save(data: AdminPlanData): Promise<AdminPlanData> {
+  async save(data: AdminPlanData): Promise<any> {
     let entity: PlanEntity;
 
     if (data.id) {
@@ -52,6 +62,10 @@ export class MikroOrmAdminPlanRepository implements AdminPlanRepository {
 
     await this.em.flush();
     return this.toData(entity);
+  }
+
+  async delete(_entity: AdminPlanData): Promise<void> {
+    throw new Error('Not implemented');
   }
 
   private toData(entity: PlanEntity): AdminPlanData {

@@ -15,5 +15,6 @@ import { RequestContextMiddleware } from './middleware/request-context.middlewar
 export class RequestContextModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestContextMiddleware).forRoutes('*');
+    // HTTP request logging is now handled by pino-http (via nestjs-pino LoggerModule)
   }
 }

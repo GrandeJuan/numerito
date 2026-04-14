@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import { relativeTime } from '@/lib/formatters';
 
 interface NotificacionItem {
   id: string;
@@ -21,19 +23,6 @@ const TIPO_ICONS: Record<string, string> = {
 
 function tipoIcon(tipo: string): string {
   return TIPO_ICONS[tipo] ?? 'notifications';
-}
-
-function relativeTime(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'ahora';
-  if (diffMin < 60) return `hace ${diffMin}m`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `hace ${diffH}h`;
-  const diffD = Math.floor(diffH / 24);
-  return `hace ${diffD}d`;
 }
 
 const POLL_INTERVAL = 60_000; // 1 minute
@@ -65,8 +54,8 @@ export function NotificationBell() {
     try {
       const res = await apiFetch('/v1/notificaciones?limit=10');
       if (res.ok) {
-        const body = await res.json();
-        setNotifications(body.data ?? []);
+        const { data } = await parseApiResponse<NotificacionItem[]>(res);
+        setNotifications(data);
       }
     } catch {
       // silent fail
@@ -119,17 +108,20 @@ export function NotificationBell() {
       <button
         aria-label="Notificaciones"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#091426]/70 hover:bg-[#091426]/5 hover:text-[#091426] dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white transition-colors w-full"
+        className="relative p-2 rounded-lg hover:bg-[#091426]/5 dark:hover:bg-white/5 transition-colors"
       >
-        <span className="material-symbols-outlined text-lg">notifications</span>
-        Notificaciones
-        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-          {unreadCount}
+        <span className="material-symbols-outlined text-[#45474c] dark:text-[#c5c6cd] text-xl">
+          notifications
         </span>
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-[#162a4a] rounded-lg shadow-xl border border-[#e2e8f0] dark:border-white/10 z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-[#162a4a] rounded-xl shadow-xl border border-[#e2e8f0] dark:border-white/10 z-50 max-h-96 overflow-y-auto">
           <div className="px-4 py-3 border-b border-[#e2e8f0] dark:border-white/10">
             <h3 className="text-sm font-semibold text-[#091426] dark:text-gray-100">
               Notificaciones

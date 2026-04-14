@@ -1,5 +1,9 @@
 import { Subscripcion, EstadoSubscripcion, CicloFacturacion } from './subscripcion.entity';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import { SubscripcionCreada } from '../events/subscripcion-creada.event';
+import { SubscripcionRenovada } from '../events/subscripcion-renovada.event';
+import { SubscripcionCancelada } from '../events/subscripcion-cancelada.event';
+import { SubscripcionVencida } from '../events/subscripcion-vencida.event';
 
 describe('Subscripcion Entity', () => {
   const futureDate = new Date('2027-01-01');
@@ -180,6 +184,60 @@ describe('Subscripcion Entity', () => {
     it('should return 0 for past fechaFin', () => {
       const sub = createSubscripcion({ fechaFin: pastDate });
       expect(sub.diasRestantes()).toBe(0);
+    });
+  });
+
+  describe('domain events', () => {
+    it('should emit SubscripcionCreada on create', () => {
+      const sub = createSubscripcion();
+      const events = sub.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(SubscripcionCreada);
+      const event = events[0] as SubscripcionCreada;
+      expect(event.subscripcionId).toBe(sub.id);
+      expect(event.estudioId).toBe('estudio-1');
+      expect(event.planId).toBe('PROFESIONAL');
+      expect(event.eventName).toBe('estudio.subscripcion-creada');
+    });
+
+    it('should emit SubscripcionRenovada on renovar', () => {
+      const sub = createSubscripcion({ estado: EstadoSubscripcion.ACTIVA });
+      sub.clearDomainEvents();
+      const nuevaFecha = new Date('2028-01-01');
+      sub.renovar(nuevaFecha);
+      const events = sub.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(SubscripcionRenovada);
+      const event = events[0] as SubscripcionRenovada;
+      expect(event.subscripcionId).toBe(sub.id);
+      expect(event.nuevaFechaFin).toEqual(nuevaFecha);
+    });
+
+    it('should emit SubscripcionCancelada on cancelar', () => {
+      const sub = createSubscripcion({ estado: EstadoSubscripcion.ACTIVA });
+      sub.clearDomainEvents();
+      sub.cancelar();
+      const events = sub.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(SubscripcionCancelada);
+      expect((events[0] as SubscripcionCancelada).estudioId).toBe('estudio-1');
+    });
+
+    it('should emit SubscripcionVencida on marcarVencida', () => {
+      const sub = createSubscripcion({ estado: EstadoSubscripcion.ACTIVA });
+      sub.clearDomainEvents();
+      sub.marcarVencida();
+      const events = sub.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(SubscripcionVencida);
+      expect((events[0] as SubscripcionVencida).estudioId).toBe('estudio-1');
+    });
+
+    it('should accumulate events across operations', () => {
+      const sub = createSubscripcion({ estado: EstadoSubscripcion.ACTIVA });
+      sub.renovar(new Date('2028-01-01'));
+      // create + renovar = 2 events
+      expect(sub.getDomainEvents()).toHaveLength(2);
     });
   });
 });

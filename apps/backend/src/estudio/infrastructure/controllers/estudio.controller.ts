@@ -8,6 +8,8 @@ import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import { ActualizarEstudioDto } from '../../application/dtos/actualizar-estudio.dto';
 import { CambiarPlanDto } from '../../application/dtos/cambiar-plan.dto';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { EVENT_BUS } from '../../../shared/domain/event-bus';
+import type { EventBus } from '../../../shared/domain/event-bus';
 
 @ApiTags('Estudios')
 @Controller({ path: 'estudios', version: '1' })
@@ -15,6 +17,7 @@ export class EstudioController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     @Inject(SUBSCRIPCION_REPOSITORY) private readonly subscripcionRepo: SubscripcionRepository,
+    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
   ) {}
 
   @Get(':id')
@@ -41,8 +44,8 @@ export class EstudioController {
 
   @Get(':id/subscripcion')
   @ApiOperation({ summary: 'Obtener subscripcion activa del estudio' })
-  async getSubscripcion(@Param('id') id: string) {
-    const subscripcion = await this.subscripcionRepo.findActiva(id);
+  async getSubscripcion(@Param('id') _id: string) {
+    const subscripcion = await this.subscripcionRepo.findActiva();
     if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
     return subscripcion;
   }
@@ -50,11 +53,13 @@ export class EstudioController {
   @Post(':id/subscripcion/cambiar-plan')
   @ApiOperation({ summary: 'Cambiar plan de subscripcion' })
   async cambiarPlan(@Param('id') id: string, @Body() dto: CambiarPlanDto) {
-    const subscripcion = await this.subscripcionRepo.findActiva(id);
+    const subscripcion = await this.subscripcionRepo.findActiva();
     if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
 
     subscripcion.cambiarPlan(dto.planId);
     await this.subscripcionRepo.save(subscripcion);
+    this.eventBus.publishAll(subscripcion.getDomainEvents());
+    subscripcion.clearDomainEvents();
     return subscripcion;
   }
 }

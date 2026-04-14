@@ -5,4 +5,6 @@ export { GlobalRepository } from './global.repository';
 export type { TenantContext } from './tenant-context';
 export { TENANT_CONTEXT } from './tenant-context';
 export { DomainEvent } from './domain-event';
+export type { EventBus } from './event-bus';
+export { EVENT_BUS } from './event-bus';
 export { ValueObject } from './value-object';

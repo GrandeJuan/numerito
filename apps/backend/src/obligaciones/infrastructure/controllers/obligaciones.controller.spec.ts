@@ -1,25 +1,30 @@
 import { ObligacionesController } from './obligaciones.controller';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 
-const makeVencimiento = (overrides: Partial<{ id: string; periodo: string; estado: string }> = {}) =>
-  Vencimiento.create({
-    clienteId: 'cliente-1',
-    estudioId: 'estudio-1',
-    tipoObligacion: 'IVA',
-    periodo: overrides.periodo ?? '2026-04',
-    fechaVencimiento: new Date('2026-04-20'),
-    descripcion: 'DDJJ IVA',
-  }, overrides.id);
+const makeVencimiento = (
+  overrides: Partial<{ id: string; periodo: string; estado: string }> = {},
+) =>
+  Vencimiento.create(
+    {
+      clienteId: 'cliente-1',
+      estudioId: 'estudio-1',
+      tipoObligacion: 'IVA',
+      periodo: overrides.periodo ?? '2026-04',
+      fechaVencimiento: new Date('2026-04-20'),
+      descripcion: 'DDJJ IVA',
+    },
+    overrides.id,
+  );
 
 describe('ObligacionesController', () => {
   let controller: ObligacionesController;
   let mockVencimientoRepo: any;
+  let mockEventBus: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       findByClienteId: jest.fn().mockResolvedValue([]),
       findByPeriodo: jest.fn().mockResolvedValue([]),
       findByEstado: jest.fn().mockResolvedValue([]),
@@ -27,7 +32,11 @@ describe('ObligacionesController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    controller = new ObligacionesController(mockVencimientoRepo);
+    mockEventBus = {
+      publish: jest.fn(),
+      publishAll: jest.fn(),
+    };
+    controller = new ObligacionesController(mockVencimientoRepo, mockEventBus);
   });
 
   describe('kpis', () => {
@@ -35,9 +44,9 @@ describe('ObligacionesController', () => {
       const pendiente = makeVencimiento();
       const vencido = makeVencimiento();
       vencido.marcarVencido();
-      mockVencimientoRepo.findByEstudioId.mockResolvedValue([pendiente, vencido]);
+      mockVencimientoRepo.findAll.mockResolvedValue([pendiente, vencido]);
 
-      const result = await controller.kpis('estudio-1');
+      const result = await controller.kpis();
       expect(result.data.pendientes).toBe(1);
       expect(result.data.vencidos).toBe(1);
       expect(result.data.presentadosEsteMes).toBe(0);
@@ -45,9 +54,9 @@ describe('ObligacionesController', () => {
     });
 
     it('should return null proximoVencimiento when no pendientes', async () => {
-      mockVencimientoRepo.findByEstudioId.mockResolvedValue([]);
+      mockVencimientoRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.kpis('estudio-1');
+      const result = await controller.kpis();
       expect(result.data.pendientes).toBe(0);
       expect(result.data.proximoVencimiento).toBeNull();
     });
@@ -56,17 +65,17 @@ describe('ObligacionesController', () => {
   describe('list', () => {
     it('should return paginated vencimientos', async () => {
       const items = [makeVencimiento(), makeVencimiento()];
-      mockVencimientoRepo.findByEstudioId.mockResolvedValue(items);
+      mockVencimientoRepo.findAll.mockResolvedValue(items);
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockVencimientoRepo.findByEstudioId.mockResolvedValue([]);
+      mockVencimientoRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list();
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -75,15 +84,15 @@ describe('ObligacionesController', () => {
       const items = [makeVencimiento({ periodo: '2026-03' })];
       mockVencimientoRepo.findByPeriodo.mockResolvedValue(items);
 
-      const result = await controller.list('estudio-1', 1, 20, undefined, '2026-03');
-      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-03', 'estudio-1');
+      await controller.list(1, 20, undefined, '2026-03');
+      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-03');
     });
 
     it('should filter by estado', async () => {
       mockVencimientoRepo.findByEstado.mockResolvedValue([]);
 
-      await controller.list('estudio-1', 1, 20, 'PENDIENTE');
-      expect(mockVencimientoRepo.findByEstado).toHaveBeenCalledWith('PENDIENTE', 'estudio-1');
+      await controller.list(1, 20, 'PENDIENTE');
+      expect(mockVencimientoRepo.findByEstado).toHaveBeenCalledWith('PENDIENTE');
     });
   });
 
@@ -120,13 +129,17 @@ describe('ObligacionesController', () => {
   });
 
   describe('presentar', () => {
-    it('should mark vencimiento as presentado', async () => {
+    it('should mark vencimiento as presentado and publish events', async () => {
       const v = makeVencimiento();
       mockVencimientoRepo.findById.mockResolvedValue(v);
 
       await controller.presentar(v.id);
       expect(v.estado).toBe('PRESENTADO');
       expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
+      const publishedEvents = mockEventBus.publishAll.mock.calls[0][0];
+      expect(publishedEvents).toHaveLength(1);
+      expect(publishedEvents[0].eventName).toBe('obligaciones.vencimiento-cumplido');
     });
 
     it('should throw when not found', async () => {
@@ -145,13 +158,17 @@ describe('ObligacionesController', () => {
   });
 
   describe('marcarVencido', () => {
-    it('should mark vencimiento as vencido', async () => {
+    it('should mark vencimiento as vencido and publish events', async () => {
       const v = makeVencimiento();
       mockVencimientoRepo.findById.mockResolvedValue(v);
 
       await controller.marcarVencido(v.id);
       expect(v.estado).toBe('VENCIDO');
       expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
+      const publishedEvents = mockEventBus.publishAll.mock.calls[0][0];
+      expect(publishedEvents).toHaveLength(1);
+      expect(publishedEvents[0].eventName).toBe('obligaciones.vencimiento-vencido');
     });
 
     it('should throw when not found', async () => {
@@ -166,9 +183,9 @@ describe('ObligacionesController', () => {
       const items = [makeVencimiento({ periodo: '2026-04' })];
       mockVencimientoRepo.findByPeriodo.mockResolvedValue(items);
 
-      const result = await controller.calendario('2026-04', 'estudio-1');
+      const result = await controller.calendario('2026-04');
       expect(result.data).toHaveLength(1);
-      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-04', 'estudio-1');
+      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-04');
     });
   });
 });

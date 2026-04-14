@@ -1,120 +1,101 @@
-import { EntityManager } from '@mikro-orm/core';
-import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
-import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
-import { SubscripcionEntity } from '../../../estudio/infrastructure/persistence/subscripcion.schema';
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  DASHBOARD_SNAPSHOT_REPOSITORY,
+  type DashboardSnapshotRepository,
+} from '../../domain/repositories/dashboard-snapshot.repository';
+import { MaterializeDashboardSnapshotService } from '../services/materialize-dashboard-snapshot.service';
+import { DashboardStatsComputer } from '../services/dashboard-stats-computer';
+
+export interface KpiWithSparkline {
+  value: number;
+  delta: string;
+  deltaUp: boolean;
+  sparkline: number[];
+}
+
+export interface GrowthDataPoint {
+  mes: string;
+  usuarios: number;
+  estudios: number;
+}
+
+export interface RevenueDataPoint {
+  mes: string;
+  mrr: number;
+  arr: number;
+}
+
+export interface TopTenant {
+  id: string;
+  nombre: string;
+  plan: string;
+  usuarios: number;
+  clientes: number;
+  actividad: number;
+}
+
+export interface RegistroReciente {
+  id: string;
+  nombre: string;
+  plan: string;
+  email: string;
+  creadoEn: string;
+}
 
 export interface AdminDashboardStats {
   kpis: {
-    estudiosActivos: number;
-    totalUsuarios: number;
-    mrr: number;
-    subscripcionesPorVencer: number;
+    estudiosActivos: KpiWithSparkline;
+    totalUsuarios: KpiWithSparkline;
+    subscripcionesActivas: KpiWithSparkline;
+    mrr: KpiWithSparkline;
+    churnMensual: KpiWithSparkline;
+    uptime: KpiWithSparkline;
   };
+  growthData: GrowthDataPoint[];
+  revenueData: RevenueDataPoint[];
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
   estudiosRecientes: { id: string; nombre: string; plan: string; estado: string; creadoEn: string }[];
+  topTenants: TopTenant[];
+  registrosRecientes: RegistroReciente[];
 }
 
+/**
+ * Dashboard stats query handler — read model pattern.
+ *
+ * Reads from the denormalized admin_dashboard_snapshot table (owned by this
+ * context). When the snapshot is stale or empty, triggers a materialization
+ * and falls back to live computation via DashboardStatsComputer.
+ *
+ * The snapshot table is maintained by domain event listeners — events from
+ * other bounded contexts mark it as stale, and the materializer recomputes.
+ */
+@Injectable()
 export class ObtenerAdminDashboardStatsHandler {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    @Inject(DASHBOARD_SNAPSHOT_REPOSITORY)
+    private readonly snapshotRepo: DashboardSnapshotRepository,
+    private readonly materializer: MaterializeDashboardSnapshotService,
+    private readonly computer: DashboardStatsComputer,
+  ) {}
 
   async execute(): Promise<AdminDashboardStats> {
-    const [estudiosActivos, totalUsuarios, subscripcionesPorVencer] = await Promise.all([
-      this.em.count(EstudioEntity, { isActive: true }),
-      this.em.count(UsuarioEntity, {}),
-      this.em.count(SubscripcionEntity, {
-        fechaFin: { $gte: new Date(), $lte: this.addDays(new Date(), 30) },
-      }),
-    ]);
+    // Try the snapshot first — fast path, no cross-context queries
+    const snapshot = await this.snapshotRepo.getLatest();
 
-    const conn = this.em.getConnection();
-
-    // MRR: sum of precio from active subscriptions' plans
-    const [mrrResult] = await conn.execute(
-      `SELECT COALESCE(SUM(p.precio), 0) as mrr
-       FROM subscripcion s
-       JOIN plan p ON s.plan_id = p.id
-       JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
-       WHERE es.codigo = 'ACTIVA'`,
-    );
-    const mrr = Number(mrrResult?.mrr) || 0;
-
-    // Monthly registrations (last 12 months)
-    const registrosRaw = await conn.execute(
-      `SELECT TO_CHAR(created_at, 'YYYY-MM') as mes, COUNT(*)::int as cantidad
-       FROM estudio
-       WHERE created_at >= NOW() - INTERVAL '12 months'
-       GROUP BY mes
-       ORDER BY mes`,
-    );
-
-    const registrosMensuales = this.fillMonths(registrosRaw);
-
-    // Plan distribution
-    const distribucionRaw = await conn.execute(
-      `SELECT p.nombre as plan, COUNT(*)::int as cantidad
-       FROM estudio e
-       JOIN plan p ON e.plan_id = p.id
-       WHERE e.is_active = true
-       GROUP BY p.nombre
-       ORDER BY cantidad DESC`,
-    );
-    const distribucionPlanes = distribucionRaw.map((r: any) => ({
-      plan: r.plan,
-      cantidad: Number(r.cantidad),
-    }));
-
-    // Alertas
-    const alertas: AdminDashboardStats['alertas'] = [];
-    if (subscripcionesPorVencer > 0) {
-      alertas.push({
-        tipo: 'warning',
-        mensaje: `${subscripcionesPorVencer} subscripciones por vencer en los próximos 30 días`,
-        fecha: new Date().toISOString().split('T')[0],
-      });
+    if (snapshot && !snapshot.stale) {
+      return snapshot.stats;
     }
 
-    // Recent estudios
-    const estudiosRecientesRaw = await this.em.find(
-      EstudioEntity,
-      {},
-      { orderBy: { createdAt: 'DESC' }, limit: 10, populate: ['plan'] },
-    );
-    const estudiosRecientes = estudiosRecientesRaw.map((e) => ({
-      id: e.id,
-      nombre: e.nombre,
-      plan: e.plan?.nombre ?? 'Sin plan',
-      estado: e.isActive ? 'Activo' : 'Inactivo',
-      creadoEn: e.createdAt.toISOString().split('T')[0],
-    }));
+    // Snapshot is stale or doesn't exist — compute fresh stats
+    const stats = await this.computer.compute();
 
-    return {
-      kpis: { estudiosActivos, totalUsuarios, mrr, subscripcionesPorVencer },
-      registrosMensuales,
-      distribucionPlanes,
-      alertas,
-      estudiosRecientes,
-    };
-  }
+    // Persist to snapshot table asynchronously (don't block the response)
+    this.snapshotRepo.save(stats).catch(() => {
+      // Swallow — the snapshot table might not exist yet (pre-migration)
+    });
 
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
-
-  private fillMonths(raw: any[]): { mes: string; cantidad: number }[] {
-    const map = new Map<string, number>();
-    raw.forEach((r: any) => map.set(r.mes, Number(r.cantidad)));
-
-    const months: { mes: string; cantidad: number }[] = [];
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      months.push({ mes: key, cantidad: map.get(key) ?? 0 });
-    }
-    return months;
+    return stats;
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { GlobalRepository } from '../../../shared/domain';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { Usuario } from '../../domain/entities/usuario.entity';
 import { Email } from '../../domain/value-objects/email.vo';
@@ -10,8 +11,13 @@ import type { Rol } from '@numerito/shared';
 import type { AuthProvider } from '../../domain/entities/usuario.entity';
 
 @Injectable()
-export class MikroOrmUsuarioRepository implements UsuarioRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmUsuarioRepository
+  extends GlobalRepository<Usuario>
+  implements UsuarioRepository
+{
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
 
   async findById(id: string): Promise<Usuario | null> {
     const entity = await this.em.findOne(UsuarioEntity, { id }, { populate: ['rol'] });
@@ -20,14 +26,18 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
   }
 
   async findByEmail(email: Email): Promise<Usuario | null> {
-    const entity = await this.em.findOne(UsuarioEntity, { email: email.value }, { populate: ['rol'] });
+    const entity = await this.em.findOne(
+      UsuarioEntity,
+      { email: email.value },
+      { populate: ['rol'] },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
   async findAll(): Promise<Usuario[]> {
     const entities = await this.em.findAll(UsuarioEntity, { populate: ['rol'] });
-    return entities.map(e => this.toDomain(e));
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(usuario: Usuario): Promise<void> {
@@ -44,6 +54,7 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
       existing.provider = usuario.provider;
       existing.providerId = usuario.providerId;
       existing.themePreference = usuario.themePreference;
+      existing.avatarUrl = usuario.avatarUrl;
     } else {
       this.em.create(UsuarioEntity, {
         id: usuario.id,
@@ -57,6 +68,7 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
         provider: usuario.provider,
         providerId: usuario.providerId,
         themePreference: usuario.themePreference,
+        avatarUrl: usuario.avatarUrl,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -73,15 +85,19 @@ export class MikroOrmUsuarioRepository implements UsuarioRepository {
   }
 
   private toDomain(entity: UsuarioEntity): Usuario {
-    return Usuario.create({
-      email: Email.create(entity.email),
-      password: Password.fromHash(entity.passwordHash),
-      nombre: entity.nombre,
-      apellido: entity.apellido,
-      rol: entity.rol.codigo as Rol,
-      provider: entity.provider as AuthProvider,
-      providerId: entity.providerId,
-      themePreference: (entity.themePreference as 'light' | 'dark') ?? 'light',
-    }, entity.id);
+    return Usuario.create(
+      {
+        email: Email.create(entity.email),
+        password: Password.fromHash(entity.passwordHash),
+        nombre: entity.nombre,
+        apellido: entity.apellido,
+        rol: entity.rol.codigo as Rol,
+        provider: entity.provider as AuthProvider,
+        providerId: entity.providerId,
+        themePreference: (entity.themePreference as 'light' | 'dark') ?? 'light',
+        avatarUrl: entity.avatarUrl,
+      },
+      entity.id,
+    );
   }
 }

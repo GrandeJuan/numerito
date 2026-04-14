@@ -6,6 +6,8 @@ import { UsuarioController } from './infrastructure/controllers/usuario.controll
 import { JwtTokenService } from './infrastructure/services/jwt-token.service';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from './infrastructure/guards/roles.guard';
+import { AdminGuard } from './infrastructure/guards/admin.guard';
+import { EstudioMemberGuard } from './infrastructure/guards/estudio-member.guard';
 import { RegistrarUsuarioHandler } from './application/commands/registrar-usuario.command';
 import { IniciarSesionHandler } from './application/commands/iniciar-sesion.command';
 import { SolicitarResetPasswordHandler } from './application/commands/solicitar-reset-password.command';
@@ -42,11 +44,20 @@ import type { TotpSecretRepository } from './domain/repositories/totp-secret.rep
 import { MikroOrmTotpSecretRepository } from './infrastructure/persistence/mikro-orm-totp-secret.repository';
 import { SESION_REPOSITORY } from './domain/repositories/sesion.repository';
 import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm-sesion.repository';
+import { EVENT_BUS } from '../shared/domain/event-bus';
+import type { EventBus } from '../shared/domain/event-bus';
+import { AVATAR_STORAGE } from './domain/ports/avatar-storage.port';
+import { LocalAvatarStorageAdapter } from './infrastructure/adapters/local-avatar-storage.adapter';
+import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-storage.adapter';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
   controllers: [AuthController, UsuarioController],
   providers: [
+    {
+      provide: AVATAR_STORAGE,
+      useClass: process.env.AWS_S3_BUCKET ? S3AvatarStorageAdapter : LocalAvatarStorageAdapter,
+    },
     { provide: TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: USUARIO_REPOSITORY, useClass: MikroOrmUsuarioRepository },
     { provide: RESET_TOKEN_REPOSITORY, useClass: MikroOrmResetTokenRepository },
@@ -56,8 +67,8 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
     { provide: ROL_PERMISO_REPOSITORY, useClass: MikroOrmRolPermisoRepository },
     {
       provide: RegistrarUsuarioHandler,
-      useFactory: (repo: UsuarioRepository) => new RegistrarUsuarioHandler(repo),
-      inject: [USUARIO_REPOSITORY],
+      useFactory: (repo: UsuarioRepository, eventBus: EventBus) => new RegistrarUsuarioHandler(repo, eventBus),
+      inject: [USUARIO_REPOSITORY, EVENT_BUS],
     },
     {
       provide: IniciarSesionHandler,
@@ -114,7 +125,9 @@ import { MikroOrmSesionRepository } from './infrastructure/persistence/mikro-orm
     ...(process.env.MICROSOFT_CLIENT_ID ? [MicrosoftStrategy] : []),
     JwtAuthGuard,
     RolesGuard,
+    AdminGuard,
+    EstudioMemberGuard,
   ],
-  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard],
+  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard],
 })
 export class IamModule {}

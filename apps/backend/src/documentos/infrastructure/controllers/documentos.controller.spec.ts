@@ -1,17 +1,21 @@
 import { DocumentosController } from './documentos.controller';
 import { Documento } from '../../domain/entities/documento.entity';
-import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
-const makeDocumento = (overrides: Partial<{ id: string; clienteId: string; estudioId: string }> = {}) =>
-  Documento.create({
-    clienteId: overrides.clienteId ?? 'cliente-1',
-    estudioId: overrides.estudioId ?? 'estudio-1',
-    tipo: 'BALANCE',
-    nombre: 'balance-2025.pdf',
-    s3Key: 'documentos/estudio-1/balance-2025.pdf',
-    mimeType: 'application/pdf',
-    sizeBytes: 102400,
-  }, overrides.id);
+const makeDocumento = (
+  overrides: Partial<{ id: string; clienteId: string; estudioId: string }> = {},
+) =>
+  Documento.create(
+    {
+      clienteId: overrides.clienteId ?? 'cliente-1',
+      estudioId: overrides.estudioId ?? 'estudio-1',
+      tipo: 'BALANCE',
+      nombre: 'balance-2025.pdf',
+      s3Key: 'documentos/estudio-1/balance-2025.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 102400,
+    },
+    overrides.id,
+  );
 
 describe('DocumentosController', () => {
   let controller: DocumentosController;
@@ -22,7 +26,6 @@ describe('DocumentosController', () => {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
       findByClienteId: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
@@ -32,17 +35,17 @@ describe('DocumentosController', () => {
   describe('list', () => {
     it('should return paginated documentos for estudio', async () => {
       const docs = [makeDocumento(), makeDocumento({ clienteId: 'cliente-2' })];
-      mockRepo.findByEstudioId.mockResolvedValue(docs);
+      mockRepo.findAll.mockResolvedValue(docs);
 
       const result = await controller.list('estudio-1', 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
-      expect(mockRepo.findByEstudioId).toHaveBeenCalledWith('estudio-1');
+      expect(mockRepo.findAll).toHaveBeenCalled();
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockRepo.findByEstudioId.mockResolvedValue([]);
+      mockRepo.findAll.mockResolvedValue([]);
 
       const result = await controller.list('estudio-1');
       expect(result.meta.page).toBe(1);
@@ -55,7 +58,7 @@ describe('DocumentosController', () => {
 
       const result = await controller.list('estudio-1', 1, 20, 'cliente-1');
       expect(result.data).toHaveLength(1);
-      expect(mockRepo.findByClienteId).toHaveBeenCalledWith('cliente-1', 'estudio-1');
+      expect(mockRepo.findByClienteId).toHaveBeenCalledWith('cliente-1');
     });
   });
 
@@ -109,9 +112,9 @@ describe('DocumentosController', () => {
     it('should throw when documento not found', async () => {
       mockRepo.findById.mockResolvedValue(null);
 
-      await expect(
-        controller.newVersion('bad-id', { s3Key: 'x', sizeBytes: 1 }),
-      ).rejects.toThrow('Documento no encontrado');
+      await expect(controller.newVersion('bad-id', { s3Key: 'x', sizeBytes: 1 })).rejects.toThrow(
+        'Documento no encontrado',
+      );
     });
   });
 });

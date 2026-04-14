@@ -38,7 +38,8 @@ describe('ObtenerDashboardStatsHandler', () => {
     mockUeRepo = {
       findByUsuarioAndEstudio: jest.fn(),
       findByUsuarioId: jest.fn(),
-      findByEstudioId: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
     };
@@ -102,10 +103,7 @@ describe('ObtenerDashboardStatsHandler', () => {
   describe('RESPONSABLE role without VER_FACTURACION', () => {
     beforeEach(() => {
       mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('RESPONSABLE'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([
-        Permiso.VER_CLIENTES,
-        Permiso.VER_TAREAS,
-      ]);
+      mockRpRepo.findPermisosByRol.mockResolvedValue([Permiso.VER_CLIENTES, Permiso.VER_TAREAS]);
       createHandler();
     });
 
@@ -142,10 +140,7 @@ describe('ObtenerDashboardStatsHandler', () => {
   describe('EMPLEADO role', () => {
     beforeEach(() => {
       mockUeRepo.findByUsuarioAndEstudio.mockResolvedValue(createMembership('EMPLEADO'));
-      mockRpRepo.findPermisosByRol.mockResolvedValue([
-        Permiso.VER_CLIENTES,
-        Permiso.VER_TAREAS,
-      ]);
+      mockRpRepo.findPermisosByRol.mockResolvedValue([Permiso.VER_CLIENTES, Permiso.VER_TAREAS]);
       createHandler();
     });
 

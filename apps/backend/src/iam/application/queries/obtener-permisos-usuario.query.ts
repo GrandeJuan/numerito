@@ -1,4 +1,3 @@
-import type { Rol } from '@numerito/shared';
 import type { UsuarioEstudioRepository } from '../../domain/repositories/usuario-estudio.repository';
 import type { RolPermisoRepository } from '../../domain/repositories/rol-permiso.repository';
 import type { Permiso } from '../../domain/value-objects/permiso.vo';
@@ -15,10 +14,7 @@ export class ObtenerPermisosUsuarioHandler {
   ) {}
 
   async execute(query: ObtenerPermisosUsuarioQuery): Promise<Permiso[]> {
-    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(
-      query.usuarioId,
-      query.estudioId,
-    );
+    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(query.usuarioId);
 
     if (!membership || !membership.isActive) {
       return [];

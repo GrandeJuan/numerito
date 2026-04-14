@@ -1,7 +1,6 @@
 import { EntityManager } from '@mikro-orm/core';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { VencimientoEntity } from '../../../obligaciones/infrastructure/persistence/vencimiento.schema';
-import { FacturaEntity } from '../../../facturacion/infrastructure/persistence/factura.schema';
 import { TareaEntity } from '../../../tareas/infrastructure/persistence/tarea.schema';
 import type { UsuarioEstudioRepository } from '../../../iam/domain/repositories/usuario-estudio.repository';
 import type { RolPermisoRepository } from '../../../iam/domain/repositories/rol-permiso.repository';
@@ -22,7 +21,13 @@ export interface DashboardStats {
   };
   vencimientosPorEstado: { estado: string; cantidad: number }[];
   facturacionMensual?: { mes: string; monto: number }[];
-  proximosVencimientos: { id: string; cliente: string; obligacion: string; fecha: string; estado: string }[];
+  proximosVencimientos: {
+    id: string;
+    cliente: string;
+    obligacion: string;
+    fecha: string;
+    estado: string;
+  }[];
   actividadReciente: { tipo: string; descripcion: string; fecha: string; usuario?: string }[];
   cargaTrabajo?: { usuario: string; tareas: number }[];
 }
@@ -35,10 +40,7 @@ export class ObtenerDashboardStatsHandler {
   ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
-    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(
-      query.usuarioId,
-      query.estudioId,
-    );
+    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(query.usuarioId);
 
     if (!membership || !membership.isActive) {
       throw new RecursoNoEncontradoError('Membresía en estudio');

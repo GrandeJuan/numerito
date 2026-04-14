@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { Factura } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { FacturaEntity } from './factura.schema';
 import { LineaFacturaEntity } from './linea-factura.schema';
 import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/estado-factura.schema';
@@ -10,39 +15,60 @@ import { ClienteEntity } from '../../../clientes/infrastructure/persistence/clie
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 
 @Injectable()
-export class MikroOrmFacturaRepository implements FacturaRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmFacturaRepository
+  extends TenantAwareRepository<Factura>
+  implements FacturaRepository
+{
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<Factura | null> {
-    const entity = await this.em.findOne(FacturaEntity, { id }, {
-      populate: ['estado', 'cliente', 'estudio', 'lineas'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      FacturaEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['estado', 'cliente', 'estudio', 'lineas'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
-  async findByClienteId(clienteId: string, estudioId: string): Promise<Factura[]> {
-    const entities = await this.em.find(FacturaEntity, {
-      cliente: { id: clienteId },
-      estudio: { id: estudioId },
-    }, {
-      populate: ['estado', 'cliente', 'estudio', 'lineas'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByEstudioId(estudioId: string): Promise<Factura[]> {
-    const entities = await this.em.find(FacturaEntity, { estudio: { id: estudioId } }, {
-      populate: ['estado', 'cliente', 'estudio', 'lineas'],
-    });
-    return entities.map(e => this.toDomain(e));
+  async findByClienteId(clienteId: string): Promise<Factura[]> {
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      FacturaEntity,
+      {
+        cliente: { id: clienteId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['estado', 'cliente', 'estudio', 'lineas'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findAll(): Promise<Factura[]> {
-    const entities = await this.em.findAll(FacturaEntity, {
-      populate: ['estado', 'cliente', 'estudio', 'lineas'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      FacturaEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['estado', 'cliente', 'estudio', 'lineas'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(factura: Factura): Promise<void> {
@@ -50,9 +76,14 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
     const cliente = this.em.getReference(ClienteEntity, factura.clienteId);
     const estudio = this.em.getReference(EstudioEntity, factura.estudioId);
 
-    const existing = await this.em.findOne(FacturaEntity, { id: factura.id }, {
-      populate: ['lineas'],
-    });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(
+      FacturaEntity,
+      { id: factura.id, estudio: { id: tenantId } },
+      {
+        populate: ['lineas'],
+      },
+    );
 
     if (existing) {
       existing.cliente = cliente;
@@ -114,7 +145,8 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
   }
 
   async delete(factura: Factura): Promise<void> {
-    const entity = await this.em.findOne(FacturaEntity, { id: factura.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(FacturaEntity, { id: factura.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();
@@ -122,25 +154,31 @@ export class MikroOrmFacturaRepository implements FacturaRepository {
   }
 
   private toDomain(entity: FacturaEntity): Factura {
-    const lineas = entity.lineas.getItems().map(l =>
-      LineaFactura.create({
-        facturaId: entity.id,
-        descripcion: l.descripcion,
-        cantidad: l.cantidad,
-        precioUnitario: l.precioUnitario,
-        alicuotaIva: l.alicuotaIva,
-      }, l.id),
+    const lineas = entity.lineas.getItems().map((l) =>
+      LineaFactura.create(
+        {
+          facturaId: entity.id,
+          descripcion: l.descripcion,
+          cantidad: l.cantidad,
+          precioUnitario: l.precioUnitario,
+          alicuotaIva: l.alicuotaIva,
+        },
+        l.id,
+      ),
     );
 
-    const factura = Factura.create({
-      clienteId: entity.cliente.id,
-      estudioId: entity.estudio.id,
-      numero: entity.numero,
-      fechaEmision: entity.fechaEmision,
-      fechaVencimiento: entity.fechaVencimiento,
-      concepto: entity.concepto,
-      lineas,
-    }, entity.id);
+    const factura = Factura.create(
+      {
+        clienteId: entity.cliente.id,
+        estudioId: entity.estudio.id,
+        numero: entity.numero,
+        fechaEmision: entity.fechaEmision,
+        fechaVencimiento: entity.fechaVencimiento,
+        concepto: entity.concepto,
+        lineas,
+      },
+      entity.id,
+    );
 
     // Restore totalPagado from DB
     if (entity.totalPagado > 0) {

@@ -26,16 +26,16 @@ export interface FacturacionStats {
 export class FacturacionStatsQuery {
   constructor(private readonly facturaRepo: FacturaRepository) {}
 
-  async execute(estudioId: string): Promise<FacturacionStats> {
-    const facturas = await this.facturaRepo.findByEstudioId(estudioId);
+  async execute(): Promise<FacturacionStats> {
+    const facturas = await this.facturaRepo.findAll();
 
-    const activas = facturas.filter(f => f.estado !== ESTADO_FACTURA.ANULADA);
+    const activas = facturas.filter((f) => f.estado !== ESTADO_FACTURA.ANULADA);
 
     const facturado = activas.reduce((sum, f) => sum + f.total, 0);
     const cobrado = activas.reduce((sum, f) => sum + f.totalPagado, 0);
     const saldoPendiente = facturado - cobrado;
     const cobradoPorcentaje = facturado > 0 ? Math.round((cobrado / facturado) * 100) : 0;
-    const facturasVencidas = facturas.filter(f => f.estado === ESTADO_FACTURA.VENCIDA).length;
+    const facturasVencidas = facturas.filter((f) => f.estado === ESTADO_FACTURA.VENCIDA).length;
 
     // Group by estado
     const estadoMap = new Map<EstadoFactura, number>();

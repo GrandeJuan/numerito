@@ -1,13 +1,19 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, LoggerService, Optional, Inject } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { errorResponse } from '../responses/api-response';
 import { DomainException } from '../../domain/exceptions/domain.exception';
+import { CORRELATION_ID_HEADER } from '../middleware/request-context.middleware';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  constructor(
+    @Optional() @Inject('LoggerService') private readonly logger?: LoggerService,
+  ) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Error interno del servidor';
@@ -34,7 +40,35 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    response.status(statusCode).json(errorResponse(code, message, statusCode));
+    // Extract correlation ID from the request header (set by RequestContextMiddleware)
+    const correlationId = request?.headers?.[CORRELATION_ID_HEADER] as string | undefined;
+
+    // Log the exception with structured context
+    if (this.logger) {
+      const logContext = {
+        statusCode,
+        code,
+        method: request?.method,
+        url: request?.url,
+        correlationId,
+      };
+
+      if (statusCode >= 500) {
+        this.logger.error(
+          `[${code}] ${message}`,
+          exception instanceof Error ? exception.stack : undefined,
+          JSON.stringify(logContext),
+        );
+      } else if (statusCode >= 400) {
+        this.logger.warn(
+          `[${code}] ${message}`,
+          JSON.stringify(logContext),
+        );
+      }
+    }
+
+    const body = errorResponse(code, message, statusCode, correlationId);
+    response.status(statusCode).json(body);
   }
 
   private statusToCode(status: number): string {

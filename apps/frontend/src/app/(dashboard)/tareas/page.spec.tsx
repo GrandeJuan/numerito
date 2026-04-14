@@ -6,7 +6,9 @@ let mockEstudioActual: any = { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO'
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
-    get estudioActual() { return mockEstudioActual; },
+    get estudioActual() {
+      return mockEstudioActual;
+    },
     tienePermiso: mockTienePermiso,
   }),
 }));
@@ -153,11 +155,12 @@ describe('TareasPage', () => {
   it('should show error state on API failure', async () => {
     mockApiFetch = vi.fn().mockResolvedValue({
       ok: false,
+      status: 500,
       json: () => Promise.resolve({ message: 'Error' }),
     });
     render(<TareasPage />);
     await waitFor(() => {
-      expect(screen.getByText('Error al cargar tareas')).toBeInTheDocument();
+      expect(screen.getByText('Error 500')).toBeInTheDocument();
     });
   });
 

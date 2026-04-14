@@ -13,6 +13,7 @@ export class UsuarioEntity {
   provider!: string | null;
   providerId!: string | null;
   themePreference!: string;
+  avatarUrl!: string | null;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -32,6 +33,7 @@ export const UsuarioSchema = new EntitySchema<UsuarioEntity>({
     provider: { type: 'string', nullable: true, default: null },
     providerId: { type: 'string', fieldName: 'provider_id', nullable: true, default: null },
     themePreference: { type: 'string', fieldName: 'theme_preference', default: 'light' },
+    avatarUrl: { type: 'string', fieldName: 'avatar_url', nullable: true, default: null, length: 500 },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

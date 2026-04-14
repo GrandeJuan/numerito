@@ -29,7 +29,7 @@ describe('ObtenerPermisosUsuarioHandler', () => {
     const result = await handler.execute({ usuarioId: 'user-1', estudioId: 'est-1' });
 
     expect(result).toEqual(permisos);
-    expect(mockUsuarioEstudioRepo.findByUsuarioAndEstudio).toHaveBeenCalledWith('user-1', 'est-1');
+    expect(mockUsuarioEstudioRepo.findByUsuarioAndEstudio).toHaveBeenCalledWith('user-1');
     expect(mockRolPermisoRepo.findPermisosByRol).toHaveBeenCalledWith('SOCIO');
   });
 

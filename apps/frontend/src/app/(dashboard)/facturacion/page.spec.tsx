@@ -1,18 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 const mockTienePermiso = vi.fn();
 let mockEstudioActual: any = { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO' };
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
-    get estudioActual() { return mockEstudioActual; },
+    get estudioActual() {
+      return mockEstudioActual;
+    },
     tienePermiso: mockTienePermiso,
   }),
 }));
 
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+  ResponsiveContainer: ({ children }: any) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
   AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
   Area: () => <div />,
   PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
@@ -63,10 +67,18 @@ const mockFacturas = [
   },
 ];
 
-let mockApiFetch: ReturnType<typeof vi.fn>;
+let mockFetchResults: Record<
+  string,
+  { data: any; loading: boolean; error: string | null; refetch: () => void }
+>;
 
-vi.mock('@/lib/api-client', () => ({
-  apiFetch: (...args: any[]) => mockApiFetch(...args),
+vi.mock('@/lib/use-fetch-with-estudio', () => ({
+  useFetchWithEstudio: (endpoint: string) => {
+    if (endpoint.includes('/stats')) {
+      return mockFetchResults.stats;
+    }
+    return mockFetchResults.facturas;
+  },
 }));
 
 import FacturacionPage from './page';
@@ -76,109 +88,81 @@ describe('FacturacionPage', () => {
     vi.clearAllMocks();
     mockTienePermiso.mockReturnValue(true);
     mockEstudioActual = { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO' };
-    mockApiFetch = vi.fn().mockImplementation((path: string) => {
-      if (path.includes('/stats')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ data: mockStats }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ data: mockFacturas, meta: { total: 2, page: 1, limit: 20 } }),
-      });
-    });
+    mockFetchResults = {
+      stats: { data: mockStats, loading: false, error: null, refetch: vi.fn() },
+      facturas: { data: mockFacturas, loading: false, error: null, refetch: vi.fn() },
+    };
   });
 
   it('should show loading state initially', () => {
+    mockFetchResults.stats = { data: null, loading: true, error: null, refetch: vi.fn() };
     render(<FacturacionPage />);
     expect(screen.getByText('Cargando...')).toBeInTheDocument();
   });
 
-  it('should render page title', async () => {
+  it('should render page title', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Facturacion')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Facturacion')).toBeInTheDocument();
   });
 
-  it('should show unauthorized message when lacking permission', async () => {
+  it('should show unauthorized message when lacking permission', () => {
     mockTienePermiso.mockReturnValue(false);
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText(/No tiene permisos/)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/No tiene permisos/)).toBeInTheDocument();
   });
 
   it('should show message when no estudio selected', () => {
     mockEstudioActual = null;
+    mockFetchResults.stats = { data: null, loading: false, error: null, refetch: vi.fn() };
+    mockFetchResults.facturas = { data: null, loading: false, error: null, refetch: vi.fn() };
     render(<FacturacionPage />);
     expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
-  it('should render KPI cards with stats', async () => {
+  it('should render KPI cards with stats', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Facturado')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Facturado')).toBeInTheDocument();
     expect(screen.getByText('Cobrado')).toBeInTheDocument();
     expect(screen.getByText('Saldo Pendiente')).toBeInTheDocument();
     expect(screen.getByText('Facturas Vencidas')).toBeInTheDocument();
   });
 
-  it('should render area chart section', async () => {
+  it('should render area chart section', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Facturacion vs Cobranzas')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Facturacion vs Cobranzas')).toBeInTheDocument();
   });
 
-  it('should render pie chart section', async () => {
+  it('should render pie chart section', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Estado de Facturas')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Estado de Facturas')).toBeInTheDocument();
   });
 
-  it('should render facturas table', async () => {
+  it('should render facturas table', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('FAC-001')).toBeInTheDocument();
-    });
+    expect(screen.getByText('FAC-001')).toBeInTheDocument();
     expect(screen.getByText('FAC-002')).toBeInTheDocument();
   });
 
-  it('should show estado badges', async () => {
+  it('should show estado badges', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Emitida')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Emitida')).toBeInTheDocument();
     expect(screen.getByText('Pagada')).toBeInTheDocument();
   });
 
-  it('should show pagination info', async () => {
+  it('should show pagination info', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText(/Mostrando/)).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Mostrando/)).toBeInTheDocument();
   });
 
-  it('should show error state on API failure', async () => {
-    mockApiFetch = vi.fn().mockResolvedValue({
-      ok: false,
-      json: () => Promise.resolve({ message: 'Error' }),
-    });
+  it('should show error state on API failure', () => {
+    mockFetchResults.stats = { data: null, loading: false, error: 'Error 500', refetch: vi.fn() };
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(screen.getByText(/Error al cargar/)).toBeInTheDocument();
-    });
+    expect(screen.getByText('Error 500')).toBeInTheDocument();
   });
 
-  it('should call apiFetch with correct paths', async () => {
+  it('should render with correct data from hook', () => {
     render(<FacturacionPage />);
-    await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledWith('/v1/facturacion/stats');
-      expect(mockApiFetch).toHaveBeenCalledWith('/v1/facturacion/facturas?page=1&limit=20');
-    });
+    expect(screen.getByText('Facturacion')).toBeInTheDocument();
+    expect(screen.getByText('FAC-001')).toBeInTheDocument();
   });
 });

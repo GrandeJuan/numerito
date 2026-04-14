@@ -31,5 +31,15 @@ describe('api-response', () => {
       expect(result.error.statusCode).toBe(404);
       expect(result.meta.timestamp).toBeDefined();
     });
+
+    it('should include correlationId when provided', () => {
+      const result = errorResponse('BAD_REQUEST', 'bad', 400, 'corr-123');
+      expect(result.meta.correlationId).toBe('corr-123');
+    });
+
+    it('should omit correlationId when not provided', () => {
+      const result = errorResponse('NOT_FOUND', 'not found', 404);
+      expect(result.meta.correlationId).toBeUndefined();
+    });
   });
 });

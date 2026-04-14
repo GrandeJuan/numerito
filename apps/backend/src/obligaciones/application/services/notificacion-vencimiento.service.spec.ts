@@ -17,7 +17,6 @@ describe('NotificacionVencimientoService', () => {
     vencimientoRepo = {
       findProximosAVencer: jest.fn(),
       findByClienteId: jest.fn(),
-      findByEstudioId: jest.fn(),
       findByPeriodo: jest.fn(),
       findByEstado: jest.fn(),
       findById: jest.fn(),
@@ -27,7 +26,7 @@ describe('NotificacionVencimientoService', () => {
     } as any;
 
     alertaConfigRepo = {
-      findByEstudioId: jest.fn(),
+      findConfig: jest.fn(),
       save: jest.fn(),
     };
 
@@ -35,15 +34,11 @@ describe('NotificacionVencimientoService', () => {
       send: jest.fn().mockResolvedValue(undefined),
     };
 
-    service = new NotificacionVencimientoService(
-      vencimientoRepo,
-      alertaConfigRepo,
-      mailSender,
-    );
+    service = new NotificacionVencimientoService(vencimientoRepo, alertaConfigRepo, mailSender);
   });
 
   it('sends email for each vencimiento proximo', async () => {
-    alertaConfigRepo.findByEstudioId.mockResolvedValue({
+    alertaConfigRepo.findConfig.mockResolvedValue({
       estudioId,
       diasAnticipacion: 7,
       canalNotificacion: 'EMAIL',
@@ -73,11 +68,11 @@ describe('NotificacionVencimientoService', () => {
 
     vencimientoRepo.findProximosAVencer.mockResolvedValue([venc1, venc2]);
 
-    const count = await service.notificarProximos(estudioId);
+    const count = await service.notificarProximos();
 
     expect(count).toBe(2);
-    expect(alertaConfigRepo.findByEstudioId).toHaveBeenCalledWith(estudioId);
-    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7, estudioId);
+    expect(alertaConfigRepo.findConfig).toHaveBeenCalled();
+    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7);
     expect(mailSender.send).toHaveBeenCalledTimes(2);
     expect(mailSender.send).toHaveBeenCalledWith(
       estudioId,
@@ -87,9 +82,9 @@ describe('NotificacionVencimientoService', () => {
   });
 
   it('does nothing when no config exists', async () => {
-    alertaConfigRepo.findByEstudioId.mockResolvedValue(null);
+    alertaConfigRepo.findConfig.mockResolvedValue(null);
 
-    const count = await service.notificarProximos(estudioId);
+    const count = await service.notificarProximos();
 
     expect(count).toBe(0);
     expect(vencimientoRepo.findProximosAVencer).not.toHaveBeenCalled();
@@ -97,14 +92,14 @@ describe('NotificacionVencimientoService', () => {
   });
 
   it('does nothing when config is inactive', async () => {
-    alertaConfigRepo.findByEstudioId.mockResolvedValue({
+    alertaConfigRepo.findConfig.mockResolvedValue({
       estudioId,
       diasAnticipacion: 7,
       canalNotificacion: 'EMAIL',
       activa: false,
     });
 
-    const count = await service.notificarProximos(estudioId);
+    const count = await service.notificarProximos();
 
     expect(count).toBe(0);
     expect(vencimientoRepo.findProximosAVencer).not.toHaveBeenCalled();
@@ -112,7 +107,7 @@ describe('NotificacionVencimientoService', () => {
   });
 
   it('does nothing when no vencimientos proximos', async () => {
-    alertaConfigRepo.findByEstudioId.mockResolvedValue({
+    alertaConfigRepo.findConfig.mockResolvedValue({
       estudioId,
       diasAnticipacion: 7,
       canalNotificacion: 'EMAIL',
@@ -121,15 +116,15 @@ describe('NotificacionVencimientoService', () => {
 
     vencimientoRepo.findProximosAVencer.mockResolvedValue([]);
 
-    const count = await service.notificarProximos(estudioId);
+    const count = await service.notificarProximos();
 
     expect(count).toBe(0);
-    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7, estudioId);
+    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7);
     expect(mailSender.send).not.toHaveBeenCalled();
   });
 
   it('returns correct count', async () => {
-    alertaConfigRepo.findByEstudioId.mockResolvedValue({
+    alertaConfigRepo.findConfig.mockResolvedValue({
       estudioId,
       diasAnticipacion: 5,
       canalNotificacion: 'BOTH',
@@ -152,7 +147,7 @@ describe('NotificacionVencimientoService', () => {
 
     vencimientoRepo.findProximosAVencer.mockResolvedValue(vencimientos);
 
-    const count = await service.notificarProximos(estudioId);
+    const count = await service.notificarProximos();
 
     expect(count).toBe(5);
     expect(mailSender.send).toHaveBeenCalledTimes(5);

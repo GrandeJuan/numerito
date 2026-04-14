@@ -101,7 +101,8 @@ export class MikroOrmClienteRepository
       ? this.em.getReference(UsuarioEntity, cliente.responsableId)
       : undefined;
 
-    const existing = await this.em.findOne(ClienteEntity, { id: cliente.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(ClienteEntity, { id: cliente.id, estudio: { id: tenantId } });
     if (existing) {
       existing.cuit = cliente.cuit.raw;
       existing.razonSocial = cliente.razonSocial.value;
@@ -130,7 +131,8 @@ export class MikroOrmClienteRepository
   }
 
   async delete(cliente: Cliente): Promise<void> {
-    const entity = await this.em.findOne(ClienteEntity, { id: cliente.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(ClienteEntity, { id: cliente.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

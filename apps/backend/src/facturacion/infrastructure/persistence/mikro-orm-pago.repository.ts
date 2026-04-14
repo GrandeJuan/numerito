@@ -1,47 +1,69 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { PagoRepository } from '../../domain/repositories/pago.repository';
 import { Pago } from '../../domain/entities/pago.entity';
+import { TenantAwareRepository } from '../../../shared/domain';
+import {
+  RequestContextService,
+  REQUEST_CONTEXT,
+} from '../../../shared/infrastructure/services/request-context.service';
 import { PagoEntity } from './pago.schema';
 import { FacturaEntity } from './factura.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { MedioPagoEntity } from '../../../shared/infrastructure/persistence/medio-pago.schema';
 
 @Injectable()
-export class MikroOrmPagoRepository implements PagoRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implements PagoRepository {
+  constructor(
+    @Inject(REQUEST_CONTEXT) context: RequestContextService,
+    private readonly em: EntityManager,
+  ) {
+    super(context);
+  }
 
   async findById(id: string): Promise<Pago | null> {
-    const entity = await this.em.findOne(PagoEntity, { id }, {
-      populate: ['factura', 'estudio', 'medioPago'],
-    });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(
+      PagoEntity,
+      {
+        id,
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['factura', 'estudio', 'medioPago'],
+      },
+    );
     if (!entity) return null;
     return this.toDomain(entity);
   }
 
   async findByFacturaId(facturaId: string): Promise<Pago[]> {
-    const entities = await this.em.find(PagoEntity, {
-      factura: { id: facturaId },
-    }, {
-      populate: ['factura', 'estudio', 'medioPago'],
-    });
-    return entities.map(e => this.toDomain(e));
-  }
-
-  async findByEstudioId(estudioId: string): Promise<Pago[]> {
-    const entities = await this.em.find(PagoEntity, {
-      estudio: { id: estudioId },
-    }, {
-      populate: ['factura', 'estudio', 'medioPago'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      PagoEntity,
+      {
+        factura: { id: facturaId },
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['factura', 'estudio', 'medioPago'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async findAll(): Promise<Pago[]> {
-    const entities = await this.em.findAll(PagoEntity, {
-      populate: ['factura', 'estudio', 'medioPago'],
-    });
-    return entities.map(e => this.toDomain(e));
+    const tenantId = this.getTenantId();
+    const entities = await this.em.find(
+      PagoEntity,
+      {
+        estudio: { id: tenantId },
+      },
+      {
+        populate: ['factura', 'estudio', 'medioPago'],
+      },
+    );
+    return entities.map((e) => this.toDomain(e));
   }
 
   async save(pago: Pago): Promise<void> {
@@ -49,7 +71,8 @@ export class MikroOrmPagoRepository implements PagoRepository {
     const estudio = this.em.getReference(EstudioEntity, pago.estudioId);
     const medioPago = this.em.getReference(MedioPagoEntity, pago.medioPagoId);
 
-    const existing = await this.em.findOne(PagoEntity, { id: pago.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
 
     if (existing) {
       existing.factura = factura;
@@ -74,7 +97,8 @@ export class MikroOrmPagoRepository implements PagoRepository {
   }
 
   async delete(pago: Pago): Promise<void> {
-    const entity = await this.em.findOne(PagoEntity, { id: pago.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();
@@ -82,13 +106,16 @@ export class MikroOrmPagoRepository implements PagoRepository {
   }
 
   private toDomain(entity: PagoEntity): Pago {
-    return Pago.create({
-      facturaId: entity.factura.id,
-      estudioId: entity.estudio.id,
-      fecha: entity.fecha,
-      monto: entity.monto,
-      medioPagoId: entity.medioPago.id,
-      referencia: entity.referencia,
-    }, entity.id);
+    return Pago.create(
+      {
+        facturaId: entity.factura.id,
+        estudioId: entity.estudio.id,
+        fecha: entity.fecha,
+        monto: entity.monto,
+        medioPagoId: entity.medioPago.id,
+        referencia: entity.referencia,
+      },
+      entity.id,
+    );
   }
 }

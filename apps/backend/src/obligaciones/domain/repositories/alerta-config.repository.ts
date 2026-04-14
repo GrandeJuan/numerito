@@ -6,7 +6,7 @@ export interface AlertaConfigData {
 }
 
 export interface AlertaConfigRepository {
-  findByEstudioId(estudioId: string): Promise<AlertaConfigData | null>;
+  findConfig(): Promise<AlertaConfigData | null>;
   save(config: AlertaConfigData): Promise<void>;
 }
 

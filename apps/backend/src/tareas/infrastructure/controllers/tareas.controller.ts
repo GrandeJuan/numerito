@@ -14,14 +14,11 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 @ApiTags('Tareas')
 @Controller({ path: 'tareas', version: '1' })
 export class TareasController {
-  constructor(
-    @Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository,
-  ) {}
+  constructor(@Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar tareas del estudio' })
   async list(
-    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
@@ -31,9 +28,9 @@ export class TareasController {
     let tareas: Tarea[];
 
     if (responsableId) {
-      tareas = await this.tareaRepo.findByResponsableId(responsableId, estudioId);
+      tareas = await this.tareaRepo.findByResponsableId(responsableId);
     } else {
-      tareas = await this.tareaRepo.findByEstudioId(estudioId);
+      tareas = await this.tareaRepo.findAll();
     }
 
     if (estado) {

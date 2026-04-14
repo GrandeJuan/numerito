@@ -1,28 +1,27 @@
-jest.mock('@mikro-orm/core', () => ({}));
-jest.mock('../../../estudio/infrastructure/persistence/estudio.schema', () => ({
-  EstudioEntity: class EstudioEntity {},
-}));
-jest.mock('../../../shared/infrastructure/persistence/plan.schema', () => ({
-  PlanEntity: class PlanEntity {},
-}));
-
 import { AdminEstudiosController } from './admin-estudios.controller';
+import type { AdminEstudiosPaginados } from '../../application/services/admin-estudios.service';
 
 describe('AdminEstudiosController', () => {
   let controller: AdminEstudiosController;
   let mockEstudioRepo: any;
-  let mockEm: any;
+  let mockEstudiosService: any;
 
-  const mockEstudioEntities = [
-    {
-      id: 'est-1',
-      nombre: 'Estudio Demo',
-      cuit: '20-12345678-6',
-      plan: { nombre: 'Profesional', codigo: 'PROFESIONAL' },
-      isActive: true,
-      createdAt: new Date('2026-01-01'),
-    },
-  ];
+  const paginatedResult: AdminEstudiosPaginados = {
+    items: [
+      {
+        id: 'est-1',
+        nombre: 'Estudio Demo',
+        cuit: '20-12345678-6',
+        plan: 'Profesional',
+        planCodigo: 'PROFESIONAL',
+        isActive: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    total: 1,
+    page: 1,
+    limit: 20,
+  };
 
   const makeEstudio = (overrides: any = {}) => ({
     id: 'est-1',
@@ -36,15 +35,15 @@ describe('AdminEstudiosController', () => {
   });
 
   beforeEach(() => {
-    mockEm = {
-      findAndCount: jest.fn().mockResolvedValue([mockEstudioEntities, 1]),
+    mockEstudiosService = {
+      list: jest.fn().mockResolvedValue(paginatedResult),
     };
     mockEstudioRepo = {
       findAll: jest.fn().mockResolvedValue([]),
       findById: jest.fn().mockResolvedValue(null),
       save: jest.fn().mockResolvedValue(undefined),
     };
-    controller = new AdminEstudiosController(mockEstudioRepo, mockEm);
+    controller = new AdminEstudiosController(mockEstudioRepo, mockEstudiosService);
   });
 
   describe('list', () => {
@@ -57,43 +56,43 @@ describe('AdminEstudiosController', () => {
       expect(result.meta).toHaveProperty('page', 1);
     });
 
-    it('should apply search filter', async () => {
+    it('should pass search filter to service', async () => {
       await controller.list({ search: 'demo' });
 
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.$or).toBeDefined();
-      expect(where.$or).toHaveLength(2);
+      expect(mockEstudiosService.list).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'demo' }),
+      );
     });
 
-    it('should apply plan filter', async () => {
+    it('should pass plan filter to service', async () => {
       await controller.list({ plan: 'PROFESIONAL' });
 
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.plan).toEqual({ codigo: 'PROFESIONAL' });
+      expect(mockEstudiosService.list).toHaveBeenCalledWith(
+        expect.objectContaining({ plan: 'PROFESIONAL' }),
+      );
     });
 
-    it('should apply isActive filter', async () => {
+    it('should pass isActive filter to service', async () => {
       await controller.list({ isActive: 'true' });
 
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.isActive).toBe(true);
+      expect(mockEstudiosService.list).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: true }),
+      );
     });
 
-    it('should apply date range filters', async () => {
+    it('should pass date range filters to service', async () => {
       await controller.list({ from: '2026-01-01', to: '2026-12-31' });
 
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.createdAt.$gte).toEqual(new Date('2026-01-01'));
-      expect(where.createdAt.$lte).toEqual(new Date('2026-12-31'));
+      expect(mockEstudiosService.list).toHaveBeenCalledWith(
+        expect.objectContaining({ from: '2026-01-01', to: '2026-12-31' }),
+      );
     });
 
-    it('should respect page and limit', async () => {
+    it('should pass page and limit to service', async () => {
       await controller.list({ page: '3', limit: '5' });
 
-      expect(mockEm.findAndCount).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.any(Object),
-        expect.objectContaining({ limit: 5, offset: 10 }),
+      expect(mockEstudiosService.list).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 3, limit: 5 }),
       );
     });
 

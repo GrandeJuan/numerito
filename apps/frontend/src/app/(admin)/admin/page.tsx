@@ -1,18 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
-import {
-  STATUS_COLORS,
-  CARD_CLASSES,
-  TABLE_CLASSES,
-  KPI_ICON_STYLE,
-  CHART_THEME,
-} from '@/lib/design-tokens';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import { formatCurrency } from '@/lib/formatters';
+import { CARD_CLASSES, CHART_THEME } from '@/lib/design-tokens';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -20,16 +22,43 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts';
+
+interface KpiWithSparkline {
+  value: number;
+  delta: string;
+  deltaUp: boolean;
+  sparkline: number[];
+}
+
+interface TopTenant {
+  id: string;
+  nombre: string;
+  plan: string;
+  usuarios: number;
+  clientes: number;
+  actividad: number;
+}
+
+interface RegistroReciente {
+  id: string;
+  nombre: string;
+  plan: string;
+  email: string;
+  creadoEn: string;
+}
 
 interface DashboardStats {
   kpis: {
-    estudiosActivos: number;
-    totalUsuarios: number;
-    mrr: number;
-    subscripcionesPorVencer: number;
+    estudiosActivos: KpiWithSparkline;
+    totalUsuarios: KpiWithSparkline;
+    subscripcionesActivas: KpiWithSparkline;
+    mrr: KpiWithSparkline;
+    churnMensual: KpiWithSparkline;
+    uptime: KpiWithSparkline;
   };
+  growthData: { mes: string; usuarios: number; estudios: number }[];
+  revenueData: { mes: string; mrr: number; arr: number }[];
   registrosMensuales: { mes: string; cantidad: number }[];
   distribucionPlanes: { plan: string; cantidad: number }[];
   alertas: { tipo: string; mensaje: string; fecha: string }[];
@@ -40,25 +69,115 @@ interface DashboardStats {
     estado: string;
     creadoEn: string;
   }[];
+  topTenants: TopTenant[];
+  registrosRecientes: RegistroReciente[];
 }
 
-const PIE_COLORS = ['#4edea3', '#091426', '#00a472', '#ef4444', '#10b981', '#8b5cf6'];
+interface ServiceStatus {
+  name: string;
+  status: 'operational' | 'degraded' | 'down';
+  latencyMs: number;
+  lastCheck: string;
+}
 
-function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('es-AR')}`;
+interface HealthCheckResult {
+  services: ServiceStatus[];
+  uptimePercent: number;
+}
+
+const QUICK_ACTIONS = [
+  { icon: 'domain_add', label: 'Crear Estudio', href: '/admin/estudios' },
+  { icon: 'person_add', label: 'Nuevo Usuario', href: '/admin/usuarios' },
+  { icon: 'receipt_long', label: 'Ver Logs', href: '/admin/logs' },
+  { icon: 'tune', label: 'Configuración', href: '/admin/configuracion' },
+  { icon: 'mail', label: 'Notificaciones', href: '/admin/configuracion' },
+  { icon: 'database', label: 'Backups', href: '/admin/configuracion' },
+] as const;
+
+const PIE_COLORS = ['#4edea3', '#00a472', '#091426', '#75777d', '#10b981', '#8b5cf6'];
+
+function formatARS(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
+  return `$${value}`;
+}
+
+const STATUS_CONFIG = {
+  operational: {
+    color: 'bg-emerald-500',
+    label: 'Operativo',
+    textColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+  },
+  degraded: {
+    color: 'bg-amber-500',
+    label: 'Degradado',
+    textColor: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+  },
+  down: {
+    color: 'bg-red-500',
+    label: 'Caído',
+    textColor: 'text-red-600 dark:text-red-400',
+    bgColor: 'bg-red-50 dark:bg-red-900/20',
+  },
+} as const;
+
+const PLAN_BADGE_STYLES: Record<string, string> = {
+  Enterprise: 'bg-[#091426] text-white',
+  Profesional: 'bg-[#4edea3]/15 text-[#00a472]',
+  Estudio: 'bg-[#00a472]/10 text-[#00a472]',
+  Trial: 'bg-[#e2e8f0] text-[#75777d]',
+};
+
+function PlanBadge({ plan }: { plan: string }) {
+  return (
+    <span
+      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${PLAN_BADGE_STYLES[plan] ?? PLAN_BADGE_STYLES.Trial}`}
+    >
+      {plan}
+    </span>
+  );
+}
+
+function ActivityBar({ value }: { value: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 flex-1 rounded-full bg-[#e2e8f0] dark:bg-white/10 overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${value}%`,
+            background: value > 90 ? '#4edea3' : value > 70 ? '#00a472' : '#75777d',
+          }}
+        />
+      </div>
+      <span className="text-xs tabular-nums text-[#45474c] dark:text-[#a0a3a8] w-8 text-right">
+        {value}
+      </span>
+    </div>
+  );
 }
 
 export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [health, setHealth] = useState<HealthCheckResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch('/v1/admin/dashboard/stats')
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Error al cargar estadísticas');
-        const body = await res.json();
-        setStats(body.data);
+    Promise.all([
+      apiFetch('/v1/admin/dashboard/stats')
+        .then((res) => parseApiResponse<DashboardStats>(res))
+        .then(({ data }) => data),
+      apiFetch('/v1/admin/health')
+        .then((res) => parseApiResponse<HealthCheckResult>(res))
+        .then(({ data }) => data)
+        .catch(() => null),
+    ])
+      .then(([statsData, healthData]) => {
+        setStats(statsData);
+        setHealth(healthData);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -83,23 +202,98 @@ export default function AdminPage() {
   const kpis = [
     {
       label: 'Estudios Activos',
-      value: stats.kpis.estudiosActivos,
-      icon: 'apartment',
+      icon: 'domain',
+      ...stats.kpis.estudiosActivos,
+      displayValue: stats.kpis.estudiosActivos.value.toLocaleString('es-AR'),
     },
     {
       label: 'Usuarios Totales',
-      value: stats.kpis.totalUsuarios,
       icon: 'group',
+      ...stats.kpis.totalUsuarios,
+      displayValue: stats.kpis.totalUsuarios.value.toLocaleString('es-AR'),
+    },
+    {
+      label: 'Suscripciones Activas',
+      icon: 'credit_card',
+      ...stats.kpis.subscripcionesActivas,
+      displayValue: stats.kpis.subscripcionesActivas.value.toLocaleString('es-AR'),
     },
     {
       label: 'MRR',
-      value: formatCurrency(stats.kpis.mrr),
       icon: 'payments',
+      ...stats.kpis.mrr,
+      displayValue: formatCurrency(stats.kpis.mrr.value),
     },
     {
-      label: 'Por Vencer',
-      value: stats.kpis.subscripcionesPorVencer,
-      icon: 'schedule',
+      label: 'Churn Mensual',
+      icon: 'trending_down',
+      ...stats.kpis.churnMensual,
+      displayValue: `${stats.kpis.churnMensual.value}%`,
+    },
+    {
+      label: 'Uptime',
+      icon: 'monitor_heart',
+      ...stats.kpis.uptime,
+      displayValue: `${stats.kpis.uptime.value}%`,
+    },
+  ];
+
+  const topTenantsColumns: Column<TopTenant>[] = [
+    {
+      key: 'nombre',
+      header: 'Estudio',
+      render: (t) => (
+        <span className="text-sm font-medium text-[#091426] dark:text-white">{t.nombre}</span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      render: (t) => <PlanBadge plan={t.plan} />,
+    },
+    {
+      key: 'usuarios',
+      header: 'Usuarios',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#a0a3a8] tabular-nums">{t.usuarios}</span>
+      ),
+    },
+    {
+      key: 'clientes',
+      header: 'Clientes',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#a0a3a8] tabular-nums">{t.clientes}</span>
+      ),
+    },
+    {
+      key: 'actividad',
+      header: 'Actividad',
+      render: (t) => <ActivityBar value={t.actividad} />,
+    },
+  ];
+
+  const estudiosRecientesColumns: Column<DashboardStats['estudiosRecientes'][number]>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (est) => (
+        <span className="text-[#091426] dark:text-white font-medium">{est.nombre}</span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      render: (est) => <span className="text-[#45474c] dark:text-[#c5c6cd]">{est.plan}</span>,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (est) => <StatusBadge status={est.estado} />,
+    },
+    {
+      key: 'creadoEn',
+      header: 'Creado',
+      render: (est) => <span className="text-[#45474c] dark:text-[#a0a3a8]">{est.creadoEn}</span>,
     },
   ];
 
@@ -115,60 +309,81 @@ export default function AdminPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  {kpi.icon}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
-              </div>
-            </div>
-          </div>
+          <KpiCard
+            key={kpi.label}
+            icon={kpi.icon}
+            label={kpi.label}
+            value={kpi.displayValue}
+            delta={kpi.delta}
+            deltaUp={kpi.deltaUp}
+            sparkline={kpi.sparkline}
+          />
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Charts Row: Growth + Plan Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Area Chart */}
+        {/* Growth Area Chart (dual series) */}
         <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Registros de Estudios
-          </h2>
-          <div className="h-72">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+                Crecimiento de Usuarios y Estudios
+              </h2>
+              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
+                Últimos 12 meses
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3]" />
+                <span className="text-[#45474c] dark:text-[#a0a3a8]">Usuarios</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#091426] dark:bg-white" />
+                <span className="text-[#45474c] dark:text-[#a0a3a8]">Estudios</span>
+              </span>
+            </div>
+          </div>
+          <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.registrosMensuales}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  className="stroke-gray-200 dark:stroke-gray-700"
+              <AreaChart data={stats.growthData}>
+                <defs>
+                  <linearGradient id="gradUsuarios" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4edea3" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#4edea3" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradEstudios" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#091426" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#091426" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
+                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} width={45} />
+                <Tooltip
+                  contentStyle={CHART_THEME.tooltipStyle}
+                  itemStyle={{ color: 'white' }}
+                  labelStyle={{ color: '#4edea3', fontWeight: 600 }}
                 />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} className="text-gray-500" />
-                <YAxis tick={{ fontSize: 12 }} className="text-gray-500" allowDecimals={false} />
-                <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="cantidad"
-                  stroke={CHART_THEME.primaryFill}
-                  fill={CHART_THEME.primaryFill}
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
+                <Area type="monotone" dataKey="usuarios" stroke="#4edea3" strokeWidth={2} fill="url(#gradUsuarios)" />
+                <Area type="monotone" dataKey="estudios" stroke="#091426" strokeWidth={2} fill="url(#gradEstudios)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Pie Chart */}
+        {/* Plan Distribution Donut */}
         <div className={`${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Distribución de Planes
+          <h2 className="text-sm font-bold text-[#091426] dark:text-white mb-1">
+            Distribución por Plan
           </h2>
-          <div className="h-72">
+          <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mb-4">
+            {stats.distribucionPlanes.reduce((a, b) => a + b.cantidad, 0)} estudios activos
+          </p>
+          <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -177,19 +392,209 @@ export default function AdminPage() {
                   nameKey="plan"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
+                  innerRadius={55}
                   outerRadius={80}
-                  paddingAngle={4}
+                  paddingAngle={3}
+                  strokeWidth={0}
                 >
                   {stats.distribucionPlanes.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Legend />
-                <Tooltip />
+                <Tooltip contentStyle={CHART_THEME.tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          <div className="space-y-2 mt-2">
+            {stats.distribucionPlanes.map((p, i) => (
+              <div key={p.plan} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                  />
+                  <span className="text-xs text-[#45474c] dark:text-[#a0a3a8]">{p.plan}</span>
+                </div>
+                <span className="text-xs font-semibold text-[#091426] dark:text-white tabular-nums">
+                  {p.cantidad}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue Bar Chart */}
+      <div className={`${CARD_CLASSES.full} p-6`}>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+              Revenue: MRR y ARR
+            </h2>
+            <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
+              Evolución en pesos argentinos
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3]" />
+              <span className="text-[#45474c] dark:text-[#a0a3a8]">MRR</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#091426] dark:bg-white" />
+              <span className="text-[#45474c] dark:text-[#a0a3a8]">ARR</span>
+            </span>
+          </div>
+        </div>
+        <div className="h-[240px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.revenueData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#75777d' }}
+                axisLine={false}
+                tickLine={false}
+                width={55}
+                tickFormatter={formatARS}
+              />
+              <Tooltip
+                contentStyle={CHART_THEME.tooltipStyle}
+                formatter={(value: number) => [formatARS(value), '']}
+                labelStyle={{ color: '#4edea3', fontWeight: 600 }}
+              />
+              <Bar dataKey="mrr" fill="#4edea3" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="arr" fill="#091426" radius={[6, 6, 0, 0]} maxBarSize={32} opacity={0.7} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* System Status Panel */}
+      {health && (
+        <div className={`${CARD_CLASSES.full} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[#091426] dark:text-white">
+              Estado del Sistema
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#45474c] dark:text-[#a0a3a8]">Uptime:</span>
+              <span className="text-sm font-bold text-[#091426] dark:text-white">
+                {health.uptimePercent}%
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {health.services.map((service) => {
+              const config = STATUS_CONFIG[service.status];
+              return (
+                <div
+                  key={service.name}
+                  className={`flex items-center gap-3 p-3 rounded-lg ${config.bgColor}`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${config.color} shrink-0`} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                      {service.name}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${config.textColor}`}>{config.label}</span>
+                      {service.latencyMs > 0 && (
+                        <span className="text-xs text-[#75777d] dark:text-[#a0a3a8]">
+                          {service.latencyMs}ms
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div
+        className="rounded-xl p-6 text-white"
+        style={{
+          background: 'radial-gradient(circle at 30% 20%, #1e293b 0%, #091426 100%)',
+        }}
+      >
+        <h3 className="text-sm font-bold mb-4">Acciones Rápidas</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {QUICK_ACTIONS.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-left"
+            >
+              <span
+                className="material-symbols-outlined text-[#4edea3]"
+                style={{ fontSize: 18 }}
+              >
+                {action.icon}
+              </span>
+              <span className="text-xs font-medium text-white/80">
+                {action.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Tenants + Recent Registrations */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Top Tenants by Activity */}
+        <div className="lg:col-span-3">
+          <DataTable
+            columns={topTenantsColumns}
+            data={stats.topTenants}
+            rowKey={(t) => t.id}
+            emptyMessage="No hay estudios registrados."
+          />
+        </div>
+
+        {/* Recent Registrations */}
+        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-[#091426] dark:text-white">
+              Registros Recientes
+            </h2>
+          </div>
+          {stats.registrosRecientes.length === 0 ? (
+            <p className="text-sm text-[#75777d] dark:text-[#a0a3a8]">
+              No hay registros recientes.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {stats.registrosRecientes.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-start gap-3 pb-3 border-b border-[#e2e8f0]/60 dark:border-white/5 last:border-0 last:pb-0"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#091426]/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]" style={{ fontSize: 16 }}>
+                      domain_add
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
+                      {r.nombre}
+                    </p>
+                    <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] truncate">
+                      {r.email}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <PlanBadge plan={r.plan} />
+                    <p className="text-[10px] text-[#75777d] dark:text-[#a0a3a8] mt-1">
+                      {r.creadoEn}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -233,54 +638,13 @@ export default function AdminPage() {
         </div>
 
         {/* Estudios Recientes */}
-        <div className={`lg:col-span-2 ${CARD_CLASSES.full} p-6`}>
-          <h2 className="text-lg font-semibold text-[#091426] dark:text-white mb-4">
-            Estudios Recientes
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-white/10">
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Nombre
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Plan
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Estado
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium text-[#45474c] dark:text-[#a0a3a8]">
-                    Creado
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.estudiosRecientes.map((est) => (
-                  <tr
-                    key={est.id}
-                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                  >
-                    <td className="py-3 px-2 text-[#091426] dark:text-white font-medium">
-                      {est.nombre}
-                    </td>
-                    <td className="py-3 px-2 text-[#45474c] dark:text-[#c5c6cd]">{est.plan}</td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          STATUS_COLORS[est.estado] ??
-                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-[#a0a3a8]'
-                        }`}
-                      >
-                        {est.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-[#45474c] dark:text-[#a0a3a8]">{est.creadoEn}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className={`lg:col-span-2`}>
+          <DataTable
+            columns={estudiosRecientesColumns}
+            data={stats.estudiosRecientes}
+            rowKey={(est) => est.id}
+            emptyMessage="No hay estudios recientes."
+          />
         </div>
       </div>
     </div>

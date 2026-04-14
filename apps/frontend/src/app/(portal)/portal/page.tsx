@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
-import { STATUS_COLORS, CARD_CLASSES, KPI_ICON_STYLE } from '@/lib/design-tokens';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import { formatFecha, formatCurrency } from '@/lib/formatters';
+import { CARD_CLASSES } from '@/lib/design-tokens';
+import { KpiCard } from '@/components/shared/kpi-card';
+import { StatusBadge } from '@/components/shared/status-badge';
 
 interface PortalStats {
   clienteNombre: string;
@@ -15,19 +19,6 @@ interface PortalStats {
   vencimientosRecientes: { id: string; obligacion: string; fecha: string; estado: string }[];
   facturasRecientes: { id: string; numero: string; monto: number; estado: string; fecha: string }[];
   documentosRecientes: { id: string; nombre: string; tipo: string; fecha: string }[];
-}
-
-function formatFecha(fecha: string): string {
-  try {
-    const d = new Date(fecha);
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return fecha;
-  }
-}
-
-function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('es-AR')}`;
 }
 
 const DOC_ICONS: Record<string, string> = {
@@ -43,11 +34,8 @@ export default function PortalPage() {
 
   useEffect(() => {
     apiFetch('/v1/portal/dashboard/stats')
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Error al cargar estadisticas del portal');
-        const body = await res.json();
-        setStats(body.data);
-      })
+      .then((res) => parseApiResponse<PortalStats>(res))
+      .then(({ data }) => setStats(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -99,19 +87,7 @@ export default function PortalPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={`${CARD_CLASSES.full} p-6`}>
-            <div className="flex items-center gap-3">
-              <div className={`${KPI_ICON_STYLE.className} rounded-lg p-2.5`}>
-                <span className={`material-symbols-outlined ${KPI_ICON_STYLE.text} text-xl`}>
-                  {kpi.icon}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">{kpi.label}</p>
-                <p className="text-2xl font-bold text-[#091426] dark:text-white">{kpi.value}</p>
-              </div>
-            </div>
-          </div>
+          <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} />
         ))}
       </div>
 
@@ -144,11 +120,7 @@ export default function PortalPage() {
                       {formatFecha(v.fecha)}
                     </p>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[v.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#a0a3a8]'}`}
-                  >
-                    {v.estado}
-                  </span>
+                  <StatusBadge status={v.estado} />
                 </li>
               ))}
             </ul>
@@ -184,11 +156,7 @@ export default function PortalPage() {
                     <p className="text-sm font-medium text-[#091426] dark:text-white">
                       {formatCurrency(f.monto)}
                     </p>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[f.estado] ?? 'bg-gray-100 text-gray-800 dark:bg-[#162a4a] dark:text-[#a0a3a8]'}`}
-                    >
-                      {f.estado}
-                    </span>
+                    <StatusBadge status={f.estado} />
                   </div>
                 </li>
               ))}

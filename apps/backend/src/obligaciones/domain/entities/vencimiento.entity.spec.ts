@@ -1,5 +1,7 @@
 import { Vencimiento } from './vencimiento.entity';
 import { TIPO_OBLIGACION, ESTADO_VENCIMIENTO } from '@numerito/shared';
+import { VencimientoCumplido } from '../events/vencimiento-cumplido.event';
+import { VencimientoVencido } from '../events/vencimiento-vencido.event';
 
 describe('Vencimiento Entity', () => {
   const createVencimiento = () => {
@@ -90,5 +92,33 @@ describe('Vencimiento Entity', () => {
     expect(v.fechaVencimiento).toEqual(new Date('2026-04-15'));
     expect(v.descripcion).toBe('DDJJ IVA Marzo 2026');
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+  });
+
+  describe('domain events', () => {
+    it('should emit VencimientoCumplido on presentar', () => {
+      const v = createVencimiento();
+      v.presentar();
+      const events = v.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(VencimientoCumplido);
+      const event = events[0] as VencimientoCumplido;
+      expect(event.vencimientoId).toBe(v.id);
+      expect(event.clienteId).toBe('cliente-1');
+      expect(event.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
+      expect(event.periodo).toBe('2026-03');
+      expect(event.eventName).toBe('obligaciones.vencimiento-cumplido');
+    });
+
+    it('should emit VencimientoVencido on marcarVencido', () => {
+      const v = createVencimiento();
+      v.marcarVencido();
+      const events = v.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(VencimientoVencido);
+      const event = events[0] as VencimientoVencido;
+      expect(event.vencimientoId).toBe(v.id);
+      expect(event.clienteId).toBe('cliente-1');
+      expect(event.eventName).toBe('obligaciones.vencimiento-vencido');
+    });
   });
 });

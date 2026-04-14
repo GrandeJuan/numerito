@@ -2,7 +2,14 @@ import { FacturacionController } from './facturacion.controller';
 import { Factura } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
 
-const makeLinea = (overrides: Partial<{ descripcion: string; cantidad: number; precioUnitario: number; alicuotaIva: number }> = {}) =>
+const makeLinea = (
+  overrides: Partial<{
+    descripcion: string;
+    cantidad: number;
+    precioUnitario: number;
+    alicuotaIva: number;
+  }> = {},
+) =>
   LineaFactura.create({
     facturaId: 'factura-1',
     descripcion: overrides.descripcion ?? 'Servicio contable',
@@ -11,16 +18,21 @@ const makeLinea = (overrides: Partial<{ descripcion: string; cantidad: number; p
     alicuotaIva: overrides.alicuotaIva ?? 21,
   });
 
-const makeFactura = (overrides: Partial<{ id: string; clienteId: string; estudioId: string; numero: string }> = {}) =>
-  Factura.create({
-    clienteId: overrides.clienteId ?? 'cliente-1',
-    estudioId: overrides.estudioId ?? 'estudio-1',
-    numero: overrides.numero ?? 'FAC-001',
-    fechaEmision: new Date('2026-01-01'),
-    fechaVencimiento: new Date('2026-02-01'),
-    concepto: 'Honorarios enero',
-    lineas: [makeLinea()],
-  }, overrides.id);
+const makeFactura = (
+  overrides: Partial<{ id: string; clienteId: string; estudioId: string; numero: string }> = {},
+) =>
+  Factura.create(
+    {
+      clienteId: overrides.clienteId ?? 'cliente-1',
+      estudioId: overrides.estudioId ?? 'estudio-1',
+      numero: overrides.numero ?? 'FAC-001',
+      fechaEmision: new Date('2026-01-01'),
+      fechaVencimiento: new Date('2026-02-01'),
+      concepto: 'Honorarios enero',
+      lineas: [makeLinea()],
+    },
+    overrides.id,
+  );
 
 describe('FacturacionController', () => {
   let controller: FacturacionController;
@@ -31,7 +43,6 @@ describe('FacturacionController', () => {
     mockFacturaRepo = {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       findByClienteId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
@@ -40,7 +51,6 @@ describe('FacturacionController', () => {
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
       findByFacturaId: jest.fn().mockResolvedValue([]),
-      findByEstudioId: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
@@ -50,9 +60,9 @@ describe('FacturacionController', () => {
   describe('stats', () => {
     it('should return facturacion stats', async () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
-      mockFacturaRepo.findByEstudioId.mockResolvedValue(facturas);
+      mockFacturaRepo.findAll.mockResolvedValue(facturas);
 
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.facturado).toBeDefined();
       expect(result.data.cobrado).toBeDefined();
       expect(result.data.porEstado).toBeDefined();
@@ -60,7 +70,7 @@ describe('FacturacionController', () => {
     });
 
     it('should return zero stats when no facturas', async () => {
-      const result = await controller.stats('estudio-1');
+      const result = await controller.stats();
       expect(result.data.facturado).toBe(0);
     });
   });
@@ -68,7 +78,7 @@ describe('FacturacionController', () => {
   describe('list', () => {
     it('should return paginated facturas for estudio', async () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
-      mockFacturaRepo.findByEstudioId.mockResolvedValue(facturas);
+      mockFacturaRepo.findAll.mockResolvedValue(facturas);
 
       const result = await controller.list('estudio-1', 1, 20);
       expect(result.data).toHaveLength(2);
@@ -82,7 +92,7 @@ describe('FacturacionController', () => {
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockFacturaRepo.findByEstudioId.mockResolvedValue([]);
+      mockFacturaRepo.findAll.mockResolvedValue([]);
 
       const result = await controller.list('estudio-1');
       expect(result.meta.page).toBe(1);
@@ -115,12 +125,10 @@ describe('FacturacionController', () => {
         fechaEmision: '2026-01-01',
         fechaVencimiento: '2026-02-01',
         concepto: 'Honorarios',
-        lineas: [
-          { descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 },
-        ],
+        lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 }],
       };
 
-      const result = await controller.create(dto as any, 'estudio-99');
+      await controller.create(dto as any, 'estudio-99');
       const savedFactura = mockFacturaRepo.save.mock.calls[0][0];
       expect(savedFactura.estudioId).toBe('estudio-99');
     });
@@ -201,7 +209,7 @@ describe('FacturacionController', () => {
       const result = await controller.cuentaCorriente('cliente-1', 'estudio-1', 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
-      expect(mockFacturaRepo.findByClienteId).toHaveBeenCalledWith('cliente-1', 'estudio-1');
+      expect(mockFacturaRepo.findByClienteId).toHaveBeenCalledWith('cliente-1');
     });
 
     it('should return empty when client has no facturas', async () => {

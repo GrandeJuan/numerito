@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { Rol } from '@numerito/shared';
+import { GlobalRepository } from '../../../shared/domain';
 import type { RolPermisoRepository } from '../../domain/repositories/rol-permiso.repository';
 import { Permiso } from '../../domain/value-objects/permiso.vo';
 import { RolPermisoEntity } from '../../../shared/infrastructure/persistence/rol-permiso.schema';
@@ -8,8 +9,29 @@ import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema
 import { PermisoEntity } from '../../../shared/infrastructure/persistence/permiso.schema';
 
 @Injectable()
-export class MikroOrmRolPermisoRepository implements RolPermisoRepository {
-  constructor(private readonly em: EntityManager) {}
+export class MikroOrmRolPermisoRepository
+  extends GlobalRepository<unknown>
+  implements RolPermisoRepository
+{
+  constructor(private readonly em: EntityManager) {
+    super();
+  }
+
+  async findById(_id: string): Promise<unknown | null> {
+    throw new Error('Not implemented');
+  }
+
+  async findAll(): Promise<unknown[]> {
+    throw new Error('Not implemented');
+  }
+
+  async save(_entity: unknown): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  async delete(_entity: unknown): Promise<void> {
+    throw new Error('Not implemented');
+  }
 
   async findPermisosByRol(rol: Rol): Promise<Permiso[]> {
     const entries = await this.em.find(

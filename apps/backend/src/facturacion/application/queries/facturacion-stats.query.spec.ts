@@ -1,4 +1,4 @@
-import { FacturacionStatsQuery, FacturacionStats } from './facturacion-stats.query';
+import { FacturacionStatsQuery } from './facturacion-stats.query';
 import { Factura, ESTADO_FACTURA } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
 
@@ -11,22 +11,27 @@ const makeLinea = (precio = 1000, iva = 21) =>
     alicuotaIva: iva,
   });
 
-const makeFactura = (overrides: {
-  id?: string;
-  numero?: string;
-  precio?: number;
-  fechaEmision?: string;
-  fechaVencimiento?: string;
-} = {}) =>
-  Factura.create({
-    clienteId: 'cliente-1',
-    estudioId: 'estudio-1',
-    numero: overrides.numero ?? 'FAC-001',
-    fechaEmision: new Date(overrides.fechaEmision ?? '2026-01-15'),
-    fechaVencimiento: new Date(overrides.fechaVencimiento ?? '2026-03-15'),
-    concepto: 'Honorarios',
-    lineas: [makeLinea(overrides.precio ?? 1000)],
-  }, overrides.id);
+const makeFactura = (
+  overrides: {
+    id?: string;
+    numero?: string;
+    precio?: number;
+    fechaEmision?: string;
+    fechaVencimiento?: string;
+  } = {},
+) =>
+  Factura.create(
+    {
+      clienteId: 'cliente-1',
+      estudioId: 'estudio-1',
+      numero: overrides.numero ?? 'FAC-001',
+      fechaEmision: new Date(overrides.fechaEmision ?? '2026-01-15'),
+      fechaVencimiento: new Date(overrides.fechaVencimiento ?? '2026-03-15'),
+      concepto: 'Honorarios',
+      lineas: [makeLinea(overrides.precio ?? 1000)],
+    },
+    overrides.id,
+  );
 
 describe('FacturacionStatsQuery', () => {
   let query: FacturacionStatsQuery;
@@ -34,13 +39,13 @@ describe('FacturacionStatsQuery', () => {
 
   beforeEach(() => {
     mockFacturaRepo = {
-      findByEstudioId: jest.fn().mockResolvedValue([]),
+      findAll: jest.fn().mockResolvedValue([]),
     };
     query = new FacturacionStatsQuery(mockFacturaRepo);
   });
 
   it('should return zero stats when no facturas', async () => {
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
 
     expect(result.facturado).toBe(0);
     expect(result.cobrado).toBe(0);
@@ -54,18 +59,18 @@ describe('FacturacionStatsQuery', () => {
   it('should calculate facturado as sum of totals', async () => {
     const f1 = makeFactura({ precio: 1000 }); // total = 1000 + 210 = 1210
     const f2 = makeFactura({ numero: 'FAC-002', precio: 2000 }); // total = 2000 + 420 = 2420
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1, f2]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
     expect(result.facturado).toBe(3630);
   });
 
   it('should calculate cobrado from totalPagado', async () => {
     const f1 = makeFactura({ precio: 1000 });
     f1.registrarPagoExterno(500);
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1]);
 
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
     expect(result.cobrado).toBe(500);
     expect(result.saldoPendiente).toBe(1210 - 500);
   });
@@ -73,9 +78,9 @@ describe('FacturacionStatsQuery', () => {
   it('should calculate cobrado percentage', async () => {
     const f1 = makeFactura({ precio: 1000 }); // total 1210
     f1.registrarPagoExterno(605); // 50%
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1]);
 
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
     expect(result.cobradoPorcentaje).toBe(50);
   });
 
@@ -83,9 +88,9 @@ describe('FacturacionStatsQuery', () => {
     const f1 = makeFactura({ fechaEmision: '2024-12-01', fechaVencimiento: '2025-01-01' });
     f1.marcarVencida();
     const f2 = makeFactura({ numero: 'FAC-002' });
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1, f2]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
     expect(result.facturasVencidas).toBe(1);
   });
 
@@ -93,9 +98,9 @@ describe('FacturacionStatsQuery', () => {
     const f1 = makeFactura({ precio: 1000 });
     const f2 = makeFactura({ numero: 'FAC-002', precio: 2000 });
     f2.anular();
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1, f2]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute('estudio-1');
+    const result = await query.execute();
     expect(result.facturado).toBe(1210);
   });
 
@@ -105,12 +110,12 @@ describe('FacturacionStatsQuery', () => {
     f2.registrarPagoExterno(f2.total);
     const f3 = makeFactura({ numero: 'FAC-003' });
     f3.anular();
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1, f2, f3]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1, f2, f3]);
 
-    const result = await query.execute('estudio-1');
-    const emitidas = result.porEstado.find(e => e.estado === ESTADO_FACTURA.EMITIDA);
-    const pagadas = result.porEstado.find(e => e.estado === ESTADO_FACTURA.PAGADA);
-    const anuladas = result.porEstado.find(e => e.estado === ESTADO_FACTURA.ANULADA);
+    const result = await query.execute();
+    const emitidas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.EMITIDA);
+    const pagadas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.PAGADA);
+    const anuladas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.ANULADA);
 
     expect(emitidas?.cantidad).toBe(1);
     expect(pagadas?.cantidad).toBe(1);
@@ -122,11 +127,11 @@ describe('FacturacionStatsQuery', () => {
     f1.registrarPagoExterno(500);
     const f2 = makeFactura({ numero: 'FAC-002', precio: 2000, fechaEmision: '2026-02-10' }); // 2420
     f2.registrarPagoExterno(1000);
-    mockFacturaRepo.findByEstudioId.mockResolvedValue([f1, f2]);
+    mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute('estudio-1');
-    const enero = result.mensual.find(m => m.mes === '2026-01');
-    const febrero = result.mensual.find(m => m.mes === '2026-02');
+    const result = await query.execute();
+    const enero = result.mensual.find((m) => m.mes === '2026-01');
+    const febrero = result.mensual.find((m) => m.mes === '2026-02');
 
     expect(enero?.facturado).toBe(1210);
     expect(enero?.cobrado).toBe(500);

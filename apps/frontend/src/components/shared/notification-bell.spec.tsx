@@ -62,7 +62,7 @@ describe('NotificationBell', () => {
     });
   });
 
-  it('shows 0 badge when no unread', async () => {
+  it('hides badge when no unread notifications', async () => {
     vi.useRealTimers();
     vi.mocked(apiFetch).mockImplementation(async (path: string) => {
       if (path.includes('/unread-count')) {
@@ -74,8 +74,11 @@ describe('NotificationBell', () => {
     render(<NotificationBell />);
 
     await waitFor(() => {
-      expect(screen.getByText('0')).toBeInTheDocument();
+      expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument();
     });
+
+    // Badge should not be visible when count is 0
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 
   it('opens dropdown when bell is clicked', async () => {

@@ -5,30 +5,66 @@ import { AdminPlanesController } from './infrastructure/controllers/admin-planes
 import { AdminEstudiosController } from './infrastructure/controllers/admin-estudios.controller';
 import { AdminDashboardController } from './infrastructure/controllers/admin-dashboard.controller';
 import { AdminUsuariosController } from './infrastructure/controllers/admin-usuarios.controller';
-import { SuperAdminGuard } from './infrastructure/guards/superadmin.guard';
+import { AdminHealthController } from './infrastructure/controllers/admin-health.controller';
+import { AdminSearchController } from './infrastructure/controllers/admin-search.controller';
+import { HealthCheckHandler } from './application/queries/health-check.query';
+import { AdminSearchHandler } from './application/queries/admin-search.query';
 import { ADMIN_PLAN_REPOSITORY } from './domain/repositories/admin-plan.repository';
+import type { AdminPlanRepository } from './domain/repositories/admin-plan.repository';
 import { MikroOrmAdminPlanRepository } from './infrastructure/persistence/mikro-orm-admin-plan.repository';
+import { DASHBOARD_SNAPSHOT_REPOSITORY } from './domain/repositories/dashboard-snapshot.repository';
+import { PgDashboardSnapshotRepository } from './infrastructure/persistence/pg-dashboard-snapshot.repository';
 import { ObtenerAdminDashboardStatsHandler } from './application/queries/obtener-admin-dashboard-stats.query';
 import { ObtenerAdminUsuariosHandler } from './application/queries/obtener-admin-usuarios.query';
+import { DashboardStatsListener } from './application/listeners/dashboard-stats.listener';
+import { DashboardStatsProjection } from './application/services/dashboard-stats-projection';
+import { DashboardStatsComputer } from './application/services/dashboard-stats-computer';
+import { MaterializeDashboardSnapshotService } from './application/services/materialize-dashboard-snapshot.service';
+import { AdminEstudiosService } from './application/services/admin-estudios.service';
+import { AdminPlanesService } from './application/services/admin-planes.service';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
-  controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController],
+  controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController, AdminHealthController, AdminSearchController],
   providers: [
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
+    { provide: DASHBOARD_SNAPSHOT_REPOSITORY, useClass: PgDashboardSnapshotRepository },
+    DashboardStatsProjection,
+    DashboardStatsListener,
+    MaterializeDashboardSnapshotService,
     {
-      provide: ObtenerAdminDashboardStatsHandler,
-      useFactory: (em: EntityManager) => new ObtenerAdminDashboardStatsHandler(em),
+      provide: DashboardStatsComputer,
+      useFactory: (em: EntityManager) => new DashboardStatsComputer(em),
       inject: [EntityManager],
     },
+    {
+      provide: AdminEstudiosService,
+      useFactory: (em: EntityManager) => new AdminEstudiosService(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: AdminPlanesService,
+      useFactory: (planRepo: AdminPlanRepository) => new AdminPlanesService(planRepo),
+      inject: [ADMIN_PLAN_REPOSITORY],
+    },
+    ObtenerAdminDashboardStatsHandler,
     {
       provide: ObtenerAdminUsuariosHandler,
       useFactory: (em: EntityManager) => new ObtenerAdminUsuariosHandler(em),
       inject: [EntityManager],
     },
-    SuperAdminGuard,
+    {
+      provide: HealthCheckHandler,
+      useFactory: (em: EntityManager) => new HealthCheckHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: AdminSearchHandler,
+      useFactory: (em: EntityManager) => new AdminSearchHandler(em),
+      inject: [EntityManager],
+    },
   ],
 })
 export class AdministracionModule {}

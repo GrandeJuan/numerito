@@ -1,8 +1,8 @@
 import { Subscripcion } from '../entities/subscripcion.entity';
 
 export interface SubscripcionRepository {
-  findByEstudioId(estudioId: string): Promise<Subscripcion[]>;
-  findActiva(estudioId: string): Promise<Subscripcion | null>;
+  findAll(): Promise<Subscripcion[]>;
+  findActiva(): Promise<Subscripcion | null>;
   save(entity: Subscripcion): Promise<void>;
   delete(entity: Subscripcion): Promise<void>;
 }

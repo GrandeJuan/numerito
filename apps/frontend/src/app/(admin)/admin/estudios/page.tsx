@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
-import { STATUS_COLORS, ROL_COLORS, CARD_CLASSES, TABLE_CLASSES } from '@/lib/design-tokens';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import type { PaginationMeta } from '@numerito/shared';
+import { formatFecha } from '@/lib/formatters';
+import { StatusBadge } from '@/components/shared/status-badge';
+import { DataTable, type Column } from '@/components/shared/data-table';
+import { FilterBar, SearchInput, FilterSelect } from '@/components/shared/filter-bar';
 
 interface Estudio {
   id: string;
@@ -14,12 +19,7 @@ interface Estudio {
   createdAt: string;
 }
 
-interface PaginationMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+
 
 export default function AdminEstudiosPage() {
   const [estudios, setEstudios] = useState<Estudio[]>([]);
@@ -44,10 +44,9 @@ export default function AdminEstudiosPage() {
         if (estado) params.set('isActive', estado);
 
         const res = await apiFetch(`/v1/admin/estudios?${params}`);
-        if (!res.ok) throw new Error('Error al cargar estudios');
-        const body = await res.json();
-        setEstudios(body.data);
-        setMeta(body.meta);
+        const { data, meta: resMeta } = await parseApiResponse<Estudio[]>(res);
+        setEstudios(data);
+        if (resMeta) setMeta(resMeta);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -75,6 +74,96 @@ export default function AdminEstudiosPage() {
   const start = (meta.page - 1) * meta.limit + 1;
   const end = Math.min(meta.page * meta.limit, meta.total);
 
+  const estudioColumns: Column<Estudio>[] = [
+    {
+      key: 'nombre',
+      header: 'Nombre',
+      render: (est) => (
+        <span className="text-[#091426] dark:text-white font-medium">{est.nombre}</span>
+      ),
+    },
+    {
+      key: 'cuit',
+      header: 'CUIT',
+      render: (est) => (
+        <span className="text-[#45474c] dark:text-[#c5c6cd] font-mono text-xs">{est.cuit}</span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      render: (est) => <StatusBadge status="ACTIVO" label={est.plan} />,
+    },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (est) => (
+        <StatusBadge
+          status={est.isActive ? 'ACTIVO' : 'INACTIVO'}
+          label={est.isActive ? 'Activo' : 'Inactivo'}
+        />
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Creado',
+      render: (est) => (
+        <span className="text-[#45474c] dark:text-[#a0a3a8]">{formatFecha(est.createdAt)}</span>
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      render: (est) => (
+        <div className="relative">
+          <button
+            onClick={() => setOpenMenu(openMenu === est.id ? null : est.id)}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            aria-label="Acciones"
+          >
+            <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]">
+              more_vert
+            </span>
+          </button>
+          {openMenu === est.id && (
+            <div className="absolute right-4 top-10 z-10 bg-white dark:bg-[#162a4a] border border-[#e2e8f0] dark:border-white/10 rounded-lg shadow-lg py-1 min-w-[160px]">
+              <button
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-[#c5c6cd] hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
+                onClick={() => setOpenMenu(null)}
+              >
+                <span className="material-symbols-outlined text-base mr-2 align-middle">
+                  visibility
+                </span>
+                Ver Detalle
+              </button>
+              {est.isActive ? (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
+                  onClick={() => handleAction(est.id, 'suspend')}
+                >
+                  <span className="material-symbols-outlined text-base mr-2 align-middle">
+                    block
+                  </span>
+                  Suspender
+                </button>
+              ) : (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
+                  onClick={() => handleAction(est.id, 'reactivate')}
+                >
+                  <span className="material-symbols-outlined text-base mr-2 align-middle">
+                    check_circle
+                  </span>
+                  Reactivar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -85,38 +174,32 @@ export default function AdminEstudiosPage() {
       </div>
 
       {/* Filters */}
-      <div className={`${CARD_CLASSES.full} p-4`}>
-        <div className="flex flex-wrap gap-3">
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="Buscar por nombre o CUIT..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-          <select
-            value={plan}
-            onChange={(e) => setPlan(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
-          >
-            <option value="">Todos los planes</option>
-            <option value="STARTER">Starter</option>
-            <option value="PROFESIONAL">Profesional</option>
-            <option value="ENTERPRISE">Enterprise</option>
-          </select>
-          <select
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#162a4a] text-[#091426] dark:text-white text-sm"
-          >
-            <option value="">Todos los estados</option>
-            <option value="true">Activo</option>
-            <option value="false">Inactivo</option>
-          </select>
-        </div>
-      </div>
+      <FilterBar>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nombre o CUIT..."
+        />
+        <FilterSelect
+          value={plan}
+          onChange={setPlan}
+          placeholder="Todos los planes"
+          options={[
+            { value: 'STARTER', label: 'Starter' },
+            { value: 'PROFESIONAL', label: 'Profesional' },
+            { value: 'ENTERPRISE', label: 'Enterprise' },
+          ]}
+        />
+        <FilterSelect
+          value={estado}
+          onChange={setEstado}
+          placeholder="Todos los estados"
+          options={[
+            { value: 'true', label: 'Activo' },
+            { value: 'false', label: 'Inactivo' },
+          ]}
+        />
+      </FilterBar>
 
       {/* Table */}
       {loading ? (
@@ -128,131 +211,35 @@ export default function AdminEstudiosPage() {
           <p className="text-red-500">{error}</p>
         </div>
       ) : (
-        <div className={CARD_CLASSES.full}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-white/10">
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Nombre</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>CUIT</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Plan</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Estado</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Creado</th>
-                  <th className={`text-left py-3 px-4 ${TABLE_CLASSES.headerText}`}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {estudios.map((est) => (
-                  <tr
-                    key={est.id}
-                    className={`border-b border-[#e2e8f0]/50 dark:border-white/5 ${TABLE_CLASSES.rowHover}`}
-                  >
-                    <td className="py-3 px-4 text-[#091426] dark:text-white font-medium">
-                      {est.nombre}
-                    </td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#c5c6cd] font-mono text-xs">
-                      {est.cuit}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROL_COLORS['SOCIO']}`}
-                      >
-                        {est.plan}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          est.isActive ? STATUS_COLORS['ACTIVO'] : STATUS_COLORS['INACTIVO']
-                        }`}
-                      >
-                        {est.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-[#45474c] dark:text-[#a0a3a8]">
-                      {new Date(est.createdAt).toLocaleDateString('es-AR')}
-                    </td>
-                    <td className="py-3 px-4 relative">
-                      <button
-                        onClick={() => setOpenMenu(openMenu === est.id ? null : est.id)}
-                        className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        aria-label="Acciones"
-                      >
-                        <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]">
-                          more_vert
-                        </span>
-                      </button>
-                      {openMenu === est.id && (
-                        <div className="absolute right-4 top-10 z-10 bg-white dark:bg-[#162a4a] border border-[#e2e8f0] dark:border-white/10 rounded-lg shadow-lg py-1 min-w-[160px]">
-                          <button
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-[#c5c6cd] hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
-                            onClick={() => setOpenMenu(null)}
-                          >
-                            <span className="material-symbols-outlined text-base mr-2 align-middle">
-                              visibility
-                            </span>
-                            Ver Detalle
-                          </button>
-                          {est.isActive ? (
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
-                              onClick={() => handleAction(est.id, 'suspend')}
-                            >
-                              <span className="material-symbols-outlined text-base mr-2 align-middle">
-                                block
-                              </span>
-                              Suspender
-                            </button>
-                          ) : (
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5"
-                              onClick={() => handleAction(est.id, 'reactivate')}
-                            >
-                              <span className="material-symbols-outlined text-base mr-2 align-middle">
-                                check_circle
-                              </span>
-                              Reactivar
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {estudios.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#45474c] dark:text-[#a0a3a8]">
-                      No se encontraron estudios.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-white/10">
-            <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
-              Mostrando {start}-{end} de {meta.total} estudios
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => fetchEstudios(meta.page - 1)}
-                disabled={meta.page <= 1}
-                className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => fetchEstudios(meta.page + 1)}
-                disabled={meta.page >= meta.totalPages}
-                className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        </div>
+        <DataTable
+          columns={estudioColumns}
+          data={estudios}
+          rowKey={(est) => est.id}
+          emptyMessage="No se encontraron estudios."
+          footer={
+            <>
+              <p className="text-sm text-[#45474c] dark:text-[#a0a3a8]">
+                Mostrando {start}-{end} de {meta.total} estudios
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => fetchEstudios(meta.page - 1)}
+                  disabled={meta.page <= 1}
+                  className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => fetchEstudios(meta.page + 1)}
+                  disabled={meta.page >= meta.totalPages}
+                  className="px-3 py-1 text-sm rounded-lg border border-[#e2e8f0] dark:border-white/10 text-gray-700 dark:text-[#c5c6cd] hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </>
+          }
+        />
       )}
     </div>
   );

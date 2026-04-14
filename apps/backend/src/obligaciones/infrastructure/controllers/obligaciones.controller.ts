@@ -7,6 +7,8 @@ import { CrearVencimientoDto } from '../../application/dtos/crear-vencimiento.dt
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { EVENT_BUS } from '../../../shared/domain/event-bus';
+import type { EventBus } from '../../../shared/domain/event-bus';
 import type { TipoObligacion } from '@numerito/shared';
 import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
@@ -15,12 +17,13 @@ import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity
 export class ObligacionesController {
   constructor(
     @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
+    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
   ) {}
 
   @Get('kpis')
   @ApiOperation({ summary: 'KPIs de obligaciones del estudio' })
-  async kpis(@EstudioId() estudioId: string) {
-    const all = await this.vencimientoRepo.findByEstudioId(estudioId);
+  async kpis() {
+    const all = await this.vencimientoRepo.findAll();
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
@@ -51,7 +54,6 @@ export class ObligacionesController {
   @Get('vencimientos')
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(
-    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
@@ -59,13 +61,17 @@ export class ObligacionesController {
   ) {
     let vencimientos;
     if (periodo) {
-      vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, estudioId);
+      vencimientos = await this.vencimientoRepo.findByPeriodo(periodo);
     } else if (estado) {
-      vencimientos = await this.vencimientoRepo.findByEstado(estado as EstadoVencimiento, estudioId);
+      vencimientos = await this.vencimientoRepo.findByEstado(estado as EstadoVencimiento);
     } else {
-      vencimientos = await this.vencimientoRepo.findByEstudioId(estudioId);
+      vencimientos = await this.vencimientoRepo.findAll();
     }
-    return successResponse(vencimientos, { total: vencimientos.length, page: +page, limit: +limit });
+    return successResponse(vencimientos, {
+      total: vencimientos.length,
+      page: +page,
+      limit: +limit,
+    });
   }
 
   @Get('vencimientos/:id')
@@ -81,7 +87,7 @@ export class ObligacionesController {
   async create(@Body() dto: CrearVencimientoDto, @EstudioId() estudioId: string) {
     const vencimiento = Vencimiento.create({
       clienteId: dto.clienteId,
-      estudioId,
+      estudioId, // entity still needs estudioId for persistence
       tipoObligacion: dto.tipoObligacion as TipoObligacion,
       periodo: dto.periodo,
       fechaVencimiento: new Date(dto.fechaVencimiento),
@@ -99,6 +105,8 @@ export class ObligacionesController {
 
     vencimiento.presentar();
     await this.vencimientoRepo.save(vencimiento);
+    this.eventBus.publishAll(vencimiento.getDomainEvents());
+    vencimiento.clearDomainEvents();
     return vencimiento;
   }
 
@@ -110,13 +118,15 @@ export class ObligacionesController {
 
     vencimiento.marcarVencido();
     await this.vencimientoRepo.save(vencimiento);
+    this.eventBus.publishAll(vencimiento.getDomainEvents());
+    vencimiento.clearDomainEvents();
     return vencimiento;
   }
 
   @Get('calendario/:periodo')
   @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
-  async calendario(@Param('periodo') periodo: string, @EstudioId() estudioId: string) {
-    const vencimientos = await this.vencimientoRepo.findByPeriodo(periodo, estudioId);
+  async calendario(@Param('periodo') periodo: string) {
+    const vencimientos = await this.vencimientoRepo.findByPeriodo(periodo);
     return successResponse(vencimientos);
   }
 }
