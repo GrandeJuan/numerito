@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Put, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearEmpleadoDto } from '../../application/dtos/crear-empleado.dto';
-import { ActualizarEmpleadoDto } from '../../application/dtos/actualizar-empleado.dto';
-import { ActualizarSueldoDto } from '../../application/dtos/actualizar-sueldo.dto';
+import { CrearEmpleadoDto, crearEmpleadoDtoSchema } from '../../application/dtos/crear-empleado.dto';
+import { ActualizarEmpleadoDto, actualizarEmpleadoDtoSchema } from '../../application/dtos/actualizar-empleado.dto';
+import { ActualizarSueldoDto, actualizarSueldoDtoSchema } from '../../application/dtos/actualizar-sueldo.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { EMPLEADO_REPOSITORY } from '../../domain/repositories/empleado.repository';
 import type { EmpleadoRepository } from '../../domain/repositories/empleado.repository';
 import { Empleado } from '../../domain/entities/empleado.entity';
@@ -24,7 +25,7 @@ export class NominaController {
 
   @Post('empleados')
   @ApiOperation({ summary: 'Crear empleado' })
-  async create(@Body() dto: CrearEmpleadoDto, @EstudioId() estudioId: string) {
+  async create(@Body(new ZodValidationPipe(crearEmpleadoDtoSchema)) dto: CrearEmpleadoDto, @EstudioId() estudioId: string) {
     const empleado = Empleado.create({
       clienteId: dto.clienteId,
       estudioId,
@@ -41,7 +42,7 @@ export class NominaController {
 
   @Put('empleados/:id')
   @ApiOperation({ summary: 'Actualizar empleado' })
-  async update(@Param('id') id: string, @Body() dto: ActualizarEmpleadoDto) {
+  async update(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarEmpleadoDtoSchema)) dto: ActualizarEmpleadoDto) {
     const empleado = await this.empleadoRepo.findById(id);
     if (!empleado) throw new RecursoNoEncontradoError('Empleado');
 
@@ -63,7 +64,7 @@ export class NominaController {
 
   @Patch('empleados/:id/sueldo')
   @ApiOperation({ summary: 'Actualizar sueldo de empleado' })
-  async actualizarSueldo(@Param('id') id: string, @Body() dto: ActualizarSueldoDto) {
+  async actualizarSueldo(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarSueldoDtoSchema)) dto: ActualizarSueldoDto) {
     const empleado = await this.empleadoRepo.findById(id);
     if (!empleado) throw new RecursoNoEncontradoError('Empleado');
 

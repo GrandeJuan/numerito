@@ -1,15 +1,9 @@
-import { IsOptional, IsString } from 'class-validator';
+import { actualizarEmpleadoSchema, type ActualizarEmpleadoInput } from '@numerito/shared';
 
-export class ActualizarEmpleadoDto {
-  @IsString()
-  @IsOptional()
+export const actualizarEmpleadoDtoSchema = actualizarEmpleadoSchema;
+
+export class ActualizarEmpleadoDto implements ActualizarEmpleadoInput {
   nombre?: string;
-
-  @IsString()
-  @IsOptional()
   apellido?: string;
-
-  @IsString()
-  @IsOptional()
   categoriaConvenio?: string;
 }

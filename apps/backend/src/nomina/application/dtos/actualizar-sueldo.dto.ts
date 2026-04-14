@@ -1,7 +1,7 @@
-import { IsNumber, Min } from 'class-validator';
+import { actualizarSueldoSchema, type ActualizarSueldoInput } from '@numerito/shared';
 
-export class ActualizarSueldoDto {
-  @IsNumber()
-  @Min(1)
+export const actualizarSueldoDtoSchema = actualizarSueldoSchema;
+
+export class ActualizarSueldoDto implements ActualizarSueldoInput {
   sueldo!: number;
 }
