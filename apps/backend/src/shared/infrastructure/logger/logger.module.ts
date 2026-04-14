@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'crypto';
-import { Request } from 'express';
+import type { IncomingMessage } from 'http';
 import { ESTUDIO_ID_HEADER, CORRELATION_ID_HEADER } from '../middleware/request-context.middleware';
 import { StructuredLogger } from './structured-logger.service';
 
@@ -13,11 +13,11 @@ export const STRUCTURED_LOGGER = Symbol('StructuredLogger');
     PinoLoggerModule.forRoot({
       pinoHttp: {
         // Generate request ID from correlation header or random UUID
-        genReqId: (req: Request) =>
+        genReqId: (req: IncomingMessage) =>
           (req.headers[CORRELATION_ID_HEADER] as string) || randomUUID(),
 
         // Attach tenant context to every log line for the request
-        customProps: (req: Request) => {
+        customProps: (req: IncomingMessage) => {
           const props: Record<string, string> = {};
           const estudioId = req.headers[ESTUDIO_ID_HEADER] as string | undefined;
           if (estudioId) {

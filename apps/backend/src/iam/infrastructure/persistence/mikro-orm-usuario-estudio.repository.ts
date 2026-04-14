@@ -36,10 +36,11 @@ export class MikroOrmUsuarioEstudioRepository
   }
 
   async findByUsuarioId(usuarioId: string): Promise<UsuarioEstudio[]> {
-    const tenantId = this.getTenantId();
+    // Intentionally tenant-unscoped: this endpoint discovers which estudios
+    // the user belongs to, which is needed BEFORE a tenant context exists.
     const entities = await this.em.find(
       UsuarioEstudioEntity,
-      { usuario: { id: usuarioId }, estudio: { id: tenantId } },
+      { usuario: { id: usuarioId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entities.map((e) => this.toDomain(e));
@@ -67,7 +68,10 @@ export class MikroOrmUsuarioEstudioRepository
 
   async save(membership: UsuarioEstudio): Promise<void> {
     const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(UsuarioEstudioEntity, {
+      id: membership.id,
+      estudio: { id: tenantId },
+    });
     if (existing) {
       const rolEntity = await this.em.findOneOrFail(RolEntity, { codigo: membership.rol });
       existing.rol = rolEntity;
@@ -91,7 +95,10 @@ export class MikroOrmUsuarioEstudioRepository
 
   async delete(membership: UsuarioEstudio): Promise<void> {
     const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id, estudio: { id: tenantId } });
+    const entity = await this.em.findOne(UsuarioEstudioEntity, {
+      id: membership.id,
+      estudio: { id: tenantId },
+    });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

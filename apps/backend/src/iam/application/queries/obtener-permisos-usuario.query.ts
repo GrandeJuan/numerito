@@ -14,7 +14,8 @@ export class ObtenerPermisosUsuarioHandler {
   ) {}
 
   async execute(query: ObtenerPermisosUsuarioQuery): Promise<Permiso[]> {
-    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(query.usuarioId);
+    const memberships = await this.usuarioEstudioRepo.findByUsuarioId(query.usuarioId);
+    const membership = memberships.find((m) => m.estudioId === query.estudioId);
 
     if (!membership || !membership.isActive) {
       return [];

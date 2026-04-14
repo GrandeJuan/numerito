@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { TIPO_DOCUMENTO } from '../constants/tipo-documento';
+import { TIPO_DOCUMENTO, type TipoDocumento } from '../constants/tipo-documento';
 
-const tipoDocumentoValues = Object.values(TIPO_DOCUMENTO) as [string, ...string[]];
+const tipoDocumentoValues = Object.values(TIPO_DOCUMENTO) as [TipoDocumento, ...TipoDocumento[]];
 
 export const crearDocumentoSchema = z.object({
   clienteId: z.string().min(1),

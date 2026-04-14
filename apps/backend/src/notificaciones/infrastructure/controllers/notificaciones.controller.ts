@@ -7,6 +7,7 @@ import {
   RecursoNoEncontradoError,
   OperacionInvalidaError,
 } from '../../../shared/domain/exceptions';
+import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Notificaciones')
 @Controller({ path: 'notificaciones', version: '1' })
@@ -33,16 +34,18 @@ export class NotificacionesController {
       offset: Number(offset),
     });
 
-    return {
-      data: result.data.map((n) => ({
-        id: n.id,
-        tipo: n.tipo,
-        mensaje: n.mensaje,
-        leida: n.leida,
-        createdAt: n.createdAt,
-      })),
+    const items = result.data.map((n) => ({
+      id: n.id,
+      tipo: n.tipo,
+      mensaje: n.mensaje,
+      leida: n.leida,
+      createdAt: n.createdAt,
+    }));
+    return successResponse(items, {
       total: result.total,
-    };
+      page: Math.floor(Number(offset) / Number(limit)) + 1,
+      limit: Number(limit),
+    });
   }
 
   @Patch(':id/leer')

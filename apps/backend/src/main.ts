@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { VersioningType, ValidationPipe } from '@nestjs/common';
+import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -21,7 +21,6 @@ async function bootstrap() {
   });
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
   app.useGlobalInterceptors(new ResponseWrapperInterceptor());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({
     origin: process.env.FRONTEND_URL,
   });

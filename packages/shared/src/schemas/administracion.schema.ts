@@ -8,7 +8,7 @@ export const crearPlanSchema = z.object({
   maxUsuarios: z.number().int().positive(),
   precio: z.number(),
   isPublico: z.boolean().optional(),
-  condiciones: z.record(z.unknown()).optional(),
+  condiciones: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type CrearPlanInput = z.infer<typeof crearPlanSchema>;
@@ -20,7 +20,7 @@ export const actualizarPlanSchema = z.object({
   maxUsuarios: z.number().int().positive().optional(),
   precio: z.number().optional(),
   isPublico: z.boolean().optional(),
-  condiciones: z.record(z.unknown()).optional(),
+  condiciones: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ActualizarPlanInput = z.infer<typeof actualizarPlanSchema>;

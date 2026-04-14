@@ -31,18 +31,25 @@ export class ObtenerPortalStatsHandler {
 
     const conn = this.em.getConnection();
 
-    // Find the cliente linked to this user
+    // Find the cliente linked to this user (if any).
     const clienteRows = await conn.execute(
       `SELECT c.id, c.razon_social
        FROM cliente c
        JOIN usuario_estudio ue ON ue.estudio_id = c.estudio_id
-       WHERE ue.usuario_id = ? AND ue.rol = 'CLIENTE'
+       JOIN rol r ON ue.rol_id = r.id
+       WHERE ue.usuario_id = ? AND r.codigo = 'CLIENTE'
        LIMIT 1`,
       [query.usuarioId],
     );
 
     if (clienteRows.length === 0) {
-      throw new ForbiddenException('No se encontro un cliente asociado a este usuario');
+      return {
+        clienteNombre: '',
+        kpis: { vencimientosPendientes: 0, facturasPendientes: 0, documentos: 0 },
+        vencimientosRecientes: [],
+        facturasRecientes: [],
+        documentosRecientes: [],
+      };
     }
 
     const clienteId = clienteRows[0].id;

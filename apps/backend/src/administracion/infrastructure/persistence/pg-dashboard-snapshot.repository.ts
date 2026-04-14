@@ -19,20 +19,19 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
 
   async getLatest(): Promise<DashboardSnapshot | null> {
     const conn = this.em.getConnection();
-    const rows = await conn.execute(
-      `SELECT * FROM "admin_dashboard_snapshot" WHERE id = 1`,
-    );
+    const rows = await conn.execute(`SELECT * FROM "admin_dashboard_snapshot" WHERE id = 1`);
 
     if (rows.length === 0) return null;
     const row = rows[0];
 
     // If all KPI values are zero and sparklines are empty, treat as unseeded
+    const estudiosSparklineParsed = this.parseJson<number[]>(row.estudios_sparkline, []);
     if (
-      row.estudios_activos === 0 &&
-      row.total_usuarios === 0 &&
-      row.subscripciones_activas === 0 &&
+      Number(row.estudios_activos) === 0 &&
+      Number(row.total_usuarios) === 0 &&
+      Number(row.subscripciones_activas) === 0 &&
       row.stale === true &&
-      (!row.estudios_sparkline || JSON.parse(row.estudios_sparkline).length === 0)
+      estudiosSparklineParsed.length === 0
     ) {
       return null;
     }
@@ -96,9 +95,7 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
 
   async markStale(): Promise<void> {
     const conn = this.em.getConnection();
-    await conn.execute(
-      `UPDATE "admin_dashboard_snapshot" SET "stale" = true WHERE id = 1`,
-    );
+    await conn.execute(`UPDATE "admin_dashboard_snapshot" SET "stale" = true WHERE id = 1`);
   }
 
   private rowToStats(row: any): AdminDashboardStats {
@@ -112,7 +109,10 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
       kpis: {
         estudiosActivos: this.buildKpi(Number(row.estudios_activos), estudiosSparkline),
         totalUsuarios: this.buildKpi(Number(row.total_usuarios), usuariosSparkline),
-        subscripcionesActivas: this.buildKpi(Number(row.subscripciones_activas), subscripcionesSparkline),
+        subscripcionesActivas: this.buildKpi(
+          Number(row.subscripciones_activas),
+          subscripcionesSparkline,
+        ),
         mrr: this.buildKpi(Number(row.mrr), mrrSparkline),
         churnMensual: this.buildKpi(Number(row.churn_mensual), churnSparkline, true),
         uptime: {

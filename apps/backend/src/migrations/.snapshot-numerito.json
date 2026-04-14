@@ -1,9 +1,379 @@
 {
   "name": "public",
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "tables": [
+    {
+      "name": "admin_dashboard_snapshot",
+      "schema": "public",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int4",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "estudios_activos": {
+          "name": "estudios_activos",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": "0",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "total_usuarios": {
+          "name": "total_usuarios",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": "0",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "subscripciones_activas": {
+          "name": "subscripciones_activas",
+          "type": "int4",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 32,
+          "scale": 0,
+          "default": "0",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "integer"
+        },
+        "mrr": {
+          "name": "mrr",
+          "type": "numeric(12,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 12,
+          "scale": 2,
+          "default": "0",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        },
+        "churn_mensual": {
+          "name": "churn_mensual",
+          "type": "numeric(5,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 5,
+          "scale": 2,
+          "default": "0",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        },
+        "uptime": {
+          "name": "uptime",
+          "type": "numeric(5,2)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": 5,
+          "scale": 2,
+          "default": "99.98",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "decimal"
+        },
+        "estudios_sparkline": {
+          "name": "estudios_sparkline",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "usuarios_sparkline": {
+          "name": "usuarios_sparkline",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "subscripciones_sparkline": {
+          "name": "subscripciones_sparkline",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "mrr_sparkline": {
+          "name": "mrr_sparkline",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "churn_sparkline": {
+          "name": "churn_sparkline",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "growth_data": {
+          "name": "growth_data",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "revenue_data": {
+          "name": "revenue_data",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "registros_mensuales": {
+          "name": "registros_mensuales",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "distribucion_planes": {
+          "name": "distribucion_planes",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "alertas": {
+          "name": "alertas",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "estudios_recientes": {
+          "name": "estudios_recientes",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "top_tenants": {
+          "name": "top_tenants",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "registros_recientes": {
+          "name": "registros_recientes",
+          "type": "jsonb",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'[]'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
+        "computed_at": {
+          "name": "computed_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "stale": {
+          "name": "stale",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "true",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": ["id"],
+          "composite": false,
+          "constraint": false,
+          "keyName": "admin_dashboard_snapshot_pkey",
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {},
+      "comment": null
+    },
     {
       "name": "alerta_config",
       "schema": "public",
@@ -91,9 +461,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": true,
           "keyName": "alerta_config_estudio_id_unique",
@@ -101,9 +469,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "alerta_config_pkey",
@@ -114,15 +480,11 @@
       "checks": [],
       "foreignKeys": {
         "alerta_config_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "alerta_config_estudio_id_foreign",
           "localTableName": "public.alerta_config",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -281,9 +643,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "asiento_contable_cliente_id_index",
@@ -291,9 +651,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "asiento_contable_estudio_id_index",
@@ -301,9 +659,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "fecha"
-          ],
+          "columnNames": ["fecha"],
           "composite": false,
           "constraint": false,
           "keyName": "asiento_contable_fecha_index",
@@ -311,9 +667,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "libro_id"
-          ],
+          "columnNames": ["libro_id"],
           "composite": false,
           "constraint": false,
           "keyName": "asiento_contable_libro_id_index",
@@ -321,9 +675,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "asiento_contable_pkey",
@@ -334,41 +686,29 @@
       "checks": [],
       "foreignKeys": {
         "asiento_contable_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "asiento_contable_cliente_id_foreign",
           "localTableName": "public.asiento_contable",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "asiento_contable_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "asiento_contable_estudio_id_foreign",
           "localTableName": "public.asiento_contable",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "asiento_contable_libro_id_foreign": {
-          "columnNames": [
-            "libro_id"
-          ],
+          "columnNames": ["libro_id"],
           "constraintName": "asiento_contable_libro_id_foreign",
           "localTableName": "public.asiento_contable",
           "referencedTableName": "public.libro_contable",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -431,9 +771,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "ciclo_facturacion_codigo_unique",
@@ -441,9 +779,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "ciclo_facturacion_pkey",
@@ -639,10 +975,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cuit",
-            "estudio_id"
-          ],
+          "columnNames": ["cuit", "estudio_id"],
           "composite": true,
           "constraint": true,
           "keyName": "cliente_cuit_estudio_id_unique",
@@ -650,9 +983,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "cliente_estudio_id_index",
@@ -660,9 +991,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "cliente_pkey",
@@ -670,9 +999,7 @@
           "primary": true
         },
         {
-          "columnNames": [
-            "responsable_id"
-          ],
+          "columnNames": ["responsable_id"],
           "composite": false,
           "constraint": false,
           "keyName": "cliente_responsable_id_index",
@@ -683,67 +1010,47 @@
       "checks": [],
       "foreignKeys": {
         "cliente_condicion_iva_id_foreign": {
-          "columnNames": [
-            "condicion_iva_id"
-          ],
+          "columnNames": ["condicion_iva_id"],
           "constraintName": "cliente_condicion_iva_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.condicion_iva",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "cliente_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "cliente_estudio_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "cliente_regimen_id_foreign": {
-          "columnNames": [
-            "regimen_id"
-          ],
+          "columnNames": ["regimen_id"],
           "constraintName": "cliente_regimen_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.regimen",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "cliente_responsable_id_foreign": {
-          "columnNames": [
-            "responsable_id"
-          ],
+          "columnNames": ["responsable_id"],
           "constraintName": "cliente_responsable_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.usuario",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "set null"
         },
         "cliente_tipo_cliente_id_foreign": {
-          "columnNames": [
-            "tipo_cliente_id"
-          ],
+          "columnNames": ["tipo_cliente_id"],
           "constraintName": "cliente_tipo_cliente_id_foreign",
           "localTableName": "public.cliente",
           "referencedTableName": "public.tipo_cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -790,10 +1097,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id",
-            "provincia_id"
-          ],
+          "columnNames": ["cliente_id", "provincia_id"],
           "composite": true,
           "constraint": false,
           "keyName": "cliente_provincia_pkey",
@@ -877,9 +1181,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "condicion_iva_codigo_unique",
@@ -887,9 +1189,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "condicion_iva_pkey",
@@ -1069,9 +1369,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "credencial_fiscal_cliente_id_index",
@@ -1079,9 +1377,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "credencial_fiscal_estudio_id_index",
@@ -1089,9 +1385,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "credencial_fiscal_pkey",
@@ -1102,41 +1396,29 @@
       "checks": [],
       "foreignKeys": {
         "credencial_fiscal_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "credencial_fiscal_cliente_id_foreign",
           "localTableName": "public.credencial_fiscal",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "credencial_fiscal_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "credencial_fiscal_estudio_id_foreign",
           "localTableName": "public.credencial_fiscal",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "credencial_fiscal_organismo_id_foreign": {
-          "columnNames": [
-            "organismo_id"
-          ],
+          "columnNames": ["organismo_id"],
           "constraintName": "credencial_fiscal_organismo_id_foreign",
           "localTableName": "public.credencial_fiscal",
           "referencedTableName": "public.organismo_fiscal",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -1327,9 +1609,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "documento_cliente_id_index",
@@ -1337,9 +1617,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "documento_estudio_id_index",
@@ -1347,9 +1625,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "documento_pkey",
@@ -1357,9 +1633,7 @@
           "primary": true
         },
         {
-          "columnNames": [
-            "s3_key"
-          ],
+          "columnNames": ["s3_key"],
           "composite": false,
           "constraint": true,
           "keyName": "documento_s3_key_unique",
@@ -1370,41 +1644,29 @@
       "checks": [],
       "foreignKeys": {
         "documento_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "documento_cliente_id_foreign",
           "localTableName": "public.documento",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "documento_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "documento_estudio_id_foreign",
           "localTableName": "public.documento",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "documento_tipo_documento_id_foreign": {
-          "columnNames": [
-            "tipo_documento_id"
-          ],
+          "columnNames": ["tipo_documento_id"],
           "constraintName": "documento_tipo_documento_id_foreign",
           "localTableName": "public.documento",
           "referencedTableName": "public.tipo_documento",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -1627,9 +1889,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "empleado_cliente_id_index",
@@ -1637,10 +1897,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "cuil",
-            "estudio_id"
-          ],
+          "columnNames": ["cuil", "estudio_id"],
           "composite": true,
           "constraint": true,
           "keyName": "empleado_cuil_estudio_id_unique",
@@ -1648,9 +1905,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "empleado_estudio_id_index",
@@ -1658,9 +1913,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "empleado_pkey",
@@ -1671,28 +1924,20 @@
       "checks": [],
       "foreignKeys": {
         "empleado_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "empleado_cliente_id_foreign",
           "localTableName": "public.empleado",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "empleado_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "empleado_estudio_id_foreign",
           "localTableName": "public.empleado",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -1755,9 +2000,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "estado_factura_codigo_unique",
@@ -1765,9 +2008,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "estado_factura_pkey",
@@ -1835,9 +2076,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "estado_subscripcion_codigo_unique",
@@ -1845,9 +2084,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "estado_subscripcion_pkey",
@@ -1915,9 +2152,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "estado_tarea_codigo_unique",
@@ -1925,9 +2160,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "estado_tarea_pkey",
@@ -1995,9 +2228,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "estado_vencimiento_codigo_unique",
@@ -2005,9 +2236,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "estado_vencimiento_pkey",
@@ -2139,9 +2368,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cuit"
-          ],
+          "columnNames": ["cuit"],
           "composite": false,
           "constraint": true,
           "keyName": "estudio_cuit_unique",
@@ -2149,9 +2376,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "estudio_pkey",
@@ -2162,15 +2387,11 @@
       "checks": [],
       "foreignKeys": {
         "estudio_plan_id_foreign": {
-          "columnNames": [
-            "plan_id"
-          ],
+          "columnNames": ["plan_id"],
           "constraintName": "estudio_plan_id_foreign",
           "localTableName": "public.estudio",
           "referencedTableName": "public.plan",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -2409,9 +2630,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "factura_cliente_id_index",
@@ -2419,10 +2638,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id",
-            "estado_id"
-          ],
+          "columnNames": ["estudio_id", "estado_id"],
           "composite": true,
           "constraint": false,
           "keyName": "factura_estudio_id_estado_id_index",
@@ -2430,9 +2646,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "factura_estudio_id_index",
@@ -2440,10 +2654,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "numero",
-            "estudio_id"
-          ],
+          "columnNames": ["numero", "estudio_id"],
           "composite": true,
           "constraint": true,
           "keyName": "factura_numero_estudio_id_unique",
@@ -2451,9 +2662,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "factura_pkey",
@@ -2464,41 +2673,29 @@
       "checks": [],
       "foreignKeys": {
         "factura_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "factura_cliente_id_foreign",
           "localTableName": "public.factura",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "factura_estado_id_foreign": {
-          "columnNames": [
-            "estado_id"
-          ],
+          "columnNames": ["estado_id"],
           "constraintName": "factura_estado_id_foreign",
           "localTableName": "public.factura",
           "referencedTableName": "public.estado_factura",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "factura_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "factura_estudio_id_foreign",
           "localTableName": "public.factura",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -2609,9 +2806,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "historial_plan_pkey",
@@ -2622,41 +2817,29 @@
       "checks": [],
       "foreignKeys": {
         "historial_plan_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "historial_plan_estudio_id_foreign",
           "localTableName": "public.historial_plan",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "historial_plan_plan_anterior_id_foreign": {
-          "columnNames": [
-            "plan_anterior_id"
-          ],
+          "columnNames": ["plan_anterior_id"],
           "constraintName": "historial_plan_plan_anterior_id_foreign",
           "localTableName": "public.historial_plan",
           "referencedTableName": "public.plan",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "historial_plan_plan_nuevo_id_foreign": {
-          "columnNames": [
-            "plan_nuevo_id"
-          ],
+          "columnNames": ["plan_nuevo_id"],
           "constraintName": "historial_plan_plan_nuevo_id_foreign",
           "localTableName": "public.historial_plan",
           "referencedTableName": "public.plan",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -2815,9 +2998,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "libro_contable_cliente_id_index",
@@ -2825,11 +3006,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "cliente_id",
-            "tipo_libro_id",
-            "periodo"
-          ],
+          "columnNames": ["cliente_id", "tipo_libro_id", "periodo"],
           "composite": true,
           "constraint": true,
           "keyName": "libro_contable_cliente_id_tipo_libro_id_periodo_unique",
@@ -2837,9 +3014,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "libro_contable_estudio_id_index",
@@ -2847,9 +3022,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "libro_contable_pkey",
@@ -2860,41 +3033,29 @@
       "checks": [],
       "foreignKeys": {
         "libro_contable_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "libro_contable_cliente_id_foreign",
           "localTableName": "public.libro_contable",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "libro_contable_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "libro_contable_estudio_id_foreign",
           "localTableName": "public.libro_contable",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "libro_contable_tipo_libro_id_foreign": {
-          "columnNames": [
-            "tipo_libro_id"
-          ],
+          "columnNames": ["tipo_libro_id"],
           "constraintName": "libro_contable_tipo_libro_id_foreign",
           "localTableName": "public.libro_contable",
           "referencedTableName": "public.tipo_libro",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -3021,9 +3182,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "factura_id"
-          ],
+          "columnNames": ["factura_id"],
           "composite": false,
           "constraint": false,
           "keyName": "linea_factura_factura_id_index",
@@ -3031,9 +3190,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "linea_factura_pkey",
@@ -3044,15 +3201,11 @@
       "checks": [],
       "foreignKeys": {
         "linea_factura_factura_id_foreign": {
-          "columnNames": [
-            "factura_id"
-          ],
+          "columnNames": ["factura_id"],
           "constraintName": "linea_factura_factura_id_foreign",
           "localTableName": "public.linea_factura",
           "referencedTableName": "public.factura",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -3115,9 +3268,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "localidad_pkey",
@@ -3128,15 +3279,11 @@
       "checks": [],
       "foreignKeys": {
         "localidad_provincia_id_foreign": {
-          "columnNames": [
-            "provincia_id"
-          ],
+          "columnNames": ["provincia_id"],
           "constraintName": "localidad_provincia_id_foreign",
           "localTableName": "public.localidad",
           "referencedTableName": "public.provincia",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -3199,9 +3346,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "medio_pago_codigo_unique",
@@ -3209,9 +3354,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "medio_pago_pkey",
@@ -3423,9 +3566,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "notificacion_fiscal_cliente_id_index",
@@ -3433,10 +3574,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id",
-            "estado"
-          ],
+          "columnNames": ["estudio_id", "estado"],
           "composite": true,
           "constraint": false,
           "keyName": "notificacion_fiscal_estudio_id_estado_index",
@@ -3444,9 +3582,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "notificacion_fiscal_estudio_id_index",
@@ -3454,9 +3590,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "fecha_notificacion"
-          ],
+          "columnNames": ["fecha_notificacion"],
           "composite": false,
           "constraint": false,
           "keyName": "notificacion_fiscal_fecha_notificacion_index",
@@ -3464,9 +3598,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "notificacion_fiscal_pkey",
@@ -3477,41 +3609,29 @@
       "checks": [],
       "foreignKeys": {
         "notificacion_fiscal_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "notificacion_fiscal_cliente_id_foreign",
           "localTableName": "public.notificacion_fiscal",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "notificacion_fiscal_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "notificacion_fiscal_estudio_id_foreign",
           "localTableName": "public.notificacion_fiscal",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "notificacion_fiscal_organismo_id_foreign": {
-          "columnNames": [
-            "organismo_id"
-          ],
+          "columnNames": ["organismo_id"],
           "constraintName": "notificacion_fiscal_organismo_id_foreign",
           "localTableName": "public.notificacion_fiscal",
           "referencedTableName": "public.organismo_fiscal",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -3654,9 +3774,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "organismo_fiscal_codigo_unique",
@@ -3664,9 +3782,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "organismo_fiscal_pkey",
@@ -3814,9 +3930,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "pago_estudio_id_index",
@@ -3824,9 +3938,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "factura_id"
-          ],
+          "columnNames": ["factura_id"],
           "composite": false,
           "constraint": false,
           "keyName": "pago_factura_id_index",
@@ -3834,9 +3946,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "pago_pkey",
@@ -3847,41 +3957,29 @@
       "checks": [],
       "foreignKeys": {
         "pago_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "pago_estudio_id_foreign",
           "localTableName": "public.pago",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "pago_factura_id_foreign": {
-          "columnNames": [
-            "factura_id"
-          ],
+          "columnNames": ["factura_id"],
           "constraintName": "pago_factura_id_foreign",
           "localTableName": "public.pago",
           "referencedTableName": "public.factura",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "pago_medio_pago_id_foreign": {
-          "columnNames": [
-            "medio_pago_id"
-          ],
+          "columnNames": ["medio_pago_id"],
           "constraintName": "pago_medio_pago_id_foreign",
           "localTableName": "public.pago",
           "referencedTableName": "public.medio_pago",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -3944,9 +4042,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "pais_codigo_unique",
@@ -3954,9 +4050,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "pais_pkey",
@@ -4040,9 +4134,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "permiso_codigo_unique",
@@ -4050,9 +4142,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "permiso_pkey",
@@ -4232,9 +4322,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "plan_codigo_unique",
@@ -4242,9 +4330,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "plan_pkey",
@@ -4328,9 +4414,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "prioridad_codigo_unique",
@@ -4338,9 +4422,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "prioridad_pkey",
@@ -4408,9 +4490,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "provincia_pkey",
@@ -4421,15 +4501,11 @@
       "checks": [],
       "foreignKeys": {
         "provincia_pais_id_foreign": {
-          "columnNames": [
-            "pais_id"
-          ],
+          "columnNames": ["pais_id"],
           "constraintName": "provincia_pais_id_foreign",
           "localTableName": "public.provincia",
           "referencedTableName": "public.pais",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -4492,9 +4568,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "regimen_codigo_unique",
@@ -4502,9 +4576,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "regimen_pkey",
@@ -4604,9 +4676,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "regla_vencimiento_pkey",
@@ -4617,15 +4687,11 @@
       "checks": [],
       "foreignKeys": {
         "regla_vencimiento_tipo_obligacion_id_foreign": {
-          "columnNames": [
-            "tipo_obligacion_id"
-          ],
+          "columnNames": ["tipo_obligacion_id"],
           "constraintName": "regla_vencimiento_tipo_obligacion_id_foreign",
           "localTableName": "public.regla_vencimiento",
           "referencedTableName": "public.tipo_obligacion",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -4688,9 +4754,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "rol_codigo_unique",
@@ -4698,9 +4762,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "rol_pkey",
@@ -4752,10 +4814,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "rol_id",
-            "permiso_id"
-          ],
+          "columnNames": ["rol_id", "permiso_id"],
           "composite": true,
           "constraint": false,
           "keyName": "rol_permiso_pkey",
@@ -4766,28 +4825,20 @@
       "checks": [],
       "foreignKeys": {
         "rol_permiso_permiso_id_foreign": {
-          "columnNames": [
-            "permiso_id"
-          ],
+          "columnNames": ["permiso_id"],
           "constraintName": "rol_permiso_permiso_id_foreign",
           "localTableName": "public.rol_permiso",
           "referencedTableName": "public.permiso",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "cascade",
           "deleteRule": "cascade"
         },
         "rol_permiso_rol_id_foreign": {
-          "columnNames": [
-            "rol_id"
-          ],
+          "columnNames": ["rol_id"],
           "constraintName": "rol_permiso_rol_id_foreign",
           "localTableName": "public.rol_permiso",
           "referencedTableName": "public.rol",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "cascade",
           "deleteRule": "cascade"
         }
@@ -4946,9 +4997,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "sesion_pkey",
@@ -4956,9 +5005,7 @@
           "primary": true
         },
         {
-          "columnNames": [
-            "usuario_id"
-          ],
+          "columnNames": ["usuario_id"],
           "composite": false,
           "constraint": false,
           "keyName": "sesion_usuario_id_index",
@@ -4969,15 +5016,11 @@
       "checks": [],
       "foreignKeys": {
         "sesion_usuario_id_foreign": {
-          "columnNames": [
-            "usuario_id"
-          ],
+          "columnNames": ["usuario_id"],
           "constraintName": "sesion_usuario_id_foreign",
           "localTableName": "public.sesion",
           "referencedTableName": "public.usuario",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -5152,9 +5195,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "subscripcion_pkey",
@@ -5165,54 +5206,38 @@
       "checks": [],
       "foreignKeys": {
         "subscripcion_ciclo_facturacion_id_foreign": {
-          "columnNames": [
-            "ciclo_facturacion_id"
-          ],
+          "columnNames": ["ciclo_facturacion_id"],
           "constraintName": "subscripcion_ciclo_facturacion_id_foreign",
           "localTableName": "public.subscripcion",
           "referencedTableName": "public.ciclo_facturacion",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "subscripcion_estado_subscripcion_id_foreign": {
-          "columnNames": [
-            "estado_subscripcion_id"
-          ],
+          "columnNames": ["estado_subscripcion_id"],
           "constraintName": "subscripcion_estado_subscripcion_id_foreign",
           "localTableName": "public.subscripcion",
           "referencedTableName": "public.estado_subscripcion",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "subscripcion_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "subscripcion_estudio_id_foreign",
           "localTableName": "public.subscripcion",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "subscripcion_plan_id_foreign": {
-          "columnNames": [
-            "plan_id"
-          ],
+          "columnNames": ["plan_id"],
           "constraintName": "subscripcion_plan_id_foreign",
           "localTableName": "public.subscripcion",
           "referencedTableName": "public.plan",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -5419,9 +5444,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "tarea_cliente_id_index",
@@ -5429,10 +5452,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id",
-            "estado_id"
-          ],
+          "columnNames": ["estudio_id", "estado_id"],
           "composite": true,
           "constraint": false,
           "keyName": "tarea_estudio_id_estado_id_index",
@@ -5440,9 +5460,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "tarea_estudio_id_index",
@@ -5450,9 +5468,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "tarea_pkey",
@@ -5460,9 +5476,7 @@
           "primary": true
         },
         {
-          "columnNames": [
-            "responsable_id"
-          ],
+          "columnNames": ["responsable_id"],
           "composite": false,
           "constraint": false,
           "keyName": "tarea_responsable_id_index",
@@ -5473,67 +5487,47 @@
       "checks": [],
       "foreignKeys": {
         "tarea_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "tarea_cliente_id_foreign",
           "localTableName": "public.tarea",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "set null"
         },
         "tarea_estado_id_foreign": {
-          "columnNames": [
-            "estado_id"
-          ],
+          "columnNames": ["estado_id"],
           "constraintName": "tarea_estado_id_foreign",
           "localTableName": "public.tarea",
           "referencedTableName": "public.estado_tarea",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "tarea_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "tarea_estudio_id_foreign",
           "localTableName": "public.tarea",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "tarea_prioridad_id_foreign": {
-          "columnNames": [
-            "prioridad_id"
-          ],
+          "columnNames": ["prioridad_id"],
           "constraintName": "tarea_prioridad_id_foreign",
           "localTableName": "public.tarea",
           "referencedTableName": "public.prioridad",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "tarea_responsable_id_foreign": {
-          "columnNames": [
-            "responsable_id"
-          ],
+          "columnNames": ["responsable_id"],
           "constraintName": "tarea_responsable_id_foreign",
           "localTableName": "public.tarea",
           "referencedTableName": "public.usuario",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "set null"
         }
@@ -5596,9 +5590,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "tipo_cliente_codigo_unique",
@@ -5606,9 +5598,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "tipo_cliente_pkey",
@@ -5676,9 +5666,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "tipo_documento_codigo_unique",
@@ -5686,9 +5674,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "tipo_documento_pkey",
@@ -5756,9 +5742,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "tipo_libro_codigo_unique",
@@ -5766,9 +5750,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "tipo_libro_pkey",
@@ -5852,9 +5834,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "codigo"
-          ],
+          "columnNames": ["codigo"],
           "composite": false,
           "constraint": true,
           "keyName": "tipo_obligacion_codigo_unique",
@@ -5862,9 +5842,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "tipo_obligacion_pkey",
@@ -6072,13 +6050,43 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "theme_preference": {
+          "name": "theme_preference",
+          "type": "varchar(10)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 10,
+          "precision": null,
+          "scale": null,
+          "default": "'light'",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "varchar(500)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 500,
+          "precision": null,
+          "scale": null,
+          "default": "null",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "string"
         }
       },
       "indexes": [
         {
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "constraint": true,
           "keyName": "usuario_email_unique",
@@ -6086,9 +6094,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "usuario_pkey",
@@ -6099,15 +6105,11 @@
       "checks": [],
       "foreignKeys": {
         "usuario_rol_id_foreign": {
-          "columnNames": [
-            "rol_id"
-          ],
+          "columnNames": ["rol_id"],
           "constraintName": "usuario_rol_id_foreign",
           "localTableName": "public.usuario",
           "referencedTableName": "public.rol",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -6234,9 +6236,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "usuario_estudio_estudio_id_index",
@@ -6244,9 +6244,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "usuario_estudio_pkey",
@@ -6254,10 +6252,7 @@
           "primary": true
         },
         {
-          "columnNames": [
-            "usuario_id",
-            "estudio_id"
-          ],
+          "columnNames": ["usuario_id", "estudio_id"],
           "composite": true,
           "constraint": true,
           "keyName": "usuario_estudio_usuario_id_estudio_id_unique",
@@ -6268,41 +6263,29 @@
       "checks": [],
       "foreignKeys": {
         "usuario_estudio_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "usuario_estudio_estudio_id_foreign",
           "localTableName": "public.usuario_estudio",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "usuario_estudio_rol_id_foreign": {
-          "columnNames": [
-            "rol_id"
-          ],
+          "columnNames": ["rol_id"],
           "constraintName": "usuario_estudio_rol_id_foreign",
           "localTableName": "public.usuario_estudio",
           "referencedTableName": "public.rol",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "usuario_estudio_usuario_id_foreign": {
-          "columnNames": [
-            "usuario_id"
-          ],
+          "columnNames": ["usuario_id"],
           "constraintName": "usuario_estudio_usuario_id_foreign",
           "localTableName": "public.usuario_estudio",
           "referencedTableName": "public.usuario",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }
@@ -6477,9 +6460,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "composite": false,
           "constraint": false,
           "keyName": "vencimiento_cliente_id_index",
@@ -6487,10 +6468,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id",
-            "estado_id"
-          ],
+          "columnNames": ["estudio_id", "estado_id"],
           "composite": true,
           "constraint": false,
           "keyName": "vencimiento_estudio_id_estado_id_index",
@@ -6498,9 +6476,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "composite": false,
           "constraint": false,
           "keyName": "vencimiento_estudio_id_index",
@@ -6508,9 +6484,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "fecha_vencimiento"
-          ],
+          "columnNames": ["fecha_vencimiento"],
           "composite": false,
           "constraint": false,
           "keyName": "vencimiento_fecha_vencimiento_index",
@@ -6518,9 +6492,7 @@
           "primary": false
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": false,
           "keyName": "vencimiento_pkey",
@@ -6531,54 +6503,38 @@
       "checks": [],
       "foreignKeys": {
         "vencimiento_cliente_id_foreign": {
-          "columnNames": [
-            "cliente_id"
-          ],
+          "columnNames": ["cliente_id"],
           "constraintName": "vencimiento_cliente_id_foreign",
           "localTableName": "public.vencimiento",
           "referencedTableName": "public.cliente",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "vencimiento_estado_id_foreign": {
-          "columnNames": [
-            "estado_id"
-          ],
+          "columnNames": ["estado_id"],
           "constraintName": "vencimiento_estado_id_foreign",
           "localTableName": "public.vencimiento",
           "referencedTableName": "public.estado_vencimiento",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "vencimiento_estudio_id_foreign": {
-          "columnNames": [
-            "estudio_id"
-          ],
+          "columnNames": ["estudio_id"],
           "constraintName": "vencimiento_estudio_id_foreign",
           "localTableName": "public.vencimiento",
           "referencedTableName": "public.estudio",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         },
         "vencimiento_tipo_obligacion_id_foreign": {
-          "columnNames": [
-            "tipo_obligacion_id"
-          ],
+          "columnNames": ["tipo_obligacion_id"],
           "constraintName": "vencimiento_tipo_obligacion_id_foreign",
           "localTableName": "public.vencimiento",
           "referencedTableName": "public.tipo_obligacion",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "updateRule": "no action",
           "deleteRule": "no action"
         }

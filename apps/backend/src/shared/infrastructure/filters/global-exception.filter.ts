@@ -1,4 +1,13 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, LoggerService, Optional, Inject } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  LoggerService,
+  Optional,
+  Inject,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { errorResponse } from '../responses/api-response';
 import { DomainException } from '../../domain/exceptions/domain.exception';
@@ -6,9 +15,7 @@ import { CORRELATION_ID_HEADER } from '../middleware/request-context.middleware'
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  constructor(
-    @Optional() @Inject('LoggerService') private readonly logger?: LoggerService,
-  ) {}
+  constructor(@Optional() @Inject('LoggerService') private readonly logger?: LoggerService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -18,6 +25,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Error interno del servidor';
     let code = 'INTERNAL_ERROR';
+    let errors: unknown | undefined;
 
     if (exception instanceof DomainException) {
       statusCode = exception.httpStatus;
@@ -32,7 +40,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       } else if (typeof exResponse === 'object' && exResponse !== null) {
         const obj = exResponse as Record<string, unknown>;
         message = (obj.message as string) || message;
-        code = (obj.code as string) || this.statusToCode(statusCode);
+        if (obj.errors !== undefined) errors = obj.errors;
       }
 
       code = this.statusToCode(statusCode);
@@ -60,14 +68,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           JSON.stringify(logContext),
         );
       } else if (statusCode >= 400) {
-        this.logger.warn(
-          `[${code}] ${message}`,
-          JSON.stringify(logContext),
-        );
+        this.logger.warn(`[${code}] ${message}`, JSON.stringify(logContext));
       }
     }
 
-    const body = errorResponse(code, message, statusCode, correlationId);
+    const body = errorResponse(code, message, statusCode, correlationId, errors);
     response.status(statusCode).json(body);
   }
 

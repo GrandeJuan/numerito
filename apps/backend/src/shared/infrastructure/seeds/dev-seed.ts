@@ -15,7 +15,7 @@
 
 import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
-import { MikroORM, EntityManager } from '@mikro-orm/postgresql';
+import { MikroORM } from '@mikro-orm/postgresql';
 import config from '../../../mikro-orm.config';
 import { SEED_SQL } from './initial-seed';
 import { PERMISOS_DEFAULT_SEED } from '../../../iam/infrastructure/seeds/permisos-default.seed';
@@ -35,8 +35,16 @@ async function run() {
 
   // ── 0. Run pending schema changes ─────────────────────
   console.log('0/7  Applying schema changes...');
-  await em.getConnection().execute(`ALTER TABLE usuario ADD COLUMN IF NOT EXISTS theme_preference varchar(10) NOT NULL DEFAULT 'light';`);
-  await em.getConnection().execute(`CREATE TABLE IF NOT EXISTS notificacion (id uuid PRIMARY KEY, usuario_id uuid NOT NULL, estudio_id uuid, tipo varchar(50) NOT NULL, mensaje text NOT NULL, leida boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT NOW(), updated_at timestamptz NOT NULL DEFAULT NOW());`);
+  await em
+    .getConnection()
+    .execute(
+      `ALTER TABLE usuario ADD COLUMN IF NOT EXISTS theme_preference varchar(10) NOT NULL DEFAULT 'light';`,
+    );
+  await em
+    .getConnection()
+    .execute(
+      `CREATE TABLE IF NOT EXISTS notificacion (id uuid PRIMARY KEY, usuario_id uuid NOT NULL, estudio_id uuid, tipo varchar(50) NOT NULL, mensaje text NOT NULL, leida boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT NOW(), updated_at timestamptz NOT NULL DEFAULT NOW());`,
+    );
 
   // ── 1. Lookup/reference data ──────────────────────────
   console.log('1/7  Seeding lookup tables...');
@@ -73,11 +81,35 @@ async function run() {
   const clienteId = uuid();
 
   const users = [
-    { id: superadminId, email: 'superadmin@numerito.com', nombre: 'Super', apellido: 'Admin', rol: 'SUPERADMIN' },
+    {
+      id: superadminId,
+      email: 'superadmin@numerito.com',
+      nombre: 'Super',
+      apellido: 'Admin',
+      rol: 'SUPERADMIN',
+    },
     { id: socioId, email: 'admin@demo.com', nombre: 'Admin', apellido: 'Demo', rol: 'SOCIO' },
-    { id: responsableId, email: 'responsable@demo.com', nombre: 'María', apellido: 'González', rol: 'RESPONSABLE' },
-    { id: empleadoId, email: 'empleado@demo.com', nombre: 'Juan', apellido: 'Pérez', rol: 'EMPLEADO' },
-    { id: clienteId, email: 'cliente@demo.com', nombre: 'Carlos', apellido: 'López', rol: 'CLIENTE' },
+    {
+      id: responsableId,
+      email: 'responsable@demo.com',
+      nombre: 'María',
+      apellido: 'González',
+      rol: 'RESPONSABLE',
+    },
+    {
+      id: empleadoId,
+      email: 'empleado@demo.com',
+      nombre: 'Juan',
+      apellido: 'Pérez',
+      rol: 'EMPLEADO',
+    },
+    {
+      id: clienteId,
+      email: 'cliente@demo.com',
+      nombre: 'Carlos',
+      apellido: 'López',
+      rol: 'CLIENTE',
+    },
   ];
 
   for (const u of users) {
@@ -94,13 +126,15 @@ async function run() {
   const estudioId = uuid();
   await em.getConnection().execute(`
     INSERT INTO estudio (id, nombre, plan_id, cuit, is_active, created_at, updated_at)
-    SELECT '${estudioId}', 'Estudio Demo', p.id, '20-12345678-9', true, NOW(), NOW()
+    SELECT '${estudioId}', 'Estudio Demo', p.id, '20-12345678-6', true, NOW(), NOW()
     FROM plan p WHERE p.codigo = 'PROFESIONAL'
     ON CONFLICT (cuit) DO NOTHING;
   `);
 
   // Get the actual estudio id (in case it already existed)
-  const [estudioRow] = await em.getConnection().execute(`SELECT id FROM estudio WHERE cuit = '20-12345678-9'`);
+  const [estudioRow] = await em
+    .getConnection()
+    .execute(`SELECT id FROM estudio WHERE cuit = '20-12345678-6'`);
   const actualEstudioId = estudioRow?.id || estudioId;
 
   // ── 6. Link users to estudio ──────────────────────────
@@ -112,7 +146,9 @@ async function run() {
   ];
 
   for (const link of links) {
-    const [userRow] = await em.getConnection().execute(`SELECT id FROM usuario WHERE email = '${link.email}'`);
+    const [userRow] = await em
+      .getConnection()
+      .execute(`SELECT id FROM usuario WHERE email = '${link.email}'`);
     if (userRow) {
       await em.getConnection().execute(`
         INSERT INTO usuario_estudio (id, usuario_id, estudio_id, rol_id, is_active, created_at, updated_at)
@@ -128,11 +164,41 @@ async function run() {
 
   // Sample clients
   const clientNames = [
-    { razon: 'Panadería El Trigal SRL', cuit: '30-71234567-0', tipo: 'PERSONA_JURIDICA', condicion: 'RESPONSABLE_INSCRIPTO', regimen: 'GENERAL' },
-    { razon: 'García María Inés', cuit: '27-28456789-3', tipo: 'PERSONA_FISICA', condicion: 'MONOTRIBUTO', regimen: 'MONOTRIBUTO' },
-    { razon: 'Tech Solutions SA', cuit: '30-71567890-5', tipo: 'PERSONA_JURIDICA', condicion: 'RESPONSABLE_INSCRIPTO', regimen: 'GENERAL' },
-    { razon: 'Martínez Roberto', cuit: '20-25678901-7', tipo: 'PERSONA_FISICA', condicion: 'MONOTRIBUTO', regimen: 'MONOTRIBUTO' },
-    { razon: 'Constructora Del Sur SRL', cuit: '30-71890123-2', tipo: 'PERSONA_JURIDICA', condicion: 'RESPONSABLE_INSCRIPTO', regimen: 'GENERAL' },
+    {
+      razon: 'Panadería El Trigal SRL',
+      cuit: '30-71234567-1',
+      tipo: 'PERSONA_JURIDICA',
+      condicion: 'RESPONSABLE_INSCRIPTO',
+      regimen: 'GENERAL',
+    },
+    {
+      razon: 'García María Inés',
+      cuit: '27-28456789-2',
+      tipo: 'PERSONA_FISICA',
+      condicion: 'MONOTRIBUTO',
+      regimen: 'MONOTRIBUTO',
+    },
+    {
+      razon: 'Tech Solutions SA',
+      cuit: '30-71567890-6',
+      tipo: 'PERSONA_JURIDICA',
+      condicion: 'RESPONSABLE_INSCRIPTO',
+      regimen: 'GENERAL',
+    },
+    {
+      razon: 'Martínez Roberto',
+      cuit: '20-25678901-9',
+      tipo: 'PERSONA_FISICA',
+      condicion: 'MONOTRIBUTO',
+      regimen: 'MONOTRIBUTO',
+    },
+    {
+      razon: 'Constructora Del Sur SRL',
+      cuit: '30-71890123-1',
+      tipo: 'PERSONA_JURIDICA',
+      condicion: 'RESPONSABLE_INSCRIPTO',
+      regimen: 'GENERAL',
+    },
   ];
 
   for (const c of clientNames) {
@@ -157,9 +223,9 @@ async function run() {
     { dias: -10, obligacion: 'SUSS', estado: 'PRESENTADO' },
   ];
 
-  const [firstClient] = await em.getConnection().execute(
-    `SELECT id FROM cliente WHERE estudio_id = '${actualEstudioId}' LIMIT 1`,
-  );
+  const [firstClient] = await em
+    .getConnection()
+    .execute(`SELECT id FROM cliente WHERE estudio_id = '${actualEstudioId}' LIMIT 1`);
 
   if (firstClient) {
     for (const v of vencimientos) {
@@ -178,11 +244,17 @@ async function run() {
   }
 
   // Sample tareas
-  const [socioUser] = await em.getConnection().execute(`SELECT id FROM usuario WHERE email = 'admin@demo.com'`);
+  const [socioUser] = await em
+    .getConnection()
+    .execute(`SELECT id FROM usuario WHERE email = 'admin@demo.com'`);
   if (socioUser) {
     const tareas = [
       { titulo: 'Liquidar IVA Panadería El Trigal', estado: 'PENDIENTE', prioridad: 'ALTA' },
-      { titulo: 'Presentar DDJJ Ganancias Tech Solutions', estado: 'EN_PROGRESO', prioridad: 'URGENTE' },
+      {
+        titulo: 'Presentar DDJJ Ganancias Tech Solutions',
+        estado: 'EN_PROGRESO',
+        prioridad: 'URGENTE',
+      },
       { titulo: 'Rubricar libro Diario', estado: 'PENDIENTE', prioridad: 'MEDIA' },
       { titulo: 'Revisar retenciones marzo', estado: 'COMPLETADO', prioridad: 'BAJA' },
       { titulo: 'Alta monotributo García María', estado: 'EN_PROGRESO', prioridad: 'MEDIA' },
@@ -208,7 +280,7 @@ async function run() {
   console.log('  responsable@demo.com / Admin123!     (RESPONSABLE → Estudio Demo)');
   console.log('  empleado@demo.com / Admin123!        (EMPLEADO → Estudio Demo)');
   console.log('  cliente@demo.com / Admin123!         (CLIENTE)');
-  console.log('\n🏢 Estudio: "Estudio Demo" (CUIT 20-12345678-9, Plan Profesional)');
+  console.log('\n🏢 Estudio: "Estudio Demo" (CUIT 20-12345678-6, Plan Profesional)');
   console.log('  5 clientes, 6 vencimientos, 5 tareas');
 }
 

@@ -40,8 +40,8 @@ export function NotificationBell() {
     try {
       const res = await apiFetch('/v1/notificaciones/unread-count');
       if (res.ok) {
-        const body = await res.json();
-        setUnreadCount(body.count ?? 0);
+        const { data } = await parseApiResponse<{ count: number }>(res);
+        setUnreadCount(data?.count ?? 0);
       }
     } catch {
       // silent fail

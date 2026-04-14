@@ -16,6 +16,7 @@ export interface ApiErrorDetail {
   code: string;
   message: string;
   statusCode: number;
+  errors?: unknown;
 }
 
 export interface ApiErrorResponse {
@@ -23,7 +24,10 @@ export interface ApiErrorResponse {
   meta: ApiMeta;
 }
 
-export function successResponse<T>(data: T, pagination?: { total: number; page: number; limit: number }): ApiSuccessResponse<T> {
+export function successResponse<T>(
+  data: T,
+  pagination?: { total: number; page: number; limit: number },
+): ApiSuccessResponse<T> {
   const meta: ApiMeta = {
     timestamp: new Date().toISOString(),
   };
@@ -38,13 +42,20 @@ export function successResponse<T>(data: T, pagination?: { total: number; page: 
   return { data, meta };
 }
 
-export function errorResponse(code: string, message: string, statusCode: number, correlationId?: string): ApiErrorResponse {
+export function errorResponse(
+  code: string,
+  message: string,
+  statusCode: number,
+  correlationId?: string,
+  errors?: unknown,
+): ApiErrorResponse {
   const meta: ApiMeta = { timestamp: new Date().toISOString() };
   if (correlationId) {
     meta.correlationId = correlationId;
   }
-  return {
-    error: { code, message, statusCode },
-    meta,
-  };
+  const error: ApiErrorDetail = { code, message, statusCode };
+  if (errors !== undefined) {
+    error.errors = errors;
+  }
+  return { error, meta };
 }

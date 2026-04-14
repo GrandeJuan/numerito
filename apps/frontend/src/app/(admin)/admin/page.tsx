@@ -332,9 +332,7 @@ export default function AdminPage() {
               <h2 className="text-sm font-bold text-[#091426] dark:text-white">
                 Crecimiento de Usuarios y Estudios
               </h2>
-              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
-                Últimos 12 meses
-              </p>
+              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">Últimos 12 meses</p>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <span className="flex items-center gap-1.5">
@@ -360,16 +358,43 @@ export default function AdminPage() {
                     <stop offset="100%" stopColor="#091426" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} width={45} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#e2e8f0"
+                  vertical={false}
+                  className="dark:opacity-20"
+                />
+                <XAxis
+                  dataKey="mes"
+                  tick={{ fontSize: 11, fill: '#75777d' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#75777d' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={45}
+                />
                 <Tooltip
                   contentStyle={CHART_THEME.tooltipStyle}
                   itemStyle={{ color: 'white' }}
                   labelStyle={{ color: '#4edea3', fontWeight: 600 }}
                 />
-                <Area type="monotone" dataKey="usuarios" stroke="#4edea3" strokeWidth={2} fill="url(#gradUsuarios)" />
-                <Area type="monotone" dataKey="estudios" stroke="#091426" strokeWidth={2} fill="url(#gradEstudios)" />
+                <Area
+                  type="monotone"
+                  dataKey="usuarios"
+                  stroke="#4edea3"
+                  strokeWidth={2}
+                  fill="url(#gradUsuarios)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="estudios"
+                  stroke="#091426"
+                  strokeWidth={2}
+                  fill="url(#gradEstudios)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -428,9 +453,7 @@ export default function AdminPage() {
       <div className={`${CARD_CLASSES.full} p-6`}>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-sm font-bold text-[#091426] dark:text-white">
-              Revenue: MRR y ARR
-            </h2>
+            <h2 className="text-sm font-bold text-[#091426] dark:text-white">Revenue: MRR y ARR</h2>
             <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
               Evolución en pesos argentinos
             </p>
@@ -449,8 +472,18 @@ export default function AdminPage() {
         <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats.revenueData} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} className="dark:opacity-20" />
-              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#75777d' }} axisLine={false} tickLine={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#e2e8f0"
+                vertical={false}
+                className="dark:opacity-20"
+              />
+              <XAxis
+                dataKey="mes"
+                tick={{ fontSize: 11, fill: '#75777d' }}
+                axisLine={false}
+                tickLine={false}
+              />
               <YAxis
                 tick={{ fontSize: 11, fill: '#75777d' }}
                 axisLine={false}
@@ -460,11 +493,17 @@ export default function AdminPage() {
               />
               <Tooltip
                 contentStyle={CHART_THEME.tooltipStyle}
-                formatter={(value: number) => [formatARS(value), '']}
+                formatter={(value) => [formatARS(Number(value)), '']}
                 labelStyle={{ color: '#4edea3', fontWeight: 600 }}
               />
               <Bar dataKey="mrr" fill="#4edea3" radius={[6, 6, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="arr" fill="#091426" radius={[6, 6, 0, 0]} maxBarSize={32} opacity={0.7} />
+              <Bar
+                dataKey="arr"
+                fill="#091426"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={32}
+                opacity={0.7}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -528,15 +567,10 @@ export default function AdminPage() {
               href={action.href}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-left"
             >
-              <span
-                className="material-symbols-outlined text-[#4edea3]"
-                style={{ fontSize: 18 }}
-              >
+              <span className="material-symbols-outlined text-[#4edea3]" style={{ fontSize: 18 }}>
                 {action.icon}
               </span>
-              <span className="text-xs font-medium text-white/80">
-                {action.label}
-              </span>
+              <span className="text-xs font-medium text-white/80">{action.label}</span>
             </Link>
           ))}
         </div>
@@ -573,7 +607,10 @@ export default function AdminPage() {
                   className="flex items-start gap-3 pb-3 border-b border-[#e2e8f0]/60 dark:border-white/5 last:border-0 last:pb-0"
                 >
                   <div className="w-8 h-8 rounded-lg bg-[#091426]/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]" style={{ fontSize: 16 }}>
+                    <span
+                      className="material-symbols-outlined text-[#45474c] dark:text-[#a0a3a8]"
+                      style={{ fontSize: 16 }}
+                    >
                       domain_add
                     </span>
                   </div>
@@ -581,9 +618,7 @@ export default function AdminPage() {
                     <p className="text-sm font-medium text-[#091426] dark:text-white truncate">
                       {r.nombre}
                     </p>
-                    <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] truncate">
-                      {r.email}
-                    </p>
+                    <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] truncate">{r.email}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <PlanBadge plan={r.plan} />

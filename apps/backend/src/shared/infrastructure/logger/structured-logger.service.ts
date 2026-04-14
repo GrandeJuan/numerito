@@ -146,7 +146,8 @@ export class StructuredLogger implements LoggerService {
     }
 
     if (this.requestContext) {
-      if (this.requestContext.correlationId) entry.correlationId = this.requestContext.correlationId;
+      if (this.requestContext.correlationId)
+        entry.correlationId = this.requestContext.correlationId;
       if (this.requestContext.estudioId) entry.estudioId = this.requestContext.estudioId;
       if (this.requestContext.userId) entry.userId = this.requestContext.userId;
     }
@@ -158,9 +159,17 @@ export class StructuredLogger implements LoggerService {
         name: stackOrExtra.name,
         stack: stackOrExtra.stack,
       };
-    } else if (typeof stackOrExtra === 'string' && level === 'error' && stackOrExtra !== lastParam) {
+    } else if (
+      typeof stackOrExtra === 'string' &&
+      level === 'error' &&
+      stackOrExtra !== lastParam
+    ) {
       entry.stack = stackOrExtra;
-    } else if (typeof stackOrExtra === 'object' && stackOrExtra !== null && !(typeof lastParam === 'string' && stackOrExtra === lastParam)) {
+    } else if (
+      typeof stackOrExtra === 'object' &&
+      stackOrExtra !== null &&
+      !(typeof lastParam === 'string' && (stackOrExtra as unknown) === lastParam)
+    ) {
       Object.assign(entry, stackOrExtra);
     }
 

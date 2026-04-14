@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { PRIORIDAD } from '../constants/prioridad';
+import { PRIORIDAD, type Prioridad } from '../constants/prioridad';
 
-const prioridadValues = Object.values(PRIORIDAD) as [string, ...string[]];
+const prioridadValues = Object.values(PRIORIDAD) as [Prioridad, ...Prioridad[]];
 
 export const crearTareaSchema = z.object({
   titulo: z.string().min(1),
