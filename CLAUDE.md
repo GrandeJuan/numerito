@@ -59,6 +59,64 @@ Use a read-model context when you need to **aggregate data from multiple bounded
 
 `architecture.spec.ts` enforces read-model rules under a separate `READ_MODEL_CONTEXTS` list. Standard bounded contexts have stricter isolation; read-model contexts get relaxed import rules but are still tested.
 
+## Domain Event Bus
+
+### Reliability Guarantees
+
+The event bus (`EventEmitterBus`) is **in-process and fire-and-forget**. It wraps NestJS `EventEmitter2` — events are dispatched synchronously within the same Node.js process. There is no persistence, no retry, and no ordering guarantee beyond single-threaded dispatch.
+
+- If the process crashes between event emission and listener execution, the event is **lost**.
+- If a listener throws, the error is caught — other listeners still run, but the failed side effect is **not retried**.
+- Events are not durable — there is no outbox, no message broker, no replay capability.
+
+### When to Use Events
+
+**Appropriate:**
+- Read-model cache invalidation (e.g., marking a dashboard snapshot as stale)
+- Non-critical side effects (e.g., logging, metrics, in-memory projection updates)
+- Loose coupling between bounded contexts for informational notifications
+
+**Not appropriate:**
+- Business-critical workflows that must not be lost (use explicit service calls or a persistent outbox pattern)
+- Workflows requiring guaranteed delivery, ordering, or exactly-once semantics
+- Cross-service communication (events are in-process only)
+
+### Publishing Pattern
+
+1. Domain entity collects events via `addDomainEvent()` during state transitions.
+2. Command handler calls `repository.save(entity)`.
+3. After successful save, handler calls `eventBus.publishAll(entity.getDomainEvents())` and `entity.clearDomainEvents()`.
+4. **Controllers never import or interact with the event bus.**
+
+Reference implementation: `RegistrarUsuarioHandler` in IAM.
+
+### Anti-Corruption Layer
+
+Each publishing context exports public event names and payload interfaces from `{context}/application/public-events.ts`. Subscribers import these — never internal domain event classes.
+
+### Event Catalog
+
+| Event Name | Context | Emitter (entity method) | Publisher (handler) | Listeners |
+|---|---|---|---|---|
+| `iam.usuario-registrado` | IAM | `Usuario.create()` | `RegistrarUsuarioHandler` | `DashboardStatsListener` |
+| `estudio.subscripcion-creada` | Estudio | `Subscripcion.create()` | _(published via aggregate events after save)_ | `DashboardStatsListener` |
+| `estudio.subscripcion-renovada` | Estudio | `Subscripcion.renovar()` | `RenovarSubscripcionHandler` | `DashboardStatsListener` |
+| `estudio.subscripcion-cancelada` | Estudio | `Subscripcion.cancelar()` | `CancelarSubscripcionHandler` | `DashboardStatsListener` |
+| `estudio.subscripcion-vencida` | Estudio | `Subscripcion.marcarVencida()` | `MarcarSubscripcionVencidaHandler` | `DashboardStatsListener` |
+| `obligaciones.vencimiento-cumplido` | Obligaciones | `Vencimiento.presentar()` | `PresentarVencimientoHandler` | `DashboardStatsListener` |
+| `obligaciones.vencimiento-vencido` | Obligaciones | `Vencimiento.marcarVencido()` | `MarcarVencidoHandler` | `DashboardStatsListener` |
+
+**Contexts without events:** Clientes, Contabilidad, Nomina, Documentos, Tareas, Facturacion, Integraciones.
+
+### Key Files
+
+- Event bus interface: `shared/domain/event-bus.ts`
+- Event bus implementation: `shared/infrastructure/services/event-emitter-bus.ts`
+- Global module: `shared/infrastructure/event-bus.module.ts`
+- Base entity (event collection): `shared/domain/base.entity.ts`
+- Public event contracts: `{context}/application/public-events.ts`
+- Sole listener: `administracion/application/listeners/dashboard-stats.listener.ts`
+
 ## Reglas Generales
 - **Idioma de negocio:** Espanol para entidades de dominio (Cliente, Vencimiento, Factura, etc.)
 - **Idioma tecnico:** Ingles para infra, config, utils, nombres de archivos tecnicos
