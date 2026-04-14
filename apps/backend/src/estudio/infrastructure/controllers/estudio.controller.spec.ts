@@ -33,7 +33,10 @@ describe('EstudioController', () => {
   let controller: EstudioController;
   let mockEstudioRepo: any;
   let mockSubscripcionRepo: any;
-  let mockEventBus: any;
+  let mockRenovarHandler: any;
+  let mockCancelarHandler: any;
+  let mockMarcarVencidaHandler: any;
+  let mockCambiarPlanHandler: any;
 
   beforeEach(() => {
     mockEstudioRepo = {
@@ -49,11 +52,19 @@ describe('EstudioController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    mockEventBus = {
-      publish: jest.fn(),
-      publishAll: jest.fn(),
-    };
-    controller = new EstudioController(mockEstudioRepo, mockSubscripcionRepo, mockEventBus);
+    mockRenovarHandler = { execute: jest.fn() };
+    mockCancelarHandler = { execute: jest.fn() };
+    mockMarcarVencidaHandler = { execute: jest.fn() };
+    mockCambiarPlanHandler = { execute: jest.fn() };
+
+    controller = new EstudioController(
+      mockEstudioRepo,
+      mockSubscripcionRepo,
+      mockRenovarHandler,
+      mockCancelarHandler,
+      mockMarcarVencidaHandler,
+      mockCambiarPlanHandler,
+    );
   });
 
   describe('getById', () => {
@@ -121,21 +132,46 @@ describe('EstudioController', () => {
   });
 
   describe('cambiarPlan', () => {
-    it('should change plan of active subscripcion', async () => {
+    it('should delegate to CambiarPlanSubscripcionHandler', async () => {
       const sub = makeSubscripcion('est-1');
-      mockSubscripcionRepo.findActiva.mockResolvedValue(sub);
+      mockCambiarPlanHandler.execute.mockResolvedValue(sub);
 
       await controller.cambiarPlan('est-1', { planId: '3' });
-      expect(sub.planId).toBe('3');
-      expect(mockSubscripcionRepo.save).toHaveBeenCalledTimes(1);
+
+      expect(mockCambiarPlanHandler.execute).toHaveBeenCalledWith({ planId: '3' });
     });
+  });
 
-    it('should throw when no active subscripcion', async () => {
-      mockSubscripcionRepo.findActiva.mockResolvedValue(null);
+  describe('renovar', () => {
+    it('should delegate to RenovarSubscripcionHandler', async () => {
+      const sub = makeSubscripcion('est-1');
+      mockRenovarHandler.execute.mockResolvedValue(sub);
 
-      await expect(controller.cambiarPlan('est-1', { planId: '3' })).rejects.toThrow(
-        'Subscripcion no encontrad',
-      );
+      await controller.renovar('est-1', { nuevaFechaFin: '2028-01-01' });
+
+      expect(mockRenovarHandler.execute).toHaveBeenCalledWith({ nuevaFechaFin: '2028-01-01' });
+    });
+  });
+
+  describe('cancelar', () => {
+    it('should delegate to CancelarSubscripcionHandler', async () => {
+      const sub = makeSubscripcion('est-1');
+      mockCancelarHandler.execute.mockResolvedValue(sub);
+
+      await controller.cancelar('est-1');
+
+      expect(mockCancelarHandler.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('marcarVencida', () => {
+    it('should delegate to MarcarSubscripcionVencidaHandler', async () => {
+      const sub = makeSubscripcion('est-1');
+      mockMarcarVencidaHandler.execute.mockResolvedValue(sub);
+
+      await controller.marcarVencida('est-1');
+
+      expect(mockMarcarVencidaHandler.execute).toHaveBeenCalledWith({ subscripcionId: 'est-1' });
     });
   });
 });

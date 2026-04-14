@@ -265,7 +265,6 @@ describe('Architecture rules', () => {
       ],
       'estudio/infrastructure/controllers/estudio.controller.ts': [
         'domain/value-objects/nombre-estudio.vo',
-        'shared/domain/event-bus',
       ],
       'facturacion/infrastructure/controllers/facturacion.controller.ts': [
         'domain/entities/pago.entity',

@@ -2,14 +2,17 @@ import { Controller, Get, Put, Post, Param, Body, Inject } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ESTUDIO_REPOSITORY } from '../../domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../domain/repositories/estudio.repository';
-import { SUBSCRIPCION_REPOSITORY } from '../../domain/repositories/subscripcion.repository';
-import type { SubscripcionRepository } from '../../domain/repositories/subscripcion.repository';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import { ActualizarEstudioDto } from '../../application/dtos/actualizar-estudio.dto';
 import { CambiarPlanDto } from '../../application/dtos/cambiar-plan.dto';
+import { RenovarSubscripcionDto } from '../../application/dtos/renovar-subscripcion.dto';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import { EVENT_BUS } from '../../../shared/domain/event-bus';
-import type { EventBus } from '../../../shared/domain/event-bus';
+import { RenovarSubscripcionHandler } from '../../application/commands/renovar-subscripcion.command';
+import { CancelarSubscripcionHandler } from '../../application/commands/cancelar-subscripcion.command';
+import { MarcarSubscripcionVencidaHandler } from '../../application/commands/marcar-subscripcion-vencida.command';
+import { CambiarPlanSubscripcionHandler } from '../../application/commands/cambiar-plan-subscripcion.command';
+import { SUBSCRIPCION_REPOSITORY } from '../../domain/repositories/subscripcion.repository';
+import type { SubscripcionRepository } from '../../domain/repositories/subscripcion.repository';
 
 @ApiTags('Estudios')
 @Controller({ path: 'estudios', version: '1' })
@@ -17,7 +20,10 @@ export class EstudioController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     @Inject(SUBSCRIPCION_REPOSITORY) private readonly subscripcionRepo: SubscripcionRepository,
-    @Inject(EVENT_BUS) private readonly eventBus: EventBus,
+    private readonly renovarHandler: RenovarSubscripcionHandler,
+    private readonly cancelarHandler: CancelarSubscripcionHandler,
+    private readonly marcarVencidaHandler: MarcarSubscripcionVencidaHandler,
+    private readonly cambiarPlanHandler: CambiarPlanSubscripcionHandler,
   ) {}
 
   @Get(':id')
@@ -52,14 +58,25 @@ export class EstudioController {
 
   @Post(':id/subscripcion/cambiar-plan')
   @ApiOperation({ summary: 'Cambiar plan de subscripcion' })
-  async cambiarPlan(@Param('id') id: string, @Body() dto: CambiarPlanDto) {
-    const subscripcion = await this.subscripcionRepo.findActiva();
-    if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
+  async cambiarPlan(@Param('id') _id: string, @Body() dto: CambiarPlanDto) {
+    return this.cambiarPlanHandler.execute({ planId: dto.planId });
+  }
 
-    subscripcion.cambiarPlan(dto.planId);
-    await this.subscripcionRepo.save(subscripcion);
-    this.eventBus.publishAll(subscripcion.getDomainEvents());
-    subscripcion.clearDomainEvents();
-    return subscripcion;
+  @Post(':id/subscripcion/renovar')
+  @ApiOperation({ summary: 'Renovar subscripcion' })
+  async renovar(@Param('id') _id: string, @Body() dto: RenovarSubscripcionDto) {
+    return this.renovarHandler.execute({ nuevaFechaFin: dto.nuevaFechaFin });
+  }
+
+  @Post(':id/subscripcion/cancelar')
+  @ApiOperation({ summary: 'Cancelar subscripcion' })
+  async cancelar(@Param('id') _id: string) {
+    return this.cancelarHandler.execute();
+  }
+
+  @Post(':id/subscripcion/marcar-vencida')
+  @ApiOperation({ summary: 'Marcar subscripcion como vencida' })
+  async marcarVencida(@Param('id') _id: string) {
+    return this.marcarVencidaHandler.execute({ subscripcionId: _id });
   }
 }
