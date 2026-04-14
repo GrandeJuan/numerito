@@ -16,6 +16,12 @@ const BOUNDED_CONTEXTS = [
   'facturacion',
 ];
 
+const READ_MODEL_CONTEXTS = [
+  'administracion',
+  'dashboard',
+  'portal',
+];
+
 function findFiles(
   dir: string,
   pattern: RegExp,
@@ -331,6 +337,83 @@ describe('Architecture rules', () => {
       }
 
       expect(staleEntries).toEqual([]);
+    });
+  });
+
+  describe('Read-model context restrictions', () => {
+    function resolveImportContext(file: string, imp: string): string | null {
+      if (!imp.startsWith('.') && !imp.startsWith('/')) return null;
+      if (imp.includes('/shared/')) return null;
+      if (imp.startsWith('@numerito/shared')) return null;
+
+      const resolvedDir = path.dirname(
+        path.resolve(path.dirname(file), imp),
+      );
+      const relFromSrc = path.relative(SRC_DIR, resolvedDir).replace(/\\/g, '/');
+
+      for (const ctx of BOUNDED_CONTEXTS) {
+        if (relFromSrc === ctx || relFromSrc.startsWith(`${ctx}/`)) {
+          return ctx;
+        }
+      }
+      return null;
+    }
+
+    it('read-model contexts must not import domain entities from other contexts', () => {
+      const violations: string[] = [];
+
+      for (const ctx of READ_MODEL_CONTEXTS) {
+        const ctxDir = path.join(SRC_DIR, ctx);
+        const files = findFiles(ctxDir, /\.ts$/, SPEC_PATTERN);
+
+        for (const file of files) {
+          const imports = extractImports(file);
+          for (const imp of imports) {
+            const targetCtx = resolveImportContext(file, imp);
+            if (!targetCtx) continue;
+
+            if (imp.includes('/domain/entities/')) {
+              violations.push(
+                `${relativeTo(file)} imports domain entity from "${targetCtx}" via "${imp}" — read-model contexts must use infrastructure/persistence schemas instead`,
+              );
+            }
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
+    });
+
+    it('read-model contexts must not import application services, commands, or queries from other contexts', () => {
+      const violations: string[] = [];
+      const forbiddenAppLayers = [
+        '/application/commands/',
+        '/application/queries/',
+        '/application/services/',
+      ];
+
+      for (const ctx of READ_MODEL_CONTEXTS) {
+        const ctxDir = path.join(SRC_DIR, ctx);
+        const files = findFiles(ctxDir, /\.ts$/, SPEC_PATTERN);
+
+        for (const file of files) {
+          const imports = extractImports(file);
+          for (const imp of imports) {
+            const targetCtx = resolveImportContext(file, imp);
+            if (!targetCtx) continue;
+
+            for (const forbidden of forbiddenAppLayers) {
+              if (imp.includes(forbidden)) {
+                violations.push(
+                  `${relativeTo(file)} imports from "${targetCtx}"${forbidden} via "${imp}" — read-model contexts may only import public-events from other contexts' application layer`,
+                );
+              }
+            }
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
     });
   });
 });
