@@ -204,6 +204,72 @@ describe('Architecture rules', () => {
     });
   });
 
+  describe('Repository rehydration pattern', () => {
+    function extractMethodBody(content: string, methodName: string): string | null {
+      const methodPattern = new RegExp(`${methodName}\\s*\\([^)]*\\)[^{]*\\{`);
+      const match = methodPattern.exec(content);
+      if (!match) return null;
+
+      let depth = 1;
+      const start = match.index + match[0].length;
+      for (let i = start; i < content.length; i++) {
+        if (content[i] === '{') depth++;
+        if (content[i] === '}') depth--;
+        if (depth === 0) return content.slice(start, i);
+      }
+      return null;
+    }
+
+    function getEntityClassNames(ctx: string): string[] {
+      const entityDir = path.join(SRC_DIR, ctx, 'domain', 'entities');
+      const entityFiles = findFiles(entityDir, /\.entity\.ts$/, SPEC_PATTERN);
+      return entityFiles
+        .map((f) => {
+          const content = fs.readFileSync(f, 'utf-8');
+          const classMatch = content.match(/export\s+class\s+(\w+)/);
+          return classMatch ? classMatch[1] : null;
+        })
+        .filter(Boolean) as string[];
+    }
+
+    it('toDomain() methods must use reconstitute(), not create()', () => {
+      const violations: string[] = [];
+
+      for (const ctx of BOUNDED_CONTEXTS) {
+        const persistenceDir = path.join(
+          SRC_DIR,
+          ctx,
+          'infrastructure',
+          'persistence',
+        );
+        const repoFiles = findFiles(
+          persistenceDir,
+          /mikro-orm-.*\.repository\.ts$/,
+        );
+        const entityNames = getEntityClassNames(ctx);
+
+        for (const file of repoFiles) {
+          const content = fs.readFileSync(file, 'utf-8');
+          const toDomainBody = extractMethodBody(content, 'toDomain');
+          if (!toDomainBody) continue;
+
+          for (const entityName of entityNames) {
+            const createCallPattern = new RegExp(
+              `${entityName}\\.create\\s*\\(`,
+            );
+            if (createCallPattern.test(toDomainBody)) {
+              violations.push(
+                `${relativeTo(file)} toDomain() calls ${entityName}.create() — use ${entityName}.reconstitute() instead`,
+              );
+            }
+          }
+        }
+      }
+
+      expect(violations).toEqual([]);
+    });
+  });
+
   describe('Value Object structure', () => {
     it('all *.vo.ts files should extend ValueObject or have readonly properties', () => {
       const voFiles = findFiles(SRC_DIR, /\.vo\.ts$/, SPEC_PATTERN);
