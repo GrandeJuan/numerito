@@ -4,6 +4,7 @@ export interface ApiMeta {
   page?: number;
   limit?: number;
   totalPages?: number;
+  correlationId?: string;
 }
 
 export interface ApiSuccessResponse<T> {
@@ -37,9 +38,13 @@ export function successResponse<T>(data: T, pagination?: { total: number; page: 
   return { data, meta };
 }
 
-export function errorResponse(code: string, message: string, statusCode: number): ApiErrorResponse {
+export function errorResponse(code: string, message: string, statusCode: number, correlationId?: string): ApiErrorResponse {
+  const meta: ApiMeta = { timestamp: new Date().toISOString() };
+  if (correlationId) {
+    meta.correlationId = correlationId;
+  }
   return {
     error: { code, message, statusCode },
-    meta: { timestamp: new Date().toISOString() },
+    meta,
   };
 }

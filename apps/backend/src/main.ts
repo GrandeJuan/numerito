@@ -2,18 +2,24 @@ import 'reflect-metadata';
 import { VersioningType, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/infrastructure/filters/global-exception.filter';
 import { ResponseWrapperInterceptor } from './shared/infrastructure/interceptors/response-wrapper.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // Use Pino as the application logger (captures all NestJS internal logs)
+  const logger = app.get(Logger);
+  app.useLogger(logger);
+
   app.setGlobalPrefix('api');
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(logger));
   app.useGlobalInterceptors(new ResponseWrapperInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({
@@ -29,6 +35,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT || 3001);
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  logger.log(`Numerito API running on port ${port}`);
 }
 bootstrap();

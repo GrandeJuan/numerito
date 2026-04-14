@@ -5,6 +5,7 @@ import mikroOrmConfig from './mikro-orm.config';
 import { AppController } from './app.controller';
 import { CrossContextModule } from './shared/infrastructure/cross-context.module';
 import { EventBusModule } from './shared/infrastructure/event-bus.module';
+import { LoggerModule } from './shared/infrastructure/logger/logger.module';
 import { RequestContextModule } from './shared/infrastructure/request-context.module';
 import { IamModule } from './iam/iam.module';
 import { EstudioModule } from './estudio/estudio.module';
@@ -27,6 +28,7 @@ import { PortalModule } from './portal/portal.module';
     MikroOrmModule.forRoot(mikroOrmConfig),
     RequestContextModule,
     EventBusModule,
+    LoggerModule,
     CrossContextModule,
     IamModule,
     EstudioModule,
