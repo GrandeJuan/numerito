@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import type { PaginationMeta } from '@numerito/shared';
 import { KpiCard } from '@/components/shared/kpi-card';
 import { RolBadge } from '@/components/shared/rol-badge';
 import { DataTable, type Column } from '@/components/shared/data-table';
@@ -28,12 +30,6 @@ interface Stats {
   sinVerificar: number;
 }
 
-interface PaginationMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 function providerIcon(provider: string | null): { icon: string; label: string } {
   switch (provider) {
@@ -86,12 +82,15 @@ export default function AdminUsuariosPage() {
           apiFetch(`/v1/admin/usuarios?${params}`),
         ]);
 
-        if (!statsRes.ok || !listRes.ok) throw new Error('Error al cargar usuarios');
-
-        const [statsBody, listBody] = await Promise.all([statsRes.json(), listRes.json()]);
-        setStats(statsBody.data);
-        setUsuarios(listBody.data);
-        setMeta(listBody.meta);
+        const [statsResult, listResult] = await Promise.all([
+          parseApiResponse<Stats>(statsRes),
+          parseApiResponse<Usuario[]>(listRes),
+        ]);
+        setStats(statsResult.data);
+        setUsuarios(listResult.data);
+        if (listResult.meta) {
+          setMeta(listResult.meta);
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {

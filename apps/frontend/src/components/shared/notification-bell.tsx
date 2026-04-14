@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
 import { relativeTime } from '@/lib/formatters';
 
 interface NotificacionItem {
@@ -53,8 +54,8 @@ export function NotificationBell() {
     try {
       const res = await apiFetch('/v1/notificaciones?limit=10');
       if (res.ok) {
-        const body = await res.json();
-        setNotifications(body.data ?? []);
+        const { data } = await parseApiResponse<NotificacionItem[]>(res);
+        setNotifications(data);
       }
     } catch {
       // silent fail

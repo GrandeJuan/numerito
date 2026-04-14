@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { apiFetch, setOnUnauthorized, setEstudioId } from './api-client';
+import { parseApiResponse } from './parse-api-response';
 
 export interface AuthUser {
   id: string;
@@ -75,8 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiFetch(`/v1/usuarios/me/permisos?estudioId=${estudioId}`);
       if (res.ok) {
-        const body = await res.json();
-        const data = body.data ?? body;
+        const { data } = await parseApiResponse<string[]>(res);
         setPermisos(Array.isArray(data) ? data : []);
       } else {
         setPermisos([]);
@@ -122,9 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(message);
     }
 
-    const body = await res.json();
-    // Backend wraps responses in { data: { ... } }
-    const data = body.data ?? body;
+    const { data } = await parseApiResponse<{
+      accessToken: string;
+      refreshToken: string;
+      usuario: { id: string; email: string; rol: string; themePreference?: string };
+    }>(res);
     setCookie('access_token', data.accessToken, 900);
     setCookie('refresh_token', data.refreshToken, 604800);
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
 import { formatCurrency } from '@/lib/formatters';
 import { CARD_CLASSES, CHART_THEME } from '@/lib/design-tokens';
 import { KpiCard } from '@/components/shared/kpi-card';
@@ -166,14 +167,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch('/v1/admin/dashboard/stats').then(async (res) => {
-        if (!res.ok) throw new Error('Error al cargar estadísticas');
-        return (await res.json()).data as DashboardStats;
-      }),
-      apiFetch('/v1/admin/health').then(async (res) => {
-        if (!res.ok) return null;
-        return (await res.json()).data as HealthCheckResult;
-      }).catch(() => null),
+      apiFetch('/v1/admin/dashboard/stats')
+        .then((res) => parseApiResponse<DashboardStats>(res))
+        .then(({ data }) => data),
+      apiFetch('/v1/admin/health')
+        .then((res) => parseApiResponse<HealthCheckResult>(res))
+        .then(({ data }) => data)
+        .catch(() => null),
     ])
       .then(([statsData, healthData]) => {
         setStats(statsData);
@@ -235,6 +235,40 @@ export default function AdminPage() {
       icon: 'monitor_heart',
       ...stats.kpis.uptime,
       displayValue: `${stats.kpis.uptime.value}%`,
+    },
+  ];
+
+  const topTenantsColumns: Column<TopTenant>[] = [
+    {
+      key: 'nombre',
+      header: 'Estudio',
+      render: (t) => (
+        <span className="text-sm font-medium text-[#091426] dark:text-white">{t.nombre}</span>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      render: (t) => <PlanBadge plan={t.plan} />,
+    },
+    {
+      key: 'usuarios',
+      header: 'Usuarios',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#a0a3a8] tabular-nums">{t.usuarios}</span>
+      ),
+    },
+    {
+      key: 'clientes',
+      header: 'Clientes',
+      render: (t) => (
+        <span className="text-[#45474c] dark:text-[#a0a3a8] tabular-nums">{t.clientes}</span>
+      ),
+    },
+    {
+      key: 'actividad',
+      header: 'Actividad',
+      render: (t) => <ActivityBar value={t.actividad} />,
     },
   ];
 
@@ -511,71 +545,13 @@ export default function AdminPage() {
       {/* Top Tenants + Recent Registrations */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Top Tenants by Activity */}
-        <div className={`lg:col-span-3 ${CARD_CLASSES.full} overflow-hidden`}>
-          <div className="p-6 pb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-[#091426] dark:text-white">
-                Top Estudios por Actividad
-              </h2>
-              <p className="text-xs text-[#75777d] dark:text-[#a0a3a8] mt-0.5">
-                Ordenados por score de actividad
-              </p>
-            </div>
-            <a
-              href="/admin/estudios"
-              className="text-xs text-[#00a472] font-semibold hover:underline"
-            >
-              Ver todos
-            </a>
-          </div>
-          {stats.topTenants.length === 0 ? (
-            <p className="px-6 pb-6 text-sm text-[#75777d] dark:text-[#a0a3a8]">
-              No hay estudios registrados.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-t border-[#e2e8f0] dark:border-white/10">
-                    {['Estudio', 'Plan', 'Usuarios', 'Clientes', 'Actividad'].map((h) => (
-                      <th
-                        key={h}
-                        className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#75777d] dark:text-[#a0a3a8] whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.topTenants.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-t border-[#e2e8f0]/60 dark:border-white/5 hover:bg-[#faf8ff] dark:hover:bg-white/5 transition-colors"
-                    >
-                      <td className="px-6 py-3">
-                        <span className="text-sm font-medium text-[#091426] dark:text-white">
-                          {t.nombre}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3">
-                        <PlanBadge plan={t.plan} />
-                      </td>
-                      <td className="px-6 py-3 text-sm text-[#45474c] dark:text-[#a0a3a8] tabular-nums">
-                        {t.usuarios}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-[#45474c] dark:text-[#a0a3a8] tabular-nums">
-                        {t.clientes}
-                      </td>
-                      <td className="px-6 py-3 w-36">
-                        <ActivityBar value={t.actividad} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="lg:col-span-3">
+          <DataTable
+            columns={topTenantsColumns}
+            data={stats.topTenants}
+            rowKey={(t) => t.id}
+            emptyMessage="No hay estudios registrados."
+          />
         </div>
 
         {/* Recent Registrations */}

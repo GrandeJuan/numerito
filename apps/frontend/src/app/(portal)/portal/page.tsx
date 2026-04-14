@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
 import { formatFecha, formatCurrency } from '@/lib/formatters';
 import { CARD_CLASSES } from '@/lib/design-tokens';
 import { KpiCard } from '@/components/shared/kpi-card';
@@ -33,11 +34,8 @@ export default function PortalPage() {
 
   useEffect(() => {
     apiFetch('/v1/portal/dashboard/stats')
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Error al cargar estadisticas del portal');
-        const body = await res.json();
-        setStats(body.data);
-      })
+      .then((res) => parseApiResponse<PortalStats>(res))
+      .then(({ data }) => setStats(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);

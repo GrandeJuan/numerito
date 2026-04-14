@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, type EstudioInfo } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
 
 export function EstudioSelector() {
   const { estudioActual, switchEstudio, isAuthenticated } = useAuth();
@@ -14,16 +15,13 @@ export function EstudioSelector() {
     if (!isAuthenticated) return;
 
     apiFetch('/v1/usuarios/me/estudios')
-      .then(async (res) => {
-        if (res.ok) {
-          const body = await res.json();
-          const data = body.data ?? body;
-          setEstudios(Array.isArray(data) ? data : []);
+      .then((res) => parseApiResponse<EstudioInfo[]>(res))
+      .then(({ data }) => {
+        setEstudios(Array.isArray(data) ? data : []);
 
-          // Auto-select if only one estudio and none selected
-          if (data.length === 1 && !estudioActual) {
-            switchEstudio(data[0]);
-          }
+        // Auto-select if only one estudio and none selected
+        if (data.length === 1 && !estudioActual) {
+          switchEstudio(data[0]);
         }
       })
       .catch(() => {})

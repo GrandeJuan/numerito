@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch } from './api-client';
+import { parseApiResponse } from './parse-api-response';
 import { useAuth } from './auth-context';
 
 export interface UseFetchResult<T> {
@@ -37,10 +38,9 @@ export function useFetchWithEstudio<T>(endpoint: string | null): UseFetchResult<
     setError(null);
 
     apiFetch(endpoint, { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Error ${res.status}`);
-        const body = await res.json();
-        setData(body.data ?? body);
+      .then((res) => parseApiResponse<T>(res))
+      .then(({ data: parsed }) => {
+        setData(parsed);
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;

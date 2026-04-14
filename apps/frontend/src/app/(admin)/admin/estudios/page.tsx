@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse } from '@/lib/parse-api-response';
+import type { PaginationMeta } from '@numerito/shared';
 import { formatFecha } from '@/lib/formatters';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { DataTable, type Column } from '@/components/shared/data-table';
@@ -17,12 +19,7 @@ interface Estudio {
   createdAt: string;
 }
 
-interface PaginationMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+
 
 export default function AdminEstudiosPage() {
   const [estudios, setEstudios] = useState<Estudio[]>([]);
@@ -47,10 +44,9 @@ export default function AdminEstudiosPage() {
         if (estado) params.set('isActive', estado);
 
         const res = await apiFetch(`/v1/admin/estudios?${params}`);
-        if (!res.ok) throw new Error('Error al cargar estudios');
-        const body = await res.json();
-        setEstudios(body.data);
-        setMeta(body.meta);
+        const { data, meta: resMeta } = await parseApiResponse<Estudio[]>(res);
+        setEstudios(data);
+        if (resMeta) setMeta(resMeta);
       } catch (err: any) {
         setError(err.message);
       } finally {
