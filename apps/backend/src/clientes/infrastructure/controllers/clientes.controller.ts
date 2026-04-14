@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Param, Body, Query, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearClienteDto, crearClienteDtoSchema } from '../../application/dtos/crear-cliente.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
@@ -12,8 +12,15 @@ import {
   ActualizarClienteHandler,
   type ActualizarClienteCommand,
 } from '../../application/commands/actualizar-cliente.command';
+import { DesactivarClienteHandler } from '../../application/commands/desactivar-cliente.command';
+import { ActivarClienteHandler } from '../../application/commands/activar-cliente.command';
+import {
+  AsignarResponsableHandler,
+  type AsignarResponsableCommand,
+} from '../../application/commands/asignar-responsable.command';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
+import { Inject } from '@nestjs/common';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -24,6 +31,9 @@ export class ClientesController {
     @Inject(CLIENTE_REPOSITORY) private readonly clienteRepo: ClienteRepository,
     private readonly crearClienteHandler: CrearClienteHandler,
     private readonly actualizarClienteHandler: ActualizarClienteHandler,
+    private readonly desactivarClienteHandler: DesactivarClienteHandler,
+    private readonly activarClienteHandler: ActivarClienteHandler,
+    private readonly asignarResponsableHandler: AsignarResponsableHandler,
   ) {}
 
   @Get()
@@ -68,33 +78,18 @@ export class ClientesController {
   @Patch(':id/desactivar')
   @ApiOperation({ summary: 'Desactivar cliente' })
   async deactivate(@Param('id') id: string) {
-    const cliente = await this.clienteRepo.findById(id);
-    if (!cliente) throw new RecursoNoEncontradoError('Cliente');
-
-    cliente.deactivate();
-    await this.clienteRepo.save(cliente);
-    return cliente;
+    return this.desactivarClienteHandler.execute({ id });
   }
 
   @Patch(':id/activar')
   @ApiOperation({ summary: 'Activar cliente' })
   async activate(@Param('id') id: string) {
-    const cliente = await this.clienteRepo.findById(id);
-    if (!cliente) throw new RecursoNoEncontradoError('Cliente');
-
-    cliente.activate();
-    await this.clienteRepo.save(cliente);
-    return cliente;
+    return this.activarClienteHandler.execute({ id });
   }
 
   @Patch(':id/responsable')
   @ApiOperation({ summary: 'Asignar responsable al cliente' })
   async assignResponsable(@Param('id') id: string, @Body() dto: AsignarResponsableDto) {
-    const cliente = await this.clienteRepo.findById(id);
-    if (!cliente) throw new RecursoNoEncontradoError('Cliente');
-
-    cliente.assignResponsable(dto.responsableId);
-    await this.clienteRepo.save(cliente);
-    return cliente;
+    return this.asignarResponsableHandler.execute({ id, responsableId: dto.responsableId } as AsignarResponsableCommand);
   }
 }

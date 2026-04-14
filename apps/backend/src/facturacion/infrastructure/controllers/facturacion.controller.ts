@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CrearFacturaDto, crearFacturaDtoSchema } from '../../application/dtos/crear-factura.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
@@ -8,11 +8,14 @@ import {
   CrearFacturaHandler,
   type CrearFacturaCommand,
 } from '../../application/commands/crear-factura.command';
+import {
+  RegistrarPagoHandler,
+  type RegistrarPagoCommand,
+} from '../../application/commands/registrar-pago.command';
+import { AnularFacturaHandler } from '../../application/commands/anular-factura.command';
 import { FACTURA_REPOSITORY } from '../../domain/repositories/factura.repository';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
-import { PAGO_REPOSITORY } from '../../domain/repositories/pago.repository';
-import type { PagoRepository } from '../../domain/repositories/pago.repository';
-import { Pago } from '../../domain/entities/pago.entity';
+import { Inject } from '@nestjs/common';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -22,8 +25,9 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 export class FacturacionController {
   constructor(
     @Inject(FACTURA_REPOSITORY) private readonly facturaRepo: FacturaRepository,
-    @Inject(PAGO_REPOSITORY) private readonly pagoRepo: PagoRepository,
     private readonly crearFacturaHandler: CrearFacturaHandler,
+    private readonly registrarPagoHandler: RegistrarPagoHandler,
+    private readonly anularFacturaHandler: AnularFacturaHandler,
   ) {}
 
   @Get('stats')
@@ -63,34 +67,21 @@ export class FacturacionController {
     @Body() dto: RegistrarPagoDto,
     @EstudioId() estudioId: string,
   ) {
-    const factura = await this.facturaRepo.findById(id);
-    if (!factura) throw new RecursoNoEncontradoError('Factura');
-
-    factura.registrarPagoExterno(dto.monto);
-
-    const pago = Pago.create({
-      facturaId: factura.id,
+    const result = await this.registrarPagoHandler.execute({
+      facturaId: id,
       estudioId,
-      fecha: new Date(),
       monto: dto.monto,
       medioPagoId: dto.medioPagoId,
       referencia: dto.referencia,
-    });
-
-    await this.facturaRepo.save(factura);
-    await this.pagoRepo.save(pago);
-    return successResponse(pago);
+    } as RegistrarPagoCommand);
+    return successResponse(result);
   }
 
   @Patch('facturas/:id/anular')
   @ApiOperation({ summary: 'Anular factura' })
   async anular(@Param('id') id: string) {
-    const factura = await this.facturaRepo.findById(id);
-    if (!factura) throw new RecursoNoEncontradoError('Factura');
-
-    factura.anular();
-    await this.facturaRepo.save(factura);
-    return successResponse(factura);
+    const result = await this.anularFacturaHandler.execute({ id });
+    return successResponse(result);
   }
 
   @Get('cuenta-corriente/:clienteId')
