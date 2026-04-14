@@ -57,6 +57,14 @@ src/
     {contexto}.module.ts
 ```
 
+## Tenant Context (Multi-tenancy)
+Single mechanism for tenant injection — do NOT create alternatives:
+- **Middleware:** `RequestContextMiddleware` (global, registered in `RequestContextModule`) reads `x-estudio-id` header and sets both `RequestContextService.estudioId` and `req.estudioId`
+- **Repositories:** Extend `TenantAwareRepository`, which reads from `RequestContextService` (injected via `REQUEST_CONTEXT` symbol). All queries auto-filter by tenant.
+- **Controllers:** Use `@EstudioId()` param decorator (from `shared/infrastructure/decorators/`) to extract `estudioId` from the request. Pass it as a plain string to command handlers.
+- **Constant:** `ESTUDIO_ID_HEADER` is defined once in `shared/infrastructure/middleware/request-context.middleware.ts`
+- **Rule:** Never create context-specific middleware or decorators for tenant injection. All tenant context flows through `RequestContextMiddleware`.
+
 ## Convenciones
 - Archivos: `kebab-case.ts` (ej: `tipo-obligacion.vo.ts`)
 - Clases: `PascalCase` (ej: `TipoObligacion`)

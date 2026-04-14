@@ -45,8 +45,14 @@ describe('RequestContextMiddleware', () => {
     expect(contextService.estudioId).toBeUndefined();
   });
 
-  it('should not leak estudioId onto req object', () => {
+  it('should set estudioId on req object for @EstudioId() decorator', () => {
     const req: any = { headers: { 'x-estudio-id': 'estudio-abc' }, user: undefined };
+    middleware.use(req, {} as any, next);
+    expect(req.estudioId).toBe('estudio-abc');
+  });
+
+  it('should not set req.estudioId when header is absent', () => {
+    const req: any = { headers: {}, user: undefined };
     middleware.use(req, {} as any, next);
     expect(req.estudioId).toBeUndefined();
   });

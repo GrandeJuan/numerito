@@ -6,6 +6,14 @@ import { RequestContextService, REQUEST_CONTEXT } from '../services/request-cont
 export const CORRELATION_ID_HEADER = 'x-correlation-id';
 export const ESTUDIO_ID_HEADER = 'x-estudio-id';
 
+declare global {
+  namespace Express {
+    interface Request {
+      estudioId?: string;
+    }
+  }
+}
+
 @Injectable()
 export class RequestContextMiddleware implements NestMiddleware {
   constructor(
@@ -17,6 +25,7 @@ export class RequestContextMiddleware implements NestMiddleware {
     const estudioId = req.headers[ESTUDIO_ID_HEADER] as string | undefined;
     if (estudioId) {
       this.context.estudioId = estudioId;
+      req.estudioId = estudioId;
     }
 
     const user = (req as any).user;
