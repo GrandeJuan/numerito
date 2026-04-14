@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearDocumentoDto } from '../../application/dtos/crear-documento.dto';
-import { NuevaVersionDto } from '../../application/dtos/nueva-version.dto';
+import { CrearDocumentoDto, crearDocumentoDtoSchema } from '../../application/dtos/crear-documento.dto';
+import { NuevaVersionDto, nuevaVersionDtoSchema } from '../../application/dtos/nueva-version.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { DOCUMENTO_REPOSITORY } from '../../domain/repositories/documento.repository';
 import type { DocumentoRepository } from '../../domain/repositories/documento.repository';
 import { Documento } from '../../domain/entities/documento.entity';
@@ -38,7 +39,7 @@ export class DocumentosController {
 
   @Post()
   @ApiOperation({ summary: 'Crear documento (metadata)' })
-  async create(@Body() dto: CrearDocumentoDto, @EstudioId() estudioId: string) {
+  async create(@Body(new ZodValidationPipe(crearDocumentoDtoSchema)) dto: CrearDocumentoDto, @EstudioId() estudioId: string) {
     const documento = Documento.create({ ...dto, estudioId });
     await this.documentoRepo.save(documento);
     return successResponse(documento);
@@ -46,7 +47,7 @@ export class DocumentosController {
 
   @Patch(':id/version')
   @ApiOperation({ summary: 'Nueva version del documento' })
-  async newVersion(@Param('id') id: string, @Body() dto: NuevaVersionDto) {
+  async newVersion(@Param('id') id: string, @Body(new ZodValidationPipe(nuevaVersionDtoSchema)) dto: NuevaVersionDto) {
     const documento = await this.documentoRepo.findById(id);
     if (!documento) throw new RecursoNoEncontradoError('Documento');
     documento.newVersion(dto.s3Key, dto.sizeBytes);

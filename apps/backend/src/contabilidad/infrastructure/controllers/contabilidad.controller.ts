@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearLibroDto } from '../../application/dtos/crear-libro.dto';
-import { RubricarLibroDto } from '../../application/dtos/rubricar-libro.dto';
-import { CrearAsientoDto } from '../../application/dtos/crear-asiento.dto';
+import { CrearLibroDto, crearLibroDtoSchema } from '../../application/dtos/crear-libro.dto';
+import { RubricarLibroDto, rubricarLibroDtoSchema } from '../../application/dtos/rubricar-libro.dto';
+import { CrearAsientoDto, crearAsientoDtoSchema } from '../../application/dtos/crear-asiento.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { ContabilidadStatsQuery } from '../../application/queries/contabilidad-stats.query';
 import { LIBRO_CONTABLE_REPOSITORY } from '../../domain/repositories/libro-contable.repository';
 import { ASIENTO_CONTABLE_REPOSITORY } from '../../domain/repositories/asiento-contable.repository';
@@ -39,7 +40,7 @@ export class ContabilidadController {
 
   @Post('libros')
   @ApiOperation({ summary: 'Crear libro contable' })
-  async createLibro(@Body() dto: CrearLibroDto, @EstudioId() estudioId: string) {
+  async createLibro(@Body(new ZodValidationPipe(crearLibroDtoSchema)) dto: CrearLibroDto, @EstudioId() estudioId: string) {
     const libro = LibroContable.create({
       clienteId: dto.clienteId,
       estudioId,
@@ -52,7 +53,7 @@ export class ContabilidadController {
 
   @Patch('libros/:id/rubricar')
   @ApiOperation({ summary: 'Rubricar libro contable' })
-  async rubricarLibro(@Param('id') id: string, @Body() dto: RubricarLibroDto) {
+  async rubricarLibro(@Param('id') id: string, @Body(new ZodValidationPipe(rubricarLibroDtoSchema)) dto: RubricarLibroDto) {
     const libro = await this.libroRepo.findById(id);
     if (!libro) throw new RecursoNoEncontradoError('LibroContable');
 
@@ -77,7 +78,7 @@ export class ContabilidadController {
 
   @Post('asientos')
   @ApiOperation({ summary: 'Crear asiento contable' })
-  async createAsiento(@Body() dto: CrearAsientoDto, @EstudioId() estudioId: string) {
+  async createAsiento(@Body(new ZodValidationPipe(crearAsientoDtoSchema)) dto: CrearAsientoDto, @EstudioId() estudioId: string) {
     const asiento = AsientoContable.create({
       libroId: dto.libroId,
       clienteId: dto.clienteId,

@@ -1,15 +1,9 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { crearLibroSchema, type CrearLibroInput } from '@numerito/shared';
 
-export class CrearLibroDto {
-  @IsString()
-  @IsNotEmpty()
+export const crearLibroDtoSchema = crearLibroSchema;
+
+export class CrearLibroDto implements CrearLibroInput {
   clienteId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   tipo!: string;
-
-  @IsString()
-  @IsNotEmpty()
   periodo!: string;
 }

@@ -1,39 +1,24 @@
-import { IsNotEmpty, IsString, IsArray, IsDateString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  crearAsientoSchema,
+  lineaAsientoSchema,
+  type CrearAsientoInput,
+  type LineaAsientoInput,
+} from '@numerito/shared';
 
-export class LineaAsientoDto {
-  @IsString()
-  @IsNotEmpty()
+export const lineaAsientoDtoSchema = lineaAsientoSchema;
+export const crearAsientoDtoSchema = crearAsientoSchema;
+
+export class LineaAsientoDto implements LineaAsientoInput {
   cuentaId!: string;
-
-  @IsNotEmpty()
   debe!: number;
-
-  @IsNotEmpty()
   haber!: number;
-
-  @IsString()
   descripcion!: string;
 }
 
-export class CrearAsientoDto {
-  @IsString()
-  @IsNotEmpty()
+export class CrearAsientoDto implements CrearAsientoInput {
   libroId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   clienteId!: string;
-
-  @IsDateString()
   fecha!: string;
-
-  @IsString()
-  @IsNotEmpty()
   descripcion!: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => LineaAsientoDto)
   lineas!: LineaAsientoDto[];
 }

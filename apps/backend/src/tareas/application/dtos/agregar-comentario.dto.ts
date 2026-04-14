@@ -1,11 +1,8 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { agregarComentarioSchema, type AgregarComentarioInput } from '@numerito/shared';
 
-export class AgregarComentarioDto {
-  @IsString()
-  @IsNotEmpty()
+export const agregarComentarioDtoSchema = agregarComentarioSchema;
+
+export class AgregarComentarioDto implements AgregarComentarioInput {
   autorId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   texto!: string;
 }

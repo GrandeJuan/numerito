@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { rubricarLibroSchema, type RubricarLibroInput } from '@numerito/shared';
 
-export class RubricarLibroDto {
-  @IsString()
-  @IsNotEmpty()
+export const rubricarLibroDtoSchema = rubricarLibroSchema;
+
+export class RubricarLibroDto implements RubricarLibroInput {
   numeroRubrica!: string;
 }

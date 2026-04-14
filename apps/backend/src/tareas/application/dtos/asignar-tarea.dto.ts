@@ -1,7 +1,7 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { asignarTareaSchema, type AsignarTareaInput } from '@numerito/shared';
 
-export class AsignarTareaDto {
-  @IsString()
-  @IsNotEmpty()
+export const asignarTareaDtoSchema = asignarTareaSchema;
+
+export class AsignarTareaDto implements AsignarTareaInput {
   responsableId!: string;
 }

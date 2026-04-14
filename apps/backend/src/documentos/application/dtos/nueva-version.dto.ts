@@ -1,11 +1,8 @@
-import { IsString, IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+import { nuevaVersionSchema, type NuevaVersionInput } from '@numerito/shared';
 
-export class NuevaVersionDto {
-  @IsString()
-  @IsNotEmpty()
+export const nuevaVersionDtoSchema = nuevaVersionSchema;
+
+export class NuevaVersionDto implements NuevaVersionInput {
   s3Key!: string;
-
-  @IsNumber()
-  @IsPositive()
   sizeBytes!: number;
 }

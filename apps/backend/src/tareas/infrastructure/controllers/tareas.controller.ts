@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearTareaDto } from '../../application/dtos/crear-tarea.dto';
-import { AsignarTareaDto } from '../../application/dtos/asignar-tarea.dto';
-import { RegistrarHorasDto } from '../../application/dtos/registrar-horas.dto';
-import { AgregarComentarioDto } from '../../application/dtos/agregar-comentario.dto';
+import { CrearTareaDto, crearTareaDtoSchema } from '../../application/dtos/crear-tarea.dto';
+import { AsignarTareaDto, asignarTareaDtoSchema } from '../../application/dtos/asignar-tarea.dto';
+import { RegistrarHorasDto, registrarHorasDtoSchema } from '../../application/dtos/registrar-horas.dto';
+import { AgregarComentarioDto, agregarComentarioDtoSchema } from '../../application/dtos/agregar-comentario.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { TAREA_REPOSITORY } from '../../domain/repositories/tarea.repository';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
 import { Tarea } from '../../domain/entities/tarea.entity';
@@ -45,7 +46,7 @@ export class TareasController {
 
   @Post()
   @ApiOperation({ summary: 'Crear tarea' })
-  async create(@Body() dto: CrearTareaDto, @EstudioId() estudioId: string) {
+  async create(@Body(new ZodValidationPipe(crearTareaDtoSchema)) dto: CrearTareaDto, @EstudioId() estudioId: string) {
     const tarea = Tarea.create({ ...dto, estudioId });
     await this.tareaRepo.save(tarea);
     return successResponse(tarea);
@@ -71,7 +72,7 @@ export class TareasController {
 
   @Patch(':id/asignar')
   @ApiOperation({ summary: 'Asignar responsable a tarea' })
-  async asignar(@Param('id') id: string, @Body() dto: AsignarTareaDto) {
+  async asignar(@Param('id') id: string, @Body(new ZodValidationPipe(asignarTareaDtoSchema)) dto: AsignarTareaDto) {
     const tarea = await this.findOrFail(id);
     tarea.asignar(dto.responsableId);
     await this.tareaRepo.save(tarea);
@@ -80,7 +81,7 @@ export class TareasController {
 
   @Post(':id/horas')
   @ApiOperation({ summary: 'Registrar horas en tarea' })
-  async registrarHoras(@Param('id') id: string, @Body() dto: RegistrarHorasDto) {
+  async registrarHoras(@Param('id') id: string, @Body(new ZodValidationPipe(registrarHorasDtoSchema)) dto: RegistrarHorasDto) {
     const tarea = await this.findOrFail(id);
     tarea.registrarHoras(dto.horas);
     await this.tareaRepo.save(tarea);
@@ -89,7 +90,7 @@ export class TareasController {
 
   @Post(':id/comentarios')
   @ApiOperation({ summary: 'Agregar comentario a tarea' })
-  async agregarComentario(@Param('id') id: string, @Body() dto: AgregarComentarioDto) {
+  async agregarComentario(@Param('id') id: string, @Body(new ZodValidationPipe(agregarComentarioDtoSchema)) dto: AgregarComentarioDto) {
     const tarea = await this.findOrFail(id);
     tarea.agregarComentario(dto.autorId, dto.texto);
     await this.tareaRepo.save(tarea);

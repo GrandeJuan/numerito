@@ -1,28 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsPositive, IsIn } from 'class-validator';
-import { TIPO_DOCUMENTO, type TipoDocumento } from '@numerito/shared';
+import { crearDocumentoSchema, type CrearDocumentoInput } from '@numerito/shared';
 
-export class CrearDocumentoDto {
-  @IsString()
-  @IsNotEmpty()
+export const crearDocumentoDtoSchema = crearDocumentoSchema;
+
+export class CrearDocumentoDto implements CrearDocumentoInput {
   clienteId!: string;
-
-  @IsString()
-  @IsIn(Object.values(TIPO_DOCUMENTO))
-  tipo!: TipoDocumento;
-
-  @IsString()
-  @IsNotEmpty()
+  tipo!: string;
   nombre!: string;
-
-  @IsString()
-  @IsNotEmpty()
   s3Key!: string;
-
-  @IsString()
-  @IsNotEmpty()
   mimeType!: string;
-
-  @IsNumber()
-  @IsPositive()
   sizeBytes!: number;
 }

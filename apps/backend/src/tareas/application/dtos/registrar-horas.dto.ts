@@ -1,11 +1,8 @@
-import { IsNumber, IsPositive, IsString, IsNotEmpty } from 'class-validator';
+import { registrarHorasSchema, type RegistrarHorasInput } from '@numerito/shared';
 
-export class RegistrarHorasDto {
-  @IsNumber()
-  @IsPositive()
+export const registrarHorasDtoSchema = registrarHorasSchema;
+
+export class RegistrarHorasDto implements RegistrarHorasInput {
   horas!: number;
-
-  @IsString()
-  @IsNotEmpty()
   descripcion!: string;
 }

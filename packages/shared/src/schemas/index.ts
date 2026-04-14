@@ -7,3 +7,6 @@ export * from './vencimiento.schema';
 export * from './estudio.schema';
 export * from './nomina.schema';
 export * from './administracion.schema';
+export * from './contabilidad.schema';
+export * from './documento.schema';
+export * from './tarea.schema';
