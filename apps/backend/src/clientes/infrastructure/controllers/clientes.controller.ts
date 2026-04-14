@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { CrearClienteDto } from '../../application/dtos/crear-cliente.dto';
+import { CrearClienteDto, crearClienteDtoSchema } from '../../application/dtos/crear-cliente.dto';
+import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { ActualizarClienteDto } from '../../application/dtos/actualizar-cliente.dto';
 import { AsignarResponsableDto } from '../../application/dtos/asignar-responsable.dto';
 import {
@@ -54,7 +55,7 @@ export class ClientesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body() dto: CrearClienteDto) {
+  async create(@Body(new ZodValidationPipe(crearClienteDtoSchema)) dto: CrearClienteDto) {
     return this.crearClienteHandler.execute(dto as CrearClienteCommand);
   }
 

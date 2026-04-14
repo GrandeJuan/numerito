@@ -1,23 +1,11 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { crearClienteSchema, type CrearClienteInput } from '@numerito/shared';
 
-export class CrearClienteDto {
-  @IsString()
-  @IsNotEmpty()
+export const crearClienteDtoSchema = crearClienteSchema;
+
+export class CrearClienteDto implements CrearClienteInput {
   cuit!: string;
-
-  @IsString()
-  @MinLength(3)
   razonSocial!: string;
-
-  @IsString()
-  @IsNotEmpty()
   condicionIva!: string;
-
-  @IsString()
-  @IsNotEmpty()
   tipo!: string;
-
-  @IsString()
-  @IsNotEmpty()
   regimen!: string;
 }
