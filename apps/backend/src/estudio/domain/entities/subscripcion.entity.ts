@@ -28,6 +28,8 @@ interface CreateSubscripcionProps {
   autoRenovacion: boolean;
 }
 
+type ReconstituteSubscripcionProps = CreateSubscripcionProps;
+
 export class Subscripcion extends BaseEntity {
   private _estudioId: string;
   private _planId: string;
@@ -52,6 +54,22 @@ export class Subscripcion extends BaseEntity {
     const sub = new Subscripcion(props, id);
     sub.addDomainEvent(new SubscripcionCreada(sub.id, props.estudioId, props.planId));
     return sub;
+  }
+
+  static reconstitute(props: ReconstituteSubscripcionProps, id: string): Subscripcion {
+    const instance = Object.create(Subscripcion.prototype) as Subscripcion;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._estudioId = props.estudioId;
+    instance._planId = props.planId;
+    instance._fechaInicio = props.fechaInicio;
+    instance._fechaFin = props.fechaFin;
+    instance._estado = props.estado;
+    instance._cicloFacturacion = props.cicloFacturacion;
+    instance._autoRenovacion = props.autoRenovacion;
+    return instance;
   }
 
   get estudioId(): string { return this._estudioId; }

@@ -99,11 +99,12 @@ export class MikroOrmUsuarioEstudioRepository
   }
 
   private toDomain(entity: UsuarioEstudioEntity): UsuarioEstudio {
-    return UsuarioEstudio.create(
+    return UsuarioEstudio.reconstitute(
       {
         usuarioId: entity.usuario.id,
         estudioId: entity.estudio.id,
         rol: entity.rol.codigo as Rol,
+        isActive: entity.isActive,
       },
       entity.id,
     );

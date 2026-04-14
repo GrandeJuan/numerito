@@ -8,6 +8,10 @@ interface CreateEstudioProps {
   cuit: string;
 }
 
+interface ReconstituteEstudioProps extends CreateEstudioProps {
+  isActive: boolean;
+}
+
 export class Estudio extends BaseEntity {
   private _nombre: NombreEstudio;
   private _plan: PlanSubscripcion;
@@ -24,6 +28,19 @@ export class Estudio extends BaseEntity {
 
   static create(props: CreateEstudioProps, id?: string): Estudio {
     return new Estudio(props, id);
+  }
+
+  static reconstitute(props: ReconstituteEstudioProps, id: string): Estudio {
+    const instance = Object.create(Estudio.prototype) as Estudio;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._nombre = props.nombre;
+    instance._plan = props.plan;
+    instance._cuit = props.cuit;
+    instance._isActive = props.isActive;
+    return instance;
   }
 
   get nombre(): NombreEstudio { return this._nombre; }

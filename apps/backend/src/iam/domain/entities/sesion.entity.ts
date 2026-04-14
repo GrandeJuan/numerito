@@ -8,6 +8,10 @@ interface CreateSesionProps {
   expiresAt: Date;
 }
 
+interface ReconstituteSesionProps extends CreateSesionProps {
+  isActive: boolean;
+}
+
 export class Sesion extends BaseEntity {
   private _usuarioId: string;
   private _refreshToken: string;
@@ -28,6 +32,21 @@ export class Sesion extends BaseEntity {
 
   static create(props: CreateSesionProps, id?: string): Sesion {
     return new Sesion(props, id);
+  }
+
+  static reconstitute(props: ReconstituteSesionProps, id: string): Sesion {
+    const instance = Object.create(Sesion.prototype) as Sesion;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._usuarioId = props.usuarioId;
+    instance._refreshToken = props.refreshToken;
+    instance._ipAddress = props.ipAddress;
+    instance._userAgent = props.userAgent;
+    instance._expiresAt = props.expiresAt;
+    instance._isActive = props.isActive;
+    return instance;
   }
 
   get usuarioId(): string { return this._usuarioId; }

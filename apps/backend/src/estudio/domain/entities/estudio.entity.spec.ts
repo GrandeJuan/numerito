@@ -60,4 +60,45 @@ describe('Estudio Entity (Aggregate Root)', () => {
     estudio.activate();
     expect(estudio.isActive).toBe(true);
   });
+
+  describe('reconstitute', () => {
+    it('should reconstitute preserving all fields including inactive state', () => {
+      const estudio = Estudio.reconstitute({
+        nombre: NombreEstudio.create('Reconstituted Studio'),
+        plan: PlanSubscripcion.create(PLAN.ENTERPRISE, Infinity, Infinity),
+        cuit: '20-12345678-6',
+        isActive: false,
+      }, 'existing-id');
+
+      expect(estudio.id).toBe('existing-id');
+      expect(estudio.nombre.value).toBe('Reconstituted Studio');
+      expect(estudio.plan.value).toBe(PLAN.ENTERPRISE);
+      expect(estudio.cuit).toBe('20-12345678-6');
+      expect(estudio.isActive).toBe(false);
+    });
+
+    it('should not emit domain events on reconstitution', () => {
+      const estudio = Estudio.reconstitute({
+        nombre: NombreEstudio.create('Test'),
+        plan: PlanSubscripcion.create(PLAN.FREE, 10, 2),
+        cuit: '20-12345678-6',
+        isActive: true,
+      }, 'some-id');
+
+      expect(estudio.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const estudio = Estudio.reconstitute({
+        nombre: NombreEstudio.create('Test'),
+        plan: PlanSubscripcion.create(PLAN.FREE, 10, 2),
+        cuit: '20-12345678-6',
+        isActive: true,
+      }, 'some-id');
+
+      const newPlan = PlanSubscripcion.create(PLAN.PROFESIONAL, 50, 5);
+      estudio.changePlan(newPlan);
+      expect(estudio.plan.value).toBe(PLAN.PROFESIONAL);
+    });
+  });
 });

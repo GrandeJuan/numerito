@@ -65,7 +65,7 @@ export class MikroOrmEstudioRepository
   }
 
   private toDomain(entity: EstudioEntity): Estudio {
-    return Estudio.create(
+    return Estudio.reconstitute(
       {
         nombre: NombreEstudio.create(entity.nombre),
         plan: PlanSubscripcion.create(
@@ -74,6 +74,7 @@ export class MikroOrmEstudioRepository
           entity.plan.maxUsuarios,
         ),
         cuit: entity.cuit,
+        isActive: entity.isActive,
       },
       entity.id,
     );

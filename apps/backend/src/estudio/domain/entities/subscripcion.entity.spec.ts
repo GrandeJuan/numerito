@@ -187,6 +187,58 @@ describe('Subscripcion Entity', () => {
     });
   });
 
+  describe('reconstitute', () => {
+    it('should reconstitute without emitting SubscripcionCreada', () => {
+      const sub = Subscripcion.reconstitute({
+        estudioId: 'estudio-1',
+        planId: 'PROFESIONAL',
+        fechaInicio: new Date('2026-04-01'),
+        fechaFin: new Date('2027-01-01'),
+        estado: EstadoSubscripcion.ACTIVA,
+        cicloFacturacion: CicloFacturacion.MENSUAL,
+        autoRenovacion: true,
+      }, 'existing-id');
+
+      expect(sub.id).toBe('existing-id');
+      expect(sub.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should preserve all fields including CANCELADA state', () => {
+      const sub = Subscripcion.reconstitute({
+        estudioId: 'estudio-2',
+        planId: 'ENTERPRISE',
+        fechaInicio: new Date('2025-01-01'),
+        fechaFin: new Date('2025-12-31'),
+        estado: EstadoSubscripcion.CANCELADA,
+        cicloFacturacion: CicloFacturacion.ANUAL,
+        autoRenovacion: false,
+      }, 'cancelled-id');
+
+      expect(sub.estudioId).toBe('estudio-2');
+      expect(sub.planId).toBe('ENTERPRISE');
+      expect(sub.estado).toBe(EstadoSubscripcion.CANCELADA);
+      expect(sub.cicloFacturacion).toBe(CicloFacturacion.ANUAL);
+      expect(sub.autoRenovacion).toBe(false);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const sub = Subscripcion.reconstitute({
+        estudioId: 'estudio-1',
+        planId: 'PROFESIONAL',
+        fechaInicio: new Date('2026-04-01'),
+        fechaFin: new Date('2027-01-01'),
+        estado: EstadoSubscripcion.ACTIVA,
+        cicloFacturacion: CicloFacturacion.MENSUAL,
+        autoRenovacion: true,
+      }, 'some-id');
+
+      sub.cancelar();
+      expect(sub.estado).toBe(EstadoSubscripcion.CANCELADA);
+      expect(sub.getDomainEvents()).toHaveLength(1);
+      expect(sub.getDomainEvents()[0]).toBeInstanceOf(SubscripcionCancelada);
+    });
+  });
+
   describe('domain events', () => {
     it('should emit SubscripcionCreada on create', () => {
       const sub = createSubscripcion();

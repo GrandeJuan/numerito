@@ -61,6 +61,83 @@ describe('Usuario Entity', () => {
     expect(usuario.password).toBe(newPassword);
   });
 
+  describe('reconstitute', () => {
+    it('should reconstitute without emitting domain events', async () => {
+      const email = Email.create('usuario@test.com');
+      const password = await Password.create('SecurePass123!');
+      const usuario = Usuario.reconstitute({
+        email,
+        password,
+        nombre: 'Juan',
+        apellido: 'Perez',
+        rol: ROL.SOCIO,
+        isActive: true,
+        emailVerified: false,
+        provider: null,
+        providerId: null,
+        themePreference: 'light',
+        avatarUrl: null,
+      }, 'existing-id');
+
+      expect(usuario.id).toBe('existing-id');
+      expect(usuario.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should preserve all fields including derived state', async () => {
+      const email = Email.create('deactivated@test.com');
+      const password = await Password.create('SecurePass123!');
+      const usuario = Usuario.reconstitute({
+        email,
+        password,
+        nombre: 'Ana',
+        apellido: 'Lopez',
+        rol: ROL.RESPONSABLE,
+        isActive: false,
+        emailVerified: true,
+        provider: 'google',
+        providerId: 'google-123',
+        themePreference: 'dark',
+        avatarUrl: 'https://example.com/avatar.png',
+      }, 'reconstituted-id');
+
+      expect(usuario.id).toBe('reconstituted-id');
+      expect(usuario.email.value).toBe('deactivated@test.com');
+      expect(usuario.nombre).toBe('Ana');
+      expect(usuario.apellido).toBe('Lopez');
+      expect(usuario.rol).toBe(ROL.RESPONSABLE);
+      expect(usuario.isActive).toBe(false);
+      expect(usuario.emailVerified).toBe(true);
+      expect(usuario.provider).toBe('google');
+      expect(usuario.providerId).toBe('google-123');
+      expect(usuario.themePreference).toBe('dark');
+      expect(usuario.avatarUrl).toBe('https://example.com/avatar.png');
+    });
+
+    it('should allow domain operations on reconstituted entities', async () => {
+      const email = Email.create('usuario@test.com');
+      const password = await Password.create('SecurePass123!');
+      const usuario = Usuario.reconstitute({
+        email,
+        password,
+        nombre: 'Juan',
+        apellido: 'Perez',
+        rol: ROL.SOCIO,
+        isActive: true,
+        emailVerified: false,
+        provider: null,
+        providerId: null,
+        themePreference: 'light',
+        avatarUrl: null,
+      }, 'some-id');
+
+      usuario.deactivate();
+      expect(usuario.isActive).toBe(false);
+
+      usuario.verifyEmail();
+      expect(usuario.emailVerified).toBe(true);
+    });
+  });
+
   describe('domain events', () => {
     it('should emit UsuarioRegistrado on create', async () => {
       const usuario = await createUsuario();

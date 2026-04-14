@@ -85,13 +85,15 @@ export class MikroOrmUsuarioRepository
   }
 
   private toDomain(entity: UsuarioEntity): Usuario {
-    return Usuario.create(
+    return Usuario.reconstitute(
       {
         email: Email.create(entity.email),
         password: Password.fromHash(entity.passwordHash),
         nombre: entity.nombre,
         apellido: entity.apellido,
         rol: entity.rol.codigo as Rol,
+        isActive: entity.isActive,
+        emailVerified: entity.emailVerified,
         provider: entity.provider as AuthProvider,
         providerId: entity.providerId,
         themePreference: (entity.themePreference as 'light' | 'dark') ?? 'light',

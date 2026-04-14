@@ -37,4 +37,35 @@ describe('HistorialPlan Entity', () => {
 
     expect(historial.motivo).toBeUndefined();
   });
+
+  describe('reconstitute', () => {
+    it('should reconstitute preserving all fields including fechaCambio', () => {
+      const fechaCambio = new Date('2025-06-15');
+      const historial = HistorialPlan.reconstitute({
+        estudioId: 'estudio-1',
+        planAnteriorId: 'FREE',
+        planNuevoId: 'PROFESIONAL',
+        motivo: 'Upgrade',
+        fechaCambio,
+      }, 'existing-id');
+
+      expect(historial.id).toBe('existing-id');
+      expect(historial.estudioId).toBe('estudio-1');
+      expect(historial.planAnteriorId).toBe('FREE');
+      expect(historial.planNuevoId).toBe('PROFESIONAL');
+      expect(historial.fechaCambio).toBe(fechaCambio);
+      expect(historial.motivo).toBe('Upgrade');
+    });
+
+    it('should not emit domain events on reconstitution', () => {
+      const historial = HistorialPlan.reconstitute({
+        estudioId: 'estudio-1',
+        planAnteriorId: 'FREE',
+        planNuevoId: 'PROFESIONAL',
+        fechaCambio: new Date(),
+      }, 'some-id');
+
+      expect(historial.getDomainEvents()).toHaveLength(0);
+    });
+  });
 });

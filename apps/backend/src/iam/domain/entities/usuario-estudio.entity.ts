@@ -7,6 +7,10 @@ interface CreateUsuarioEstudioProps {
   rol: Rol;
 }
 
+interface ReconstituteUsuarioEstudioProps extends CreateUsuarioEstudioProps {
+  isActive: boolean;
+}
+
 export class UsuarioEstudio extends BaseEntity {
   private _usuarioId: string;
   private _estudioId: string;
@@ -23,6 +27,19 @@ export class UsuarioEstudio extends BaseEntity {
 
   static create(props: CreateUsuarioEstudioProps, id?: string): UsuarioEstudio {
     return new UsuarioEstudio(props, id);
+  }
+
+  static reconstitute(props: ReconstituteUsuarioEstudioProps, id: string): UsuarioEstudio {
+    const instance = Object.create(UsuarioEstudio.prototype) as UsuarioEstudio;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._usuarioId = props.usuarioId;
+    instance._estudioId = props.estudioId;
+    instance._rol = props.rol;
+    instance._isActive = props.isActive;
+    return instance;
   }
 
   get usuarioId(): string {

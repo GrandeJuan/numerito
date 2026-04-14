@@ -122,7 +122,7 @@ export class MikroOrmSubscripcionRepository
   }
 
   private toDomain(entity: SubscripcionEntity): Subscripcion {
-    const sub = Subscripcion.create(
+    return Subscripcion.reconstitute(
       {
         estudioId: entity.estudio.id,
         planId: String(entity.plan.id),
@@ -134,9 +134,5 @@ export class MikroOrmSubscripcionRepository
       },
       entity.id,
     );
-    // Clear events from reconstitution — Subscripcion.create() always adds
-    // SubscripcionCreada, but we only want that event when truly creating new
-    sub.clearDomainEvents();
-    return sub;
   }
 }

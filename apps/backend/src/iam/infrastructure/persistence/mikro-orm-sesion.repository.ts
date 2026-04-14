@@ -69,13 +69,14 @@ export class MikroOrmSesionRepository extends GlobalRepository<Sesion> implement
   }
 
   private toDomain(entity: SesionEntity): Sesion {
-    return Sesion.create(
+    return Sesion.reconstitute(
       {
         usuarioId: entity.usuario.id,
         refreshToken: entity.refreshToken,
         ipAddress: entity.ipAddress,
         userAgent: entity.userAgent,
         expiresAt: entity.expiresAt,
+        isActive: entity.isActive,
       },
       entity.id,
     );

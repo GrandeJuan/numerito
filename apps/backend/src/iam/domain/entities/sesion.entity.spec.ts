@@ -88,4 +88,53 @@ describe('Sesion Entity', () => {
     });
     expect(sesion.isValid).toBe(false);
   });
+
+  describe('reconstitute', () => {
+    it('should reconstitute preserving all fields including inactive state', () => {
+      const expiresAt = new Date('2027-01-01');
+      const sesion = Sesion.reconstitute({
+        usuarioId: 'user-1',
+        refreshToken: 'token-xyz',
+        ipAddress: '10.0.0.1',
+        userAgent: 'Firefox/130',
+        expiresAt,
+        isActive: false,
+      }, 'existing-id');
+
+      expect(sesion.id).toBe('existing-id');
+      expect(sesion.usuarioId).toBe('user-1');
+      expect(sesion.refreshToken).toBe('token-xyz');
+      expect(sesion.ipAddress).toBe('10.0.0.1');
+      expect(sesion.userAgent).toBe('Firefox/130');
+      expect(sesion.expiresAt).toBe(expiresAt);
+      expect(sesion.isActive).toBe(false);
+    });
+
+    it('should not emit domain events on reconstitution', () => {
+      const sesion = Sesion.reconstitute({
+        usuarioId: 'user-1',
+        refreshToken: 'token-abc',
+        ipAddress: '192.168.1.1',
+        userAgent: 'Chrome/120',
+        expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+        isActive: true,
+      }, 'some-id');
+
+      expect(sesion.getDomainEvents()).toHaveLength(0);
+    });
+
+    it('should allow domain operations on reconstituted entities', () => {
+      const sesion = Sesion.reconstitute({
+        usuarioId: 'user-1',
+        refreshToken: 'token-abc',
+        ipAddress: '192.168.1.1',
+        userAgent: 'Chrome/120',
+        expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+        isActive: true,
+      }, 'some-id');
+
+      sesion.revoke();
+      expect(sesion.isActive).toBe(false);
+    });
+  });
 });

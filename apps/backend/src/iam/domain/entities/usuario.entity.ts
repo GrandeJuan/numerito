@@ -18,6 +18,20 @@ interface CreateUsuarioProps {
   avatarUrl?: string | null;
 }
 
+interface ReconstituteUsuarioProps {
+  email: Email;
+  password: Password;
+  nombre: string;
+  apellido: string;
+  rol: Rol;
+  isActive: boolean;
+  emailVerified: boolean;
+  provider: AuthProvider;
+  providerId: string | null;
+  themePreference: 'light' | 'dark';
+  avatarUrl: string | null;
+}
+
 export class Usuario extends BaseEntity {
   private _email: Email;
   private _password: Password;
@@ -50,6 +64,26 @@ export class Usuario extends BaseEntity {
     const usuario = new Usuario(props, id);
     usuario.addDomainEvent(new UsuarioRegistrado(usuario.id, props.email.value));
     return usuario;
+  }
+
+  static reconstitute(props: ReconstituteUsuarioProps, id: string): Usuario {
+    const instance = Object.create(Usuario.prototype) as Usuario;
+    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
+    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
+    instance.updatedAt = new Date();
+    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
+    instance._email = props.email;
+    instance._password = props.password;
+    instance._nombre = props.nombre;
+    instance._apellido = props.apellido;
+    instance._rol = props.rol;
+    instance._isActive = props.isActive;
+    instance._emailVerified = props.emailVerified;
+    instance._provider = props.provider;
+    instance._providerId = props.providerId;
+    instance._themePreference = props.themePreference;
+    instance._avatarUrl = props.avatarUrl;
+    return instance;
   }
 
   get email(): Email {
