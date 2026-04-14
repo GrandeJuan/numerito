@@ -84,7 +84,8 @@ export class MikroOrmTareaRepository
       ? this.em.getReference(UsuarioEntity, tarea.responsableId)
       : undefined;
 
-    const existing = await this.em.findOne(TareaEntity, { id: tarea.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(TareaEntity, { id: tarea.id, estudio: { id: tenantId } });
     if (existing) {
       existing.titulo = tarea.titulo;
       existing.descripcion = tarea.descripcion;
@@ -123,7 +124,8 @@ export class MikroOrmTareaRepository
   }
 
   async delete(tarea: Tarea): Promise<void> {
-    const entity = await this.em.findOne(TareaEntity, { id: tarea.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(TareaEntity, { id: tarea.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

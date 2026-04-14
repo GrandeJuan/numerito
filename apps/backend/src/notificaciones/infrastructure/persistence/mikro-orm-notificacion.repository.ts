@@ -70,7 +70,8 @@ export class MikroOrmNotificacionRepository
   }
 
   async save(notificacion: Notificacion): Promise<void> {
-    const existing = await this.em.findOne(NotificacionEntity, { id: notificacion.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(NotificacionEntity, { id: notificacion.id, estudioId: tenantId });
     if (existing) {
       existing.usuarioId = notificacion.usuarioId;
       existing.estudioId = notificacion.estudioId ?? existing.estudioId;
@@ -93,7 +94,8 @@ export class MikroOrmNotificacionRepository
   }
 
   async delete(notificacion: Notificacion): Promise<void> {
-    const entity = await this.em.findOne(NotificacionEntity, { id: notificacion.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(NotificacionEntity, { id: notificacion.id, estudioId: tenantId });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

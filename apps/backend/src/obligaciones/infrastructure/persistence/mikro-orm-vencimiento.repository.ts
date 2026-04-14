@@ -129,7 +129,8 @@ export class MikroOrmVencimientoRepository
     const cliente = this.em.getReference(ClienteEntity, vencimiento.clienteId);
     const estudio = this.em.getReference(EstudioEntity, vencimiento.estudioId);
 
-    const existing = await this.em.findOne(VencimientoEntity, { id: vencimiento.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(VencimientoEntity, { id: vencimiento.id, estudio: { id: tenantId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -156,7 +157,8 @@ export class MikroOrmVencimientoRepository
   }
 
   async delete(vencimiento: Vencimiento): Promise<void> {
-    const entity = await this.em.findOne(VencimientoEntity, { id: vencimiento.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(VencimientoEntity, { id: vencimiento.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

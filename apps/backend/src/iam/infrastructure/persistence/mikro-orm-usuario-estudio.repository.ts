@@ -66,7 +66,8 @@ export class MikroOrmUsuarioEstudioRepository
   }
 
   async save(membership: UsuarioEstudio): Promise<void> {
-    const existing = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id, estudio: { id: tenantId } });
     if (existing) {
       const rolEntity = await this.em.findOneOrFail(RolEntity, { codigo: membership.rol });
       existing.rol = rolEntity;
@@ -89,7 +90,8 @@ export class MikroOrmUsuarioEstudioRepository
   }
 
   async delete(membership: UsuarioEstudio): Promise<void> {
-    const entity = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(UsuarioEstudioEntity, { id: membership.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

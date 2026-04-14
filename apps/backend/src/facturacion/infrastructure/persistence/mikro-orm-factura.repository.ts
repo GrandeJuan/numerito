@@ -76,9 +76,10 @@ export class MikroOrmFacturaRepository
     const cliente = this.em.getReference(ClienteEntity, factura.clienteId);
     const estudio = this.em.getReference(EstudioEntity, factura.estudioId);
 
+    const tenantId = this.getTenantId();
     const existing = await this.em.findOne(
       FacturaEntity,
-      { id: factura.id },
+      { id: factura.id, estudio: { id: tenantId } },
       {
         populate: ['lineas'],
       },
@@ -144,7 +145,8 @@ export class MikroOrmFacturaRepository
   }
 
   async delete(factura: Factura): Promise<void> {
-    const entity = await this.em.findOne(FacturaEntity, { id: factura.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(FacturaEntity, { id: factura.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

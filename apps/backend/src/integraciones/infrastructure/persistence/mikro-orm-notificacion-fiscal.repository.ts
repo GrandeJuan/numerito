@@ -76,7 +76,8 @@ export class MikroOrmNotificacionFiscalRepository
       id: Number(notificacion.organismoId),
     });
 
-    const existing = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: tenantId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -107,7 +108,8 @@ export class MikroOrmNotificacionFiscalRepository
   }
 
   async delete(notificacion: NotificacionFiscal): Promise<void> {
-    const entity = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

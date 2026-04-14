@@ -108,7 +108,8 @@ export class MikroOrmCredencialFiscalRepository
       id: Number(credencial.organismoId),
     });
 
-    const existing = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: tenantId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -148,7 +149,8 @@ export class MikroOrmCredencialFiscalRepository
   }
 
   async delete(credencial: CredencialFiscalData): Promise<void> {
-    const entity = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

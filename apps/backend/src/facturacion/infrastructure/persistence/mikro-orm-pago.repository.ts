@@ -71,7 +71,8 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     const estudio = this.em.getReference(EstudioEntity, pago.estudioId);
     const medioPago = this.em.getReference(MedioPagoEntity, pago.medioPagoId);
 
-    const existing = await this.em.findOne(PagoEntity, { id: pago.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
 
     if (existing) {
       existing.factura = factura;
@@ -96,7 +97,8 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
   }
 
   async delete(pago: Pago): Promise<void> {
-    const entity = await this.em.findOne(PagoEntity, { id: pago.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

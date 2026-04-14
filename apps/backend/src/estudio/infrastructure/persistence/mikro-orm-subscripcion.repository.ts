@@ -78,7 +78,8 @@ export class MikroOrmSubscripcionRepository
   }
 
   async save(subscripcion: Subscripcion): Promise<void> {
-    const existing = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id });
+    const tenantId = this.getTenantId();
+    const existing = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: tenantId } });
     const plan = await this.em.findOneOrFail(PlanEntity, { id: Number(subscripcion.planId) });
     const estado = await this.em.findOneOrFail(EstadoSubscripcionEntity, {
       codigo: subscripcion.estado,
@@ -112,7 +113,8 @@ export class MikroOrmSubscripcionRepository
   }
 
   async delete(subscripcion: Subscripcion): Promise<void> {
-    const entity = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id });
+    const tenantId = this.getTenantId();
+    const entity = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: tenantId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();
