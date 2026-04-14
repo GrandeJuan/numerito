@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/formatters';
 import { CARD_CLASSES, CHART_THEME } from '@/lib/design-tokens';
@@ -82,6 +83,15 @@ interface HealthCheckResult {
   services: ServiceStatus[];
   uptimePercent: number;
 }
+
+const QUICK_ACTIONS = [
+  { icon: 'domain_add', label: 'Crear Estudio', href: '/admin/estudios' },
+  { icon: 'person_add', label: 'Nuevo Usuario', href: '/admin/usuarios' },
+  { icon: 'receipt_long', label: 'Ver Logs', href: '/admin/logs' },
+  { icon: 'tune', label: 'Configuración', href: '/admin/configuracion' },
+  { icon: 'mail', label: 'Notificaciones', href: '/admin/configuracion' },
+  { icon: 'database', label: 'Backups', href: '/admin/configuracion' },
+] as const;
 
 const PIE_COLORS = ['#4edea3', '#00a472', '#091426', '#75777d', '#10b981', '#8b5cf6'];
 
@@ -468,6 +478,35 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div
+        className="rounded-xl p-6 text-white"
+        style={{
+          background: 'radial-gradient(circle at 30% 20%, #1e293b 0%, #091426 100%)',
+        }}
+      >
+        <h3 className="text-sm font-bold mb-4">Acciones Rápidas</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {QUICK_ACTIONS.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-left"
+            >
+              <span
+                className="material-symbols-outlined text-[#4edea3]"
+                style={{ fontSize: 18 }}
+              >
+                {action.icon}
+              </span>
+              <span className="text-xs font-medium text-white/80">
+                {action.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Top Tenants + Recent Registrations */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

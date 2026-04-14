@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
+// Mock next/link
+vi.mock('next/link', () => ({
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}));
+
 // Mock recharts to avoid canvas issues in tests
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: any) => (
@@ -198,5 +205,52 @@ describe('AdminPage', () => {
 
     expect(screen.getByText('2500ms')).toBeInTheDocument();
     expect(screen.getByText('5000ms')).toBeInTheDocument();
+  });
+
+  it('should render quick actions panel with all 6 buttons', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Acciones Rápidas')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Crear Estudio')).toBeInTheDocument();
+    expect(screen.getByText('Nuevo Usuario')).toBeInTheDocument();
+    expect(screen.getByText('Ver Logs')).toBeInTheDocument();
+    expect(screen.getByText('Configuración')).toBeInTheDocument();
+    expect(screen.getByText('Notificaciones')).toBeInTheDocument();
+    expect(screen.getByText('Backups')).toBeInTheDocument();
+  });
+
+  it('should render quick action buttons as links to correct routes', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Acciones Rápidas')).toBeInTheDocument();
+    });
+
+    const crearEstudio = screen.getByText('Crear Estudio').closest('a');
+    expect(crearEstudio).toHaveAttribute('href', '/admin/estudios');
+
+    const nuevoUsuario = screen.getByText('Nuevo Usuario').closest('a');
+    expect(nuevoUsuario).toHaveAttribute('href', '/admin/usuarios');
+
+    const verLogs = screen.getByText('Ver Logs').closest('a');
+    expect(verLogs).toHaveAttribute('href', '/admin/logs');
+  });
+
+  it('should render quick action icons', async () => {
+    render(<AdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Acciones Rápidas')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('domain_add')).toBeInTheDocument();
+    expect(screen.getByText('person_add')).toBeInTheDocument();
+    expect(screen.getByText('receipt_long')).toBeInTheDocument();
+    expect(screen.getByText('tune')).toBeInTheDocument();
+    expect(screen.getByText('mail')).toBeInTheDocument();
+    expect(screen.getByText('database')).toBeInTheDocument();
   });
 });
