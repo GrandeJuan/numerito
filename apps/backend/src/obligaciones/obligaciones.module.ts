@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EntityManager } from '@mikro-orm/core';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
@@ -6,6 +7,7 @@ import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikr
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
+import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -31,6 +33,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (repo: VencimientoRepository, eventBus: EventBus) =>
         new MarcarVencidoHandler(repo, eventBus),
       inject: [VENCIMIENTO_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: VencimientoKpisHandler,
+      useFactory: (em: EntityManager) => new VencimientoKpisHandler(em),
+      inject: [EntityManager],
     },
   ],
   exports: [VENCIMIENTO_REPOSITORY],

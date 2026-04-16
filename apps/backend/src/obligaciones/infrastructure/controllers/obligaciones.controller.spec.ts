@@ -22,6 +22,7 @@ describe('ObligacionesController', () => {
   let mockCrearVencimientoHandler: any;
   let mockPresentarVencimientoHandler: any;
   let mockMarcarVencidoHandler: any;
+  let mockVencimientoKpisHandler: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
@@ -43,33 +44,58 @@ describe('ObligacionesController', () => {
     mockMarcarVencidoHandler = {
       execute: jest.fn().mockResolvedValue(makeVencimiento()),
     };
+    mockVencimientoKpisHandler = {
+      execute: jest.fn().mockResolvedValue({
+        pendientes: 0,
+        vencidos: 0,
+        presentadosEsteMes: 0,
+        proximoVencimiento: null,
+      }),
+    };
     controller = new ObligacionesController(
       mockVencimientoRepo,
       mockCrearVencimientoHandler,
       mockPresentarVencimientoHandler,
       mockMarcarVencidoHandler,
+      mockVencimientoKpisHandler,
     );
   });
 
   describe('kpis', () => {
-    it('should return KPI counts', async () => {
-      const pendiente = makeVencimiento();
-      const vencido = makeVencimiento();
-      vencido.marcarVencido();
-      mockVencimientoRepo.findAll.mockResolvedValue([pendiente, vencido]);
+    it('should delegate to VencimientoKpisHandler with the estudioId', async () => {
+      mockVencimientoKpisHandler.execute.mockResolvedValue({
+        pendientes: 1,
+        vencidos: 1,
+        presentadosEsteMes: 0,
+        proximoVencimiento: '2026-04-20',
+      });
 
-      const result = await controller.kpis();
-      expect(result.data.pendientes).toBe(1);
-      expect(result.data.vencidos).toBe(1);
-      expect(result.data.presentadosEsteMes).toBe(0);
-      expect(result.data.proximoVencimiento).toBeDefined();
+      const result = await controller.kpis('estudio-1');
+
+      expect(mockVencimientoKpisHandler.execute).toHaveBeenCalledWith({ estudioId: 'estudio-1' });
+      expect(result.data).toEqual({
+        pendientes: 1,
+        vencidos: 1,
+        presentadosEsteMes: 0,
+        proximoVencimiento: '2026-04-20',
+      });
     });
 
-    it('should return null proximoVencimiento when no pendientes', async () => {
-      mockVencimientoRepo.findAll.mockResolvedValue([]);
+    it('should not call findAll on the repository (KPI math leaves the controller)', async () => {
+      await controller.kpis('estudio-1');
 
-      const result = await controller.kpis();
-      expect(result.data.pendientes).toBe(0);
+      expect(mockVencimientoRepo.findAll).not.toHaveBeenCalled();
+    });
+
+    it('should pass through null proximoVencimiento from the handler', async () => {
+      mockVencimientoKpisHandler.execute.mockResolvedValue({
+        pendientes: 0,
+        vencidos: 0,
+        presentadosEsteMes: 0,
+        proximoVencimiento: null,
+      });
+
+      const result = await controller.kpis('estudio-1');
       expect(result.data.proximoVencimiento).toBeNull();
     });
   });

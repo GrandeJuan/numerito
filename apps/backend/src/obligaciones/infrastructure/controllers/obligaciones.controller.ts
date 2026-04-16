@@ -10,6 +10,7 @@ import {
 } from '../../application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
+import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -23,37 +24,14 @@ export class ObligacionesController {
     private readonly crearVencimientoHandler: CrearVencimientoHandler,
     private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
+    private readonly vencimientoKpisHandler: VencimientoKpisHandler,
   ) {}
 
   @Get('kpis')
   @ApiOperation({ summary: 'KPIs de obligaciones del estudio' })
-  async kpis() {
-    const all = await this.vencimientoRepo.findAll();
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-    let pendientes = 0;
-    let vencidos = 0;
-    let presentadosEsteMes = 0;
-    let proximoVencimiento: Date | null = null;
-
-    for (const v of all) {
-      if (v.estado === 'PENDIENTE') {
-        pendientes++;
-        if (!proximoVencimiento || v.fechaVencimiento < proximoVencimiento) {
-          proximoVencimiento = v.fechaVencimiento;
-        }
-      }
-      if (v.estado === 'VENCIDO') vencidos++;
-      if (v.estado === 'PRESENTADO' && v.periodo === currentMonth) presentadosEsteMes++;
-    }
-
-    return successResponse({
-      pendientes,
-      vencidos,
-      presentadosEsteMes,
-      proximoVencimiento: proximoVencimiento?.toISOString().split('T')[0] ?? null,
-    });
+  async kpis(@EstudioId() estudioId: string) {
+    const result = await this.vencimientoKpisHandler.execute({ estudioId });
+    return successResponse(result);
   }
 
   @Get('vencimientos')
