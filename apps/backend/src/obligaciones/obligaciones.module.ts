@@ -9,6 +9,7 @@ import { PresentarVencimientoHandler } from './application/commands/presentar-ve
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
+import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -43,6 +44,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     {
       provide: VencimientoListHandler,
       useFactory: (em: EntityManager) => new VencimientoListHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: VencimientoCalendarioHandler,
+      useFactory: (em: EntityManager) => new VencimientoCalendarioHandler(em),
       inject: [EntityManager],
     },
   ],

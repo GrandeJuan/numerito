@@ -24,6 +24,7 @@ describe('ObligacionesController', () => {
   let mockMarcarVencidoHandler: any;
   let mockVencimientoKpisHandler: any;
   let mockVencimientoListHandler: any;
+  let mockVencimientoCalendarioHandler: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
@@ -56,6 +57,9 @@ describe('ObligacionesController', () => {
     mockVencimientoListHandler = {
       execute: jest.fn().mockResolvedValue({ items: [], total: 0 }),
     };
+    mockVencimientoCalendarioHandler = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
     controller = new ObligacionesController(
       mockVencimientoRepo,
       mockCrearVencimientoHandler,
@@ -63,6 +67,7 @@ describe('ObligacionesController', () => {
       mockMarcarVencidoHandler,
       mockVencimientoKpisHandler,
       mockVencimientoListHandler,
+      mockVencimientoCalendarioHandler,
     );
   });
 
@@ -244,13 +249,64 @@ describe('ObligacionesController', () => {
   });
 
   describe('calendario', () => {
-    it('should return vencimientos for a periodo', async () => {
-      const items = [makeVencimiento({ periodo: '2026-04' })];
-      mockVencimientoRepo.findByPeriodo.mockResolvedValue(items);
+    const calendarioItem = {
+      id: 'v-1',
+      clienteId: 'cli-1',
+      cliente: 'Empresa Alpha SRL',
+      tipoObligacion: 'IVA',
+      periodo: '2026-04',
+      fechaVencimiento: '2026-04-20',
+      descripcion: 'DDJJ IVA',
+      estado: 'PENDIENTE',
+    };
 
-      const result = await controller.calendario('2026-04');
-      expect(result.data).toHaveLength(1);
-      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-04');
+    it('should delegate to VencimientoCalendarioHandler with the derived date range', async () => {
+      mockVencimientoCalendarioHandler.execute.mockResolvedValue([calendarioItem]);
+
+      const result = await controller.calendario('estudio-1', '2026-04');
+
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        fechaDesde: '2026-04-01',
+        fechaHasta: '2026-04-30',
+      });
+      expect(result.data).toEqual([calendarioItem]);
+    });
+
+    it('should compute the last day of months with 31 days', async () => {
+      await controller.calendario('estudio-1', '2026-01');
+
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        fechaDesde: '2026-01-01',
+        fechaHasta: '2026-01-31',
+      });
+    });
+
+    it('should compute the last day of February in a non-leap year', async () => {
+      await controller.calendario('estudio-1', '2026-02');
+
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        fechaDesde: '2026-02-01',
+        fechaHasta: '2026-02-28',
+      });
+    });
+
+    it('should compute the last day of February in a leap year', async () => {
+      await controller.calendario('estudio-1', '2028-02');
+
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        fechaDesde: '2028-02-01',
+        fechaHasta: '2028-02-29',
+      });
+    });
+
+    it('should not call findByPeriodo on the repo — domain entities no longer leak through the response', async () => {
+      await controller.calendario('estudio-1', '2026-04');
+
+      expect(mockVencimientoRepo.findByPeriodo).not.toHaveBeenCalled();
     });
   });
 });

@@ -12,6 +12,7 @@ import { PresentarVencimientoHandler } from '../../application/commands/presenta
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from '../../application/queries/vencimiento-list.query';
+import { VencimientoCalendarioHandler } from '../../application/queries/vencimiento-calendario.query';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -27,6 +28,7 @@ export class ObligacionesController {
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
     private readonly vencimientoListHandler: VencimientoListHandler,
+    private readonly vencimientoCalendarioHandler: VencimientoCalendarioHandler,
   ) {}
 
   @Get('kpis')
@@ -96,8 +98,25 @@ export class ObligacionesController {
 
   @Get('calendario/:periodo')
   @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
-  async calendario(@Param('periodo') periodo: string) {
-    const vencimientos = await this.vencimientoRepo.findByPeriodo(periodo);
-    return successResponse(vencimientos);
+  async calendario(@EstudioId() estudioId: string, @Param('periodo') periodo: string) {
+    const { fechaDesde, fechaHasta } = periodoToRange(periodo);
+    const items = await this.vencimientoCalendarioHandler.execute({
+      estudioId,
+      fechaDesde,
+      fechaHasta,
+    });
+    return successResponse(items);
   }
+}
+
+function periodoToRange(periodo: string): { fechaDesde: string; fechaHasta: string } {
+  const [yearStr, monthStr] = periodo.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const lastDay = new Date(year, month, 0).getDate();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    fechaDesde: `${yearStr}-${pad(month)}-01`,
+    fechaHasta: `${yearStr}-${pad(month)}-${pad(lastDay)}`,
+  };
 }
