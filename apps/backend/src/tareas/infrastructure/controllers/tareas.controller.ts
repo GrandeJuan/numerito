@@ -12,9 +12,9 @@ import { IniciarTareaHandler } from '../../application/commands/iniciar-tarea.co
 import { CompletarTareaHandler } from '../../application/commands/completar-tarea.command';
 import { AsignarTareaHandler } from '../../application/commands/asignar-tarea.command';
 import { RegistrarHorasHandler } from '../../application/commands/registrar-horas.command';
+import { AgregarComentarioHandler } from '../../application/commands/agregar-comentario.command';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
-import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 @ApiTags('Tareas')
 @Controller({ path: 'tareas', version: '1' })
@@ -25,6 +25,7 @@ export class TareasController {
     private readonly completarTareaHandler: CompletarTareaHandler,
     private readonly asignarTareaHandler: AsignarTareaHandler,
     private readonly registrarHorasHandler: RegistrarHorasHandler,
+    private readonly agregarComentarioHandler: AgregarComentarioHandler,
   ) {}
 
   @Get()
@@ -99,15 +100,11 @@ export class TareasController {
   @Post(':id/comentarios')
   @ApiOperation({ summary: 'Agregar comentario a tarea' })
   async agregarComentario(@Param('id') id: string, @Body(new ZodValidationPipe(agregarComentarioDtoSchema)) dto: AgregarComentarioDto) {
-    const tarea = await this.findOrFail(id);
-    tarea.agregarComentario(dto.autorId, dto.texto);
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.agregarComentarioHandler.execute({
+      tareaId: id,
+      autorId: dto.autorId,
+      texto: dto.texto,
+    });
     return successResponse(tarea);
-  }
-
-  private async findOrFail(id: string): Promise<Tarea> {
-    const tarea = await this.tareaRepo.findById(id);
-    if (!tarea) throw new RecursoNoEncontradoError('Tarea');
-    return tarea;
   }
 }

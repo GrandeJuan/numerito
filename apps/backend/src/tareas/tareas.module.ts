@@ -7,6 +7,7 @@ import { IniciarTareaHandler } from './application/commands/iniciar-tarea.comman
 import { CompletarTareaHandler } from './application/commands/completar-tarea.command';
 import { AsignarTareaHandler } from './application/commands/asignar-tarea.command';
 import { RegistrarHorasHandler } from './application/commands/registrar-horas.command';
+import { AgregarComentarioHandler } from './application/commands/agregar-comentario.command';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -36,6 +37,12 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       provide: RegistrarHorasHandler,
       useFactory: (repo: TareaRepository, eventBus: EventBus) =>
         new RegistrarHorasHandler(repo, eventBus),
+      inject: [TAREA_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: AgregarComentarioHandler,
+      useFactory: (repo: TareaRepository, eventBus: EventBus) =>
+        new AgregarComentarioHandler(repo, eventBus),
       inject: [TAREA_REPOSITORY, EVENT_BUS],
     },
   ],

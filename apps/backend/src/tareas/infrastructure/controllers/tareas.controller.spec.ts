@@ -20,6 +20,7 @@ describe('TareasController', () => {
   let mockCompletarTareaHandler: { execute: jest.Mock };
   let mockAsignarTareaHandler: { execute: jest.Mock };
   let mockRegistrarHorasHandler: { execute: jest.Mock };
+  let mockAgregarComentarioHandler: { execute: jest.Mock };
 
   beforeEach(() => {
     mockRepo = {
@@ -33,12 +34,14 @@ describe('TareasController', () => {
     mockCompletarTareaHandler = { execute: jest.fn() };
     mockAsignarTareaHandler = { execute: jest.fn() };
     mockRegistrarHorasHandler = { execute: jest.fn() };
+    mockAgregarComentarioHandler = { execute: jest.fn() };
     controller = new TareasController(
       mockRepo,
       mockIniciarTareaHandler as any,
       mockCompletarTareaHandler as any,
       mockAsignarTareaHandler as any,
       mockRegistrarHorasHandler as any,
+      mockAgregarComentarioHandler as any,
     );
   });
 
@@ -199,21 +202,29 @@ describe('TareasController', () => {
   });
 
   describe('agregarComentario', () => {
-    it('should add comment to tarea', async () => {
+    it('should delegate to AgregarComentarioHandler with tarea id, autorId, and texto', async () => {
       const tarea = makeTarea();
-      mockRepo.findById.mockResolvedValue(tarea);
+      tarea.agregarComentario('user-1', 'Avanzando bien');
+      mockAgregarComentarioHandler.execute.mockResolvedValue(tarea);
 
       const result = await controller.agregarComentario(tarea.id, {
         autorId: 'user-1',
         texto: 'Avanzando bien',
       });
+
+      expect(mockAgregarComentarioHandler.execute).toHaveBeenCalledWith({
+        tareaId: tarea.id,
+        autorId: 'user-1',
+        texto: 'Avanzando bien',
+      });
       expect(result.data.comentarios).toHaveLength(1);
       expect(result.data.comentarios[0].texto).toBe('Avanzando bien');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw when tarea not found', async () => {
-      mockRepo.findById.mockResolvedValue(null);
+    it('should propagate handler errors', async () => {
+      mockAgregarComentarioHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(
         controller.agregarComentario('bad-id', { autorId: 'u', texto: 't' }),
       ).rejects.toThrow('Tarea no encontrad');
