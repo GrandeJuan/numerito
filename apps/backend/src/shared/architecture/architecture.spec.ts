@@ -338,9 +338,6 @@ describe('Architecture rules', () => {
       'nomina/infrastructure/controllers/nomina.controller.ts': [
         'domain/entities/empleado.entity',
       ],
-      'obligaciones/infrastructure/controllers/obligaciones.controller.ts': [
-        'domain/entities/vencimiento.entity',
-      ],
       'tareas/infrastructure/controllers/tareas.controller.ts': [
         'domain/entities/tarea.entity',
       ],

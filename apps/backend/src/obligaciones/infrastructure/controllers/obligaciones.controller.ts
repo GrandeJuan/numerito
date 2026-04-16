@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { VENCIMIENTO_REPOSITORY } from '../../domain/repositories/vencimiento.repository';
-import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
+import type { EstadoVencimiento } from '@numerito/shared';
 import { CrearVencimientoDto, crearVencimientoDtoSchema } from '../../application/dtos/crear-vencimiento.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import {
@@ -13,22 +12,21 @@ import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.
 import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from '../../application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from '../../application/queries/vencimiento-calendario.query';
+import { VencimientoByIdHandler } from '../../application/queries/vencimiento-by-id.query';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
-import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import type { EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 
 @ApiTags('Obligaciones')
 @Controller({ path: 'obligaciones', version: '1' })
 export class ObligacionesController {
   constructor(
-    @Inject(VENCIMIENTO_REPOSITORY) private readonly vencimientoRepo: VencimientoRepository,
     private readonly crearVencimientoHandler: CrearVencimientoHandler,
     private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
     private readonly vencimientoListHandler: VencimientoListHandler,
     private readonly vencimientoCalendarioHandler: VencimientoCalendarioHandler,
+    private readonly vencimientoByIdHandler: VencimientoByIdHandler,
   ) {}
 
   @Get('kpis')
@@ -71,10 +69,9 @@ export class ObligacionesController {
 
   @Get('vencimientos/:id')
   @ApiOperation({ summary: 'Obtener vencimiento por ID' })
-  async getById(@Param('id') id: string) {
-    const vencimiento = await this.vencimientoRepo.findById(id);
-    if (!vencimiento) throw new RecursoNoEncontradoError('Vencimiento');
-    return vencimiento;
+  async getById(@EstudioId() estudioId: string, @Param('id') id: string) {
+    const vencimiento = await this.vencimientoByIdHandler.execute({ id, estudioId });
+    return successResponse(vencimiento);
   }
 
   @Post('vencimientos')

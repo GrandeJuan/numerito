@@ -1,50 +1,36 @@
 import { ObligacionesController } from './obligaciones.controller';
-import { Vencimiento } from '../../domain/entities/vencimiento.entity';
-
-const makeVencimiento = (
-  overrides: Partial<{ id: string; periodo: string; estado: string }> = {},
-) =>
-  Vencimiento.create(
-    {
-      clienteId: 'cliente-1',
-      estudioId: 'estudio-1',
-      tipoObligacion: 'IVA',
-      periodo: overrides.periodo ?? '2026-04',
-      fechaVencimiento: new Date('2026-04-20'),
-      descripcion: 'DDJJ IVA',
-    },
-    overrides.id,
-  );
+import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 describe('ObligacionesController', () => {
   let controller: ObligacionesController;
-  let mockVencimientoRepo: any;
   let mockCrearVencimientoHandler: any;
   let mockPresentarVencimientoHandler: any;
   let mockMarcarVencidoHandler: any;
   let mockVencimientoKpisHandler: any;
   let mockVencimientoListHandler: any;
   let mockVencimientoCalendarioHandler: any;
+  let mockVencimientoByIdHandler: any;
+
+  const byIdFixture = {
+    id: 'v-1',
+    clienteId: 'cli-1',
+    cliente: 'Empresa Alpha SRL',
+    tipoObligacion: 'IVA' as const,
+    periodo: '2026-04',
+    fechaVencimiento: '2026-04-20',
+    descripcion: 'DDJJ IVA',
+    estado: 'PENDIENTE' as const,
+  };
 
   beforeEach(() => {
-    mockVencimientoRepo = {
-      findById: jest.fn(),
-      findAll: jest.fn().mockResolvedValue([]),
-      findByClienteId: jest.fn().mockResolvedValue([]),
-      findByPeriodo: jest.fn().mockResolvedValue([]),
-      findByEstado: jest.fn().mockResolvedValue([]),
-      findProximosAVencer: jest.fn().mockResolvedValue([]),
-      save: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn(),
-    };
     mockCrearVencimientoHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'new-vencimiento-id' }),
     };
     mockPresentarVencimientoHandler = {
-      execute: jest.fn().mockResolvedValue(makeVencimiento()),
+      execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
     };
     mockMarcarVencidoHandler = {
-      execute: jest.fn().mockResolvedValue(makeVencimiento()),
+      execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
     };
     mockVencimientoKpisHandler = {
       execute: jest.fn().mockResolvedValue({
@@ -60,14 +46,17 @@ describe('ObligacionesController', () => {
     mockVencimientoCalendarioHandler = {
       execute: jest.fn().mockResolvedValue([]),
     };
+    mockVencimientoByIdHandler = {
+      execute: jest.fn().mockResolvedValue(byIdFixture),
+    };
     controller = new ObligacionesController(
-      mockVencimientoRepo,
       mockCrearVencimientoHandler,
       mockPresentarVencimientoHandler,
       mockMarcarVencidoHandler,
       mockVencimientoKpisHandler,
       mockVencimientoListHandler,
       mockVencimientoCalendarioHandler,
+      mockVencimientoByIdHandler,
     );
   });
 
@@ -89,12 +78,6 @@ describe('ObligacionesController', () => {
         presentadosEsteMes: 0,
         proximoVencimiento: '2026-04-20',
       });
-    });
-
-    it('should not call findAll on the repository (KPI math leaves the controller)', async () => {
-      await controller.kpis('estudio-1');
-
-      expect(mockVencimientoRepo.findAll).not.toHaveBeenCalled();
     });
 
     it('should pass through null proximoVencimiento from the handler', async () => {
@@ -186,29 +169,27 @@ describe('ObligacionesController', () => {
         limit: 50,
       });
     });
-
-    it('should not call findAll/findByEstado/findByPeriodo on the repo — filtering leaves the controller', async () => {
-      await controller.list('estudio-1', 1, 20, 'PENDIENTE', '2026-04');
-
-      expect(mockVencimientoRepo.findAll).not.toHaveBeenCalled();
-      expect(mockVencimientoRepo.findByEstado).not.toHaveBeenCalled();
-      expect(mockVencimientoRepo.findByPeriodo).not.toHaveBeenCalled();
-    });
   });
 
   describe('getById', () => {
-    it('should return vencimiento by id', async () => {
-      const v = makeVencimiento();
-      mockVencimientoRepo.findById.mockResolvedValue(v);
+    it('should delegate to VencimientoByIdHandler with id and estudioId', async () => {
+      const result = await controller.getById('estudio-1', 'v-1');
 
-      const result = await controller.getById(v.id);
-      expect(result).toBeDefined();
+      expect(mockVencimientoByIdHandler.execute).toHaveBeenCalledWith({
+        id: 'v-1',
+        estudioId: 'estudio-1',
+      });
+      expect(result.data).toEqual(byIdFixture);
     });
 
-    it('should throw when not found', async () => {
-      mockVencimientoRepo.findById.mockResolvedValue(null);
+    it('should propagate RecursoNoEncontradoError from the handler', async () => {
+      mockVencimientoByIdHandler.execute.mockRejectedValue(
+        new RecursoNoEncontradoError('Vencimiento'),
+      );
 
-      await expect(controller.getById('bad-id')).rejects.toThrow('Vencimiento no encontrado');
+      await expect(controller.getById('estudio-1', 'bad-id')).rejects.toThrow(
+        'Vencimiento no encontrado',
+      );
     });
   });
 
@@ -222,9 +203,12 @@ describe('ObligacionesController', () => {
         descripcion: 'DDJJ IVA',
       };
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto as any, 'estudio-1');
       expect(result.id).toBe('new-vencimiento-id');
-      expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith(dto);
+      expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith({
+        ...dto,
+        estudioId: 'estudio-1',
+      });
     });
   });
 
@@ -301,12 +285,6 @@ describe('ObligacionesController', () => {
         fechaDesde: '2028-02-01',
         fechaHasta: '2028-02-29',
       });
-    });
-
-    it('should not call findByPeriodo on the repo — domain entities no longer leak through the response', async () => {
-      await controller.calendario('estudio-1', '2026-04');
-
-      expect(mockVencimientoRepo.findByPeriodo).not.toHaveBeenCalled();
     });
   });
 });
