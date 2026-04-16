@@ -1,6 +1,7 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
-import { ESTADO_VENCIMIENTO } from '@numerito/shared';
+import { ESTADO_VENCIMIENTO, TIPO_OBLIGACION } from '@numerito/shared';
 import type { TipoObligacion, EstadoVencimiento } from '@numerito/shared';
 import { VencimientoCumplido } from '../events/vencimiento-cumplido.event';
 import { VencimientoVencido } from '../events/vencimiento-vencido.event';
@@ -17,18 +18,29 @@ interface CreateVencimientoProps {
   descripcion: string;
 }
 
-interface ReconstituteVencimientoProps extends CreateVencimientoProps {
-  estado: EstadoVencimiento;
-}
+const tipoObligacionValues = Object.values(TIPO_OBLIGACION) as [TipoObligacion, ...TipoObligacion[]];
+const estadoVencimientoValues = Object.values(ESTADO_VENCIMIENTO) as [EstadoVencimiento, ...EstadoVencimiento[]];
+
+const vencimientoReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  tipoObligacion: z.enum(tipoObligacionValues),
+  periodo: z.string().min(1),
+  fechaVencimiento: z.date(),
+  descripcion: z.string(),
+  estado: z.enum(estadoVencimientoValues),
+});
+
+export type ReconstituteVencimientoProps = z.input<typeof vencimientoReconstitutePropsSchema>;
 
 export class Vencimiento extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _tipoObligacion: TipoObligacion;
-  private _periodo: string;
-  private _fechaVencimiento: Date;
-  private _descripcion: string;
-  private _estado: EstadoVencimiento;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _tipoObligacion!: TipoObligacion;
+  private _periodo!: string;
+  private _fechaVencimiento!: Date;
+  private _descripcion!: string;
+  private _estado!: EstadoVencimiento;
 
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
@@ -49,18 +61,18 @@ export class Vencimiento extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteVencimientoProps, id: string): Vencimiento {
-    const instance = Object.create(Vencimiento.prototype) as Vencimiento;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._tipoObligacion = props.tipoObligacion;
-    instance._periodo = props.periodo;
-    instance._fechaVencimiento = props.fechaVencimiento;
-    instance._descripcion = props.descripcion;
-    instance._estado = props.estado;
+    const { instance, props: data } = reconstituteEntity(Vencimiento, {
+      schema: vencimientoReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._tipoObligacion = data.tipoObligacion;
+    instance._periodo = data.periodo;
+    instance._fechaVencimiento = data.fechaVencimiento;
+    instance._descripcion = data.descripcion;
+    instance._estado = data.estado;
     return instance;
   }
 

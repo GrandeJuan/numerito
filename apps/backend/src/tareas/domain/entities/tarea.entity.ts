@@ -1,6 +1,7 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
-import { ESTADO_TAREA } from '@numerito/shared';
+import { ESTADO_TAREA, PRIORIDAD } from '@numerito/shared';
 import type { EstadoTarea, Prioridad } from '@numerito/shared';
 
 export { ESTADO_TAREA };
@@ -20,23 +21,39 @@ interface CreateTareaProps {
   descripcion?: string;
 }
 
-interface ReconstituteTareaProps extends CreateTareaProps {
-  estado: EstadoTarea;
-  responsableId?: string;
-  horasRegistradas: number;
-  comentarios: Comentario[];
-}
+const estadoTareaValues = Object.values(ESTADO_TAREA) as [EstadoTarea, ...EstadoTarea[]];
+const prioridadValues = Object.values(PRIORIDAD) as [Prioridad, ...Prioridad[]];
+
+const comentarioSchema = z.object({
+  usuarioId: z.string().min(1),
+  texto: z.string(),
+  fecha: z.date(),
+});
+
+const tareaReconstitutePropsSchema = z.object({
+  titulo: z.string().min(1),
+  descripcion: z.string().optional(),
+  clienteId: z.string().min(1).optional(),
+  estudioId: z.string().min(1),
+  prioridad: z.enum(prioridadValues),
+  estado: z.enum(estadoTareaValues),
+  responsableId: z.string().min(1).optional(),
+  horasRegistradas: z.number(),
+  comentarios: z.array(comentarioSchema),
+});
+
+export type ReconstituteTareaProps = z.input<typeof tareaReconstitutePropsSchema>;
 
 export class Tarea extends BaseEntity {
-  private _titulo: string;
+  private _titulo!: string;
   private _descripcion?: string;
   private _clienteId?: string;
-  private _estudioId: string;
-  private _estado: EstadoTarea;
-  private _prioridad: Prioridad;
+  private _estudioId!: string;
+  private _estado!: EstadoTarea;
+  private _prioridad!: Prioridad;
   private _responsableId?: string;
-  private _horasRegistradas: number;
-  private _comentarios: Comentario[];
+  private _horasRegistradas!: number;
+  private _comentarios!: Comentario[];
 
   private constructor(props: CreateTareaProps, id?: string) {
     super(id);
@@ -55,20 +72,20 @@ export class Tarea extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteTareaProps, id: string): Tarea {
-    const instance = Object.create(Tarea.prototype) as Tarea;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._titulo = props.titulo;
-    instance._descripcion = props.descripcion;
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._estado = props.estado;
-    instance._prioridad = props.prioridad;
-    instance._responsableId = props.responsableId;
-    instance._horasRegistradas = props.horasRegistradas;
-    instance._comentarios = props.comentarios;
+    const { instance, props: data } = reconstituteEntity(Tarea, {
+      schema: tareaReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._titulo = data.titulo;
+    instance._descripcion = data.descripcion;
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._estado = data.estado;
+    instance._prioridad = data.prioridad;
+    instance._responsableId = data.responsableId;
+    instance._horasRegistradas = data.horasRegistradas;
+    instance._comentarios = data.comentarios;
     return instance;
   }
 

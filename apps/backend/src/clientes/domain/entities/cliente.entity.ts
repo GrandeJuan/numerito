@@ -1,6 +1,8 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { Cuit } from '../value-objects/cuit.vo';
 import { RazonSocial } from '../value-objects/razon-social.vo';
+import { CONDICION_IVA, PROVINCIA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 import type { CondicionIVA, Provincia, TipoCliente, Regimen } from '@numerito/shared';
 
 export type { TipoCliente, Regimen };
@@ -15,21 +17,35 @@ interface CreateClienteProps {
   provincias?: Provincia[];
 }
 
-interface ReconstituteClienteProps extends CreateClienteProps {
-  isActive: boolean;
-  responsableId?: string;
-}
+const condicionIvaValues = Object.values(CONDICION_IVA) as [CondicionIVA, ...CondicionIVA[]];
+const tipoClienteValues = Object.values(TIPO_CLIENTE) as [TipoCliente, ...TipoCliente[]];
+const regimenValues = Object.values(REGIMEN) as [Regimen, ...Regimen[]];
+const provinciaValues = Object.values(PROVINCIA) as [Provincia, ...Provincia[]];
+
+const clienteReconstitutePropsSchema = z.object({
+  cuit: z.instanceof(Cuit),
+  razonSocial: z.instanceof(RazonSocial),
+  condicionIva: z.enum(condicionIvaValues),
+  tipo: z.enum(tipoClienteValues),
+  regimen: z.enum(regimenValues),
+  estudioId: z.string().min(1),
+  isActive: z.boolean(),
+  responsableId: z.string().min(1).optional(),
+  provincias: z.array(z.enum(provinciaValues)).optional(),
+});
+
+export type ReconstituteClienteProps = z.input<typeof clienteReconstitutePropsSchema>;
 
 export class Cliente extends BaseEntity {
-  private _cuit: Cuit;
-  private _razonSocial: RazonSocial;
-  private _condicionIva: CondicionIVA;
-  private _tipo: TipoCliente;
-  private _regimen: Regimen;
-  private _estudioId: string;
-  private _isActive: boolean;
+  private _cuit!: Cuit;
+  private _razonSocial!: RazonSocial;
+  private _condicionIva!: CondicionIVA;
+  private _tipo!: TipoCliente;
+  private _regimen!: Regimen;
+  private _estudioId!: string;
+  private _isActive!: boolean;
   private _responsableId?: string;
-  private _provincias: Provincia[];
+  private _provincias!: Provincia[];
 
   private constructor(props: CreateClienteProps, id?: string) {
     super(id);
@@ -48,20 +64,20 @@ export class Cliente extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteClienteProps, id: string): Cliente {
-    const instance = Object.create(Cliente.prototype) as Cliente;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._cuit = props.cuit;
-    instance._razonSocial = props.razonSocial;
-    instance._condicionIva = props.condicionIva;
-    instance._tipo = props.tipo;
-    instance._regimen = props.regimen;
-    instance._estudioId = props.estudioId;
-    instance._isActive = props.isActive;
-    instance._responsableId = props.responsableId;
-    instance._provincias = props.provincias ?? [];
+    const { instance, props: data } = reconstituteEntity(Cliente, {
+      schema: clienteReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._cuit = data.cuit;
+    instance._razonSocial = data.razonSocial;
+    instance._condicionIva = data.condicionIva;
+    instance._tipo = data.tipo;
+    instance._regimen = data.regimen;
+    instance._estudioId = data.estudioId;
+    instance._isActive = data.isActive;
+    instance._responsableId = data.responsableId;
+    instance._provincias = data.provincias ?? [];
     return instance;
   }
 
