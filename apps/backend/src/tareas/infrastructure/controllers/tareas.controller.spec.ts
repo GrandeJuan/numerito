@@ -16,6 +16,8 @@ const makeTarea = (overrides: Partial<{ id: string; estudioId: string; clienteId
 describe('TareasController', () => {
   let controller: TareasController;
   let mockRepo: any;
+  let mockIniciarTareaHandler: { execute: jest.Mock };
+  let mockCompletarTareaHandler: { execute: jest.Mock };
 
   beforeEach(() => {
     mockRepo = {
@@ -25,7 +27,13 @@ describe('TareasController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    controller = new TareasController(mockRepo);
+    mockIniciarTareaHandler = { execute: jest.fn() };
+    mockCompletarTareaHandler = { execute: jest.fn() };
+    controller = new TareasController(
+      mockRepo,
+      mockIniciarTareaHandler as any,
+      mockCompletarTareaHandler as any,
+    );
   });
 
   describe('list', () => {
@@ -91,34 +99,42 @@ describe('TareasController', () => {
   });
 
   describe('iniciar', () => {
-    it('should start a tarea', async () => {
+    it('should delegate to IniciarTareaHandler with the tarea id', async () => {
       const tarea = makeTarea();
-      mockRepo.findById.mockResolvedValue(tarea);
+      tarea.iniciar();
+      mockIniciarTareaHandler.execute.mockResolvedValue(tarea);
 
       const result = await controller.iniciar(tarea.id);
+
+      expect(mockIniciarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: tarea.id });
       expect(result.data.estado).toBe('EN_PROGRESO');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw when tarea not found', async () => {
-      mockRepo.findById.mockResolvedValue(null);
+    it('should propagate handler errors', async () => {
+      mockIniciarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(controller.iniciar('bad-id')).rejects.toThrow('Tarea no encontrad');
     });
   });
 
   describe('completar', () => {
-    it('should complete a tarea in progress', async () => {
+    it('should delegate to CompletarTareaHandler with the tarea id', async () => {
       const tarea = makeTarea();
       tarea.iniciar();
-      mockRepo.findById.mockResolvedValue(tarea);
+      tarea.completar();
+      mockCompletarTareaHandler.execute.mockResolvedValue(tarea);
 
       const result = await controller.completar(tarea.id);
+
+      expect(mockCompletarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: tarea.id });
       expect(result.data.estado).toBe('COMPLETADO');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw when tarea not found', async () => {
-      mockRepo.findById.mockResolvedValue(null);
+    it('should propagate handler errors', async () => {
+      mockCompletarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(controller.completar('bad-id')).rejects.toThrow('Tarea no encontrad');
     });
   });

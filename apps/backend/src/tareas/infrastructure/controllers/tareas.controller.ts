@@ -8,6 +8,8 @@ import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-vali
 import { TAREA_REPOSITORY } from '../../domain/repositories/tarea.repository';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
 import { Tarea } from '../../domain/entities/tarea.entity';
+import { IniciarTareaHandler } from '../../application/commands/iniciar-tarea.command';
+import { CompletarTareaHandler } from '../../application/commands/completar-tarea.command';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -15,7 +17,11 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 @ApiTags('Tareas')
 @Controller({ path: 'tareas', version: '1' })
 export class TareasController {
-  constructor(@Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository) {}
+  constructor(
+    @Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository,
+    private readonly iniciarTareaHandler: IniciarTareaHandler,
+    private readonly completarTareaHandler: CompletarTareaHandler,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar tareas del estudio' })
@@ -55,18 +61,14 @@ export class TareasController {
   @Patch(':id/iniciar')
   @ApiOperation({ summary: 'Iniciar tarea' })
   async iniciar(@Param('id') id: string) {
-    const tarea = await this.findOrFail(id);
-    tarea.iniciar();
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.iniciarTareaHandler.execute({ tareaId: id });
     return successResponse(tarea);
   }
 
   @Patch(':id/completar')
   @ApiOperation({ summary: 'Completar tarea' })
   async completar(@Param('id') id: string) {
-    const tarea = await this.findOrFail(id);
-    tarea.completar();
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.completarTareaHandler.execute({ tareaId: id });
     return successResponse(tarea);
   }
 
