@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 
 export enum TipoNotificacion {
   VENCIMIENTO_PROXIMO = 'VENCIMIENTO_PROXIMO',
@@ -14,16 +15,24 @@ interface CreateNotificacionProps {
   mensaje: string;
 }
 
-interface ReconstituteNotificacionProps extends CreateNotificacionProps {
-  leida: boolean;
-}
+const tipoNotificacionValues = Object.values(TipoNotificacion) as [TipoNotificacion, ...TipoNotificacion[]];
+
+const notificacionReconstitutePropsSchema = z.object({
+  usuarioId: z.string().min(1),
+  estudioId: z.string().optional(),
+  tipo: z.enum(tipoNotificacionValues),
+  mensaje: z.string(),
+  leida: z.boolean(),
+});
+
+export type ReconstituteNotificacionProps = z.input<typeof notificacionReconstitutePropsSchema>;
 
 export class Notificacion extends BaseEntity {
-  private _usuarioId: string;
+  private _usuarioId!: string;
   private _estudioId?: string;
-  private _tipo: TipoNotificacion;
-  private _mensaje: string;
-  private _leida: boolean;
+  private _tipo!: TipoNotificacion;
+  private _mensaje!: string;
+  private _leida!: boolean;
 
   private constructor(props: CreateNotificacionProps, id?: string) {
     super(id);
@@ -39,16 +48,16 @@ export class Notificacion extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteNotificacionProps, id: string): Notificacion {
-    const instance = Object.create(Notificacion.prototype) as Notificacion;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._usuarioId = props.usuarioId;
-    instance._estudioId = props.estudioId;
-    instance._tipo = props.tipo;
-    instance._mensaje = props.mensaje;
-    instance._leida = props.leida;
+    const { instance, props: data } = reconstituteEntity(Notificacion, {
+      schema: notificacionReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._usuarioId = data.usuarioId;
+    instance._estudioId = data.estudioId;
+    instance._tipo = data.tipo;
+    instance._mensaje = data.mensaje;
+    instance._leida = data.leida;
     return instance;
   }
 

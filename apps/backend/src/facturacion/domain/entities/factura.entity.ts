@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { LineaFactura } from './linea-factura.entity';
 import type { LineaFacturaInput } from './linea-factura.entity';
@@ -18,28 +19,32 @@ interface CreateFacturaProps {
   lineas: LineaFacturaInput[];
 }
 
-interface ReconstituteFacturaProps {
-  clienteId: string;
-  estudioId: string;
-  numero: string;
-  fechaEmision: Date;
-  fechaVencimiento: Date;
-  concepto: string;
-  lineas: LineaFactura[];
-  estado: EstadoFactura;
-  totalPagado: number;
-}
+const estadoFacturaValues = Object.values(ESTADO_FACTURA) as [EstadoFactura, ...EstadoFactura[]];
+
+const facturaReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  numero: z.string(),
+  fechaEmision: z.date(),
+  fechaVencimiento: z.date(),
+  concepto: z.string(),
+  lineas: z.array(z.instanceof(LineaFactura)),
+  estado: z.enum(estadoFacturaValues),
+  totalPagado: z.number(),
+});
+
+export type ReconstituteFacturaProps = z.input<typeof facturaReconstitutePropsSchema>;
 
 export class Factura extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _numero: string;
-  private _fechaEmision: Date;
-  private _fechaVencimiento: Date;
-  private _concepto: string;
-  private _lineas: LineaFactura[];
-  private _estado: EstadoFactura;
-  private _totalPagado: number;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _numero!: string;
+  private _fechaEmision!: Date;
+  private _fechaVencimiento!: Date;
+  private _concepto!: string;
+  private _lineas!: LineaFactura[];
+  private _estado!: EstadoFactura;
+  private _totalPagado!: number;
 
   private constructor(props: CreateFacturaProps, id?: string) {
     super(id);
@@ -76,20 +81,20 @@ export class Factura extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteFacturaProps, id: string): Factura {
-    const instance = Object.create(Factura.prototype) as Factura;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._numero = props.numero;
-    instance._fechaEmision = props.fechaEmision;
-    instance._fechaVencimiento = props.fechaVencimiento;
-    instance._concepto = props.concepto;
-    instance._lineas = props.lineas;
-    instance._estado = props.estado;
-    instance._totalPagado = props.totalPagado;
+    const { instance, props: data } = reconstituteEntity(Factura, {
+      schema: facturaReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._numero = data.numero;
+    instance._fechaEmision = data.fechaEmision;
+    instance._fechaVencimiento = data.fechaVencimiento;
+    instance._concepto = data.concepto;
+    instance._lineas = data.lineas;
+    instance._estado = data.estado;
+    instance._totalPagado = data.totalPagado;
     return instance;
   }
 

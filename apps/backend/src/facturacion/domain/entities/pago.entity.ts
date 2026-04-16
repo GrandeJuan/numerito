@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 interface CreatePagoProps {
@@ -10,14 +11,23 @@ interface CreatePagoProps {
   referencia?: string;
 }
 
-interface ReconstitutePagoProps extends CreatePagoProps {}
+const pagoReconstitutePropsSchema = z.object({
+  facturaId: z.string().min(1),
+  estudioId: z.string().min(1),
+  fecha: z.date(),
+  monto: z.number(),
+  medioPagoId: z.number(),
+  referencia: z.string().optional(),
+});
+
+export type ReconstitutePagoProps = z.input<typeof pagoReconstitutePropsSchema>;
 
 export class Pago extends BaseEntity {
-  private _facturaId: string;
-  private _estudioId: string;
-  private _fecha: Date;
-  private _monto: number;
-  private _medioPagoId: number;
+  private _facturaId!: string;
+  private _estudioId!: string;
+  private _fecha!: Date;
+  private _monto!: number;
+  private _medioPagoId!: number;
   private _referencia?: string;
 
   private constructor(props: CreatePagoProps, id?: string) {
@@ -38,17 +48,17 @@ export class Pago extends BaseEntity {
   }
 
   static reconstitute(props: ReconstitutePagoProps, id: string): Pago {
-    const instance = Object.create(Pago.prototype) as Pago;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._facturaId = props.facturaId;
-    instance._estudioId = props.estudioId;
-    instance._fecha = props.fecha;
-    instance._monto = props.monto;
-    instance._medioPagoId = props.medioPagoId;
-    instance._referencia = props.referencia;
+    const { instance, props: data } = reconstituteEntity(Pago, {
+      schema: pagoReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._facturaId = data.facturaId;
+    instance._estudioId = data.estudioId;
+    instance._fecha = data.fecha;
+    instance._monto = data.monto;
+    instance._medioPagoId = data.medioPagoId;
+    instance._referencia = data.referencia;
     return instance;
   }
 

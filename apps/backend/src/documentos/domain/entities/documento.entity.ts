@@ -1,4 +1,6 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
+import { TIPO_DOCUMENTO } from '@numerito/shared';
 import type { TipoDocumento } from '@numerito/shared';
 
 export type { TipoDocumento };
@@ -13,19 +15,30 @@ interface CreateDocumentoProps {
   sizeBytes: number;
 }
 
-interface ReconstituteDocumentoProps extends CreateDocumentoProps {
-  version: number;
-}
+const tipoDocumentoValues = Object.values(TIPO_DOCUMENTO) as [TipoDocumento, ...TipoDocumento[]];
+
+const documentoReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  tipo: z.enum(tipoDocumentoValues),
+  nombre: z.string(),
+  s3Key: z.string(),
+  mimeType: z.string(),
+  sizeBytes: z.number(),
+  version: z.number(),
+});
+
+export type ReconstituteDocumentoProps = z.input<typeof documentoReconstitutePropsSchema>;
 
 export class Documento extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _tipo: TipoDocumento;
-  private _nombre: string;
-  private _s3Key: string;
-  private _mimeType: string;
-  private _sizeBytes: number;
-  private _version: number;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _tipo!: TipoDocumento;
+  private _nombre!: string;
+  private _s3Key!: string;
+  private _mimeType!: string;
+  private _sizeBytes!: number;
+  private _version!: number;
 
   private constructor(props: CreateDocumentoProps, id?: string) {
     super(id);
@@ -44,19 +57,19 @@ export class Documento extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteDocumentoProps, id: string): Documento {
-    const instance = Object.create(Documento.prototype) as Documento;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._tipo = props.tipo;
-    instance._nombre = props.nombre;
-    instance._s3Key = props.s3Key;
-    instance._mimeType = props.mimeType;
-    instance._sizeBytes = props.sizeBytes;
-    instance._version = props.version;
+    const { instance, props: data } = reconstituteEntity(Documento, {
+      schema: documentoReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._tipo = data.tipo;
+    instance._nombre = data.nombre;
+    instance._s3Key = data.s3Key;
+    instance._mimeType = data.mimeType;
+    instance._sizeBytes = data.sizeBytes;
+    instance._version = data.version;
     return instance;
   }
 

@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 interface CreateEmpleadoProps {
@@ -12,22 +13,32 @@ interface CreateEmpleadoProps {
   categoriaConvenio: string;
 }
 
-interface ReconstituteEmpleadoProps extends CreateEmpleadoProps {
-  isActive: boolean;
-  fechaEgreso?: Date;
-}
+const empleadoReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  nombre: z.string(),
+  apellido: z.string(),
+  cuil: z.string(),
+  fechaIngreso: z.date(),
+  fechaEgreso: z.date().optional(),
+  sueldoBasico: z.number(),
+  categoriaConvenio: z.string(),
+  isActive: z.boolean(),
+});
+
+export type ReconstituteEmpleadoProps = z.input<typeof empleadoReconstitutePropsSchema>;
 
 export class Empleado extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _nombre: string;
-  private _apellido: string;
-  private _cuil: string;
-  private _fechaIngreso: Date;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _nombre!: string;
+  private _apellido!: string;
+  private _cuil!: string;
+  private _fechaIngreso!: Date;
   private _fechaEgreso?: Date;
-  private _sueldoBasico: number;
-  private _categoriaConvenio: string;
-  private _isActive: boolean;
+  private _sueldoBasico!: number;
+  private _categoriaConvenio!: string;
+  private _isActive!: boolean;
 
   private constructor(props: CreateEmpleadoProps, id?: string) {
     super(id);
@@ -53,21 +64,21 @@ export class Empleado extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteEmpleadoProps, id: string): Empleado {
-    const instance = Object.create(Empleado.prototype) as Empleado;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._nombre = props.nombre;
-    instance._apellido = props.apellido;
-    instance._cuil = props.cuil;
-    instance._fechaIngreso = props.fechaIngreso;
-    instance._fechaEgreso = props.fechaEgreso;
-    instance._sueldoBasico = props.sueldoBasico;
-    instance._categoriaConvenio = props.categoriaConvenio;
-    instance._isActive = props.isActive;
+    const { instance, props: data } = reconstituteEntity(Empleado, {
+      schema: empleadoReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._nombre = data.nombre;
+    instance._apellido = data.apellido;
+    instance._cuil = data.cuil;
+    instance._fechaIngreso = data.fechaIngreso;
+    instance._fechaEgreso = data.fechaEgreso;
+    instance._sueldoBasico = data.sueldoBasico;
+    instance._categoriaConvenio = data.categoriaConvenio;
+    instance._isActive = data.isActive;
     return instance;
   }
 

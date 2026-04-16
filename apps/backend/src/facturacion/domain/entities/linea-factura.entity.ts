@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export interface LineaFacturaInput {
@@ -17,14 +18,22 @@ interface CreateLineaFacturaProps {
   alicuotaIva: number;
 }
 
-interface ReconstituteLineaFacturaProps extends CreateLineaFacturaProps {}
+const lineaFacturaReconstitutePropsSchema = z.object({
+  facturaId: z.string().min(1),
+  descripcion: z.string(),
+  cantidad: z.number(),
+  precioUnitario: z.number(),
+  alicuotaIva: z.number(),
+});
+
+export type ReconstituteLineaFacturaProps = z.input<typeof lineaFacturaReconstitutePropsSchema>;
 
 export class LineaFactura extends BaseEntity {
-  private _facturaId: string;
-  private _descripcion: string;
-  private _cantidad: number;
-  private _precioUnitario: number;
-  private _alicuotaIva: number;
+  private _facturaId!: string;
+  private _descripcion!: string;
+  private _cantidad!: number;
+  private _precioUnitario!: number;
+  private _alicuotaIva!: number;
 
   private constructor(props: CreateLineaFacturaProps, id?: string) {
     super(id);
@@ -49,16 +58,16 @@ export class LineaFactura extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteLineaFacturaProps, id: string): LineaFactura {
-    const instance = Object.create(LineaFactura.prototype) as LineaFactura;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._facturaId = props.facturaId;
-    instance._descripcion = props.descripcion;
-    instance._cantidad = props.cantidad;
-    instance._precioUnitario = props.precioUnitario;
-    instance._alicuotaIva = props.alicuotaIva;
+    const { instance, props: data } = reconstituteEntity(LineaFactura, {
+      schema: lineaFacturaReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._facturaId = data.facturaId;
+    instance._descripcion = data.descripcion;
+    instance._cantidad = data.cantidad;
+    instance._precioUnitario = data.precioUnitario;
+    instance._alicuotaIva = data.alicuotaIva;
     return instance;
   }
 

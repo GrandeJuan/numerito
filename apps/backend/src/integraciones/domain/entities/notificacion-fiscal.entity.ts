@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 
 export const ESTADO_NOTIFICACION = {
   PENDIENTE: 'PENDIENTE',
@@ -18,20 +19,31 @@ interface CreateNotificacionFiscalProps {
   fechaNotificacion: Date;
 }
 
-interface ReconstituteNotificacionFiscalProps extends CreateNotificacionFiscalProps {
-  estado: EstadoNotificacion;
-  notaGestion?: string;
-}
+const estadoNotificacionValues = Object.values(ESTADO_NOTIFICACION) as [EstadoNotificacion, ...EstadoNotificacion[]];
+
+const notificacionFiscalReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  organismoId: z.string(),
+  cuitCliente: z.string(),
+  asunto: z.string(),
+  contenido: z.string(),
+  fechaNotificacion: z.date(),
+  estado: z.enum(estadoNotificacionValues),
+  notaGestion: z.string().optional(),
+});
+
+export type ReconstituteNotificacionFiscalProps = z.input<typeof notificacionFiscalReconstitutePropsSchema>;
 
 export class NotificacionFiscal extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _organismoId: string;
-  private _cuitCliente: string;
-  private _asunto: string;
-  private _contenido: string;
-  private _fechaNotificacion: Date;
-  private _estado: EstadoNotificacion;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _organismoId!: string;
+  private _cuitCliente!: string;
+  private _asunto!: string;
+  private _contenido!: string;
+  private _fechaNotificacion!: Date;
+  private _estado!: EstadoNotificacion;
   private _notaGestion?: string;
 
   private constructor(props: CreateNotificacionFiscalProps, id?: string) {
@@ -51,20 +63,20 @@ export class NotificacionFiscal extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteNotificacionFiscalProps, id: string): NotificacionFiscal {
-    const instance = Object.create(NotificacionFiscal.prototype) as NotificacionFiscal;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._organismoId = props.organismoId;
-    instance._cuitCliente = props.cuitCliente;
-    instance._asunto = props.asunto;
-    instance._contenido = props.contenido;
-    instance._fechaNotificacion = props.fechaNotificacion;
-    instance._estado = props.estado;
-    instance._notaGestion = props.notaGestion;
+    const { instance, props: data } = reconstituteEntity(NotificacionFiscal, {
+      schema: notificacionFiscalReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._organismoId = data.organismoId;
+    instance._cuitCliente = data.cuitCliente;
+    instance._asunto = data.asunto;
+    instance._contenido = data.contenido;
+    instance._fechaNotificacion = data.fechaNotificacion;
+    instance._estado = data.estado;
+    instance._notaGestion = data.notaGestion;
     return instance;
   }
 
