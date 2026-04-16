@@ -21,6 +21,8 @@ describe('TareasController', () => {
   let mockAsignarTareaHandler: { execute: jest.Mock };
   let mockRegistrarHorasHandler: { execute: jest.Mock };
   let mockAgregarComentarioHandler: { execute: jest.Mock };
+  let mockTareaListHandler: { execute: jest.Mock };
+  let mockTareaKpisHandler: { execute: jest.Mock };
 
   beforeEach(() => {
     mockRepo = {
@@ -35,6 +37,8 @@ describe('TareasController', () => {
     mockAsignarTareaHandler = { execute: jest.fn() };
     mockRegistrarHorasHandler = { execute: jest.fn() };
     mockAgregarComentarioHandler = { execute: jest.fn() };
+    mockTareaListHandler = { execute: jest.fn().mockResolvedValue({ items: [], total: 0 }) };
+    mockTareaKpisHandler = { execute: jest.fn() };
     controller = new TareasController(
       mockRepo,
       mockIniciarTareaHandler as any,
@@ -42,52 +46,90 @@ describe('TareasController', () => {
       mockAsignarTareaHandler as any,
       mockRegistrarHorasHandler as any,
       mockAgregarComentarioHandler as any,
+      mockTareaListHandler as any,
+      mockTareaKpisHandler as any,
     );
   });
 
   describe('list', () => {
-    it('should return paginated tareas for estudio', async () => {
-      const tareas = [makeTarea(), makeTarea({ clienteId: 'cliente-2' })];
-      mockRepo.findAll.mockResolvedValue(tareas);
+    it('delegates to TareaListHandler with estudioId and default pagination', async () => {
+      mockTareaListHandler.execute.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await controller.list(1, 20);
-      expect(result.data).toHaveLength(2);
-      expect(result.meta.total).toBe(2);
-      expect(result.meta.page).toBe(1);
-    });
+      const result = await controller.list('estudio-1');
 
-    it('should use default page and limit when not provided', async () => {
-      mockRepo.findAll.mockResolvedValue([]);
-
-      const result = await controller.list();
+      expect(mockTareaListHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        estado: undefined,
+        clienteId: undefined,
+        responsableId: undefined,
+        prioridad: undefined,
+        page: 1,
+        limit: 20,
+      });
+      expect(result.meta.total).toBe(0);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
 
-    it('should filter by responsableId when provided', async () => {
-      const tarea = makeTarea();
-      tarea.asignar('user-1');
-      mockRepo.findByResponsableId.mockResolvedValue([tarea]);
+    it('returns DTO items and pagination metadata from the handler', async () => {
+      const items = [
+        {
+          id: 't-1',
+          titulo: 'Preparar balance',
+          descripcion: null,
+          clienteId: 'cli-1',
+          clienteNombre: 'Empresa Alpha SRL',
+          responsableId: 'u-1',
+          responsableNombre: 'Ana Perez',
+          estado: 'PENDIENTE',
+          prioridad: 'MEDIA',
+          horasRegistradas: 0,
+        },
+      ];
+      mockTareaListHandler.execute.mockResolvedValue({ items, total: 1 });
 
-      const result = await controller.list(1, 20, undefined, 'user-1');
-      expect(result.data).toHaveLength(1);
-      expect(mockRepo.findByResponsableId).toHaveBeenCalledWith('user-1');
+      const result = await controller.list('estudio-1');
+
+      expect(result.data).toEqual(items);
+      expect(result.meta.total).toBe(1);
     });
 
-    it('should filter by estado when provided', async () => {
-      const tareas = [makeTarea(), makeTarea()];
-      mockRepo.findAll.mockResolvedValue(tareas);
+    it('forwards estado, clienteId, responsableId and prioridad filters to the handler', async () => {
+      await controller.list('estudio-1', 2, 50, 'EN_PROGRESO', 'u-1', 'cli-1', 'ALTA');
 
-      const result = await controller.list(1, 20, 'PENDIENTE');
-      expect(result.data).toHaveLength(2);
+      expect(mockTareaListHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        estado: 'EN_PROGRESO',
+        clienteId: 'cli-1',
+        responsableId: 'u-1',
+        prioridad: 'ALTA',
+        page: 2,
+        limit: 50,
+      });
     });
 
-    it('should filter by clienteId when provided', async () => {
-      const tareas = [makeTarea({ clienteId: 'cliente-1' })];
-      mockRepo.findAll.mockResolvedValue(tareas);
+    it('does not materialise rows via the repository for filtering', async () => {
+      await controller.list('estudio-1', 1, 20, 'PENDIENTE');
 
-      const result = await controller.list(1, 20, undefined, undefined, 'cliente-1');
-      expect(result.data).toHaveLength(1);
+      expect(mockRepo.findAll).not.toHaveBeenCalled();
+      expect(mockRepo.findByResponsableId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('kpis', () => {
+    it('delegates to TareaKpisHandler with the estudioId', async () => {
+      const kpis = { pendientes: 3, enProgreso: 2, completadas: 5, totalHoras: 12.5 };
+      mockTareaKpisHandler.execute.mockResolvedValue(kpis);
+
+      const result = await controller.kpis('estudio-1');
+
+      expect(mockTareaKpisHandler.execute).toHaveBeenCalledWith({ estudioId: 'estudio-1' });
+      expect(result.data).toEqual(kpis);
+    });
+
+    it('propagates handler errors', async () => {
+      mockTareaKpisHandler.execute.mockRejectedValue(new Error('db down'));
+      await expect(controller.kpis('estudio-1')).rejects.toThrow('db down');
     });
   });
 

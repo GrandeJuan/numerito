@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import type { EstadoTarea, Prioridad } from '@numerito/shared';
 import { CrearTareaDto, crearTareaDtoSchema } from '../../application/dtos/crear-tarea.dto';
 import { AsignarTareaDto, asignarTareaDtoSchema } from '../../application/dtos/asignar-tarea.dto';
 import { RegistrarHorasDto, registrarHorasDtoSchema } from '../../application/dtos/registrar-horas.dto';
@@ -13,6 +14,8 @@ import { CompletarTareaHandler } from '../../application/commands/completar-tare
 import { AsignarTareaHandler } from '../../application/commands/asignar-tarea.command';
 import { RegistrarHorasHandler } from '../../application/commands/registrar-horas.command';
 import { AgregarComentarioHandler } from '../../application/commands/agregar-comentario.command';
+import { TareaListHandler } from '../../application/queries/tarea-list.query';
+import { TareaKpisHandler } from '../../application/queries/tarea-kpis.query';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
@@ -26,33 +29,40 @@ export class TareasController {
     private readonly asignarTareaHandler: AsignarTareaHandler,
     private readonly registrarHorasHandler: RegistrarHorasHandler,
     private readonly agregarComentarioHandler: AgregarComentarioHandler,
+    private readonly tareaListHandler: TareaListHandler,
+    private readonly tareaKpisHandler: TareaKpisHandler,
   ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar tareas del estudio' })
   async list(
+    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
     @Query('responsableId') responsableId?: string,
     @Query('clienteId') clienteId?: string,
+    @Query('prioridad') prioridad?: string,
   ) {
-    let tareas: Tarea[];
+    const pageNum = +page;
+    const limitNum = +limit;
+    const { items, total } = await this.tareaListHandler.execute({
+      estudioId,
+      estado: estado as EstadoTarea | undefined,
+      clienteId,
+      responsableId,
+      prioridad: prioridad as Prioridad | undefined,
+      page: pageNum,
+      limit: limitNum,
+    });
+    return successResponse(items, { total, page: pageNum, limit: limitNum });
+  }
 
-    if (responsableId) {
-      tareas = await this.tareaRepo.findByResponsableId(responsableId);
-    } else {
-      tareas = await this.tareaRepo.findAll();
-    }
-
-    if (estado) {
-      tareas = tareas.filter((t) => t.estado === estado);
-    }
-    if (clienteId) {
-      tareas = tareas.filter((t) => t.clienteId === clienteId);
-    }
-
-    return successResponse(tareas, { total: tareas.length, page: +page, limit: +limit });
+  @Get('kpis')
+  @ApiOperation({ summary: 'KPIs de tareas del estudio' })
+  async kpis(@EstudioId() estudioId: string) {
+    const result = await this.tareaKpisHandler.execute({ estudioId });
+    return successResponse(result);
   }
 
   @Post()
