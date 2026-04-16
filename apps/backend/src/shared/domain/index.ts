@@ -9,3 +9,5 @@ export type { EventBus } from './event-bus';
 export { EVENT_BUS } from './event-bus';
 export { ValueObject } from './value-object';
 export type { Mapper } from './mapper';
+export { reconstituteEntity } from './reconstitute';
+export type { ReconstituteOptions, ReconstituteResult } from './reconstitute';

@@ -1,9 +1,12 @@
 import { Sesion } from './sesion.entity';
 
+const USER_ID = '22222222-2222-2222-2222-222222222222';
+const SESION_ID = '11111111-1111-1111-1111-111111111111';
+
 describe('Sesion Entity', () => {
   it('should create a session with device info', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -11,7 +14,7 @@ describe('Sesion Entity', () => {
     });
 
     expect(sesion.id).toBeDefined();
-    expect(sesion.usuarioId).toBe('user-1');
+    expect(sesion.usuarioId).toBe(USER_ID);
     expect(sesion.refreshToken).toBe('token-abc');
     expect(sesion.ipAddress).toBe('192.168.1.1');
     expect(sesion.userAgent).toBe('Chrome/120');
@@ -20,7 +23,7 @@ describe('Sesion Entity', () => {
 
   it('should revoke a session (remote logout)', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -33,7 +36,7 @@ describe('Sesion Entity', () => {
 
   it('should detect expired session', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -46,7 +49,7 @@ describe('Sesion Entity', () => {
   it('should expose expiresAt getter', () => {
     const expiresAt = new Date(Date.now() + 7 * 24 * 3600000);
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -57,7 +60,7 @@ describe('Sesion Entity', () => {
 
   it('should validate active non-expired session via isValid', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -68,7 +71,7 @@ describe('Sesion Entity', () => {
 
   it('should be invalid when revoked', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -80,7 +83,7 @@ describe('Sesion Entity', () => {
 
   it('should be invalid when expired', () => {
     const sesion = Sesion.create({
-      usuarioId: 'user-1',
+      usuarioId: USER_ID,
       refreshToken: 'token-abc',
       ipAddress: '192.168.1.1',
       userAgent: 'Chrome/120',
@@ -93,16 +96,16 @@ describe('Sesion Entity', () => {
     it('should reconstitute preserving all fields including inactive state', () => {
       const expiresAt = new Date('2027-01-01');
       const sesion = Sesion.reconstitute({
-        usuarioId: 'user-1',
+        usuarioId: USER_ID,
         refreshToken: 'token-xyz',
         ipAddress: '10.0.0.1',
         userAgent: 'Firefox/130',
         expiresAt,
         isActive: false,
-      }, 'existing-id');
+      }, SESION_ID);
 
-      expect(sesion.id).toBe('existing-id');
-      expect(sesion.usuarioId).toBe('user-1');
+      expect(sesion.id).toBe(SESION_ID);
+      expect(sesion.usuarioId).toBe(USER_ID);
       expect(sesion.refreshToken).toBe('token-xyz');
       expect(sesion.ipAddress).toBe('10.0.0.1');
       expect(sesion.userAgent).toBe('Firefox/130');
@@ -112,29 +115,42 @@ describe('Sesion Entity', () => {
 
     it('should not emit domain events on reconstitution', () => {
       const sesion = Sesion.reconstitute({
-        usuarioId: 'user-1',
+        usuarioId: USER_ID,
         refreshToken: 'token-abc',
         ipAddress: '192.168.1.1',
         userAgent: 'Chrome/120',
         expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
         isActive: true,
-      }, 'some-id');
+      }, SESION_ID);
 
       expect(sesion.getDomainEvents()).toHaveLength(0);
     });
 
     it('should allow domain operations on reconstituted entities', () => {
       const sesion = Sesion.reconstitute({
-        usuarioId: 'user-1',
+        usuarioId: USER_ID,
         refreshToken: 'token-abc',
         ipAddress: '192.168.1.1',
         userAgent: 'Chrome/120',
         expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
         isActive: true,
-      }, 'some-id');
+      }, SESION_ID);
 
       sesion.revoke();
       expect(sesion.isActive).toBe(false);
+    });
+
+    it('rejects malformed props via Zod (drift detection)', () => {
+      expect(() =>
+        Sesion.reconstitute({
+          usuarioId: 'not-a-uuid',
+          refreshToken: 'token-abc',
+          ipAddress: '192.168.1.1',
+          userAgent: 'Chrome/120',
+          expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+          isActive: true,
+        }, SESION_ID),
+      ).toThrow();
     });
   });
 });

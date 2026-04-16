@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 
 interface CreateSesionProps {
   usuarioId: string;
@@ -8,9 +9,16 @@ interface CreateSesionProps {
   expiresAt: Date;
 }
 
-interface ReconstituteSesionProps extends CreateSesionProps {
-  isActive: boolean;
-}
+const sesionReconstitutePropsSchema = z.object({
+  usuarioId: z.string().uuid(),
+  refreshToken: z.string().min(1),
+  ipAddress: z.string(),
+  userAgent: z.string(),
+  expiresAt: z.date(),
+  isActive: z.boolean(),
+});
+
+export type ReconstituteSesionProps = z.infer<typeof sesionReconstitutePropsSchema>;
 
 export class Sesion extends BaseEntity {
   private _usuarioId: string;
@@ -35,17 +43,17 @@ export class Sesion extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteSesionProps, id: string): Sesion {
-    const instance = Object.create(Sesion.prototype) as Sesion;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._usuarioId = props.usuarioId;
-    instance._refreshToken = props.refreshToken;
-    instance._ipAddress = props.ipAddress;
-    instance._userAgent = props.userAgent;
-    instance._expiresAt = props.expiresAt;
-    instance._isActive = props.isActive;
+    const { instance, props: data } = reconstituteEntity(Sesion, {
+      schema: sesionReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._usuarioId = data.usuarioId;
+    instance._refreshToken = data.refreshToken;
+    instance._ipAddress = data.ipAddress;
+    instance._userAgent = data.userAgent;
+    instance._expiresAt = data.expiresAt;
+    instance._isActive = data.isActive;
     return instance;
   }
 
