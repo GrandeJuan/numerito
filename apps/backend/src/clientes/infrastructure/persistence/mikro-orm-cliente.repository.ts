@@ -1,9 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
-import { Cliente, type TipoCliente, type Regimen } from '../../domain/entities/cliente.entity';
+import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
-import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -15,13 +14,15 @@ import { TipoClienteEntity } from '../../../shared/infrastructure/persistence/ti
 import { RegimenEntity } from '../../../shared/infrastructure/persistence/regimen.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
-import type { CondicionIVA } from '@numerito/shared';
+import { ClienteMapper } from './cliente.mapper';
 
 @Injectable()
 export class MikroOrmClienteRepository
   extends TenantAwareRepository<Cliente>
   implements ClienteRepository
 {
+  private readonly mapper = new ClienteMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -42,7 +43,7 @@ export class MikroOrmClienteRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByCuit(cuit: Cuit): Promise<Cliente | null> {
@@ -58,7 +59,7 @@ export class MikroOrmClienteRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<Cliente[]> {
@@ -72,7 +73,7 @@ export class MikroOrmClienteRepository
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByResponsableId(responsableId: string): Promise<Cliente[]> {
@@ -87,42 +88,43 @@ export class MikroOrmClienteRepository
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(cliente: Cliente): Promise<void> {
+    const data = this.mapper.toPersistence(cliente);
     const [condicionIva, tipoCliente, regimen] = await Promise.all([
-      this.em.findOneOrFail(CondicionIvaEntity, { codigo: cliente.condicionIva }),
-      this.em.findOneOrFail(TipoClienteEntity, { codigo: cliente.tipo }),
-      this.em.findOneOrFail(RegimenEntity, { codigo: cliente.regimen }),
+      this.em.findOneOrFail(CondicionIvaEntity, { codigo: data.condicionIva }),
+      this.em.findOneOrFail(TipoClienteEntity, { codigo: data.tipo }),
+      this.em.findOneOrFail(RegimenEntity, { codigo: data.regimen }),
     ]);
-    const estudio = this.em.getReference(EstudioEntity, cliente.estudioId);
-    const responsable = cliente.responsableId
-      ? this.em.getReference(UsuarioEntity, cliente.responsableId)
+    const estudio = this.em.getReference(EstudioEntity, data.estudioId);
+    const responsable = data.responsableId
+      ? this.em.getReference(UsuarioEntity, data.responsableId)
       : undefined;
 
     const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(ClienteEntity, { id: cliente.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(ClienteEntity, { id: data.id, estudio: { id: tenantId } });
     if (existing) {
-      existing.cuit = cliente.cuit.raw;
-      existing.razonSocial = cliente.razonSocial.value;
+      existing.cuit = data.cuit;
+      existing.razonSocial = data.razonSocial;
       existing.condicionIva = condicionIva;
       existing.tipoCliente = tipoCliente;
       existing.regimen = regimen;
       existing.estudio = estudio;
       existing.responsable = responsable;
-      existing.isActive = cliente.isActive;
+      existing.isActive = data.isActive;
     } else {
       this.em.create(ClienteEntity, {
-        id: cliente.id,
-        cuit: cliente.cuit.raw,
-        razonSocial: cliente.razonSocial.value,
+        id: data.id,
+        cuit: data.cuit,
+        razonSocial: data.razonSocial,
         condicionIva,
         tipoCliente,
         regimen,
         estudio,
         responsable,
-        isActive: cliente.isActive,
+        isActive: data.isActive,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -137,21 +139,5 @@ export class MikroOrmClienteRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: ClienteEntity): Cliente {
-    return Cliente.reconstitute(
-      {
-        cuit: Cuit.create(entity.cuit),
-        razonSocial: RazonSocial.create(entity.razonSocial),
-        condicionIva: entity.condicionIva.codigo as CondicionIVA,
-        tipo: entity.tipoCliente.codigo as TipoCliente,
-        regimen: entity.regimen.codigo as Regimen,
-        estudioId: entity.estudio.id,
-        isActive: entity.isActive,
-        responsableId: entity.responsable?.id,
-      },
-      entity.id,
-    );
   }
 }
