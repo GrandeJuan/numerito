@@ -23,6 +23,7 @@ describe('ObligacionesController', () => {
   let mockPresentarVencimientoHandler: any;
   let mockMarcarVencidoHandler: any;
   let mockVencimientoKpisHandler: any;
+  let mockVencimientoListHandler: any;
 
   beforeEach(() => {
     mockVencimientoRepo = {
@@ -52,12 +53,16 @@ describe('ObligacionesController', () => {
         proximoVencimiento: null,
       }),
     };
+    mockVencimientoListHandler = {
+      execute: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+    };
     controller = new ObligacionesController(
       mockVencimientoRepo,
       mockCrearVencimientoHandler,
       mockPresentarVencimientoHandler,
       mockMarcarVencidoHandler,
       mockVencimientoKpisHandler,
+      mockVencimientoListHandler,
     );
   });
 
@@ -101,36 +106,88 @@ describe('ObligacionesController', () => {
   });
 
   describe('list', () => {
-    it('should return paginated vencimientos', async () => {
-      const items = [makeVencimiento(), makeVencimiento()];
-      mockVencimientoRepo.findAll.mockResolvedValue(items);
+    const listItem = {
+      id: 'v-1',
+      clienteId: 'cli-1',
+      cliente: 'Empresa Alpha SRL',
+      tipoObligacion: 'IVA',
+      periodo: '2026-04',
+      fechaVencimiento: '2026-04-20',
+      descripcion: 'DDJJ IVA',
+      estado: 'PENDIENTE',
+    };
 
-      const result = await controller.list(1, 20);
+    it('should delegate to VencimientoListHandler with estudioId', async () => {
+      mockVencimientoListHandler.execute.mockResolvedValue({
+        items: [listItem, listItem],
+        total: 7,
+      });
+
+      const result = await controller.list('estudio-1', 1, 20);
+
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        estado: undefined,
+        periodo: undefined,
+        clienteId: undefined,
+        fechaDesde: undefined,
+        fechaHasta: undefined,
+        page: 1,
+        limit: 20,
+      });
       expect(result.data).toHaveLength(2);
-      expect(result.meta.total).toBe(2);
+      expect(result.meta).toEqual({ total: 7, page: 1, limit: 20 });
     });
 
     it('should use default page and limit when not provided', async () => {
-      mockVencimientoRepo.findAll.mockResolvedValue([]);
-
-      const result = await controller.list();
+      const result = await controller.list('estudio-1');
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
 
-    it('should filter by periodo', async () => {
-      const items = [makeVencimiento({ periodo: '2026-03' })];
-      mockVencimientoRepo.findByPeriodo.mockResolvedValue(items);
-
-      await controller.list(1, 20, undefined, '2026-03');
-      expect(mockVencimientoRepo.findByPeriodo).toHaveBeenCalledWith('2026-03');
+    it('should forward periodo filter', async () => {
+      await controller.list('estudio-1', 1, 20, undefined, '2026-03');
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ periodo: '2026-03' }),
+      );
     });
 
-    it('should filter by estado', async () => {
-      mockVencimientoRepo.findByEstado.mockResolvedValue([]);
+    it('should forward estado filter', async () => {
+      await controller.list('estudio-1', 1, 20, 'PENDIENTE');
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ estado: 'PENDIENTE' }),
+      );
+    });
 
-      await controller.list(1, 20, 'PENDIENTE');
-      expect(mockVencimientoRepo.findByEstado).toHaveBeenCalledWith('PENDIENTE');
+    it('should forward clienteId and date-range filters', async () => {
+      await controller.list(
+        'estudio-1',
+        2,
+        50,
+        undefined,
+        undefined,
+        'cli-42',
+        '2026-04-01',
+        '2026-04-30',
+      );
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith({
+        estudioId: 'estudio-1',
+        estado: undefined,
+        periodo: undefined,
+        clienteId: 'cli-42',
+        fechaDesde: '2026-04-01',
+        fechaHasta: '2026-04-30',
+        page: 2,
+        limit: 50,
+      });
+    });
+
+    it('should not call findAll/findByEstado/findByPeriodo on the repo — filtering leaves the controller', async () => {
+      await controller.list('estudio-1', 1, 20, 'PENDIENTE', '2026-04');
+
+      expect(mockVencimientoRepo.findAll).not.toHaveBeenCalled();
+      expect(mockVencimientoRepo.findByEstado).not.toHaveBeenCalled();
+      expect(mockVencimientoRepo.findByPeriodo).not.toHaveBeenCalled();
     });
   });
 

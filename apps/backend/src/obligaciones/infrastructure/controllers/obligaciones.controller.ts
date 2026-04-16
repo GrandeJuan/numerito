@@ -11,6 +11,7 @@ import {
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
+import { VencimientoListHandler } from '../../application/queries/vencimiento-list.query';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -25,6 +26,7 @@ export class ObligacionesController {
     private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
+    private readonly vencimientoListHandler: VencimientoListHandler,
   ) {}
 
   @Get('kpis')
@@ -37,23 +39,31 @@ export class ObligacionesController {
   @Get('vencimientos')
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(
+    @EstudioId() estudioId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
     @Query('periodo') periodo?: string,
+    @Query('clienteId') clienteId?: string,
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
   ) {
-    let vencimientos;
-    if (periodo) {
-      vencimientos = await this.vencimientoRepo.findByPeriodo(periodo);
-    } else if (estado) {
-      vencimientos = await this.vencimientoRepo.findByEstado(estado as EstadoVencimiento);
-    } else {
-      vencimientos = await this.vencimientoRepo.findAll();
-    }
-    return successResponse(vencimientos, {
-      total: vencimientos.length,
-      page: +page,
-      limit: +limit,
+    const pageNum = +page;
+    const limitNum = +limit;
+    const { items, total } = await this.vencimientoListHandler.execute({
+      estudioId,
+      estado: estado as EstadoVencimiento | undefined,
+      periodo,
+      clienteId,
+      fechaDesde,
+      fechaHasta,
+      page: pageNum,
+      limit: limitNum,
+    });
+    return successResponse(items, {
+      total,
+      page: pageNum,
+      limit: limitNum,
     });
   }
 

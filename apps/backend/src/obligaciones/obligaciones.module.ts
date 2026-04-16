@@ -8,6 +8,7 @@ import { CrearVencimientoHandler } from './application/commands/crear-vencimient
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
+import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -37,6 +38,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     {
       provide: VencimientoKpisHandler,
       useFactory: (em: EntityManager) => new VencimientoKpisHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: VencimientoListHandler,
+      useFactory: (em: EntityManager) => new VencimientoListHandler(em),
       inject: [EntityManager],
     },
   ],
