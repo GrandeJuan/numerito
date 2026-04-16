@@ -8,3 +8,4 @@ export { DomainEvent } from './domain-event';
 export type { EventBus } from './event-bus';
 export { EVENT_BUS } from './event-bus';
 export { ValueObject } from './value-object';
+export type { Mapper } from './mapper';
