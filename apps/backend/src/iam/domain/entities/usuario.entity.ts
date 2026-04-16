@@ -1,7 +1,9 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
 import { UsuarioRegistrado } from '../events/usuario-registrado.event';
+import { ROL } from '@numerito/shared';
 import type { Rol } from '@numerito/shared';
 
 export type AuthProvider = 'google' | 'microsoft' | null;
@@ -18,32 +20,36 @@ interface CreateUsuarioProps {
   avatarUrl?: string | null;
 }
 
-interface ReconstituteUsuarioProps {
-  email: Email;
-  password: Password;
-  nombre: string;
-  apellido: string;
-  rol: Rol;
-  isActive: boolean;
-  emailVerified: boolean;
-  provider: AuthProvider;
-  providerId: string | null;
-  themePreference: 'light' | 'dark';
-  avatarUrl: string | null;
-}
+const rolValues = Object.values(ROL) as [Rol, ...Rol[]];
+
+const usuarioReconstitutePropsSchema = z.object({
+  email: z.instanceof(Email),
+  password: z.instanceof(Password),
+  nombre: z.string().min(1),
+  apellido: z.string().min(1),
+  rol: z.enum(rolValues),
+  isActive: z.boolean(),
+  emailVerified: z.boolean(),
+  provider: z.union([z.literal('google'), z.literal('microsoft'), z.null()]),
+  providerId: z.string().nullable(),
+  themePreference: z.union([z.literal('light'), z.literal('dark')]),
+  avatarUrl: z.string().nullable(),
+});
+
+export type ReconstituteUsuarioProps = z.input<typeof usuarioReconstitutePropsSchema>;
 
 export class Usuario extends BaseEntity {
-  private _email: Email;
-  private _password: Password;
-  private _nombre: string;
-  private _apellido: string;
-  private _rol: Rol;
-  private _isActive: boolean;
-  private _emailVerified: boolean;
-  private _provider: AuthProvider;
-  private _providerId: string | null;
-  private _themePreference: 'light' | 'dark';
-  private _avatarUrl: string | null;
+  private _email!: Email;
+  private _password!: Password;
+  private _nombre!: string;
+  private _apellido!: string;
+  private _rol!: Rol;
+  private _isActive!: boolean;
+  private _emailVerified!: boolean;
+  private _provider!: AuthProvider;
+  private _providerId!: string | null;
+  private _themePreference!: 'light' | 'dark';
+  private _avatarUrl!: string | null;
 
   private constructor(props: CreateUsuarioProps, id?: string) {
     super(id);
@@ -67,22 +73,22 @@ export class Usuario extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteUsuarioProps, id: string): Usuario {
-    const instance = Object.create(Usuario.prototype) as Usuario;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._email = props.email;
-    instance._password = props.password;
-    instance._nombre = props.nombre;
-    instance._apellido = props.apellido;
-    instance._rol = props.rol;
-    instance._isActive = props.isActive;
-    instance._emailVerified = props.emailVerified;
-    instance._provider = props.provider;
-    instance._providerId = props.providerId;
-    instance._themePreference = props.themePreference;
-    instance._avatarUrl = props.avatarUrl;
+    const { instance, props: data } = reconstituteEntity(Usuario, {
+      schema: usuarioReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._email = data.email;
+    instance._password = data.password;
+    instance._nombre = data.nombre;
+    instance._apellido = data.apellido;
+    instance._rol = data.rol;
+    instance._isActive = data.isActive;
+    instance._emailVerified = data.emailVerified;
+    instance._provider = data.provider;
+    instance._providerId = data.providerId;
+    instance._themePreference = data.themePreference;
+    instance._avatarUrl = data.avatarUrl;
     return instance;
   }
 
@@ -154,7 +160,6 @@ export class Usuario extends BaseEntity {
 
   changeRol(newRol: Rol): void {
     this._rol = newRol;
-    this.updatedAt = new Date();
   }
 
   deactivate(): void {

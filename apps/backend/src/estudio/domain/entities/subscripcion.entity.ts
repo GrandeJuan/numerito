@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { SubscripcionCreada } from '../events/subscripcion-creada.event';
 import { SubscripcionRenovada } from '../events/subscripcion-renovada.event';
@@ -28,16 +29,35 @@ interface CreateSubscripcionProps {
   autoRenovacion: boolean;
 }
 
-type ReconstituteSubscripcionProps = CreateSubscripcionProps;
+const estadoSubscripcionValues = Object.values(EstadoSubscripcion) as [
+  EstadoSubscripcion,
+  ...EstadoSubscripcion[],
+];
+const cicloFacturacionValues = Object.values(CicloFacturacion) as [
+  CicloFacturacion,
+  ...CicloFacturacion[],
+];
+
+const subscripcionReconstitutePropsSchema = z.object({
+  estudioId: z.string().min(1),
+  planId: z.string().min(1),
+  fechaInicio: z.date(),
+  fechaFin: z.date(),
+  estado: z.enum(estadoSubscripcionValues),
+  cicloFacturacion: z.enum(cicloFacturacionValues),
+  autoRenovacion: z.boolean(),
+});
+
+export type ReconstituteSubscripcionProps = z.input<typeof subscripcionReconstitutePropsSchema>;
 
 export class Subscripcion extends BaseEntity {
-  private _estudioId: string;
-  private _planId: string;
-  private _fechaInicio: Date;
-  private _fechaFin: Date;
-  private _estado: EstadoSubscripcion;
-  private _cicloFacturacion: CicloFacturacion;
-  private _autoRenovacion: boolean;
+  private _estudioId!: string;
+  private _planId!: string;
+  private _fechaInicio!: Date;
+  private _fechaFin!: Date;
+  private _estado!: EstadoSubscripcion;
+  private _cicloFacturacion!: CicloFacturacion;
+  private _autoRenovacion!: boolean;
 
   private constructor(props: CreateSubscripcionProps, id?: string) {
     super(id);
@@ -57,18 +77,18 @@ export class Subscripcion extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteSubscripcionProps, id: string): Subscripcion {
-    const instance = Object.create(Subscripcion.prototype) as Subscripcion;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._estudioId = props.estudioId;
-    instance._planId = props.planId;
-    instance._fechaInicio = props.fechaInicio;
-    instance._fechaFin = props.fechaFin;
-    instance._estado = props.estado;
-    instance._cicloFacturacion = props.cicloFacturacion;
-    instance._autoRenovacion = props.autoRenovacion;
+    const { instance, props: data } = reconstituteEntity(Subscripcion, {
+      schema: subscripcionReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._estudioId = data.estudioId;
+    instance._planId = data.planId;
+    instance._fechaInicio = data.fechaInicio;
+    instance._fechaFin = data.fechaFin;
+    instance._estado = data.estado;
+    instance._cicloFacturacion = data.cicloFacturacion;
+    instance._autoRenovacion = data.autoRenovacion;
     return instance;
   }
 

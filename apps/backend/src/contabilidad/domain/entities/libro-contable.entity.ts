@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export const TIPO_LIBRO = {
@@ -18,17 +19,25 @@ interface CreateLibroContableProps {
   periodo: string;
 }
 
-interface ReconstituteLibroContableProps extends CreateLibroContableProps {
-  isRubricado: boolean;
-  numeroRubrica?: string;
-}
+const tipoLibroValues = Object.values(TIPO_LIBRO) as [TipoLibro, ...TipoLibro[]];
+
+const libroContableReconstitutePropsSchema = z.object({
+  clienteId: z.string().min(1),
+  estudioId: z.string().min(1),
+  tipo: z.enum(tipoLibroValues),
+  periodo: z.string().min(1),
+  isRubricado: z.boolean(),
+  numeroRubrica: z.string().optional(),
+});
+
+export type ReconstituteLibroContableProps = z.input<typeof libroContableReconstitutePropsSchema>;
 
 export class LibroContable extends BaseEntity {
-  private _clienteId: string;
-  private _estudioId: string;
-  private _tipo: TipoLibro;
-  private _periodo: string;
-  private _isRubricado: boolean;
+  private _clienteId!: string;
+  private _estudioId!: string;
+  private _tipo!: TipoLibro;
+  private _periodo!: string;
+  private _isRubricado!: boolean;
   private _numeroRubrica?: string;
 
   private constructor(props: CreateLibroContableProps, id?: string) {
@@ -45,17 +54,17 @@ export class LibroContable extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteLibroContableProps, id: string): LibroContable {
-    const instance = Object.create(LibroContable.prototype) as LibroContable;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._clienteId = props.clienteId;
-    instance._estudioId = props.estudioId;
-    instance._tipo = props.tipo;
-    instance._periodo = props.periodo;
-    instance._isRubricado = props.isRubricado;
-    instance._numeroRubrica = props.numeroRubrica;
+    const { instance, props: data } = reconstituteEntity(LibroContable, {
+      schema: libroContableReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._clienteId = data.clienteId;
+    instance._estudioId = data.estudioId;
+    instance._tipo = data.tipo;
+    instance._periodo = data.periodo;
+    instance._isRubricado = data.isRubricado;
+    instance._numeroRubrica = data.numeroRubrica;
     return instance;
   }
 

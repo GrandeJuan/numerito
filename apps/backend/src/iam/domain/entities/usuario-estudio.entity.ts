@@ -1,4 +1,6 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
+import { ROL } from '@numerito/shared';
 import type { Rol } from '@numerito/shared';
 
 interface CreateUsuarioEstudioProps {
@@ -7,15 +9,22 @@ interface CreateUsuarioEstudioProps {
   rol: Rol;
 }
 
-interface ReconstituteUsuarioEstudioProps extends CreateUsuarioEstudioProps {
-  isActive: boolean;
-}
+const rolValues = Object.values(ROL) as [Rol, ...Rol[]];
+
+const usuarioEstudioReconstitutePropsSchema = z.object({
+  usuarioId: z.string().min(1),
+  estudioId: z.string().min(1),
+  rol: z.enum(rolValues),
+  isActive: z.boolean(),
+});
+
+export type ReconstituteUsuarioEstudioProps = z.input<typeof usuarioEstudioReconstitutePropsSchema>;
 
 export class UsuarioEstudio extends BaseEntity {
-  private _usuarioId: string;
-  private _estudioId: string;
-  private _rol: Rol;
-  private _isActive: boolean;
+  private _usuarioId!: string;
+  private _estudioId!: string;
+  private _rol!: Rol;
+  private _isActive!: boolean;
 
   private constructor(props: CreateUsuarioEstudioProps, id?: string) {
     super(id);
@@ -30,15 +39,15 @@ export class UsuarioEstudio extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteUsuarioEstudioProps, id: string): UsuarioEstudio {
-    const instance = Object.create(UsuarioEstudio.prototype) as UsuarioEstudio;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._usuarioId = props.usuarioId;
-    instance._estudioId = props.estudioId;
-    instance._rol = props.rol;
-    instance._isActive = props.isActive;
+    const { instance, props: data } = reconstituteEntity(UsuarioEstudio, {
+      schema: usuarioEstudioReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._usuarioId = data.usuarioId;
+    instance._estudioId = data.estudioId;
+    instance._rol = data.rol;
+    instance._isActive = data.isActive;
     return instance;
   }
 

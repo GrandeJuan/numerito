@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 
 interface CreateHistorialPlanProps {
   estudioId: string;
@@ -7,15 +8,21 @@ interface CreateHistorialPlanProps {
   motivo?: string;
 }
 
-interface ReconstituteHistorialPlanProps extends CreateHistorialPlanProps {
-  fechaCambio: Date;
-}
+const historialPlanReconstitutePropsSchema = z.object({
+  estudioId: z.string().min(1),
+  planAnteriorId: z.string().min(1),
+  planNuevoId: z.string().min(1),
+  fechaCambio: z.date(),
+  motivo: z.string().optional(),
+});
+
+export type ReconstituteHistorialPlanProps = z.input<typeof historialPlanReconstitutePropsSchema>;
 
 export class HistorialPlan extends BaseEntity {
-  private _estudioId: string;
-  private _planAnteriorId: string;
-  private _planNuevoId: string;
-  private _fechaCambio: Date;
+  private _estudioId!: string;
+  private _planAnteriorId!: string;
+  private _planNuevoId!: string;
+  private _fechaCambio!: Date;
   private _motivo?: string;
 
   private constructor(props: CreateHistorialPlanProps, id?: string) {
@@ -32,16 +39,16 @@ export class HistorialPlan extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteHistorialPlanProps, id: string): HistorialPlan {
-    const instance = Object.create(HistorialPlan.prototype) as HistorialPlan;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._estudioId = props.estudioId;
-    instance._planAnteriorId = props.planAnteriorId;
-    instance._planNuevoId = props.planNuevoId;
-    instance._fechaCambio = props.fechaCambio;
-    instance._motivo = props.motivo;
+    const { instance, props: data } = reconstituteEntity(HistorialPlan, {
+      schema: historialPlanReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._estudioId = data.estudioId;
+    instance._planAnteriorId = data.planAnteriorId;
+    instance._planNuevoId = data.planNuevoId;
+    instance._fechaCambio = data.fechaCambio;
+    instance._motivo = data.motivo;
     return instance;
   }
 

@@ -1,4 +1,5 @@
-import { BaseEntity } from '../../../shared/domain';
+import { z } from 'zod';
+import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { NombreEstudio } from '../value-objects/nombre-estudio.vo';
 import { PlanSubscripcion } from '../value-objects/plan-subscripcion.vo';
 
@@ -8,15 +9,20 @@ interface CreateEstudioProps {
   cuit: string;
 }
 
-interface ReconstituteEstudioProps extends CreateEstudioProps {
-  isActive: boolean;
-}
+const estudioReconstitutePropsSchema = z.object({
+  nombre: z.instanceof(NombreEstudio),
+  plan: z.instanceof(PlanSubscripcion),
+  cuit: z.string().min(1),
+  isActive: z.boolean(),
+});
+
+export type ReconstituteEstudioProps = z.input<typeof estudioReconstitutePropsSchema>;
 
 export class Estudio extends BaseEntity {
-  private _nombre: NombreEstudio;
-  private _plan: PlanSubscripcion;
-  private _cuit: string;
-  private _isActive: boolean;
+  private _nombre!: NombreEstudio;
+  private _plan!: PlanSubscripcion;
+  private _cuit!: string;
+  private _isActive!: boolean;
 
   private constructor(props: CreateEstudioProps, id?: string) {
     super(id);
@@ -31,15 +37,15 @@ export class Estudio extends BaseEntity {
   }
 
   static reconstitute(props: ReconstituteEstudioProps, id: string): Estudio {
-    const instance = Object.create(Estudio.prototype) as Estudio;
-    Object.defineProperty(instance, 'id', { value: id, writable: false, enumerable: true });
-    Object.defineProperty(instance, 'createdAt', { value: new Date(), writable: false, enumerable: true });
-    instance.updatedAt = new Date();
-    Object.defineProperty(instance, '_domainEvents', { value: [], writable: true, enumerable: false });
-    instance._nombre = props.nombre;
-    instance._plan = props.plan;
-    instance._cuit = props.cuit;
-    instance._isActive = props.isActive;
+    const { instance, props: data } = reconstituteEntity(Estudio, {
+      schema: estudioReconstitutePropsSchema,
+      props,
+      id,
+    });
+    instance._nombre = data.nombre;
+    instance._plan = data.plan;
+    instance._cuit = data.cuit;
+    instance._isActive = data.isActive;
     return instance;
   }
 
