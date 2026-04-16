@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
-import { Tarea, type Prioridad, type EstadoTarea } from '../../domain/entities/tarea.entity';
+import { Tarea } from '../../domain/entities/tarea.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -13,12 +13,15 @@ import { PrioridadEntity } from '../../../shared/infrastructure/persistence/prio
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
+import { TareaMapper } from './tarea.mapper';
 
 @Injectable()
 export class MikroOrmTareaRepository
   extends TenantAwareRepository<Tarea>
   implements TareaRepository
 {
+  private readonly mapper = new TareaMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -39,7 +42,7 @@ export class MikroOrmTareaRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByResponsableId(responsableId: string): Promise<Tarea[]> {
@@ -54,7 +57,7 @@ export class MikroOrmTareaRepository
         populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<Tarea[]> {
@@ -68,54 +71,47 @@ export class MikroOrmTareaRepository
         populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(tarea: Tarea): Promise<void> {
+    const data = this.mapper.toPersistence(tarea);
     const [estado, prioridad] = await Promise.all([
-      this.em.findOneOrFail(EstadoTareaEntity, { codigo: tarea.estado }),
-      this.em.findOneOrFail(PrioridadEntity, { codigo: tarea.prioridad }),
+      this.em.findOneOrFail(EstadoTareaEntity, { codigo: data.estado }),
+      this.em.findOneOrFail(PrioridadEntity, { codigo: data.prioridad }),
     ]);
-    const estudio = this.em.getReference(EstudioEntity, tarea.estudioId);
-    const cliente = tarea.clienteId
-      ? this.em.getReference(ClienteEntity, tarea.clienteId)
+    const estudio = this.em.getReference(EstudioEntity, data.estudioId);
+    const cliente = data.clienteId
+      ? this.em.getReference(ClienteEntity, data.clienteId)
       : undefined;
-    const responsable = tarea.responsableId
-      ? this.em.getReference(UsuarioEntity, tarea.responsableId)
+    const responsable = data.responsableId
+      ? this.em.getReference(UsuarioEntity, data.responsableId)
       : undefined;
 
     const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(TareaEntity, { id: tarea.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(TareaEntity, { id: data.id, estudio: { id: tenantId } });
     if (existing) {
-      existing.titulo = tarea.titulo;
-      existing.descripcion = tarea.descripcion;
+      existing.titulo = data.titulo;
+      existing.descripcion = data.descripcion;
       existing.cliente = cliente;
       existing.estudio = estudio;
       existing.estado = estado;
       existing.prioridad = prioridad;
       existing.responsable = responsable;
-      existing.horasRegistradas = tarea.horasRegistradas;
-      existing.comentarios = tarea.comentarios.map((c) => ({
-        usuarioId: c.usuarioId,
-        texto: c.texto,
-        fecha: c.fecha.toISOString(),
-      }));
+      existing.horasRegistradas = data.horasRegistradas;
+      existing.comentarios = data.comentarios;
     } else {
       this.em.create(TareaEntity, {
-        id: tarea.id,
-        titulo: tarea.titulo,
-        descripcion: tarea.descripcion,
+        id: data.id,
+        titulo: data.titulo,
+        descripcion: data.descripcion,
         cliente,
         estudio,
         estado,
         prioridad,
         responsable,
-        horasRegistradas: tarea.horasRegistradas,
-        comentarios: tarea.comentarios.map((c) => ({
-          usuarioId: c.usuarioId,
-          texto: c.texto,
-          fecha: c.fecha.toISOString(),
-        })),
+        horasRegistradas: data.horasRegistradas,
+        comentarios: data.comentarios,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -130,26 +126,5 @@ export class MikroOrmTareaRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: TareaEntity): Tarea {
-    return Tarea.reconstitute(
-      {
-        titulo: entity.titulo,
-        descripcion: entity.descripcion,
-        clienteId: entity.cliente?.id,
-        estudioId: entity.estudio.id,
-        prioridad: entity.prioridad.codigo as Prioridad,
-        estado: entity.estado.codigo as EstadoTarea,
-        responsableId: entity.responsable?.id,
-        horasRegistradas: entity.horasRegistradas,
-        comentarios: (entity.comentarios ?? []).map((c: { usuarioId: string; texto: string; fecha: string }) => ({
-          usuarioId: c.usuarioId,
-          texto: c.texto,
-          fecha: new Date(c.fecha),
-        })),
-      },
-      entity.id,
-    );
   }
 }
