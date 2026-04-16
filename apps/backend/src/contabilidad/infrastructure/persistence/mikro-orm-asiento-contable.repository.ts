@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { AsientoContableRepository } from '../../domain/repositories/asiento-contable.repository';
-import { AsientoContable, type LineaAsiento } from '../../domain/entities/asiento-contable.entity';
+import { AsientoContable } from '../../domain/entities/asiento-contable.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -11,12 +11,15 @@ import { AsientoContableEntity } from './asiento-contable.schema';
 import { LibroContableEntity } from './libro-contable.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { AsientoContableMapper } from './asiento-contable.mapper';
 
 @Injectable()
 export class MikroOrmAsientoContableRepository
   extends TenantAwareRepository<AsientoContable>
   implements AsientoContableRepository
 {
+  private readonly mapper = new AsientoContableMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -37,7 +40,7 @@ export class MikroOrmAsientoContableRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByLibroId(libroId: string): Promise<AsientoContable[]> {
@@ -52,7 +55,7 @@ export class MikroOrmAsientoContableRepository
         populate: ['libro', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByClienteId(clienteId: string): Promise<AsientoContable[]> {
@@ -67,7 +70,7 @@ export class MikroOrmAsientoContableRepository
         populate: ['libro', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<AsientoContable[]> {
@@ -81,32 +84,33 @@ export class MikroOrmAsientoContableRepository
         populate: ['libro', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(asiento: AsientoContable): Promise<void> {
-    const libro = this.em.getReference(LibroContableEntity, asiento.libroId);
-    const cliente = this.em.getReference(ClienteEntity, asiento.clienteId);
-    const estudio = this.em.getReference(EstudioEntity, asiento.estudioId);
+    const data = this.mapper.toPersistence(asiento);
+    const libro = this.em.getReference(LibroContableEntity, data.libroId);
+    const cliente = this.em.getReference(ClienteEntity, data.clienteId);
+    const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
     const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(AsientoContableEntity, { id: asiento.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(AsientoContableEntity, { id: data.id, estudio: { id: tenantId } });
     if (existing) {
       existing.libro = libro;
       existing.cliente = cliente;
       existing.estudio = estudio;
-      existing.fecha = asiento.fecha;
-      existing.descripcion = asiento.descripcion;
-      existing.lineas = asiento.lineas;
+      existing.fecha = data.fecha;
+      existing.descripcion = data.descripcion;
+      existing.lineas = data.lineas;
     } else {
       this.em.create(AsientoContableEntity, {
-        id: asiento.id,
+        id: data.id,
         libro,
         cliente,
         estudio,
-        fecha: asiento.fecha,
-        descripcion: asiento.descripcion,
-        lineas: asiento.lineas,
+        fecha: data.fecha,
+        descripcion: data.descripcion,
+        lineas: data.lineas,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -121,19 +125,5 @@ export class MikroOrmAsientoContableRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: AsientoContableEntity): AsientoContable {
-    return AsientoContable.reconstitute(
-      {
-        libroId: entity.libro.id,
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        fecha: entity.fecha,
-        descripcion: entity.descripcion,
-        lineas: entity.lineas as LineaAsiento[],
-      },
-      entity.id,
-    );
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { LibroContableRepository } from '../../domain/repositories/libro-contable.repository';
-import { LibroContable, type TipoLibro } from '../../domain/entities/libro-contable.entity';
+import { LibroContable } from '../../domain/entities/libro-contable.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -11,12 +11,15 @@ import { LibroContableEntity } from './libro-contable.schema';
 import { TipoLibroEntity } from '../../../shared/infrastructure/persistence/tipo-libro.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { LibroContableMapper } from './libro-contable.mapper';
 
 @Injectable()
 export class MikroOrmLibroContableRepository
   extends TenantAwareRepository<LibroContable>
   implements LibroContableRepository
 {
+  private readonly mapper = new LibroContableMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -37,7 +40,7 @@ export class MikroOrmLibroContableRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByClienteId(clienteId: string): Promise<LibroContable[]> {
@@ -52,7 +55,7 @@ export class MikroOrmLibroContableRepository
         populate: ['tipoLibro', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<LibroContable[]> {
@@ -66,32 +69,33 @@ export class MikroOrmLibroContableRepository
         populate: ['tipoLibro', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(libro: LibroContable): Promise<void> {
-    const tipoLibro = await this.em.findOneOrFail(TipoLibroEntity, { codigo: libro.tipo });
-    const cliente = this.em.getReference(ClienteEntity, libro.clienteId);
-    const estudio = this.em.getReference(EstudioEntity, libro.estudioId);
+    const data = this.mapper.toPersistence(libro);
+    const tipoLibro = await this.em.findOneOrFail(TipoLibroEntity, { codigo: data.tipo });
+    const cliente = this.em.getReference(ClienteEntity, data.clienteId);
+    const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
     const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(LibroContableEntity, { id: libro.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(LibroContableEntity, { id: data.id, estudio: { id: tenantId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
       existing.tipoLibro = tipoLibro;
-      existing.periodo = libro.periodo;
-      existing.isRubricado = libro.isRubricado;
-      existing.numeroRubrica = libro.numeroRubrica;
+      existing.periodo = data.periodo;
+      existing.isRubricado = data.isRubricado;
+      existing.numeroRubrica = data.numeroRubrica;
     } else {
       this.em.create(LibroContableEntity, {
-        id: libro.id,
+        id: data.id,
         cliente,
         estudio,
         tipoLibro,
-        periodo: libro.periodo,
-        isRubricado: libro.isRubricado,
-        numeroRubrica: libro.numeroRubrica,
+        periodo: data.periodo,
+        isRubricado: data.isRubricado,
+        numeroRubrica: data.numeroRubrica,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -106,19 +110,5 @@ export class MikroOrmLibroContableRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: LibroContableEntity): LibroContable {
-    return LibroContable.reconstitute(
-      {
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        tipo: entity.tipoLibro.codigo as TipoLibro,
-        periodo: entity.periodo,
-        isRubricado: entity.isRubricado,
-        numeroRubrica: entity.numeroRubrica,
-      },
-      entity.id,
-    );
   }
 }
