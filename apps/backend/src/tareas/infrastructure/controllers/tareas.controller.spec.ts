@@ -1,21 +1,8 @@
 import { TareasController } from './tareas.controller';
-import { Tarea } from '../../domain/entities/tarea.entity';
-
-const makeTarea = (overrides: Partial<{ id: string; estudioId: string; clienteId: string }> = {}) =>
-  Tarea.create(
-    {
-      titulo: 'Preparar balance',
-      descripcion: 'Balance mensual cliente X',
-      clienteId: overrides.clienteId ?? 'cliente-1',
-      estudioId: overrides.estudioId ?? 'estudio-1',
-      prioridad: 'MEDIA',
-    },
-    overrides.id,
-  );
 
 describe('TareasController', () => {
   let controller: TareasController;
-  let mockRepo: any;
+  let mockCrearTareaHandler: { execute: jest.Mock };
   let mockIniciarTareaHandler: { execute: jest.Mock };
   let mockCompletarTareaHandler: { execute: jest.Mock };
   let mockAsignarTareaHandler: { execute: jest.Mock };
@@ -25,13 +12,7 @@ describe('TareasController', () => {
   let mockTareaKpisHandler: { execute: jest.Mock };
 
   beforeEach(() => {
-    mockRepo = {
-      findById: jest.fn(),
-      findAll: jest.fn().mockResolvedValue([]),
-      findByResponsableId: jest.fn().mockResolvedValue([]),
-      save: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn(),
-    };
+    mockCrearTareaHandler = { execute: jest.fn() };
     mockIniciarTareaHandler = { execute: jest.fn() };
     mockCompletarTareaHandler = { execute: jest.fn() };
     mockAsignarTareaHandler = { execute: jest.fn() };
@@ -40,7 +21,7 @@ describe('TareasController', () => {
     mockTareaListHandler = { execute: jest.fn().mockResolvedValue({ items: [], total: 0 }) };
     mockTareaKpisHandler = { execute: jest.fn() };
     controller = new TareasController(
-      mockRepo,
+      mockCrearTareaHandler as any,
       mockIniciarTareaHandler as any,
       mockCompletarTareaHandler as any,
       mockAsignarTareaHandler as any,
@@ -107,13 +88,6 @@ describe('TareasController', () => {
         limit: 50,
       });
     });
-
-    it('does not materialise rows via the repository for filtering', async () => {
-      await controller.list('estudio-1', 1, 20, 'PENDIENTE');
-
-      expect(mockRepo.findAll).not.toHaveBeenCalled();
-      expect(mockRepo.findByResponsableId).not.toHaveBeenCalled();
-    });
   });
 
   describe('kpis', () => {
@@ -134,33 +108,56 @@ describe('TareasController', () => {
   });
 
   describe('create', () => {
-    it('should create a new tarea', async () => {
+    it('should delegate to CrearTareaHandler with dto fields + estudioId', async () => {
       const dto = {
         titulo: 'Preparar DDJJ',
         descripcion: 'DDJJ mensual',
         clienteId: 'cliente-1',
         prioridad: 'ALTA' as const,
       };
+      const createdTarea = {
+        id: 't-created',
+        titulo: 'Preparar DDJJ',
+        descripcion: 'DDJJ mensual',
+        clienteId: 'cliente-1',
+        estudioId: 'estudio-1',
+        prioridad: 'ALTA',
+        estado: 'PENDIENTE',
+      };
+      mockCrearTareaHandler.execute.mockResolvedValue(createdTarea);
 
       const result = await controller.create(dto, 'estudio-1');
-      expect(result.data.id).toBeDefined();
-      expect(result.data.titulo).toBe('Preparar DDJJ');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+
+      expect(mockCrearTareaHandler.execute).toHaveBeenCalledWith({
+        titulo: 'Preparar DDJJ',
+        descripcion: 'DDJJ mensual',
+        clienteId: 'cliente-1',
+        prioridad: 'ALTA',
+        estudioId: 'estudio-1',
+      });
+      expect(result.data).toBe(createdTarea);
+    });
+
+    it('should propagate handler errors', async () => {
+      mockCrearTareaHandler.execute.mockRejectedValue(new Error('DB error'));
+      await expect(
+        controller.create(
+          { titulo: 't', prioridad: 'MEDIA' as const } as any,
+          'estudio-1',
+        ),
+      ).rejects.toThrow('DB error');
     });
   });
 
   describe('iniciar', () => {
     it('should delegate to IniciarTareaHandler with the tarea id', async () => {
-      const tarea = makeTarea();
-      tarea.iniciar();
+      const tarea = { id: 't-1', estado: 'EN_PROGRESO' };
       mockIniciarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.iniciar(tarea.id);
+      const result = await controller.iniciar('t-1');
 
-      expect(mockIniciarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: tarea.id });
-      expect(result.data.estado).toBe('EN_PROGRESO');
-      expect(mockRepo.findById).not.toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(mockIniciarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: 't-1' });
+      expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
@@ -171,17 +168,13 @@ describe('TareasController', () => {
 
   describe('completar', () => {
     it('should delegate to CompletarTareaHandler with the tarea id', async () => {
-      const tarea = makeTarea();
-      tarea.iniciar();
-      tarea.completar();
+      const tarea = { id: 't-1', estado: 'COMPLETADO' };
       mockCompletarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.completar(tarea.id);
+      const result = await controller.completar('t-1');
 
-      expect(mockCompletarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: tarea.id });
-      expect(result.data.estado).toBe('COMPLETADO');
-      expect(mockRepo.findById).not.toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(mockCompletarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: 't-1' });
+      expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
@@ -192,19 +185,16 @@ describe('TareasController', () => {
 
   describe('asignar', () => {
     it('should delegate to AsignarTareaHandler with tarea id and responsableId', async () => {
-      const tarea = makeTarea();
-      tarea.asignar('user-1');
+      const tarea = { id: 't-1', responsableId: 'user-1' };
       mockAsignarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.asignar(tarea.id, { responsableId: 'user-1' });
+      const result = await controller.asignar('t-1', { responsableId: 'user-1' });
 
       expect(mockAsignarTareaHandler.execute).toHaveBeenCalledWith({
-        tareaId: tarea.id,
+        tareaId: 't-1',
         responsableId: 'user-1',
       });
-      expect(result.data.responsableId).toBe('user-1');
-      expect(mockRepo.findById).not.toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
@@ -217,22 +207,19 @@ describe('TareasController', () => {
 
   describe('registrarHoras', () => {
     it('should delegate to RegistrarHorasHandler with tarea id and horas', async () => {
-      const tarea = makeTarea();
-      tarea.registrarHoras(2.5);
+      const tarea = { id: 't-1', horasRegistradas: 2.5 };
       mockRegistrarHorasHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.registrarHoras(tarea.id, {
+      const result = await controller.registrarHoras('t-1', {
         horas: 2.5,
         descripcion: 'Trabajo en balance',
       });
 
       expect(mockRegistrarHorasHandler.execute).toHaveBeenCalledWith({
-        tareaId: tarea.id,
+        tareaId: 't-1',
         horas: 2.5,
       });
-      expect(result.data.horasRegistradas).toBe(2.5);
-      expect(mockRepo.findById).not.toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
@@ -245,24 +232,20 @@ describe('TareasController', () => {
 
   describe('agregarComentario', () => {
     it('should delegate to AgregarComentarioHandler with tarea id, autorId, and texto', async () => {
-      const tarea = makeTarea();
-      tarea.agregarComentario('user-1', 'Avanzando bien');
+      const tarea = { id: 't-1', comentarios: [{ texto: 'Avanzando bien' }] };
       mockAgregarComentarioHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.agregarComentario(tarea.id, {
+      const result = await controller.agregarComentario('t-1', {
         autorId: 'user-1',
         texto: 'Avanzando bien',
       });
 
       expect(mockAgregarComentarioHandler.execute).toHaveBeenCalledWith({
-        tareaId: tarea.id,
+        tareaId: 't-1',
         autorId: 'user-1',
         texto: 'Avanzando bien',
       });
-      expect(result.data.comentarios).toHaveLength(1);
-      expect(result.data.comentarios[0].texto).toBe('Avanzando bien');
-      expect(mockRepo.findById).not.toHaveBeenCalled();
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {

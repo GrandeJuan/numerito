@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { EstadoTarea, Prioridad } from '@numerito/shared';
 import { CrearTareaDto, crearTareaDtoSchema } from '../../application/dtos/crear-tarea.dto';
@@ -6,9 +6,7 @@ import { AsignarTareaDto, asignarTareaDtoSchema } from '../../application/dtos/a
 import { RegistrarHorasDto, registrarHorasDtoSchema } from '../../application/dtos/registrar-horas.dto';
 import { AgregarComentarioDto, agregarComentarioDtoSchema } from '../../application/dtos/agregar-comentario.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { TAREA_REPOSITORY } from '../../domain/repositories/tarea.repository';
-import type { TareaRepository } from '../../domain/repositories/tarea.repository';
-import { Tarea } from '../../domain/entities/tarea.entity';
+import { CrearTareaHandler } from '../../application/commands/crear-tarea.command';
 import { IniciarTareaHandler } from '../../application/commands/iniciar-tarea.command';
 import { CompletarTareaHandler } from '../../application/commands/completar-tarea.command';
 import { AsignarTareaHandler } from '../../application/commands/asignar-tarea.command';
@@ -23,7 +21,7 @@ import { successResponse } from '../../../shared/infrastructure/responses/api-re
 @Controller({ path: 'tareas', version: '1' })
 export class TareasController {
   constructor(
-    @Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository,
+    private readonly crearTareaHandler: CrearTareaHandler,
     private readonly iniciarTareaHandler: IniciarTareaHandler,
     private readonly completarTareaHandler: CompletarTareaHandler,
     private readonly asignarTareaHandler: AsignarTareaHandler,
@@ -68,8 +66,7 @@ export class TareasController {
   @Post()
   @ApiOperation({ summary: 'Crear tarea' })
   async create(@Body(new ZodValidationPipe(crearTareaDtoSchema)) dto: CrearTareaDto, @EstudioId() estudioId: string) {
-    const tarea = Tarea.create({ ...dto, estudioId });
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.crearTareaHandler.execute({ ...dto, estudioId });
     return successResponse(tarea);
   }
 

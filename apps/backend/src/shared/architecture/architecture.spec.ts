@@ -338,9 +338,6 @@ describe('Architecture rules', () => {
       'nomina/infrastructure/controllers/nomina.controller.ts': [
         'domain/entities/empleado.entity',
       ],
-      'tareas/infrastructure/controllers/tareas.controller.ts': [
-        'domain/entities/tarea.entity',
-      ],
     };
 
     function isViolatingImport(imp: string): boolean {

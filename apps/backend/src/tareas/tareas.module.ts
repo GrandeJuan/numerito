@@ -4,6 +4,7 @@ import { TAREA_REPOSITORY } from './domain/repositories/tarea.repository';
 import type { TareaRepository } from './domain/repositories/tarea.repository';
 import { MikroOrmTareaRepository } from './infrastructure/persistence/mikro-orm-tarea.repository';
 import { TareasController } from './infrastructure/controllers/tareas.controller';
+import { CrearTareaHandler } from './application/commands/crear-tarea.command';
 import { IniciarTareaHandler } from './application/commands/iniciar-tarea.command';
 import { CompletarTareaHandler } from './application/commands/completar-tarea.command';
 import { AsignarTareaHandler } from './application/commands/asignar-tarea.command';
@@ -18,6 +19,12 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
   controllers: [TareasController],
   providers: [
     { provide: TAREA_REPOSITORY, useClass: MikroOrmTareaRepository },
+    {
+      provide: CrearTareaHandler,
+      useFactory: (repo: TareaRepository, eventBus: EventBus) =>
+        new CrearTareaHandler(repo, eventBus),
+      inject: [TAREA_REPOSITORY, EVENT_BUS],
+    },
     {
       provide: IniciarTareaHandler,
       useFactory: (repo: TareaRepository, eventBus: EventBus) =>
