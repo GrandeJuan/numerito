@@ -10,6 +10,8 @@ import type { TareaRepository } from '../../domain/repositories/tarea.repository
 import { Tarea } from '../../domain/entities/tarea.entity';
 import { IniciarTareaHandler } from '../../application/commands/iniciar-tarea.command';
 import { CompletarTareaHandler } from '../../application/commands/completar-tarea.command';
+import { AsignarTareaHandler } from '../../application/commands/asignar-tarea.command';
+import { RegistrarHorasHandler } from '../../application/commands/registrar-horas.command';
 import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -21,6 +23,8 @@ export class TareasController {
     @Inject(TAREA_REPOSITORY) private readonly tareaRepo: TareaRepository,
     private readonly iniciarTareaHandler: IniciarTareaHandler,
     private readonly completarTareaHandler: CompletarTareaHandler,
+    private readonly asignarTareaHandler: AsignarTareaHandler,
+    private readonly registrarHorasHandler: RegistrarHorasHandler,
   ) {}
 
   @Get()
@@ -75,18 +79,20 @@ export class TareasController {
   @Patch(':id/asignar')
   @ApiOperation({ summary: 'Asignar responsable a tarea' })
   async asignar(@Param('id') id: string, @Body(new ZodValidationPipe(asignarTareaDtoSchema)) dto: AsignarTareaDto) {
-    const tarea = await this.findOrFail(id);
-    tarea.asignar(dto.responsableId);
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.asignarTareaHandler.execute({
+      tareaId: id,
+      responsableId: dto.responsableId,
+    });
     return successResponse(tarea);
   }
 
   @Post(':id/horas')
   @ApiOperation({ summary: 'Registrar horas en tarea' })
   async registrarHoras(@Param('id') id: string, @Body(new ZodValidationPipe(registrarHorasDtoSchema)) dto: RegistrarHorasDto) {
-    const tarea = await this.findOrFail(id);
-    tarea.registrarHoras(dto.horas);
-    await this.tareaRepo.save(tarea);
+    const tarea = await this.registrarHorasHandler.execute({
+      tareaId: id,
+      horas: dto.horas,
+    });
     return successResponse(tarea);
   }
 

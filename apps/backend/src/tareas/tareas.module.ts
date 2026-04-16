@@ -5,6 +5,8 @@ import { MikroOrmTareaRepository } from './infrastructure/persistence/mikro-orm-
 import { TareasController } from './infrastructure/controllers/tareas.controller';
 import { IniciarTareaHandler } from './application/commands/iniciar-tarea.command';
 import { CompletarTareaHandler } from './application/commands/completar-tarea.command';
+import { AsignarTareaHandler } from './application/commands/asignar-tarea.command';
+import { RegistrarHorasHandler } from './application/commands/registrar-horas.command';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -22,6 +24,18 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       provide: CompletarTareaHandler,
       useFactory: (repo: TareaRepository, eventBus: EventBus) =>
         new CompletarTareaHandler(repo, eventBus),
+      inject: [TAREA_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: AsignarTareaHandler,
+      useFactory: (repo: TareaRepository, eventBus: EventBus) =>
+        new AsignarTareaHandler(repo, eventBus),
+      inject: [TAREA_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: RegistrarHorasHandler,
+      useFactory: (repo: TareaRepository, eventBus: EventBus) =>
+        new RegistrarHorasHandler(repo, eventBus),
       inject: [TAREA_REPOSITORY, EVENT_BUS],
     },
   ],

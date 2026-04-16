@@ -18,6 +18,8 @@ describe('TareasController', () => {
   let mockRepo: any;
   let mockIniciarTareaHandler: { execute: jest.Mock };
   let mockCompletarTareaHandler: { execute: jest.Mock };
+  let mockAsignarTareaHandler: { execute: jest.Mock };
+  let mockRegistrarHorasHandler: { execute: jest.Mock };
 
   beforeEach(() => {
     mockRepo = {
@@ -29,10 +31,14 @@ describe('TareasController', () => {
     };
     mockIniciarTareaHandler = { execute: jest.fn() };
     mockCompletarTareaHandler = { execute: jest.fn() };
+    mockAsignarTareaHandler = { execute: jest.fn() };
+    mockRegistrarHorasHandler = { execute: jest.fn() };
     controller = new TareasController(
       mockRepo,
       mockIniciarTareaHandler as any,
       mockCompletarTareaHandler as any,
+      mockAsignarTareaHandler as any,
+      mockRegistrarHorasHandler as any,
     );
   });
 
@@ -140,17 +146,24 @@ describe('TareasController', () => {
   });
 
   describe('asignar', () => {
-    it('should assign responsable to tarea', async () => {
+    it('should delegate to AsignarTareaHandler with tarea id and responsableId', async () => {
       const tarea = makeTarea();
-      mockRepo.findById.mockResolvedValue(tarea);
+      tarea.asignar('user-1');
+      mockAsignarTareaHandler.execute.mockResolvedValue(tarea);
 
       const result = await controller.asignar(tarea.id, { responsableId: 'user-1' });
+
+      expect(mockAsignarTareaHandler.execute).toHaveBeenCalledWith({
+        tareaId: tarea.id,
+        responsableId: 'user-1',
+      });
       expect(result.data.responsableId).toBe('user-1');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw when tarea not found', async () => {
-      mockRepo.findById.mockResolvedValue(null);
+    it('should propagate handler errors', async () => {
+      mockAsignarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(controller.asignar('bad-id', { responsableId: 'user-1' })).rejects.toThrow(
         'Tarea no encontrad',
       );
@@ -158,20 +171,27 @@ describe('TareasController', () => {
   });
 
   describe('registrarHoras', () => {
-    it('should register hours on tarea', async () => {
+    it('should delegate to RegistrarHorasHandler with tarea id and horas', async () => {
       const tarea = makeTarea();
-      mockRepo.findById.mockResolvedValue(tarea);
+      tarea.registrarHoras(2.5);
+      mockRegistrarHorasHandler.execute.mockResolvedValue(tarea);
 
       const result = await controller.registrarHoras(tarea.id, {
         horas: 2.5,
         descripcion: 'Trabajo en balance',
       });
+
+      expect(mockRegistrarHorasHandler.execute).toHaveBeenCalledWith({
+        tareaId: tarea.id,
+        horas: 2.5,
+      });
       expect(result.data.horasRegistradas).toBe(2.5);
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).not.toHaveBeenCalled();
+      expect(mockRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw when tarea not found', async () => {
-      mockRepo.findById.mockResolvedValue(null);
+    it('should propagate handler errors', async () => {
+      mockRegistrarHorasHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(
         controller.registrarHoras('bad-id', { horas: 1, descripcion: 'x' }),
       ).rejects.toThrow('Tarea no encontrad');
