@@ -438,7 +438,7 @@ describe('Architecture rules', () => {
             for (const forbidden of forbiddenDomainPaths) {
               if (imp.includes(forbidden)) {
                 violations.push(
-                  `${relativeTo(file)} imports from "${targetCtx}"${forbidden} via "${imp}" — read-model contexts must use infrastructure/persistence schemas or raw SQL instead`,
+                  `${relativeTo(file)} imports from "${targetCtx}"${forbidden} via "${imp}" — read-model contexts must compose public views or use raw SQL instead`,
                 );
               }
             }
@@ -600,14 +600,15 @@ describe('Architecture rules', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // ReadModelViewContract — Phase 1 (non-blocking)
+  // ReadModelViewContract — blocking
   //
-  // These tests report violations as warnings. They become blocking assertions
-  // in #232 once every read-model context has migrated to compose views.
+  // Read-model contexts (dashboard, portal, administracion) must compose
+  // public views instead of importing source-context schemas directly.
+  // Flipped from advisory to blocking in #232.
   //
   // See ADR 0003 for the full rationale and migration plan.
   // ---------------------------------------------------------------------------
-  describe('ReadModelViewContract (Phase 1 — non-blocking)', () => {
+  describe('ReadModelViewContract', () => {
     function resolveImportContext(file: string, imp: string): string | null {
       if (!imp.startsWith('.') && !imp.startsWith('/')) return null;
       if (imp.includes('/shared/')) return null;
@@ -626,8 +627,8 @@ describe('Architecture rules', () => {
       return null;
     }
 
-    it('(advisory) read-model contexts should not import schema entities from other contexts', () => {
-      const warnings: string[] = [];
+    it('read-model contexts must not import schema entities from other contexts', () => {
+      const violations: string[] = [];
 
       for (const ctx of READ_MODEL_CONTEXTS) {
         const ctxDir = path.join(SRC_DIR, ctx);
@@ -640,27 +641,19 @@ describe('Architecture rules', () => {
             if (!targetCtx) continue;
 
             if (imp.includes('/infrastructure/persistence/') && imp.includes('.schema')) {
-              warnings.push(
-                `${relativeTo(file)} imports schema from "${targetCtx}" via "${imp}" — should use a public view instead`,
+              violations.push(
+                `${relativeTo(file)} imports schema from "${targetCtx}" via "${imp}" — must use a public view instead`,
               );
             }
           }
         }
       }
 
-      if (warnings.length > 0) {
-        console.warn(
-          `[ReadModelViewContract] ${warnings.length} read-model file(s) import cross-context schemas (non-blocking):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n'),
-        );
-      }
-
-      // Intentionally no assertion — advisory in Phase 1.
-      // #232 will flip to: expect(warnings).toEqual([]);
+      expect(violations).toEqual([]);
     });
 
-    it('(advisory) public views must be exported from public-views.ts', () => {
-      const warnings: string[] = [];
+    it('public views must be exported from public-views.ts', () => {
+      const violations: string[] = [];
 
       for (const ctx of BOUNDED_CONTEXTS) {
         const viewsDir = path.join(SRC_DIR, ctx, 'application', 'views');
@@ -669,7 +662,7 @@ describe('Architecture rules', () => {
 
         const barrelPath = path.join(SRC_DIR, ctx, 'application', 'public-views.ts');
         if (!fs.existsSync(barrelPath)) {
-          warnings.push(
+          violations.push(
             `${ctx} has views in application/views/ but no public-views.ts barrel`,
           );
           continue;
@@ -680,22 +673,14 @@ describe('Architecture rules', () => {
           const fileName = path.basename(viewFile, '.ts');
           // Check that the barrel references the view file
           if (!barrelContent.includes(fileName)) {
-            warnings.push(
+            violations.push(
               `${relativeTo(viewFile)} is not exported from ${ctx}/application/public-views.ts`,
             );
           }
         }
       }
 
-      if (warnings.length > 0) {
-        console.warn(
-          `[ReadModelViewContract] ${warnings.length} view(s) not exported from public-views.ts (non-blocking):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n'),
-        );
-      }
-
-      // Intentionally no assertion — advisory in Phase 1.
-      // #232 will flip to: expect(warnings).toEqual([]);
+      expect(violations).toEqual([]);
     });
   });
 });

@@ -30,25 +30,34 @@ Three contexts — `administracion`, `dashboard`, `portal` — exist outside the
 ### Rules
 
 Read-model contexts **may**:
-- Import MikroORM schema entities (`*.schema.ts`) from other contexts' `infrastructure/persistence/` layers
+- Compose public views exposed by source contexts via `{context}/application/public-views.ts`
 - Run raw SQL via `em.getConnection().execute()` for complex cross-context queries
 - Use `EntityManager` directly for simple finds and counts
+- Import their own schemas (e.g., administracion importing its own `dashboard-snapshot.schema.ts`)
 
 Read-model contexts **must not**:
+- Import MikroORM schema entities (`*.schema.ts`) from other bounded contexts — use public views instead
 - Import domain entities (`/{context}/domain/entities/`)
 - Import application services, commands, or queries from other contexts
 - Contain domain entities, aggregates, or domain events of their own
 - Perform write operations — they are strictly read-only
 
-### Pattern
+### Public View Pattern
 
-Each read-model context has a flat structure with query services and controllers — no domain layer. Query services receive `EntityManager` via DI and return plain DTOs.
+Source contexts expose stable read projections via `application/views/*.view.ts`, re-exported through `application/public-views.ts`. Each view is an `@Injectable()` NestJS provider with a typed `execute()` method returning plain DTOs. Read-model contexts inject views via Symbol tokens and compose them instead of reaching into source schemas.
 
 ```
-apps/backend/src/{context}/
-  application/queries/   ← query handlers owning the SQL
+# Source context exposes views:
+apps/backend/src/{source-context}/
+  application/
+    views/               ← @Injectable() view providers
+    public-views.ts      ← Symbol tokens + type exports (anti-corruption barrel)
+
+# Read-model context composes views:
+apps/backend/src/{read-model-context}/
+  application/queries/   ← query handlers composing injected views
   infrastructure/        ← controllers (thin HTTP adapters)
-  {context}.module.ts
+  {context}.module.ts    ← imports source modules, injects view tokens
 ```
 
 ### When to Use
@@ -57,7 +66,10 @@ Use a read-model context when you need to **aggregate data from multiple bounded
 
 ### Enforcement
 
-`architecture.spec.ts` enforces read-model rules under a separate `READ_MODEL_CONTEXTS` list. Standard bounded contexts have stricter isolation; read-model contexts get relaxed import rules but are still tested.
+`architecture.spec.ts` enforces read-model rules under a separate `READ_MODEL_CONTEXTS` list:
+- Read-model contexts **cannot** import cross-context schemas — the `ReadModelViewContract` test fails CI on any violation
+- Public views **must** be exported from `public-views.ts` — the barrel enforcement test fails CI on any view not in the barrel
+- Standard bounded contexts have stricter isolation; read-model contexts get view-composition rules
 
 ## Domain Event Bus
 
