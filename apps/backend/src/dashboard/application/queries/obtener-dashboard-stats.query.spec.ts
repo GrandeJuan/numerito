@@ -1,7 +1,4 @@
 // Mock entities to avoid ESM import issues
-jest.mock('../../../clientes/infrastructure/persistence/cliente.schema', () => ({
-  ClienteEntity: class ClienteEntity {},
-}));
 jest.mock('../../../obligaciones/infrastructure/persistence/vencimiento.schema', () => ({
   VencimientoEntity: class VencimientoEntity {},
 }));
@@ -18,6 +15,7 @@ describe('ObtenerDashboardStatsHandler', () => {
   let handler: ObtenerDashboardStatsHandler;
   let mockEm: any;
   let mockExecute: jest.Mock;
+  let mockClienteSummary: any;
 
   const estudioId = 'estudio-uuid';
   const usuarioId = 'usuario-uuid';
@@ -29,10 +27,13 @@ describe('ObtenerDashboardStatsHandler', () => {
       find: jest.fn().mockResolvedValue([]),
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
+    mockClienteSummary = {
+      execute: jest.fn().mockResolvedValue({ totalClientes: 0 }),
+    };
   });
 
   function createHandler() {
-    handler = new ObtenerDashboardStatsHandler(mockEm);
+    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary);
   }
 
   function mockMembership(rol: string) {
@@ -81,13 +82,16 @@ describe('ObtenerDashboardStatsHandler', () => {
       expect(result.kpis).toHaveProperty('facturacionMes');
     });
 
-    it('should count all clientes in the estudio', async () => {
+    it('should count all clientes in the estudio via clienteSummary view', async () => {
       mockMembership('SOCIO');
       mockPermisos(['VER_FACTURACION', 'VER_CLIENTES', 'VER_TAREAS']);
-      mockEm.count.mockResolvedValueOnce(15);
+      mockClienteSummary.execute.mockResolvedValueOnce({ totalClientes: 15 });
 
       const result = await handler.execute({ estudioId, usuarioId });
       expect(result.kpis.clientes).toBe(15);
+      expect(mockClienteSummary.execute).toHaveBeenCalledWith({
+        estudioId,
+      });
     });
   });
 

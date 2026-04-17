@@ -1,9 +1,9 @@
 import { EntityManager } from '@mikro-orm/core';
-import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { VencimientoEntity } from '../../../obligaciones/infrastructure/persistence/vencimiento.schema';
 import { TareaEntity } from '../../../tareas/infrastructure/persistence/tarea.schema';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
+import type { ClienteSummaryView } from '../../../clientes/application/views/cliente-summary.view';
 
 export type { DashboardStats };
 
@@ -13,7 +13,10 @@ export interface DashboardStatsQuery {
 }
 
 export class ObtenerDashboardStatsHandler {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly clienteSummary: ClienteSummaryView,
+  ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
     const conn = this.em.getConnection();
@@ -46,16 +49,17 @@ export class ObtenerDashboardStatsHandler {
     const esSocioOResponsable = rol === 'SOCIO' || rol === 'RESPONSABLE';
 
     // Build base filter — EMPLEADO sees only their assigned resources
-    const clienteFilter: Record<string, any> = { estudio: query.estudioId };
     const tareaFilter: Record<string, any> = { estudio: query.estudioId };
     if (esEmpleado) {
-      clienteFilter.responsable = query.usuarioId;
       tareaFilter.responsable = query.usuarioId;
     }
 
     // KPIs
-    const [clientes, vencimientosProximos, tareasActivas] = await Promise.all([
-      this.em.count(ClienteEntity, clienteFilter),
+    const [clienteSummary, vencimientosProximos, tareasActivas] = await Promise.all([
+      this.clienteSummary.execute({
+        estudioId: query.estudioId,
+        ...(esEmpleado ? { responsableId: query.usuarioId } : {}),
+      }),
       this.em.count(VencimientoEntity, {
         estudio: query.estudioId,
         fechaVencimiento: { $gte: new Date(), $lte: this.addDays(new Date(), 30) },
@@ -194,7 +198,7 @@ export class ObtenerDashboardStatsHandler {
 
     return {
       kpis: {
-        clientes,
+        clientes: clienteSummary.totalClientes,
         vencimientosProximos,
         ...(tieneFacturacion ? { facturacionMes } : {}),
         tareasActivas,

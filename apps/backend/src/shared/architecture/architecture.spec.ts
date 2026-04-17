@@ -598,4 +598,104 @@ describe('Architecture rules', () => {
       // Phase 3 (#231) will flip to: expect(warnings).toEqual([]);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // ReadModelViewContract — Phase 1 (non-blocking)
+  //
+  // These tests report violations as warnings. They become blocking assertions
+  // in #232 once every read-model context has migrated to compose views.
+  //
+  // See ADR 0003 for the full rationale and migration plan.
+  // ---------------------------------------------------------------------------
+  describe('ReadModelViewContract (Phase 1 — non-blocking)', () => {
+    function resolveImportContext(file: string, imp: string): string | null {
+      if (!imp.startsWith('.') && !imp.startsWith('/')) return null;
+      if (imp.includes('/shared/')) return null;
+      if (imp.startsWith('@numerito/shared')) return null;
+
+      const resolvedDir = path.dirname(
+        path.resolve(path.dirname(file), imp),
+      );
+      const relFromSrc = path.relative(SRC_DIR, resolvedDir).replace(/\\/g, '/');
+
+      for (const ctx of BOUNDED_CONTEXTS) {
+        if (relFromSrc === ctx || relFromSrc.startsWith(`${ctx}/`)) {
+          return ctx;
+        }
+      }
+      return null;
+    }
+
+    it('(advisory) read-model contexts should not import schema entities from other contexts', () => {
+      const warnings: string[] = [];
+
+      for (const ctx of READ_MODEL_CONTEXTS) {
+        const ctxDir = path.join(SRC_DIR, ctx);
+        const files = findFiles(ctxDir, /\.ts$/, SPEC_PATTERN);
+
+        for (const file of files) {
+          const imports = extractImports(file);
+          for (const imp of imports) {
+            const targetCtx = resolveImportContext(file, imp);
+            if (!targetCtx) continue;
+
+            if (imp.includes('/infrastructure/persistence/') && imp.includes('.schema')) {
+              warnings.push(
+                `${relativeTo(file)} imports schema from "${targetCtx}" via "${imp}" — should use a public view instead`,
+              );
+            }
+          }
+        }
+      }
+
+      if (warnings.length > 0) {
+        console.warn(
+          `[ReadModelViewContract] ${warnings.length} read-model file(s) import cross-context schemas (non-blocking):\n` +
+            warnings.map((w) => `  - ${w}`).join('\n'),
+        );
+      }
+
+      // Intentionally no assertion — advisory in Phase 1.
+      // #232 will flip to: expect(warnings).toEqual([]);
+    });
+
+    it('(advisory) public views must be exported from public-views.ts', () => {
+      const warnings: string[] = [];
+
+      for (const ctx of BOUNDED_CONTEXTS) {
+        const viewsDir = path.join(SRC_DIR, ctx, 'application', 'views');
+        const viewFiles = findFiles(viewsDir, /\.view\.ts$/, SPEC_PATTERN);
+        if (viewFiles.length === 0) continue;
+
+        const barrelPath = path.join(SRC_DIR, ctx, 'application', 'public-views.ts');
+        if (!fs.existsSync(barrelPath)) {
+          warnings.push(
+            `${ctx} has views in application/views/ but no public-views.ts barrel`,
+          );
+          continue;
+        }
+
+        const barrelContent = fs.readFileSync(barrelPath, 'utf-8');
+        for (const viewFile of viewFiles) {
+          const fileName = path.basename(viewFile, '.ts');
+          // Check that the barrel references the view file
+          if (!barrelContent.includes(fileName)) {
+            warnings.push(
+              `${relativeTo(viewFile)} is not exported from ${ctx}/application/public-views.ts`,
+            );
+          }
+        }
+      }
+
+      if (warnings.length > 0) {
+        console.warn(
+          `[ReadModelViewContract] ${warnings.length} view(s) not exported from public-views.ts (non-blocking):\n` +
+            warnings.map((w) => `  - ${w}`).join('\n'),
+        );
+      }
+
+      // Intentionally no assertion — advisory in Phase 1.
+      // #232 will flip to: expect(warnings).toEqual([]);
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EntityManager } from '@mikro-orm/core';
 import { ClientesController } from './infrastructure/controllers/clientes.controller';
 import { CrearClienteHandler } from './application/commands/crear-cliente.command';
 import { ActualizarClienteHandler } from './application/commands/actualizar-cliente.command';
@@ -8,6 +9,8 @@ import { AsignarResponsableHandler } from './application/commands/asignar-respon
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
+import { CLIENTE_SUMMARY_VIEW } from './application/public-views';
+import { ClienteSummaryView } from './application/views/cliente-summary.view';
 
 @Module({
   imports: [],
@@ -44,7 +47,12 @@ import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-or
         new AsignarResponsableHandler(repo),
       inject: [CLIENTE_REPOSITORY],
     },
+    {
+      provide: CLIENTE_SUMMARY_VIEW,
+      useFactory: (em: EntityManager) => new ClienteSummaryView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [CLIENTE_REPOSITORY],
+  exports: [CLIENTE_REPOSITORY, CLIENTE_SUMMARY_VIEW],
 })
 export class ClientesModule {}
