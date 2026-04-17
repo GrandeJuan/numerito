@@ -3,6 +3,9 @@ import { EntityManager } from '@mikro-orm/core';
 import type { VencimientosPendientesClienteView } from '../../../obligaciones/application/views/vencimientos-pendientes-cliente.view';
 import type { FacturasPendientesClienteView } from '../../../facturacion/application/views/facturas-pendientes-cliente.view';
 import type { DocumentosClienteCountView } from '../../../documentos/application/views/documentos-cliente-count.view';
+import type { VencimientosRecientesClienteView } from '../../../obligaciones/application/views/vencimientos-recientes-cliente.view';
+import type { FacturasRecientesClienteView } from '../../../facturacion/application/views/facturas-recientes-cliente.view';
+import type { DocumentosRecientesClienteView } from '../../../documentos/application/views/documentos-recientes-cliente.view';
 
 export interface PortalStatsQuery {
   usuarioId: string;
@@ -27,6 +30,9 @@ export class ObtenerPortalStatsHandler {
     private readonly vencimientosPendientesCliente: VencimientosPendientesClienteView,
     private readonly facturasPendientesCliente: FacturasPendientesClienteView,
     private readonly documentosClienteCount: DocumentosClienteCountView,
+    private readonly vencimientosRecientesCliente: VencimientosRecientesClienteView,
+    private readonly facturasRecientesCliente: FacturasRecientesClienteView,
+    private readonly documentosRecientesCliente: DocumentosRecientesClienteView,
   ) {}
 
   async execute(query: PortalStatsQuery): Promise<PortalStats> {
@@ -60,63 +66,22 @@ export class ObtenerPortalStatsHandler {
     const clienteId = clienteRows[0].id;
     const clienteNombre = clienteRows[0].razon_social;
 
-    // KPIs — compose views from source contexts
-    const [vencimientosSummary, facturasSummary, documentosSummary] = await Promise.all([
+    // KPIs + recent items — compose views from source contexts
+    const [
+      vencimientosSummary,
+      facturasSummary,
+      documentosSummary,
+      vencimientosRecientes,
+      facturasRecientes,
+      documentosRecientes,
+    ] = await Promise.all([
       this.vencimientosPendientesCliente.execute({ clienteId }),
       this.facturasPendientesCliente.execute({ clienteId }),
       this.documentosClienteCount.execute({ clienteId }),
+      this.vencimientosRecientesCliente.execute({ clienteId }),
+      this.facturasRecientesCliente.execute({ clienteId }),
+      this.documentosRecientesCliente.execute({ clienteId }),
     ]);
-
-    // Recent vencimientos (5)
-    const vencimientosRaw = await conn.execute(
-      `SELECT v.id, to2.nombre as obligacion, v.fecha_vencimiento::text as fecha, ev.nombre as estado
-       FROM vencimiento v
-       JOIN tipo_obligacion to2 ON v.tipo_obligacion_id = to2.id
-       JOIN estado_vencimiento ev ON v.estado_id = ev.id
-       WHERE v.cliente_id = ?
-       ORDER BY v.fecha_vencimiento DESC
-       LIMIT 5`,
-      [clienteId],
-    );
-    const vencimientosRecientes = vencimientosRaw.map((r: any) => ({
-      id: r.id,
-      obligacion: r.obligacion,
-      fecha: r.fecha,
-      estado: r.estado,
-    }));
-
-    // Recent facturas (5)
-    const facturasRaw = await conn.execute(
-      `SELECT f.id, f.numero, f.total as monto, f.estado, f.fecha_emision::text as fecha
-       FROM factura f
-       WHERE f.cliente_id = ?
-       ORDER BY f.fecha_emision DESC
-       LIMIT 5`,
-      [clienteId],
-    );
-    const facturasRecientes = facturasRaw.map((r: any) => ({
-      id: r.id,
-      numero: r.numero,
-      monto: Number(r.monto),
-      estado: r.estado,
-      fecha: r.fecha,
-    }));
-
-    // Recent documentos (5)
-    const documentosRaw = await conn.execute(
-      `SELECT d.id, d.nombre, d.tipo, d.created_at::text as fecha
-       FROM documento d
-       WHERE d.cliente_id = ?
-       ORDER BY d.created_at DESC
-       LIMIT 5`,
-      [clienteId],
-    );
-    const documentosRecientes = documentosRaw.map((r: any) => ({
-      id: r.id,
-      nombre: r.nombre,
-      tipo: r.tipo,
-      fecha: r.fecha,
-    }));
 
     return {
       clienteNombre,

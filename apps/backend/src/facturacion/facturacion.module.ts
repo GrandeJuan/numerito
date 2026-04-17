@@ -13,10 +13,12 @@ import { AnularFacturaHandler } from './application/commands/anular-factura.comm
 import { FacturasPendientesClienteView } from './application/views/facturas-pendientes-cliente.view';
 import { FacturacionMesView } from './application/views/facturacion-mes.view';
 import { FacturacionMensualView } from './application/views/facturacion-mensual.view';
+import { FacturasRecientesClienteView } from './application/views/facturas-recientes-cliente.view';
 import {
   FACTURAS_PENDIENTES_CLIENTE_VIEW,
   FACTURACION_MES_VIEW,
   FACTURACION_MENSUAL_VIEW,
+  FACTURAS_RECIENTES_CLIENTE_VIEW,
 } from './application/public-views';
 
 @Module({
@@ -57,6 +59,11 @@ import {
       useFactory: (em: EntityManager) => new FacturacionMensualView(em),
       inject: [EntityManager],
     },
+    {
+      provide: FACTURAS_RECIENTES_CLIENTE_VIEW,
+      useFactory: (em: EntityManager) => new FacturasRecientesClienteView(em),
+      inject: [EntityManager],
+    },
   ],
   exports: [
     FACTURA_REPOSITORY,
@@ -64,6 +71,7 @@ import {
     FACTURAS_PENDIENTES_CLIENTE_VIEW,
     FACTURACION_MES_VIEW,
     FACTURACION_MENSUAL_VIEW,
+    FACTURAS_RECIENTES_CLIENTE_VIEW,
   ],
 })
 export class FacturacionModule {}

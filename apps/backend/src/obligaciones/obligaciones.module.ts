@@ -15,11 +15,13 @@ import { VencimientosProximosView } from './application/views/vencimientos-proxi
 import { VencimientosPendientesClienteView } from './application/views/vencimientos-pendientes-cliente.view';
 import { VencimientosPorEstadoView } from './application/views/vencimientos-por-estado.view';
 import { ProximosVencimientosDetalleView } from './application/views/proximos-vencimientos-detalle.view';
+import { VencimientosRecientesClienteView } from './application/views/vencimientos-recientes-cliente.view';
 import {
   VENCIMIENTOS_PROXIMOS_VIEW,
   VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
   VENCIMIENTOS_POR_ESTADO_VIEW,
   PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
+  VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
 } from './application/public-views';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
@@ -87,6 +89,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new ProximosVencimientosDetalleView(em),
       inject: [EntityManager],
     },
+    {
+      provide: VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
+      useFactory: (em: EntityManager) => new VencimientosRecientesClienteView(em),
+      inject: [EntityManager],
+    },
   ],
   exports: [
     VENCIMIENTO_REPOSITORY,
@@ -94,6 +101,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
     VENCIMIENTOS_POR_ESTADO_VIEW,
     PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
+    VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
   ],
 })
 export class ObligacionesModule {}

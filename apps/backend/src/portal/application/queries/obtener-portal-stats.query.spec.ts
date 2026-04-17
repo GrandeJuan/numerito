@@ -8,6 +8,9 @@ describe('ObtenerPortalStatsHandler', () => {
   let mockVencimientosPendientesCliente: any;
   let mockFacturasPendientesCliente: any;
   let mockDocumentosClienteCount: any;
+  let mockVencimientosRecientesCliente: any;
+  let mockFacturasRecientesCliente: any;
+  let mockDocumentosRecientesCliente: any;
 
   const usuarioId = 'user-uuid';
   const clienteId = 'cliente-uuid';
@@ -27,6 +30,15 @@ describe('ObtenerPortalStatsHandler', () => {
     mockDocumentosClienteCount = {
       execute: jest.fn().mockResolvedValue({ totalDocumentos: 0 }),
     };
+    mockVencimientosRecientesCliente = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    mockFacturasRecientesCliente = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    mockDocumentosRecientesCliente = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
   });
 
   function createHandler() {
@@ -35,6 +47,9 @@ describe('ObtenerPortalStatsHandler', () => {
       mockVencimientosPendientesCliente,
       mockFacturasPendientesCliente,
       mockDocumentosClienteCount,
+      mockVencimientosRecientesCliente,
+      mockFacturasRecientesCliente,
+      mockDocumentosRecientesCliente,
     );
   }
 
@@ -81,7 +96,7 @@ describe('ObtenerPortalStatsHandler', () => {
       expect(result.kpis.documentos).toBe(10);
     });
 
-    it('should call views with clienteId', async () => {
+    it('should call KPI views with clienteId', async () => {
       createHandler();
       await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(mockVencimientosPendientesCliente.execute).toHaveBeenCalledWith({ clienteId });
@@ -89,7 +104,15 @@ describe('ObtenerPortalStatsHandler', () => {
       expect(mockDocumentosClienteCount.execute).toHaveBeenCalledWith({ clienteId });
     });
 
-    it('should return empty arrays when no recent data', async () => {
+    it('should call recent-items views with clienteId', async () => {
+      createHandler();
+      await handler.execute({ usuarioId, rol: 'CLIENTE' });
+      expect(mockVencimientosRecientesCliente.execute).toHaveBeenCalledWith({ clienteId });
+      expect(mockFacturasRecientesCliente.execute).toHaveBeenCalledWith({ clienteId });
+      expect(mockDocumentosRecientesCliente.execute).toHaveBeenCalledWith({ clienteId });
+    });
+
+    it('should return empty arrays when views return no recent data', async () => {
       createHandler();
       const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(result.vencimientosRecientes).toEqual([]);
@@ -101,23 +124,20 @@ describe('ObtenerPortalStatsHandler', () => {
   describe('when recent data exists', () => {
     beforeEach(() => {
       // find cliente
-      mockExecute
-        .mockResolvedValueOnce([{ id: clienteId, razon_social: 'Empresa Test' }]);
-      // vencimientos recientes
-      mockExecute.mockResolvedValueOnce([
+      mockExecute.mockResolvedValueOnce([{ id: clienteId, razon_social: 'Empresa Test' }]);
+      // Views return recent items
+      mockVencimientosRecientesCliente.execute.mockResolvedValue([
         { id: 'v1', obligacion: 'IVA', fecha: '2026-04-15', estado: 'Pendiente' },
       ]);
-      // facturas recientes
-      mockExecute.mockResolvedValueOnce([
+      mockFacturasRecientesCliente.execute.mockResolvedValue([
         { id: 'f1', numero: 'A-0001-00001', monto: 5000, estado: 'Pendiente', fecha: '2026-04-01' },
       ]);
-      // documentos recientes
-      mockExecute.mockResolvedValueOnce([
+      mockDocumentosRecientesCliente.execute.mockResolvedValue([
         { id: 'd1', nombre: 'Balance.pdf', tipo: 'PDF', fecha: '2026-04-01' },
       ]);
     });
 
-    it('should return recent items', async () => {
+    it('should return recent items from composed views', async () => {
       createHandler();
       const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(result.vencimientosRecientes).toHaveLength(1);
