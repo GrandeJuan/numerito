@@ -6,7 +6,8 @@ import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-vali
 import { DOCUMENTO_REPOSITORY } from '../../domain/repositories/documento.repository';
 import type { DocumentoRepository } from '../../domain/repositories/documento.repository';
 import { Documento } from '../../domain/entities/documento.entity';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -18,39 +19,40 @@ export class DocumentosController {
   @Get()
   @ApiOperation({ summary: 'Listar documentos del estudio' })
   async list(
+    @Principal() principal: EstudioPrincipal,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('clienteId') clienteId?: string,
   ) {
     const documentos = clienteId
-      ? await this.documentoRepo.findByClienteId(clienteId)
-      : await this.documentoRepo.findAll();
+      ? await this.documentoRepo.findByClienteId(principal, clienteId)
+      : await this.documentoRepo.findAll(principal);
     return successResponse(documentos, { total: documentos.length, page: +page, limit: +limit });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener documento por ID' })
-  async getById(@Param('id') id: string) {
-    const documento = await this.documentoRepo.findById(id);
+  async getById(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const documento = await this.documentoRepo.findById(principal, id);
     if (!documento) throw new RecursoNoEncontradoError('Documento');
     return successResponse(documento);
   }
 
   @Post()
   @ApiOperation({ summary: 'Crear documento (metadata)' })
-  async create(@Body(new ZodValidationPipe(crearDocumentoDtoSchema)) dto: CrearDocumentoDto, @EstudioId() estudioId: string) {
-    const documento = Documento.create({ ...dto, estudioId });
-    await this.documentoRepo.save(documento);
+  async create(@Body(new ZodValidationPipe(crearDocumentoDtoSchema)) dto: CrearDocumentoDto, @Principal() principal: EstudioPrincipal) {
+    const documento = Documento.create({ ...dto, estudioId: principal.estudioId });
+    await this.documentoRepo.save(principal, documento);
     return successResponse(documento);
   }
 
   @Patch(':id/version')
   @ApiOperation({ summary: 'Nueva version del documento' })
-  async newVersion(@Param('id') id: string, @Body(new ZodValidationPipe(nuevaVersionDtoSchema)) dto: NuevaVersionDto) {
-    const documento = await this.documentoRepo.findById(id);
+  async newVersion(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(nuevaVersionDtoSchema)) dto: NuevaVersionDto) {
+    const documento = await this.documentoRepo.findById(principal, id);
     if (!documento) throw new RecursoNoEncontradoError('Documento');
     documento.newVersion(dto.s3Key, dto.sizeBytes);
-    await this.documentoRepo.save(documento);
+    await this.documentoRepo.save(principal, documento);
     return successResponse(documento);
   }
 }

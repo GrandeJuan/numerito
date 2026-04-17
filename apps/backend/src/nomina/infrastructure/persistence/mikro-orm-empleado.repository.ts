@@ -11,6 +11,7 @@ import { EmpleadoEntity } from './empleado.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { EmpleadoMapper } from './empleado.mapper';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 @Injectable()
 export class MikroOrmEmpleadoRepository
@@ -26,13 +27,12 @@ export class MikroOrmEmpleadoRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Empleado | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Empleado | null> {
     const entity = await this.em.findOne(
       EmpleadoEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio'],
@@ -42,13 +42,12 @@ export class MikroOrmEmpleadoRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByClienteId(clienteId: string): Promise<Empleado[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<Empleado[]> {
     const entities = await this.em.find(
       EmpleadoEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio'],
@@ -57,12 +56,11 @@ export class MikroOrmEmpleadoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<Empleado[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Empleado[]> {
     const entities = await this.em.find(
       EmpleadoEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio'],
@@ -71,12 +69,11 @@ export class MikroOrmEmpleadoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(empleado: Empleado): Promise<void> {
+  async save(principal: EstudioPrincipal, empleado: Empleado): Promise<void> {
     const cliente = this.em.getReference(ClienteEntity, empleado.clienteId);
     const estudio = this.em.getReference(EstudioEntity, empleado.estudioId);
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(EmpleadoEntity, { id: empleado.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(EmpleadoEntity, { id: empleado.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -108,9 +105,8 @@ export class MikroOrmEmpleadoRepository
     await this.em.flush();
   }
 
-  async delete(empleado: Empleado): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(EmpleadoEntity, { id: empleado.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, empleado: Empleado): Promise<void> {
+    const entity = await this.em.findOne(EmpleadoEntity, { id: empleado.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

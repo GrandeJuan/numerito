@@ -1,5 +1,8 @@
 import { NominaController } from './nomina.controller';
 import { Empleado } from '../../domain/entities/empleado.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeEmpleado = (overrides: Partial<{ id: string; estudioId: string }> = {}) =>
   Empleado.create(
@@ -36,16 +39,17 @@ describe('NominaController', () => {
       const empleados = [makeEmpleado(), makeEmpleado()];
       mockEmpleadoRepo.findAll.mockResolvedValue(empleados);
 
-      const result = await controller.list(1, 20);
+      const result = await controller.list(principal, 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
+      expect(mockEmpleadoRepo.findAll).toHaveBeenCalledWith(principal);
     });
 
     it('should use default page and limit when not provided', async () => {
       mockEmpleadoRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list();
+      const result = await controller.list(principal);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -62,9 +66,11 @@ describe('NominaController', () => {
         sueldoBasico: 600000,
         categoriaConvenio: 'CAT-B',
       };
-      const result = await controller.create(dto as any, 'estudio-1');
+      const result = await controller.create(dto as any, principal);
       expect(result.id).toBeDefined();
+      expect(result.estudioId).toBe('estudio-1');
       expect(mockEmpleadoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEmpleadoRepo.save).toHaveBeenCalledWith(principal, expect.any(Empleado));
     });
   });
 
@@ -73,18 +79,19 @@ describe('NominaController', () => {
       const empleado = makeEmpleado();
       mockEmpleadoRepo.findById.mockResolvedValue(empleado);
 
-      await controller.update(empleado.id, {
+      await controller.update(principal, empleado.id, {
         nombre: 'Carlos',
         apellido: 'Garcia',
         categoriaConvenio: 'CAT-C',
       } as any);
-      expect(mockEmpleadoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEmpleadoRepo.findById).toHaveBeenCalledWith(principal, empleado.id);
+      expect(mockEmpleadoRepo.save).toHaveBeenCalledWith(principal, empleado);
     });
 
     it('should throw when empleado not found', async () => {
       mockEmpleadoRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.update('bad-id', { nombre: 'X' } as any)).rejects.toThrow(
+      await expect(controller.update(principal, 'bad-id', { nombre: 'X' } as any)).rejects.toThrow(
         'Empleado no encontrado',
       );
     });
@@ -95,15 +102,16 @@ describe('NominaController', () => {
       const empleado = makeEmpleado();
       mockEmpleadoRepo.findById.mockResolvedValue(empleado);
 
-      await controller.darDeBaja(empleado.id, { fecha: '2026-03-15' } as any);
+      await controller.darDeBaja(principal, empleado.id, { fecha: '2026-03-15' } as any);
       expect(empleado.isActive).toBe(false);
-      expect(mockEmpleadoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEmpleadoRepo.findById).toHaveBeenCalledWith(principal, empleado.id);
+      expect(mockEmpleadoRepo.save).toHaveBeenCalledWith(principal, empleado);
     });
 
     it('should throw when empleado not found', async () => {
       mockEmpleadoRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.darDeBaja('bad-id', { fecha: '2026-03-15' } as any)).rejects.toThrow(
+      await expect(controller.darDeBaja(principal, 'bad-id', { fecha: '2026-03-15' } as any)).rejects.toThrow(
         'Empleado no encontrado',
       );
     });
@@ -114,16 +122,17 @@ describe('NominaController', () => {
       const empleado = makeEmpleado();
       mockEmpleadoRepo.findById.mockResolvedValue(empleado);
 
-      await controller.actualizarSueldo(empleado.id, { sueldo: 700000 } as any);
+      await controller.actualizarSueldo(principal, empleado.id, { sueldo: 700000 } as any);
       expect(empleado.sueldoBasico).toBe(700000);
-      expect(mockEmpleadoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockEmpleadoRepo.findById).toHaveBeenCalledWith(principal, empleado.id);
+      expect(mockEmpleadoRepo.save).toHaveBeenCalledWith(principal, empleado);
     });
 
     it('should throw when empleado not found', async () => {
       mockEmpleadoRepo.findById.mockResolvedValue(null);
 
       await expect(
-        controller.actualizarSueldo('bad-id', { sueldo: 700000 } as any),
+        controller.actualizarSueldo(principal, 'bad-id', { sueldo: 700000 } as any),
       ).rejects.toThrow('Empleado no encontrado');
     });
 
@@ -132,7 +141,7 @@ describe('NominaController', () => {
       mockEmpleadoRepo.findById.mockResolvedValue(empleado);
 
       await expect(
-        controller.actualizarSueldo(empleado.id, { sueldo: -100 } as any),
+        controller.actualizarSueldo(principal, empleado.id, { sueldo: -100 } as any),
       ).rejects.toThrow('El sueldo debe ser mayor a 0');
     });
   });

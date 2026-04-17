@@ -1,5 +1,8 @@
 import { FacturacionController } from './facturacion.controller';
 import { Factura } from '../../domain/entities/factura.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeFactura = (
   overrides: Partial<{ id: string; clienteId: string; estudioId: string; numero: string }> = {},
@@ -20,8 +23,9 @@ const makeFactura = (
 describe('FacturacionController', () => {
   let controller: FacturacionController;
   let mockFacturaRepo: any;
-  let mockPagoRepo: any;
   let mockCrearFacturaHandler: any;
+  let mockRegistrarPagoHandler: any;
+  let mockAnularFacturaHandler: any;
 
   beforeEach(() => {
     mockFacturaRepo = {
@@ -31,17 +35,21 @@ describe('FacturacionController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    mockPagoRepo = {
-      findById: jest.fn(),
-      findAll: jest.fn().mockResolvedValue([]),
-      findByFacturaId: jest.fn().mockResolvedValue([]),
-      save: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn(),
-    };
     mockCrearFacturaHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'factura-new' }),
     };
-    controller = new FacturacionController(mockFacturaRepo, mockPagoRepo, mockCrearFacturaHandler);
+    mockRegistrarPagoHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'pago-new', monto: 500 }),
+    };
+    mockAnularFacturaHandler = {
+      execute: jest.fn().mockResolvedValue(makeFactura()),
+    };
+    controller = new FacturacionController(
+      mockFacturaRepo,
+      mockCrearFacturaHandler,
+      mockRegistrarPagoHandler,
+      mockAnularFacturaHandler,
+    );
   });
 
   describe('stats', () => {
@@ -49,15 +57,16 @@ describe('FacturacionController', () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
       mockFacturaRepo.findAll.mockResolvedValue(facturas);
 
-      const result = await controller.stats();
+      const result = await controller.stats(principal);
       expect(result.data.facturado).toBeDefined();
       expect(result.data.cobrado).toBeDefined();
       expect(result.data.porEstado).toBeDefined();
       expect(result.data.mensual).toBeDefined();
+      expect(mockFacturaRepo.findAll).toHaveBeenCalledWith(principal);
     });
 
     it('should return zero stats when no facturas', async () => {
-      const result = await controller.stats();
+      const result = await controller.stats(principal);
       expect(result.data.facturado).toBe(0);
     });
   });
@@ -67,28 +76,29 @@ describe('FacturacionController', () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
       mockFacturaRepo.findAll.mockResolvedValue(facturas);
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(principal, 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
+      expect(mockFacturaRepo.findAll).toHaveBeenCalledWith(principal);
     });
 
     it('should return empty list when no facturas', async () => {
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(principal, 1, 20);
       expect(result.data).toHaveLength(0);
     });
 
     it('should use default page and limit when not provided', async () => {
       mockFacturaRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list(principal);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
   });
 
   describe('create', () => {
-    it('should dispatch to CrearFacturaHandler', async () => {
+    it('should dispatch to CrearFacturaHandler with principal', async () => {
       const dto = {
         clienteId: 'cliente-1',
         numero: 'FAC-001',
@@ -100,10 +110,10 @@ describe('FacturacionController', () => {
         ],
       };
 
-      const result = await controller.create(dto as any);
+      const result = await controller.create(dto as any, principal);
       expect(result.data.id).toBe('factura-new');
       expect(mockCrearFacturaHandler.execute).toHaveBeenCalledTimes(1);
-      expect(mockCrearFacturaHandler.execute).toHaveBeenCalledWith(dto);
+      expect(mockCrearFacturaHandler.execute).toHaveBeenCalledWith(principal, dto);
     });
 
     it('should not call repository directly', async () => {
@@ -116,7 +126,7 @@ describe('FacturacionController', () => {
         lineas: [{ descripcion: 'Servicio', cantidad: 1, precioUnitario: 500, alicuotaIva: 21 }],
       };
 
-      await controller.create(dto as any);
+      await controller.create(dto as any, principal);
       expect(mockFacturaRepo.save).not.toHaveBeenCalled();
     });
   });
@@ -126,65 +136,50 @@ describe('FacturacionController', () => {
       const factura = makeFactura();
       mockFacturaRepo.findById.mockResolvedValue(factura);
 
-      const result = await controller.getById(factura.id);
+      const result = await controller.getById(principal, factura.id);
       expect(result.data).toBeDefined();
+      expect(mockFacturaRepo.findById).toHaveBeenCalledWith(principal, factura.id);
     });
 
     it('should throw when factura not found', async () => {
       mockFacturaRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.getById('nonexistent')).rejects.toThrow('Factura no encontrado');
+      await expect(controller.getById(principal, 'nonexistent')).rejects.toThrow('Factura no encontrado');
     });
   });
 
   describe('registrarPago', () => {
-    it('should register a payment on a factura', async () => {
-      const factura = makeFactura();
-      mockFacturaRepo.findById.mockResolvedValue(factura);
-
+    it('should dispatch to RegistrarPagoHandler with principal', async () => {
       const dto = { monto: 500, medioPagoId: 1 };
-      const result = await controller.registrarPago(factura.id, dto as any, 'estudio-1');
+      const result = await controller.registrarPago(principal, 'factura-1', dto as any);
 
-      expect(mockFacturaRepo.save).toHaveBeenCalledTimes(1);
-      expect(mockPagoRepo.save).toHaveBeenCalledTimes(1);
       expect(result.data).toBeDefined();
+      expect(mockRegistrarPagoHandler.execute).toHaveBeenCalledWith(principal, {
+        facturaId: 'factura-1',
+        monto: 500,
+        medioPagoId: 1,
+        referencia: undefined,
+      });
     });
 
-    it('should throw when factura not found', async () => {
-      mockFacturaRepo.findById.mockResolvedValue(null);
-
-      await expect(
-        controller.registrarPago('bad-id', { monto: 100, medioPagoId: 1 } as any, 'estudio-1'),
-      ).rejects.toThrow('Factura no encontrado');
-    });
-
-    it('should save pago with referencia when provided', async () => {
-      const factura = makeFactura();
-      mockFacturaRepo.findById.mockResolvedValue(factura);
-
+    it('should pass referencia when provided', async () => {
       const dto = { monto: 100, medioPagoId: 2, referencia: 'TRF-123' };
-      await controller.registrarPago(factura.id, dto as any, 'estudio-1');
+      await controller.registrarPago(principal, 'factura-1', dto as any);
 
-      const savedPago = mockPagoRepo.save.mock.calls[0][0];
-      expect(savedPago.referencia).toBe('TRF-123');
+      expect(mockRegistrarPagoHandler.execute).toHaveBeenCalledWith(principal, {
+        facturaId: 'factura-1',
+        monto: 100,
+        medioPagoId: 2,
+        referencia: 'TRF-123',
+      });
     });
   });
 
   describe('anular', () => {
-    it('should anular a factura', async () => {
-      const factura = makeFactura();
-      mockFacturaRepo.findById.mockResolvedValue(factura);
-
-      const result = await controller.anular(factura.id);
-      expect(factura.estado).toBe('ANULADA');
-      expect(mockFacturaRepo.save).toHaveBeenCalledTimes(1);
+    it('should dispatch to AnularFacturaHandler with principal', async () => {
+      const result = await controller.anular(principal, 'factura-1');
       expect(result.data).toBeDefined();
-    });
-
-    it('should throw when factura not found', async () => {
-      mockFacturaRepo.findById.mockResolvedValue(null);
-
-      await expect(controller.anular('bad-id')).rejects.toThrow('Factura no encontrado');
+      expect(mockAnularFacturaHandler.execute).toHaveBeenCalledWith(principal, { id: 'factura-1' });
     });
   });
 
@@ -193,21 +188,21 @@ describe('FacturacionController', () => {
       const facturas = [makeFactura(), makeFactura({ numero: 'FAC-002' })];
       mockFacturaRepo.findByClienteId.mockResolvedValue(facturas);
 
-      const result = await controller.cuentaCorriente('cliente-1', 'estudio-1', 1, 20);
+      const result = await controller.cuentaCorriente(principal, 'cliente-1', 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
-      expect(mockFacturaRepo.findByClienteId).toHaveBeenCalledWith('cliente-1');
+      expect(mockFacturaRepo.findByClienteId).toHaveBeenCalledWith(principal, 'cliente-1');
     });
 
     it('should return empty when client has no facturas', async () => {
-      const result = await controller.cuentaCorriente('cliente-1', 'estudio-1', 1, 20);
+      const result = await controller.cuentaCorriente(principal, 'cliente-1', 1, 20);
       expect(result.data).toHaveLength(0);
     });
 
     it('should use default page and limit when not provided', async () => {
       mockFacturaRepo.findByClienteId.mockResolvedValue([]);
 
-      const result = await controller.cuentaCorriente('cliente-1', 'estudio-1');
+      const result = await controller.cuentaCorriente(principal, 'cliente-1');
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });

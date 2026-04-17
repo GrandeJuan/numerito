@@ -12,6 +12,7 @@ import { FacturaEntity } from './factura.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { MedioPagoEntity } from '../../../shared/infrastructure/persistence/medio-pago.schema';
 import { PagoMapper } from './pago.mapper';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 @Injectable()
 export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implements PagoRepository {
@@ -24,13 +25,12 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     super(context);
   }
 
-  async findById(id: string): Promise<Pago | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Pago | null> {
     const entity = await this.em.findOne(
       PagoEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['factura', 'estudio', 'medioPago'],
@@ -40,13 +40,12 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByFacturaId(facturaId: string): Promise<Pago[]> {
-    const tenantId = this.getTenantId();
+  async findByFacturaId(principal: EstudioPrincipal, facturaId: string): Promise<Pago[]> {
     const entities = await this.em.find(
       PagoEntity,
       {
         factura: { id: facturaId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['factura', 'estudio', 'medioPago'],
@@ -55,12 +54,11 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<Pago[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Pago[]> {
     const entities = await this.em.find(
       PagoEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['factura', 'estudio', 'medioPago'],
@@ -69,13 +67,12 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(pago: Pago): Promise<void> {
+  async save(principal: EstudioPrincipal, pago: Pago): Promise<void> {
     const factura = this.em.getReference(FacturaEntity, pago.facturaId);
     const estudio = this.em.getReference(EstudioEntity, pago.estudioId);
     const medioPago = this.em.getReference(MedioPagoEntity, pago.medioPagoId);
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: principal.estudioId } });
 
     if (existing) {
       existing.factura = factura;
@@ -99,9 +96,8 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     await this.em.flush();
   }
 
-  async delete(pago: Pago): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, pago: Pago): Promise<void> {
+    const entity = await this.em.findOne(PagoEntity, { id: pago.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

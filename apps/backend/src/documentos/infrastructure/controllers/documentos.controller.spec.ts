@@ -1,5 +1,8 @@
 import { DocumentosController } from './documentos.controller';
 import { Documento } from '../../domain/entities/documento.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeDocumento = (
   overrides: Partial<{ id: string; clienteId: string; estudioId: string }> = {},
@@ -37,17 +40,17 @@ describe('DocumentosController', () => {
       const docs = [makeDocumento(), makeDocumento({ clienteId: 'cliente-2' })];
       mockRepo.findAll.mockResolvedValue(docs);
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(principal, 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
-      expect(mockRepo.findAll).toHaveBeenCalled();
+      expect(mockRepo.findAll).toHaveBeenCalledWith(principal);
     });
 
     it('should use default page and limit when not provided', async () => {
       mockRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list(principal);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -56,9 +59,9 @@ describe('DocumentosController', () => {
       const docs = [makeDocumento()];
       mockRepo.findByClienteId.mockResolvedValue(docs);
 
-      const result = await controller.list('estudio-1', 1, 20, 'cliente-1');
+      const result = await controller.list(principal, 1, 20, 'cliente-1');
       expect(result.data).toHaveLength(1);
-      expect(mockRepo.findByClienteId).toHaveBeenCalledWith('cliente-1');
+      expect(mockRepo.findByClienteId).toHaveBeenCalledWith(principal, 'cliente-1');
     });
   });
 
@@ -67,15 +70,16 @@ describe('DocumentosController', () => {
       const doc = makeDocumento();
       mockRepo.findById.mockResolvedValue(doc);
 
-      const result = await controller.getById(doc.id);
+      const result = await controller.getById(principal, doc.id);
       expect(result.data).toBeDefined();
       expect(result.data.nombre).toBe('balance-2025.pdf');
+      expect(mockRepo.findById).toHaveBeenCalledWith(principal, doc.id);
     });
 
     it('should throw when documento not found', async () => {
       mockRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.getById('nonexistent')).rejects.toThrow('Documento no encontrado');
+      await expect(controller.getById(principal, 'nonexistent')).rejects.toThrow('Documento no encontrado');
     });
   });
 
@@ -90,9 +94,11 @@ describe('DocumentosController', () => {
         sizeBytes: 102400,
       };
 
-      const result = await controller.create(dto, 'estudio-1');
+      const result = await controller.create(dto, principal);
       expect(result.data.id).toBeDefined();
+      expect(result.data.estudioId).toBe('estudio-1');
       expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.save).toHaveBeenCalledWith(principal, expect.any(Documento));
     });
   });
 
@@ -102,17 +108,18 @@ describe('DocumentosController', () => {
       mockRepo.findById.mockResolvedValue(doc);
 
       const dto = { s3Key: 'documentos/estudio-1/balance-2025-v2.pdf', sizeBytes: 204800 };
-      const result = await controller.newVersion(doc.id, dto);
+      const result = await controller.newVersion(principal, doc.id, dto);
 
       expect(result.data.version).toBe(2);
       expect(result.data.s3Key).toBe(dto.s3Key);
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findById).toHaveBeenCalledWith(principal, doc.id);
+      expect(mockRepo.save).toHaveBeenCalledWith(principal, doc);
     });
 
     it('should throw when documento not found', async () => {
       mockRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.newVersion('bad-id', { s3Key: 'x', sizeBytes: 1 })).rejects.toThrow(
+      await expect(controller.newVersion(principal, 'bad-id', { s3Key: 'x', sizeBytes: 1 })).rejects.toThrow(
         'Documento no encontrado',
       );
     });

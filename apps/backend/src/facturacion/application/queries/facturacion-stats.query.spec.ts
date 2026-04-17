@@ -1,6 +1,9 @@
 import { FacturacionStatsQuery } from './facturacion-stats.query';
 import { Factura, ESTADO_FACTURA } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeLinea = (precio = 1000, iva = 21) =>
   LineaFactura.create({
@@ -45,7 +48,7 @@ describe('FacturacionStatsQuery', () => {
   });
 
   it('should return zero stats when no facturas', async () => {
-    const result = await query.execute();
+    const result = await query.execute(principal);
 
     expect(result.facturado).toBe(0);
     expect(result.cobrado).toBe(0);
@@ -54,6 +57,7 @@ describe('FacturacionStatsQuery', () => {
     expect(result.facturasVencidas).toBe(0);
     expect(result.mensual).toEqual([]);
     expect(result.porEstado).toEqual([]);
+    expect(mockFacturaRepo.findAll).toHaveBeenCalledWith(principal);
   });
 
   it('should calculate facturado as sum of totals', async () => {
@@ -61,7 +65,7 @@ describe('FacturacionStatsQuery', () => {
     const f2 = makeFactura({ numero: 'FAC-002', precio: 2000 }); // total = 2000 + 420 = 2420
     mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.facturado).toBe(3630);
   });
 
@@ -70,7 +74,7 @@ describe('FacturacionStatsQuery', () => {
     f1.registrarPagoExterno(500);
     mockFacturaRepo.findAll.mockResolvedValue([f1]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.cobrado).toBe(500);
     expect(result.saldoPendiente).toBe(1210 - 500);
   });
@@ -80,7 +84,7 @@ describe('FacturacionStatsQuery', () => {
     f1.registrarPagoExterno(605); // 50%
     mockFacturaRepo.findAll.mockResolvedValue([f1]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.cobradoPorcentaje).toBe(50);
   });
 
@@ -90,7 +94,7 @@ describe('FacturacionStatsQuery', () => {
     const f2 = makeFactura({ numero: 'FAC-002' });
     mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.facturasVencidas).toBe(1);
   });
 
@@ -100,7 +104,7 @@ describe('FacturacionStatsQuery', () => {
     f2.anular();
     mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.facturado).toBe(1210);
   });
 
@@ -112,7 +116,7 @@ describe('FacturacionStatsQuery', () => {
     f3.anular();
     mockFacturaRepo.findAll.mockResolvedValue([f1, f2, f3]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     const emitidas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.EMITIDA);
     const pagadas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.PAGADA);
     const anuladas = result.porEstado.find((e) => e.estado === ESTADO_FACTURA.ANULADA);
@@ -129,7 +133,7 @@ describe('FacturacionStatsQuery', () => {
     f2.registrarPagoExterno(1000);
     mockFacturaRepo.findAll.mockResolvedValue([f1, f2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     const enero = result.mensual.find((m) => m.mes === '2026-01');
     const febrero = result.mensual.find((m) => m.mes === '2026-02');
 

@@ -7,7 +7,8 @@ import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-vali
 import { EMPLEADO_REPOSITORY } from '../../domain/repositories/empleado.repository';
 import type { EmpleadoRepository } from '../../domain/repositories/empleado.repository';
 import { Empleado } from '../../domain/entities/empleado.entity';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -18,17 +19,17 @@ export class NominaController {
 
   @Get('empleados')
   @ApiOperation({ summary: 'Listar empleados del estudio' })
-  async list(@Query('page') page = 1, @Query('limit') limit = 20) {
-    const empleados = await this.empleadoRepo.findAll();
+  async list(@Principal() principal: EstudioPrincipal, @Query('page') page = 1, @Query('limit') limit = 20) {
+    const empleados = await this.empleadoRepo.findAll(principal);
     return successResponse(empleados, { total: empleados.length, page: +page, limit: +limit });
   }
 
   @Post('empleados')
   @ApiOperation({ summary: 'Crear empleado' })
-  async create(@Body(new ZodValidationPipe(crearEmpleadoDtoSchema)) dto: CrearEmpleadoDto, @EstudioId() estudioId: string) {
+  async create(@Body(new ZodValidationPipe(crearEmpleadoDtoSchema)) dto: CrearEmpleadoDto, @Principal() principal: EstudioPrincipal) {
     const empleado = Empleado.create({
       clienteId: dto.clienteId,
-      estudioId,
+      estudioId: principal.estudioId,
       nombre: dto.nombre,
       apellido: dto.apellido,
       cuil: dto.cuil,
@@ -36,40 +37,40 @@ export class NominaController {
       sueldoBasico: dto.sueldoBasico,
       categoriaConvenio: dto.categoriaConvenio,
     });
-    await this.empleadoRepo.save(empleado);
+    await this.empleadoRepo.save(principal, empleado);
     return empleado;
   }
 
   @Put('empleados/:id')
   @ApiOperation({ summary: 'Actualizar empleado' })
-  async update(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarEmpleadoDtoSchema)) dto: ActualizarEmpleadoDto) {
-    const empleado = await this.empleadoRepo.findById(id);
+  async update(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(actualizarEmpleadoDtoSchema)) dto: ActualizarEmpleadoDto) {
+    const empleado = await this.empleadoRepo.findById(principal, id);
     if (!empleado) throw new RecursoNoEncontradoError('Empleado');
 
     empleado.actualizar(dto);
-    await this.empleadoRepo.save(empleado);
+    await this.empleadoRepo.save(principal, empleado);
     return empleado;
   }
 
   @Patch('empleados/:id/baja')
   @ApiOperation({ summary: 'Dar de baja empleado' })
-  async darDeBaja(@Param('id') id: string, @Body() body: { fecha: string }) {
-    const empleado = await this.empleadoRepo.findById(id);
+  async darDeBaja(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body() body: { fecha: string }) {
+    const empleado = await this.empleadoRepo.findById(principal, id);
     if (!empleado) throw new RecursoNoEncontradoError('Empleado');
 
     empleado.darDeBaja(new Date(body.fecha));
-    await this.empleadoRepo.save(empleado);
+    await this.empleadoRepo.save(principal, empleado);
     return empleado;
   }
 
   @Patch('empleados/:id/sueldo')
   @ApiOperation({ summary: 'Actualizar sueldo de empleado' })
-  async actualizarSueldo(@Param('id') id: string, @Body(new ZodValidationPipe(actualizarSueldoDtoSchema)) dto: ActualizarSueldoDto) {
-    const empleado = await this.empleadoRepo.findById(id);
+  async actualizarSueldo(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(actualizarSueldoDtoSchema)) dto: ActualizarSueldoDto) {
+    const empleado = await this.empleadoRepo.findById(principal, id);
     if (!empleado) throw new RecursoNoEncontradoError('Empleado');
 
     empleado.actualizarSueldo(dto.sueldo);
-    await this.empleadoRepo.save(empleado);
+    await this.empleadoRepo.save(principal, empleado);
     return empleado;
   }
 }

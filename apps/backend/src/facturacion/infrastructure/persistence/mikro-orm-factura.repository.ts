@@ -13,6 +13,7 @@ import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { FacturaMapper } from './factura.mapper';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 @Injectable()
 export class MikroOrmFacturaRepository
@@ -28,13 +29,12 @@ export class MikroOrmFacturaRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Factura | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Factura | null> {
     const entity = await this.em.findOne(
       FacturaEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'cliente', 'estudio', 'lineas'],
@@ -44,13 +44,12 @@ export class MikroOrmFacturaRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByClienteId(clienteId: string): Promise<Factura[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<Factura[]> {
     const entities = await this.em.find(
       FacturaEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'cliente', 'estudio', 'lineas'],
@@ -59,12 +58,11 @@ export class MikroOrmFacturaRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<Factura[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Factura[]> {
     const entities = await this.em.find(
       FacturaEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'cliente', 'estudio', 'lineas'],
@@ -73,15 +71,14 @@ export class MikroOrmFacturaRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(factura: Factura): Promise<void> {
+  async save(principal: EstudioPrincipal, factura: Factura): Promise<void> {
     const estado = await this.em.findOneOrFail(EstadoFacturaEntity, { codigo: factura.estado });
     const cliente = this.em.getReference(ClienteEntity, factura.clienteId);
     const estudio = this.em.getReference(EstudioEntity, factura.estudioId);
 
-    const tenantId = this.getTenantId();
     const existing = await this.em.findOne(
       FacturaEntity,
-      { id: factura.id, estudio: { id: tenantId } },
+      { id: factura.id, estudio: { id: principal.estudioId } },
       {
         populate: ['lineas'],
       },
@@ -146,9 +143,8 @@ export class MikroOrmFacturaRepository
     await this.em.flush();
   }
 
-  async delete(factura: Factura): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(FacturaEntity, { id: factura.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, factura: Factura): Promise<void> {
+    const entity = await this.em.findOne(FacturaEntity, { id: factura.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

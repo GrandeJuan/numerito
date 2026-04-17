@@ -1,6 +1,7 @@
 import { ESTADO_FACTURA } from '../../domain/entities/factura.entity';
 import type { EstadoFactura } from '../../domain/entities/factura.entity';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 export interface EstadoCount {
   estado: EstadoFactura;
@@ -26,8 +27,8 @@ export interface FacturacionStats {
 export class FacturacionStatsQuery {
   constructor(private readonly facturaRepo: FacturaRepository) {}
 
-  async execute(): Promise<FacturacionStats> {
-    const facturas = await this.facturaRepo.findAll();
+  async execute(principal: EstudioPrincipal): Promise<FacturacionStats> {
+    const facturas = await this.facturaRepo.findAll(principal);
 
     const activas = facturas.filter((f) => f.estado !== ESTADO_FACTURA.ANULADA);
 

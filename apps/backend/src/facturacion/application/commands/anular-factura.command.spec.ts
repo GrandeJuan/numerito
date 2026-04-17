@@ -2,6 +2,9 @@ import { AnularFacturaHandler } from './anular-factura.command';
 import { Factura } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
 import { ESTADO_FACTURA } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeFactura = (id = 'factura-1') => {
   const linea = LineaFactura.create({
@@ -44,17 +47,18 @@ describe('AnularFactura Command', () => {
     const factura = makeFactura();
     mockRepo.findById.mockResolvedValue(factura);
 
-    const result = await handler.execute({ id: 'factura-1' });
+    const result = await handler.execute(principal, { id: 'factura-1' });
 
     expect(result.estado).toBe(ESTADO_FACTURA.ANULADA);
-    expect(mockRepo.save).toHaveBeenCalledWith(factura);
+    expect(mockRepo.findById).toHaveBeenCalledWith(principal, 'factura-1');
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, factura);
   });
 
   it('should throw when factura not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({ id: 'nonexistent' }),
+      handler.execute(principal, { id: 'nonexistent' }),
     ).rejects.toThrow('Factura no encontrado');
     expect(mockRepo.save).not.toHaveBeenCalled();
   });

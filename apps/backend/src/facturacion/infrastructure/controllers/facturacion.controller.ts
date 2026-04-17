@@ -16,7 +16,8 @@ import { AnularFacturaHandler } from '../../application/commands/anular-factura.
 import { FACTURA_REPOSITORY } from '../../domain/repositories/factura.repository';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { Inject } from '@nestjs/common';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -32,30 +33,30 @@ export class FacturacionController {
 
   @Get('stats')
   @ApiOperation({ summary: 'Estadisticas de facturacion del estudio' })
-  async stats() {
+  async stats(@Principal() principal: EstudioPrincipal) {
     const query = new FacturacionStatsQuery(this.facturaRepo);
-    const stats = await query.execute();
+    const stats = await query.execute(principal);
     return successResponse(stats);
   }
 
   @Get('facturas')
   @ApiOperation({ summary: 'Listar facturas del estudio' })
-  async list(@Query('page') page = 1, @Query('limit') limit = 20) {
-    const facturas = await this.facturaRepo.findAll();
+  async list(@Principal() principal: EstudioPrincipal, @Query('page') page = 1, @Query('limit') limit = 20) {
+    const facturas = await this.facturaRepo.findAll(principal);
     return successResponse(facturas, { total: facturas.length, page: +page, limit: +limit });
   }
 
   @Post('facturas')
   @ApiOperation({ summary: 'Crear factura' })
-  async create(@Body(new ZodValidationPipe(crearFacturaDtoSchema)) dto: CrearFacturaDto, @EstudioId() estudioId: string) {
-    const result = await this.crearFacturaHandler.execute({ ...dto, estudioId } as CrearFacturaCommand);
+  async create(@Body(new ZodValidationPipe(crearFacturaDtoSchema)) dto: CrearFacturaDto, @Principal() principal: EstudioPrincipal) {
+    const result = await this.crearFacturaHandler.execute(principal, dto as CrearFacturaCommand);
     return successResponse(result);
   }
 
   @Get('facturas/:id')
   @ApiOperation({ summary: 'Obtener factura por ID' })
-  async getById(@Param('id') id: string) {
-    const factura = await this.facturaRepo.findById(id);
+  async getById(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const factura = await this.facturaRepo.findById(principal, id);
     if (!factura) throw new RecursoNoEncontradoError('Factura');
     return successResponse(factura);
   }
@@ -63,13 +64,12 @@ export class FacturacionController {
   @Post('facturas/:id/pago')
   @ApiOperation({ summary: 'Registrar pago en factura' })
   async registrarPago(
+    @Principal() principal: EstudioPrincipal,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(registrarPagoDtoSchema)) dto: RegistrarPagoDto,
-    @EstudioId() estudioId: string,
   ) {
-    const result = await this.registrarPagoHandler.execute({
+    const result = await this.registrarPagoHandler.execute(principal, {
       facturaId: id,
-      estudioId,
       monto: dto.monto,
       medioPagoId: dto.medioPagoId,
       referencia: dto.referencia,
@@ -79,19 +79,20 @@ export class FacturacionController {
 
   @Patch('facturas/:id/anular')
   @ApiOperation({ summary: 'Anular factura' })
-  async anular(@Param('id') id: string) {
-    const result = await this.anularFacturaHandler.execute({ id });
+  async anular(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const result = await this.anularFacturaHandler.execute(principal, { id });
     return successResponse(result);
   }
 
   @Get('cuenta-corriente/:clienteId')
   @ApiOperation({ summary: 'Cuenta corriente de un cliente' })
   async cuentaCorriente(
+    @Principal() principal: EstudioPrincipal,
     @Param('clienteId') clienteId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
   ) {
-    const facturas = await this.facturaRepo.findByClienteId(clienteId);
+    const facturas = await this.facturaRepo.findByClienteId(principal, clienteId);
     return successResponse(facturas, { total: facturas.length, page: +page, limit: +limit });
   }
 }

@@ -1,6 +1,9 @@
 import { RegistrarPagoHandler } from './registrar-pago.command';
 import { Factura } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeFactura = (id = 'factura-1') => {
   const linea = LineaFactura.create({
@@ -51,26 +54,26 @@ describe('RegistrarPago Command', () => {
     const factura = makeFactura();
     mockFacturaRepo.findById.mockResolvedValue(factura);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       facturaId: 'factura-1',
-      estudioId: 'estudio-1',
       monto: 500,
       medioPagoId: 1,
       referencia: 'TRF-001',
     });
 
     expect(result.monto).toBe(500);
-    expect(mockFacturaRepo.save).toHaveBeenCalledWith(factura);
+    expect(mockFacturaRepo.findById).toHaveBeenCalledWith(principal, 'factura-1');
+    expect(mockFacturaRepo.save).toHaveBeenCalledWith(principal, factura);
     expect(mockPagoRepo.save).toHaveBeenCalledTimes(1);
+    expect(mockPagoRepo.save).toHaveBeenCalledWith(principal, expect.anything());
   });
 
   it('should throw when factura not found', async () => {
     mockFacturaRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({
+      handler.execute(principal, {
         facturaId: 'nonexistent',
-        estudioId: 'estudio-1',
         monto: 100,
         medioPagoId: 1,
       }),
@@ -83,9 +86,8 @@ describe('RegistrarPago Command', () => {
     mockFacturaRepo.findById.mockResolvedValue(factura);
 
     await expect(
-      handler.execute({
+      handler.execute(principal, {
         facturaId: 'factura-1',
-        estudioId: 'estudio-1',
         monto: 999999,
         medioPagoId: 1,
       }),
