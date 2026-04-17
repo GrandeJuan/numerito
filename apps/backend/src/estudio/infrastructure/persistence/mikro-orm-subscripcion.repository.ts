@@ -2,9 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { SubscripcionRepository } from '../../domain/repositories/subscripcion.repository';
 import {
-  Subscripcion,
+  type Subscripcion,
   EstadoSubscripcion,
-  CicloFacturacion,
 } from '../../domain/entities/subscripcion.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
@@ -12,6 +11,7 @@ import {
   REQUEST_CONTEXT,
 } from '../../../shared/infrastructure/services/request-context.service';
 import { SubscripcionEntity } from './subscripcion.schema';
+import { SubscripcionMapper } from './subscripcion.mapper';
 import { EstudioEntity } from './estudio.schema';
 import { PlanEntity } from '../../../shared/infrastructure/persistence/plan.schema';
 import { EstadoSubscripcionEntity } from '../../../shared/infrastructure/persistence/estado-subscripcion.schema';
@@ -22,6 +22,8 @@ export class MikroOrmSubscripcionRepository
   extends TenantAwareRepository<Subscripcion>
   implements SubscripcionRepository
 {
+  private readonly mapper = new SubscripcionMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -42,7 +44,7 @@ export class MikroOrmSubscripcionRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<Subscripcion[]> {
@@ -56,7 +58,7 @@ export class MikroOrmSubscripcionRepository
         populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findActiva(): Promise<Subscripcion | null> {
@@ -74,7 +76,7 @@ export class MikroOrmSubscripcionRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async save(subscripcion: Subscripcion): Promise<void> {
@@ -121,18 +123,4 @@ export class MikroOrmSubscripcionRepository
     }
   }
 
-  private toDomain(entity: SubscripcionEntity): Subscripcion {
-    return Subscripcion.reconstitute(
-      {
-        estudioId: entity.estudio.id,
-        planId: String(entity.plan.id),
-        fechaInicio: entity.fechaInicio,
-        fechaFin: entity.fechaFin,
-        estado: entity.estadoSubscripcion.codigo as EstadoSubscripcion,
-        cicloFacturacion: entity.cicloFacturacion.codigo as CicloFacturacion,
-        autoRenovacion: entity.autoRenovacion,
-      },
-      entity.id,
-    );
-  }
 }

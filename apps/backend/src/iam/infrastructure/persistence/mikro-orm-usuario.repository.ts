@@ -2,19 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { GlobalRepository } from '../../../shared/domain';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
-import { Usuario } from '../../domain/entities/usuario.entity';
+import type { Usuario } from '../../domain/entities/usuario.entity';
 import { Email } from '../../domain/value-objects/email.vo';
-import { Password } from '../../domain/value-objects/password.vo';
 import { UsuarioEntity } from './usuario.schema';
+import { UsuarioMapper } from './usuario.mapper';
 import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema';
-import type { Rol } from '@numerito/shared';
-import type { AuthProvider } from '../../domain/entities/usuario.entity';
 
 @Injectable()
 export class MikroOrmUsuarioRepository
   extends GlobalRepository<Usuario>
   implements UsuarioRepository
 {
+  private readonly mapper = new UsuarioMapper();
+
   constructor(private readonly em: EntityManager) {
     super();
   }
@@ -22,7 +22,7 @@ export class MikroOrmUsuarioRepository
   async findById(id: string): Promise<Usuario | null> {
     const entity = await this.em.findOne(UsuarioEntity, { id }, { populate: ['rol'] });
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByEmail(email: Email): Promise<Usuario | null> {
@@ -32,12 +32,12 @@ export class MikroOrmUsuarioRepository
       { populate: ['rol'] },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<Usuario[]> {
     const entities = await this.em.findAll(UsuarioEntity, { populate: ['rol'] });
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(usuario: Usuario): Promise<void> {
@@ -82,24 +82,5 @@ export class MikroOrmUsuarioRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: UsuarioEntity): Usuario {
-    return Usuario.reconstitute(
-      {
-        email: Email.create(entity.email),
-        password: Password.fromHash(entity.passwordHash),
-        nombre: entity.nombre,
-        apellido: entity.apellido,
-        rol: entity.rol.codigo as Rol,
-        isActive: entity.isActive,
-        emailVerified: entity.emailVerified,
-        provider: entity.provider as AuthProvider,
-        providerId: entity.providerId,
-        themePreference: (entity.themePreference as 'light' | 'dark') ?? 'light',
-        avatarUrl: entity.avatarUrl,
-      },
-      entity.id,
-    );
   }
 }

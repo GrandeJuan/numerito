@@ -1,23 +1,25 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { UsuarioEstudioRepository } from '../../domain/repositories/usuario-estudio.repository';
-import { UsuarioEstudio } from '../../domain/entities/usuario-estudio.entity';
+import type { UsuarioEstudio } from '../../domain/entities/usuario-estudio.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
   REQUEST_CONTEXT,
 } from '../../../shared/infrastructure/services/request-context.service';
 import { UsuarioEstudioEntity } from './usuario-estudio.schema';
+import { UsuarioEstudioMapper } from './usuario-estudio.mapper';
 import { UsuarioEntity } from './usuario.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { RolEntity } from '../../../shared/infrastructure/persistence/rol.schema';
-import type { Rol } from '@numerito/shared';
 
 @Injectable()
 export class MikroOrmUsuarioEstudioRepository
   extends TenantAwareRepository<UsuarioEstudio>
   implements UsuarioEstudioRepository
 {
+  private readonly mapper = new UsuarioEstudioMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -32,7 +34,7 @@ export class MikroOrmUsuarioEstudioRepository
       { id, estudio: { id: tenantId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
-    return entity ? this.toDomain(entity) : null;
+    return entity ? this.mapper.toDomain(this.mapper.fromSchema(entity)) : null;
   }
 
   async findByUsuarioId(usuarioId: string): Promise<UsuarioEstudio[]> {
@@ -43,7 +45,7 @@ export class MikroOrmUsuarioEstudioRepository
       { usuario: { id: usuarioId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByUsuarioAndEstudio(usuarioId: string): Promise<UsuarioEstudio | null> {
@@ -53,7 +55,7 @@ export class MikroOrmUsuarioEstudioRepository
       { usuario: { id: usuarioId }, estudio: { id: tenantId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
-    return entity ? this.toDomain(entity) : null;
+    return entity ? this.mapper.toDomain(this.mapper.fromSchema(entity)) : null;
   }
 
   async findAll(): Promise<UsuarioEstudio[]> {
@@ -63,7 +65,7 @@ export class MikroOrmUsuarioEstudioRepository
       { estudio: { id: tenantId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(membership: UsuarioEstudio): Promise<void> {
@@ -103,17 +105,5 @@ export class MikroOrmUsuarioEstudioRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: UsuarioEstudioEntity): UsuarioEstudio {
-    return UsuarioEstudio.reconstitute(
-      {
-        usuarioId: entity.usuario.id,
-        estudioId: entity.estudio.id,
-        rol: entity.rol.codigo as Rol,
-        isActive: entity.isActive,
-      },
-      entity.id,
-    );
   }
 }
