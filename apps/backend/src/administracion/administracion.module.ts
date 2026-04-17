@@ -24,12 +24,30 @@ import { AdminEstudiosService } from './application/services/admin-estudios.serv
 import { AdminPlanesService } from './application/services/admin-planes.service';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
-import { ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW } from '../estudio/application/public-views';
+import {
+  ESTUDIO_SEARCH_VIEW,
+  ESTUDIOS_ADMIN_LIST_VIEW,
+  ESTUDIO_ADMIN_KPIS_VIEW,
+  ESTUDIO_ADMIN_SPARKLINE_VIEW,
+  ESTUDIO_REGISTROS_MENSUALES_VIEW,
+  ESTUDIO_DISTRIBUCION_PLANES_VIEW,
+  ESTUDIO_RECIENTES_ADMIN_VIEW,
+} from '../estudio/application/public-views';
 import type { EstudioSearchView } from '../estudio/application/views/estudio-search.view';
 import type { EstudiosAdminListView } from '../estudio/application/views/estudios-admin-list.view';
-import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from '../iam/application/public-views';
+import type { EstudioAdminKpisView } from '../estudio/application/views/estudio-admin-kpis.view';
+import type { EstudioAdminSparklineView } from '../estudio/application/views/estudio-admin-sparkline.view';
+import type { EstudioRegistrosMensualesView } from '../estudio/application/views/estudio-registros-mensuales.view';
+import type { EstudioDistribucionPlanesView } from '../estudio/application/views/estudio-distribucion-planes.view';
+import type { EstudioRecientesAdminView } from '../estudio/application/views/estudio-recientes-admin.view';
+import {
+  USUARIO_SEARCH_VIEW,
+  USUARIOS_ADMIN_LIST_VIEW,
+  USUARIO_ADMIN_KPIS_VIEW,
+} from '../iam/application/public-views';
 import type { UsuarioSearchView } from '../iam/application/views/usuario-search.view';
 import type { UsuariosAdminListView } from '../iam/application/views/usuarios-admin-list.view';
+import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admin-kpis.view';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
@@ -42,8 +60,33 @@ import type { UsuariosAdminListView } from '../iam/application/views/usuarios-ad
     MaterializeDashboardSnapshotService,
     {
       provide: DashboardStatsComputer,
-      useFactory: (em: EntityManager) => new DashboardStatsComputer(em),
-      inject: [EntityManager],
+      useFactory: (
+        estudioKpis: EstudioAdminKpisView,
+        estudioSparkline: EstudioAdminSparklineView,
+        registrosMensuales: EstudioRegistrosMensualesView,
+        distribucionPlanes: EstudioDistribucionPlanesView,
+        estudiosRecientes: EstudioRecientesAdminView,
+        usuarioKpis: UsuarioAdminKpisView,
+        em: EntityManager,
+      ) =>
+        new DashboardStatsComputer(
+          estudioKpis,
+          estudioSparkline,
+          registrosMensuales,
+          distribucionPlanes,
+          estudiosRecientes,
+          usuarioKpis,
+          em,
+        ),
+      inject: [
+        ESTUDIO_ADMIN_KPIS_VIEW,
+        ESTUDIO_ADMIN_SPARKLINE_VIEW,
+        ESTUDIO_REGISTROS_MENSUALES_VIEW,
+        ESTUDIO_DISTRIBUCION_PLANES_VIEW,
+        ESTUDIO_RECIENTES_ADMIN_VIEW,
+        USUARIO_ADMIN_KPIS_VIEW,
+        EntityManager,
+      ],
     },
     {
       provide: AdminEstudiosService,

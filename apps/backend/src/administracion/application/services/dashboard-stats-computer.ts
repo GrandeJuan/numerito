@@ -1,4 +1,10 @@
 import { EntityManager } from '@mikro-orm/core';
+import type { EstudioAdminKpisView } from '../../estudio/application/views/estudio-admin-kpis.view';
+import type { EstudioAdminSparklineView } from '../../estudio/application/views/estudio-admin-sparkline.view';
+import type { EstudioRegistrosMensualesView } from '../../estudio/application/views/estudio-registros-mensuales.view';
+import type { EstudioDistribucionPlanesView } from '../../estudio/application/views/estudio-distribucion-planes.view';
+import type { EstudioRecientesAdminView } from '../../estudio/application/views/estudio-recientes-admin.view';
+import type { UsuarioAdminKpisView } from '../../iam/application/views/usuario-admin-kpis.view';
 import type {
   AdminDashboardStats,
   GrowthDataPoint,
@@ -9,124 +15,37 @@ import type {
 } from '../queries/obtener-admin-dashboard-stats.query';
 
 /**
- * Computes dashboard stats from raw SQL queries.
+ * Computes dashboard stats by composing source-context public views.
  *
- * Extracted from ObtenerAdminDashboardStatsHandler so it can be used by:
- * 1. The MaterializeDashboardSnapshot service (to populate the read model)
- * 2. The handler as a fallback when the snapshot is stale or empty
- *
- * Uses raw SQL to avoid importing entities from other bounded contexts.
+ * 12 of 14 queries are delegated to 6 views in estudio and iam contexts.
+ * Only topTenants and registrosRecientes remain as raw SQL — they join
+ * across estudio + iam + clientes contexts (cross-context UNION pattern
+ * deferred to a future iteration).
  */
 export class DashboardStatsComputer {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly estudioKpis: EstudioAdminKpisView,
+    private readonly estudioSparkline: EstudioAdminSparklineView,
+    private readonly registrosMensuales: EstudioRegistrosMensualesView,
+    private readonly distribucionPlanes: EstudioDistribucionPlanesView,
+    private readonly estudiosRecientes: EstudioRecientesAdminView,
+    private readonly usuarioKpis: UsuarioAdminKpisView,
+    private readonly em: EntityManager,
+  ) {}
 
   async compute(): Promise<AdminDashboardStats> {
-    const conn = this.em.getConnection();
-
-    const [
-      [{ count: estudiosActivosCount }],
-      [{ count: totalUsuariosCount }],
-      [{ count: subscripcionesActivasCount }],
-      [{ count: subscripcionesPorVencerCount }],
-      estudiosHistorico,
-      usuariosHistorico,
-      subscripcionesHistorico,
-      mrrHistorico,
-      churnHistorico,
-    ] = await Promise.all([
-      conn.execute(`SELECT COUNT(*)::int as count FROM estudio WHERE is_active = true`),
-      conn.execute(`SELECT COUNT(*)::int as count FROM usuario`),
-      conn.execute(
-        `SELECT COUNT(*)::int as count FROM subscripcion s
-         JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
-         WHERE es.codigo = 'ACTIVA'`,
-      ),
-      conn.execute(
-        `SELECT COUNT(*)::int as count FROM subscripcion
-         WHERE fecha_fin >= NOW() AND fecha_fin <= NOW() + INTERVAL '30 days'`,
-      ),
-      conn.execute(
-        `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
-                (SELECT COUNT(*) FROM estudio WHERE is_active = true AND created_at <= d.mes + INTERVAL '1 month' - INTERVAL '1 day')::int as cantidad
-         FROM generate_series(
-           DATE_TRUNC('month', NOW()) - INTERVAL '11 months',
-           DATE_TRUNC('month', NOW()),
-           '1 month'
-         ) d(mes)
-         ORDER BY d.mes`,
-      ),
-      conn.execute(
-        `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
-                (SELECT COUNT(*) FROM usuario WHERE created_at <= d.mes + INTERVAL '1 month' - INTERVAL '1 day')::int as cantidad
-         FROM generate_series(
-           DATE_TRUNC('month', NOW()) - INTERVAL '11 months',
-           DATE_TRUNC('month', NOW()),
-           '1 month'
-         ) d(mes)
-         ORDER BY d.mes`,
-      ),
-      conn.execute(
-        `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
-                (SELECT COUNT(*) FROM subscripcion s
-                 JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
-                 WHERE es.codigo = 'ACTIVA'
-                   AND s.fecha_inicio <= d.mes + INTERVAL '1 month' - INTERVAL '1 day'
-                   AND (s.fecha_fin IS NULL OR s.fecha_fin >= d.mes))::int as cantidad
-         FROM generate_series(
-           DATE_TRUNC('month', NOW()) - INTERVAL '11 months',
-           DATE_TRUNC('month', NOW()),
-           '1 month'
-         ) d(mes)
-         ORDER BY d.mes`,
-      ),
-      conn.execute(
-        `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
-                COALESCE((SELECT SUM(p.precio) FROM subscripcion s
-                 JOIN plan p ON s.plan_id = p.id
-                 JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
-                 WHERE es.codigo = 'ACTIVA'
-                   AND s.fecha_inicio <= d.mes + INTERVAL '1 month' - INTERVAL '1 day'
-                   AND (s.fecha_fin IS NULL OR s.fecha_fin >= d.mes)), 0) as mrr
-         FROM generate_series(
-           DATE_TRUNC('month', NOW()) - INTERVAL '11 months',
-           DATE_TRUNC('month', NOW()),
-           '1 month'
-         ) d(mes)
-         ORDER BY d.mes`,
-      ),
-      conn.execute(
-        `SELECT TO_CHAR(d.mes, 'YYYY-MM') as mes,
-                (SELECT COUNT(*) FROM subscripcion s
-                 JOIN estado_subscripcion es ON s.estado_subscripcion_id = es.id
-                 WHERE es.codigo = 'CANCELADA'
-                   AND s.updated_at >= d.mes
-                   AND s.updated_at < d.mes + INTERVAL '1 month')::int as canceladas,
-                GREATEST((SELECT COUNT(*) FROM subscripcion s2
-                 JOIN estado_subscripcion es2 ON s2.estado_subscripcion_id = es2.id
-                 WHERE es2.codigo IN ('ACTIVA', 'CANCELADA', 'SUSPENDIDA', 'VENCIDA')
-                   AND s2.fecha_inicio < d.mes
-                   AND (s2.fecha_fin IS NULL OR s2.fecha_fin >= d.mes)), 1)::int as activas_inicio
-         FROM generate_series(
-           DATE_TRUNC('month', NOW()) - INTERVAL '11 months',
-           DATE_TRUNC('month', NOW()),
-           '1 month'
-         ) d(mes)
-         ORDER BY d.mes`,
-      ),
+    const [kpis, sparkline, usuarios, registros, distribucion, recientes] = await Promise.all([
+      this.estudioKpis.execute(),
+      this.estudioSparkline.execute(),
+      this.usuarioKpis.execute(),
+      this.registrosMensuales.execute(),
+      this.distribucionPlanes.execute(),
+      this.estudiosRecientes.execute(),
     ]);
 
-    const estudiosActivos = Number(estudiosActivosCount);
-    const totalUsuarios = Number(totalUsuariosCount);
-    const subscripcionesActivas = Number(subscripcionesActivasCount);
-    const subscripcionesPorVencer = Number(subscripcionesPorVencerCount);
-
-    const estudiosSparkline = this.extractSparkline(estudiosHistorico, 'cantidad');
-    const usuariosSparkline = this.extractSparkline(usuariosHistorico, 'cantidad');
-    const subscripcionesSparkline = this.extractSparkline(subscripcionesHistorico, 'cantidad');
-    const mrrSparkline = this.extractSparkline(mrrHistorico, 'mrr');
-    const churnSparkline = churnHistorico.map((r: any) =>
-      Math.round((Number(r.canceladas) / Number(r.activas_inicio)) * 10000) / 100,
-    );
+    const { estudiosActivos, subscripcionesActivas, subscripcionesPorVencer } = kpis;
+    const { estudios: estudiosSparkline, subscripciones: subscripcionesSparkline, mrr: mrrSparkline, churn: churnSparkline } = sparkline;
+    const { totalUsuarios, sparkline: usuariosSparkline } = usuarios;
 
     const currentMrr = mrrSparkline[mrrSparkline.length - 1] ?? 0;
     const currentChurn = churnSparkline[churnSparkline.length - 1] ?? 0;
@@ -143,28 +62,6 @@ export class DashboardStatsComputer {
       return { mes, mrr, arr: mrr * 12 };
     });
 
-    const registrosRaw = await conn.execute(
-      `SELECT TO_CHAR(created_at, 'YYYY-MM') as mes, COUNT(*)::int as cantidad
-       FROM estudio
-       WHERE created_at >= NOW() - INTERVAL '12 months'
-       GROUP BY mes
-       ORDER BY mes`,
-    );
-    const registrosMensuales = this.fillMonths(registrosRaw);
-
-    const distribucionRaw = await conn.execute(
-      `SELECT p.nombre as plan, COUNT(*)::int as cantidad
-       FROM estudio e
-       JOIN plan p ON e.plan_id = p.id
-       WHERE e.is_active = true
-       GROUP BY p.nombre
-       ORDER BY cantidad DESC`,
-    );
-    const distribucionPlanes = distribucionRaw.map((r: any) => ({
-      plan: r.plan,
-      cantidad: Number(r.cantidad),
-    }));
-
     const alertas: AdminDashboardStats['alertas'] = [];
     if (subscripcionesPorVencer > 0) {
       alertas.push({
@@ -174,20 +71,17 @@ export class DashboardStatsComputer {
       });
     }
 
-    const estudiosRecientesRaw: any[] = await conn.execute(
-      `SELECT e.id, e.nombre, p.nombre as plan, e.is_active, e.created_at
-       FROM estudio e
-       JOIN plan p ON e.plan_id = p.id
-       ORDER BY e.created_at DESC
-       LIMIT 10`,
-    );
-    const estudiosRecientes = estudiosRecientesRaw.map((e: any) => ({
+    const estudiosRecientesFormatted = recientes.map((e) => ({
       id: e.id,
       nombre: e.nombre,
-      plan: e.plan ?? 'Sin plan',
-      estado: e.is_active ? 'Activo' : 'Inactivo',
-      creadoEn: new Date(e.created_at).toISOString().split('T')[0],
+      plan: e.plan,
+      estado: e.isActive ? 'Activo' : 'Inactivo',
+      creadoEn: e.createdAt,
     }));
+
+    // Cross-context queries — remain as raw SQL (topTenants joins estudio +
+    // iam + clientes; registrosRecientes joins estudio + iam).
+    const conn = this.em.getConnection();
 
     const topTenantsRaw: any[] = await conn.execute(
       `SELECT
@@ -271,10 +165,10 @@ export class DashboardStatsComputer {
       },
       growthData,
       revenueData,
-      registrosMensuales,
-      distribucionPlanes,
+      registrosMensuales: registros,
+      distribucionPlanes: distribucion,
       alertas,
-      estudiosRecientes,
+      estudiosRecientes: estudiosRecientesFormatted,
       topTenants,
       registrosRecientes,
     };
@@ -296,10 +190,6 @@ export class DashboardStatsComputer {
     };
   }
 
-  private extractSparkline(rows: any[], field: string): number[] {
-    return rows.map((r: any) => Number(r[field]) || 0);
-  }
-
   private buildMonthLabels(): string[] {
     const labels: string[] = [];
     const now = new Date();
@@ -308,19 +198,5 @@ export class DashboardStatsComputer {
       labels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
     return labels;
-  }
-
-  private fillMonths(raw: any[]): { mes: string; cantidad: number }[] {
-    const map = new Map<string, number>();
-    raw.forEach((r: any) => map.set(r.mes, Number(r.cantidad)));
-
-    const months: { mes: string; cantidad: number }[] = [];
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      months.push({ mes: key, cantidad: map.get(key) ?? 0 });
-    }
-    return months;
   }
 }

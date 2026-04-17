@@ -1,51 +1,41 @@
 import { DashboardStatsComputer } from './dashboard-stats-computer';
 
-function make12Rows(field: string, values: number[]) {
-  const now = new Date();
-  return values.map((v, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-    const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    return { mes, [field]: String(v) };
-  });
-}
-
-function makeChurnRows(canceladas: number[], activas: number[]) {
-  const now = new Date();
-  return canceladas.map((c, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-    const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    return { mes, canceladas: String(c), activas_inicio: String(activas[i]) };
-  });
-}
-
 describe('DashboardStatsComputer', () => {
   let computer: DashboardStatsComputer;
+  let mockEstudioKpis: any;
+  let mockEstudioSparkline: any;
+  let mockRegistrosMensuales: any;
+  let mockDistribucionPlanes: any;
+  let mockEstudiosRecientes: any;
+  let mockUsuarioKpis: any;
   let mockExecute: jest.Mock;
   let mockEm: any;
 
-  function setupDefaultMocks() {
-    const estudiosHist = make12Rows('cantidad', [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10]);
-    const usuariosHist = make12Rows('cantidad', [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50]);
-    const subsHist = make12Rows('cantidad', [2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8]);
-    const mrrHist = make12Rows('mrr', [1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
-    const churnHist = makeChurnRows(
-      [1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
-      [10, 12, 14, 15, 16, 18, 20, 20, 22, 24, 25, 27],
-    );
+  function setupDefaultViews() {
+    mockEstudioKpis.execute.mockResolvedValue({
+      estudiosActivos: 10,
+      subscripcionesActivas: 8,
+      subscripcionesPorVencer: 2,
+    });
 
+    mockEstudioSparkline.execute.mockResolvedValue({
+      estudios: [3, 4, 5, 5, 6, 6, 7, 7, 8, 9, 9, 10],
+      subscripciones: [2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8],
+      mrr: [1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000],
+      churn: [10, 0, 7.14, 0, 6.25, 0, 0, 5, 0, 0, 4, 0],
+    });
+
+    mockUsuarioKpis.execute.mockResolvedValue({
+      totalUsuarios: 50,
+      sparkline: [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50],
+    });
+
+    mockRegistrosMensuales.execute.mockResolvedValue([]);
+    mockDistribucionPlanes.execute.mockResolvedValue([]);
+    mockEstudiosRecientes.execute.mockResolvedValue([]);
+
+    // Cross-context raw SQL: topTenants + registrosRecientes
     mockExecute
-      .mockResolvedValueOnce([{ count: 10 }])
-      .mockResolvedValueOnce([{ count: 50 }])
-      .mockResolvedValueOnce([{ count: 8 }])
-      .mockResolvedValueOnce([{ count: 2 }])
-      .mockResolvedValueOnce(estudiosHist)
-      .mockResolvedValueOnce(usuariosHist)
-      .mockResolvedValueOnce(subsHist)
-      .mockResolvedValueOnce(mrrHist)
-      .mockResolvedValueOnce(churnHist)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
         { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: '10', clientes: '30', raw_score: '90' },
         { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: '5', clientes: '20', raw_score: '55' },
@@ -56,15 +46,30 @@ describe('DashboardStatsComputer', () => {
   }
 
   beforeEach(() => {
+    mockEstudioKpis = { execute: jest.fn().mockResolvedValue({ estudiosActivos: 0, subscripcionesActivas: 0, subscripcionesPorVencer: 0 }) };
+    mockEstudioSparkline = { execute: jest.fn().mockResolvedValue({ estudios: [], subscripciones: [], mrr: [], churn: [] }) };
+    mockRegistrosMensuales = { execute: jest.fn().mockResolvedValue([]) };
+    mockDistribucionPlanes = { execute: jest.fn().mockResolvedValue([]) };
+    mockEstudiosRecientes = { execute: jest.fn().mockResolvedValue([]) };
+    mockUsuarioKpis = { execute: jest.fn().mockResolvedValue({ totalUsuarios: 0, sparkline: [] }) };
     mockExecute = jest.fn().mockResolvedValue([]);
     mockEm = {
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
-    computer = new DashboardStatsComputer(mockEm);
+
+    computer = new DashboardStatsComputer(
+      mockEstudioKpis,
+      mockEstudioSparkline,
+      mockRegistrosMensuales,
+      mockDistribucionPlanes,
+      mockEstudiosRecientes,
+      mockUsuarioKpis,
+      mockEm,
+    );
   });
 
   it('should return stats with correct shape', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -80,7 +85,7 @@ describe('DashboardStatsComputer', () => {
   });
 
   it('should return 6 KPIs with sparkline data', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -95,12 +100,11 @@ describe('DashboardStatsComputer', () => {
       expect(typeof kpi.delta).toBe('string');
       expect(typeof kpi.deltaUp).toBe('boolean');
       expect(Array.isArray(kpi.sparkline)).toBe(true);
-      expect(kpi.sparkline).toHaveLength(12);
     }
   });
 
-  it('should calculate KPI values from current counts', async () => {
-    setupDefaultMocks();
+  it('should calculate KPI values from view results', async () => {
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -110,7 +114,7 @@ describe('DashboardStatsComputer', () => {
   });
 
   it('should calculate MRR from sparkline (last month value)', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -118,8 +122,8 @@ describe('DashboardStatsComputer', () => {
     expect(result.kpis.mrr.sparkline).toEqual([1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
   });
 
-  it('should calculate churn as (canceladas / activas_inicio) * 100', async () => {
-    setupDefaultMocks();
+  it('should calculate churn from sparkline (last month value)', async () => {
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -128,7 +132,7 @@ describe('DashboardStatsComputer', () => {
   });
 
   it('should calculate delta as percentage change from previous month', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -136,8 +140,56 @@ describe('DashboardStatsComputer', () => {
     expect(result.kpis.estudiosActivos.deltaUp).toBe(true);
   });
 
+  it('should delegate estudio KPIs to EstudioAdminKpisView', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockEstudioKpis.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate sparklines to EstudioAdminSparklineView', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockEstudioSparkline.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate usuario KPIs to UsuarioAdminKpisView', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockUsuarioKpis.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate registros mensuales to view', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockRegistrosMensuales.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate distribucion planes to view', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockDistribucionPlanes.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate estudios recientes to view', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    expect(mockEstudiosRecientes.execute).toHaveBeenCalledTimes(1);
+  });
+
   it('should return topTenants with activity scores normalized to 0-100', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -154,7 +206,7 @@ describe('DashboardStatsComputer', () => {
   });
 
   it('should return registrosRecientes with email and formatted date', async () => {
-    setupDefaultMocks();
+    setupDefaultViews();
 
     const result = await computer.compute();
 
@@ -168,8 +220,35 @@ describe('DashboardStatsComputer', () => {
     });
   });
 
-  it('should not import entities from other bounded contexts', () => {
-    const computer = new DashboardStatsComputer({} as any);
-    expect(computer).toBeDefined();
+  it('should generate alerta when subscripciones por vencer > 0', async () => {
+    setupDefaultViews();
+
+    const result = await computer.compute();
+
+    expect(result.alertas).toHaveLength(1);
+    expect(result.alertas[0].tipo).toBe('warning');
+    expect(result.alertas[0].mensaje).toContain('2 subscripciones');
+  });
+
+  it('should not generate alertas when no subscripciones por vencer', async () => {
+    setupDefaultViews();
+    mockEstudioKpis.execute.mockResolvedValue({
+      estudiosActivos: 10,
+      subscripcionesActivas: 8,
+      subscripcionesPorVencer: 0,
+    });
+
+    const result = await computer.compute();
+
+    expect(result.alertas).toHaveLength(0);
+  });
+
+  it('should only use raw SQL for cross-context queries (topTenants + registrosRecientes)', async () => {
+    setupDefaultViews();
+
+    await computer.compute();
+
+    // Only 2 raw SQL calls should remain (topTenants + registrosRecientes)
+    expect(mockExecute).toHaveBeenCalledTimes(2);
   });
 });

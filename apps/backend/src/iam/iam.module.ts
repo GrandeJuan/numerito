@@ -51,8 +51,9 @@ import { AVATAR_STORAGE } from './domain/ports/avatar-storage.port';
 import { LocalAvatarStorageAdapter } from './infrastructure/adapters/local-avatar-storage.adapter';
 import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-storage.adapter';
 import { UsuarioSearchView } from './application/views/usuario-search.view';
-import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from './application/public-views';
+import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW, USUARIO_ADMIN_KPIS_VIEW } from './application/public-views';
 import { UsuariosAdminListView } from './application/views/usuarios-admin-list.view';
+import { UsuarioAdminKpisView } from './application/views/usuario-admin-kpis.view';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
@@ -141,7 +142,12 @@ import { UsuariosAdminListView } from './application/views/usuarios-admin-list.v
       useFactory: (em: EntityManager) => new UsuariosAdminListView(em),
       inject: [EntityManager],
     },
+    {
+      provide: USUARIO_ADMIN_KPIS_VIEW,
+      useFactory: (em: EntityManager) => new UsuarioAdminKpisView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard, USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW],
+  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard, USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW, USUARIO_ADMIN_KPIS_VIEW],
 })
 export class IamModule {}

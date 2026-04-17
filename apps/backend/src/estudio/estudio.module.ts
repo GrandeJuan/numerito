@@ -15,8 +15,21 @@ import { CambiarPlanSubscripcionHandler } from './application/commands/cambiar-p
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 import { EstudioSearchView } from './application/views/estudio-search.view';
-import { ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW } from './application/public-views';
+import {
+  ESTUDIO_SEARCH_VIEW,
+  ESTUDIOS_ADMIN_LIST_VIEW,
+  ESTUDIO_ADMIN_KPIS_VIEW,
+  ESTUDIO_ADMIN_SPARKLINE_VIEW,
+  ESTUDIO_REGISTROS_MENSUALES_VIEW,
+  ESTUDIO_DISTRIBUCION_PLANES_VIEW,
+  ESTUDIO_RECIENTES_ADMIN_VIEW,
+} from './application/public-views';
 import { EstudiosAdminListView } from './application/views/estudios-admin-list.view';
+import { EstudioAdminKpisView } from './application/views/estudio-admin-kpis.view';
+import { EstudioAdminSparklineView } from './application/views/estudio-admin-sparkline.view';
+import { EstudioRegistrosMensualesView } from './application/views/estudio-registros-mensuales.view';
+import { EstudioDistribucionPlanesView } from './application/views/estudio-distribucion-planes.view';
+import { EstudioRecientesAdminView } from './application/views/estudio-recientes-admin.view';
 
 @Module({
   imports: [],
@@ -59,7 +72,32 @@ import { EstudiosAdminListView } from './application/views/estudios-admin-list.v
       useFactory: (em: EntityManager) => new EstudiosAdminListView(em),
       inject: [EntityManager],
     },
+    {
+      provide: ESTUDIO_ADMIN_KPIS_VIEW,
+      useFactory: (em: EntityManager) => new EstudioAdminKpisView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIO_ADMIN_SPARKLINE_VIEW,
+      useFactory: (em: EntityManager) => new EstudioAdminSparklineView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIO_REGISTROS_MENSUALES_VIEW,
+      useFactory: (em: EntityManager) => new EstudioRegistrosMensualesView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIO_DISTRIBUCION_PLANES_VIEW,
+      useFactory: (em: EntityManager) => new EstudioDistribucionPlanesView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIO_RECIENTES_ADMIN_VIEW,
+      useFactory: (em: EntityManager) => new EstudioRecientesAdminView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY, ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW],
+  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY, ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW, ESTUDIO_ADMIN_KPIS_VIEW, ESTUDIO_ADMIN_SPARKLINE_VIEW, ESTUDIO_REGISTROS_MENSUALES_VIEW, ESTUDIO_DISTRIBUCION_PLANES_VIEW, ESTUDIO_RECIENTES_ADMIN_VIEW],
 })
 export class EstudioModule {}
