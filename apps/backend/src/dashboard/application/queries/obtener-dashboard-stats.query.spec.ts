@@ -7,6 +7,11 @@ describe('ObtenerDashboardStatsHandler', () => {
   let mockClienteSummary: any;
   let mockVencimientosProximos: any;
   let mockTareasPendientes: any;
+  let mockVencimientosPorEstado: any;
+  let mockProximosVencimientosDetalle: any;
+  let mockCargaTrabajo: any;
+  let mockFacturacionMes: any;
+  let mockFacturacionMensual: any;
 
   const estudioId = 'estudio-uuid';
   const usuarioId = 'usuario-uuid';
@@ -27,10 +32,35 @@ describe('ObtenerDashboardStatsHandler', () => {
     mockTareasPendientes = {
       execute: jest.fn().mockResolvedValue({ totalTareasPendientes: 0 }),
     };
+    mockVencimientosPorEstado = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    mockProximosVencimientosDetalle = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    mockCargaTrabajo = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    mockFacturacionMes = {
+      execute: jest.fn().mockResolvedValue({ total: 0 }),
+    };
+    mockFacturacionMensual = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
   });
 
   function createHandler() {
-    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary, mockVencimientosProximos, mockTareasPendientes);
+    handler = new ObtenerDashboardStatsHandler(
+      mockEm,
+      mockClienteSummary,
+      mockVencimientosProximos,
+      mockTareasPendientes,
+      mockVencimientosPorEstado,
+      mockProximosVencimientosDetalle,
+      mockCargaTrabajo,
+      mockFacturacionMes,
+      mockFacturacionMensual,
+    );
   }
 
   function mockMembership(rol: string) {
@@ -113,6 +143,71 @@ describe('ObtenerDashboardStatsHandler', () => {
       expect(mockTareasPendientes.execute).toHaveBeenCalledWith({
         estudioId,
       });
+    });
+
+    it('should delegate vencimientosPorEstado to view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+      mockVencimientosPorEstado.execute.mockResolvedValueOnce([
+        { estado: 'PENDIENTE', cantidad: 10 },
+      ]);
+
+      const result = await handler.execute({ estudioId, usuarioId });
+
+      expect(result.vencimientosPorEstado).toEqual([{ estado: 'PENDIENTE', cantidad: 10 }]);
+      expect(mockVencimientosPorEstado.execute).toHaveBeenCalledWith({ estudioId });
+    });
+
+    it('should delegate proximosVencimientos to view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+      mockProximosVencimientosDetalle.execute.mockResolvedValueOnce([
+        { id: 'v-1', cliente: 'Acme', obligacion: 'IVA', fecha: '2026-05-01', estado: 'PENDIENTE' },
+      ]);
+
+      const result = await handler.execute({ estudioId, usuarioId });
+
+      expect(result.proximosVencimientos).toEqual([
+        { id: 'v-1', cliente: 'Acme', obligacion: 'IVA', fecha: '2026-05-01', estado: 'PENDIENTE' },
+      ]);
+      expect(mockProximosVencimientosDetalle.execute).toHaveBeenCalledWith({ estudioId });
+    });
+
+    it('should delegate facturacionMes to view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+      mockFacturacionMes.execute.mockResolvedValueOnce({ total: 250000 });
+
+      const result = await handler.execute({ estudioId, usuarioId });
+
+      expect(result.kpis.facturacionMes).toBe(250000);
+      expect(mockFacturacionMes.execute).toHaveBeenCalledWith({ estudioId });
+    });
+
+    it('should delegate facturacionMensual to view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+      mockFacturacionMensual.execute.mockResolvedValueOnce([
+        { mes: '2026-03', monto: 100000 },
+      ]);
+
+      const result = await handler.execute({ estudioId, usuarioId });
+
+      expect(result.facturacionMensual).toEqual([{ mes: '2026-03', monto: 100000 }]);
+      expect(mockFacturacionMensual.execute).toHaveBeenCalledWith({ estudioId });
+    });
+
+    it('should delegate cargaTrabajo to view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION']);
+      mockCargaTrabajo.execute.mockResolvedValueOnce([
+        { usuario: 'alice@test.com', tareas: 5 },
+      ]);
+
+      const result = await handler.execute({ estudioId, usuarioId });
+
+      expect(result.cargaTrabajo).toEqual([{ usuario: 'alice@test.com', tareas: 5 }]);
+      expect(mockCargaTrabajo.execute).toHaveBeenCalledWith({ estudioId });
     });
   });
 

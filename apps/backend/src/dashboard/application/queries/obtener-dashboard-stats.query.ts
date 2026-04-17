@@ -3,7 +3,12 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
 import type { ClienteSummaryView } from '../../../clientes/application/views/cliente-summary.view';
 import type { VencimientosProximosView } from '../../../obligaciones/application/views/vencimientos-proximos.view';
+import type { VencimientosPorEstadoView } from '../../../obligaciones/application/views/vencimientos-por-estado.view';
+import type { ProximosVencimientosDetalleView } from '../../../obligaciones/application/views/proximos-vencimientos-detalle.view';
 import type { TareasPendientesView } from '../../../tareas/application/views/tareas-pendientes.view';
+import type { CargaTrabajoView } from '../../../tareas/application/views/carga-trabajo.view';
+import type { FacturacionMesView } from '../../../facturacion/application/views/facturacion-mes.view';
+import type { FacturacionMensualView } from '../../../facturacion/application/views/facturacion-mensual.view';
 
 export type { DashboardStats };
 
@@ -18,6 +23,11 @@ export class ObtenerDashboardStatsHandler {
     private readonly clienteSummary: ClienteSummaryView,
     private readonly vencimientosProximos: VencimientosProximosView,
     private readonly tareasPendientes: TareasPendientesView,
+    private readonly vencimientosPorEstado: VencimientosPorEstadoView,
+    private readonly proximosVencimientosDetalle: ProximosVencimientosDetalleView,
+    private readonly cargaTrabajo: CargaTrabajoView,
+    private readonly facturacionMes: FacturacionMesView,
+    private readonly facturacionMensual: FacturacionMensualView,
   ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
@@ -50,7 +60,7 @@ export class ObtenerDashboardStatsHandler {
     const esEmpleado = rol === 'EMPLEADO';
     const esSocioOResponsable = rol === 'SOCIO' || rol === 'RESPONSABLE';
 
-    // KPIs
+    // KPIs — compose views from source contexts
     const [clienteSummary, vencimientosProximosSummary, tareasPendientesSummary] = await Promise.all([
       this.clienteSummary.execute({
         estudioId: query.estudioId,
@@ -67,77 +77,28 @@ export class ObtenerDashboardStatsHandler {
 
     let facturacionMes: number | undefined;
     if (tieneFacturacion) {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-      const [row] = await conn.execute(
-        `SELECT COALESCE(SUM(total), 0) as total
-         FROM factura
-         WHERE estudio_id = ?
-           AND fecha_emision >= ?
-           AND fecha_emision <= ?`,
-        [query.estudioId, startOfMonth.toISOString(), endOfMonth.toISOString()],
-      );
-      facturacionMes = Number(row?.total) || 0;
+      const result = await this.facturacionMes.execute({ estudioId: query.estudioId });
+      facturacionMes = result.total;
     }
 
-    // Vencimientos por estado (last 6 months)
-    const vencimientosPorEstadoRaw = await conn.execute(
-      `SELECT ev.nombre as estado, COUNT(*)::int as cantidad
-       FROM vencimiento v
-       JOIN estado_vencimiento ev ON v.estado_id = ev.id
-       WHERE v.estudio_id = ?
-         AND v.fecha_vencimiento >= NOW() - INTERVAL '6 months'
-       GROUP BY ev.nombre
-       ORDER BY cantidad DESC`,
-      [query.estudioId],
-    );
-    const vencimientosPorEstado = vencimientosPorEstadoRaw.map((r: any) => ({
-      estado: r.estado,
-      cantidad: Number(r.cantidad),
-    }));
+    // Chart/detail data — compose views from source contexts
+    const vencimientosPorEstado = await this.vencimientosPorEstado.execute({
+      estudioId: query.estudioId,
+    });
 
-    // Facturacion mensual (6 months)
     let facturacionMensual: { mes: string; monto: number }[] | undefined;
     if (tieneFacturacion) {
-      const facturacionRaw = await conn.execute(
-        `SELECT TO_CHAR(fecha_emision, 'YYYY-MM') as mes, COALESCE(SUM(total), 0) as monto
-         FROM factura
-         WHERE estudio_id = ?
-           AND fecha_emision >= NOW() - INTERVAL '6 months'
-         GROUP BY mes
-         ORDER BY mes`,
-        [query.estudioId],
-      );
-      facturacionMensual = facturacionRaw.map((r: any) => ({
-        mes: r.mes,
-        monto: Number(r.monto),
-      }));
+      facturacionMensual = await this.facturacionMensual.execute({
+        estudioId: query.estudioId,
+      });
     }
 
-    // Proximos vencimientos (top 5)
-    const proximosRaw = await conn.execute(
-      `SELECT v.id, c.razon_social as cliente, to2.nombre as obligacion,
-              v.fecha_vencimiento::text as fecha, ev.nombre as estado
-       FROM vencimiento v
-       JOIN cliente c ON v.cliente_id = c.id
-       JOIN tipo_obligacion to2 ON v.tipo_obligacion_id = to2.id
-       JOIN estado_vencimiento ev ON v.estado_id = ev.id
-       WHERE v.estudio_id = ?
-         AND v.fecha_vencimiento >= NOW()
-       ORDER BY v.fecha_vencimiento ASC
-       LIMIT 5`,
-      [query.estudioId],
-    );
-    const proximosVencimientos = proximosRaw.map((r: any) => ({
-      id: r.id,
-      cliente: r.cliente,
-      obligacion: r.obligacion,
-      fecha: r.fecha,
-      estado: r.estado,
-    }));
+    const proximosVencimientos = await this.proximosVencimientosDetalle.execute({
+      estudioId: query.estudioId,
+    });
 
-    // Actividad reciente
+    // Actividad reciente — cross-context query, remains as raw SQL
+    // until a dedicated cross-context view pattern is established.
     const actividadFilter = esEmpleado
       ? `AND (t.responsable_id = '${query.usuarioId}' OR c.responsable_id = '${query.usuarioId}')`
       : '';
@@ -170,24 +131,12 @@ export class ObtenerDashboardStatsHandler {
       ...(r.usuario ? { usuario: r.usuario } : {}),
     }));
 
-    // Carga de trabajo (only SOCIO/RESPONSABLE)
+    // Carga de trabajo — compose view from tareas context
     let cargaTrabajo: { usuario: string; tareas: number }[] | undefined;
     if (esSocioOResponsable) {
-      const cargaRaw = await conn.execute(
-        `SELECT u.email as usuario, COUNT(*)::int as tareas
-         FROM tarea t
-         JOIN usuario u ON t.responsable_id = u.id
-         JOIN estado_tarea et ON t.estado_id = et.id
-         WHERE t.estudio_id = ?
-           AND et.codigo NOT IN ('COMPLETADA', 'CANCELADA')
-         GROUP BY u.email
-         ORDER BY tareas DESC`,
-        [query.estudioId],
-      );
-      cargaTrabajo = cargaRaw.map((r: any) => ({
-        usuario: r.usuario,
-        tareas: Number(r.tareas),
-      }));
+      cargaTrabajo = await this.cargaTrabajo.execute({
+        estudioId: query.estudioId,
+      });
     }
 
     return {

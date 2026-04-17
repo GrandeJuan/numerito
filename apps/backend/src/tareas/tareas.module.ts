@@ -13,7 +13,8 @@ import { AgregarComentarioHandler } from './application/commands/agregar-comenta
 import { TareaListHandler } from './application/queries/tarea-list.query';
 import { TareaKpisHandler } from './application/queries/tarea-kpis.query';
 import { TareasPendientesView } from './application/views/tareas-pendientes.view';
-import { TAREAS_PENDIENTES_VIEW } from './application/public-views';
+import { CargaTrabajoView } from './application/views/carga-trabajo.view';
+import { TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW } from './application/public-views';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -68,7 +69,12 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       inject: [EntityManager],
     },
     { provide: TAREAS_PENDIENTES_VIEW, useClass: TareasPendientesView },
+    {
+      provide: CARGA_TRABAJO_VIEW,
+      useFactory: (em: EntityManager) => new CargaTrabajoView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [TAREA_REPOSITORY, TAREAS_PENDIENTES_VIEW],
+  exports: [TAREA_REPOSITORY, TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW],
 })
 export class TareasModule {}

@@ -13,7 +13,14 @@ import { VencimientoCalendarioHandler } from './application/queries/vencimiento-
 import { VencimientoByIdHandler } from './application/queries/vencimiento-by-id.query';
 import { VencimientosProximosView } from './application/views/vencimientos-proximos.view';
 import { VencimientosPendientesClienteView } from './application/views/vencimientos-pendientes-cliente.view';
-import { VENCIMIENTOS_PROXIMOS_VIEW, VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW } from './application/public-views';
+import { VencimientosPorEstadoView } from './application/views/vencimientos-por-estado.view';
+import { ProximosVencimientosDetalleView } from './application/views/proximos-vencimientos-detalle.view';
+import {
+  VENCIMIENTOS_PROXIMOS_VIEW,
+  VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
+  VENCIMIENTOS_POR_ESTADO_VIEW,
+  PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
+} from './application/public-views';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -70,7 +77,23 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new VencimientosPendientesClienteView(em),
       inject: [EntityManager],
     },
+    {
+      provide: VENCIMIENTOS_POR_ESTADO_VIEW,
+      useFactory: (em: EntityManager) => new VencimientosPorEstadoView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
+      useFactory: (em: EntityManager) => new ProximosVencimientosDetalleView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [VENCIMIENTO_REPOSITORY, VENCIMIENTOS_PROXIMOS_VIEW, VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW],
+  exports: [
+    VENCIMIENTO_REPOSITORY,
+    VENCIMIENTOS_PROXIMOS_VIEW,
+    VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
+    VENCIMIENTOS_POR_ESTADO_VIEW,
+    PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
+  ],
 })
 export class ObligacionesModule {}

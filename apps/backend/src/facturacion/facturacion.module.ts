@@ -11,7 +11,13 @@ import { CrearFacturaHandler } from './application/commands/crear-factura.comman
 import { RegistrarPagoHandler } from './application/commands/registrar-pago.command';
 import { AnularFacturaHandler } from './application/commands/anular-factura.command';
 import { FacturasPendientesClienteView } from './application/views/facturas-pendientes-cliente.view';
-import { FACTURAS_PENDIENTES_CLIENTE_VIEW } from './application/public-views';
+import { FacturacionMesView } from './application/views/facturacion-mes.view';
+import { FacturacionMensualView } from './application/views/facturacion-mensual.view';
+import {
+  FACTURAS_PENDIENTES_CLIENTE_VIEW,
+  FACTURACION_MES_VIEW,
+  FACTURACION_MENSUAL_VIEW,
+} from './application/public-views';
 
 @Module({
   controllers: [FacturacionController],
@@ -41,7 +47,23 @@ import { FACTURAS_PENDIENTES_CLIENTE_VIEW } from './application/public-views';
       useFactory: (em: EntityManager) => new FacturasPendientesClienteView(em),
       inject: [EntityManager],
     },
+    {
+      provide: FACTURACION_MES_VIEW,
+      useFactory: (em: EntityManager) => new FacturacionMesView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: FACTURACION_MENSUAL_VIEW,
+      useFactory: (em: EntityManager) => new FacturacionMensualView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [FACTURA_REPOSITORY, PAGO_REPOSITORY, FACTURAS_PENDIENTES_CLIENTE_VIEW],
+  exports: [
+    FACTURA_REPOSITORY,
+    PAGO_REPOSITORY,
+    FACTURAS_PENDIENTES_CLIENTE_VIEW,
+    FACTURACION_MES_VIEW,
+    FACTURACION_MENSUAL_VIEW,
+  ],
 })
 export class FacturacionModule {}
