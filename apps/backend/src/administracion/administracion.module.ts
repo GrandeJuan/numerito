@@ -32,6 +32,8 @@ import {
   ESTUDIO_REGISTROS_MENSUALES_VIEW,
   ESTUDIO_DISTRIBUCION_PLANES_VIEW,
   ESTUDIO_RECIENTES_ADMIN_VIEW,
+  ESTUDIO_TOP_TENANTS_VIEW,
+  ESTUDIO_REGISTROS_RECIENTES_VIEW,
 } from '../estudio/application/public-views';
 import type { EstudioSearchView } from '../estudio/application/views/estudio-search.view';
 import type { EstudiosAdminListView } from '../estudio/application/views/estudios-admin-list.view';
@@ -40,6 +42,8 @@ import type { EstudioAdminSparklineView } from '../estudio/application/views/est
 import type { EstudioRegistrosMensualesView } from '../estudio/application/views/estudio-registros-mensuales.view';
 import type { EstudioDistribucionPlanesView } from '../estudio/application/views/estudio-distribucion-planes.view';
 import type { EstudioRecientesAdminView } from '../estudio/application/views/estudio-recientes-admin.view';
+import type { EstudioTopTenantsView } from '../estudio/application/views/estudio-top-tenants.view';
+import type { EstudioRegistrosRecientesView } from '../estudio/application/views/estudio-registros-recientes.view';
 import {
   USUARIO_SEARCH_VIEW,
   USUARIOS_ADMIN_LIST_VIEW,
@@ -67,7 +71,8 @@ import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admi
         distribucionPlanes: EstudioDistribucionPlanesView,
         estudiosRecientes: EstudioRecientesAdminView,
         usuarioKpis: UsuarioAdminKpisView,
-        em: EntityManager,
+        topTenants: EstudioTopTenantsView,
+        registrosRecientes: EstudioRegistrosRecientesView,
       ) =>
         new DashboardStatsComputer(
           estudioKpis,
@@ -76,7 +81,8 @@ import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admi
           distribucionPlanes,
           estudiosRecientes,
           usuarioKpis,
-          em,
+          topTenants,
+          registrosRecientes,
         ),
       inject: [
         ESTUDIO_ADMIN_KPIS_VIEW,
@@ -85,7 +91,8 @@ import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admi
         ESTUDIO_DISTRIBUCION_PLANES_VIEW,
         ESTUDIO_RECIENTES_ADMIN_VIEW,
         USUARIO_ADMIN_KPIS_VIEW,
-        EntityManager,
+        ESTUDIO_TOP_TENANTS_VIEW,
+        ESTUDIO_REGISTROS_RECIENTES_VIEW,
       ],
     },
     {

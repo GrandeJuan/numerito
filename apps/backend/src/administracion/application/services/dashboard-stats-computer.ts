@@ -1,26 +1,23 @@
-import { EntityManager } from '@mikro-orm/core';
 import type { EstudioAdminKpisView } from '../../estudio/application/views/estudio-admin-kpis.view';
 import type { EstudioAdminSparklineView } from '../../estudio/application/views/estudio-admin-sparkline.view';
 import type { EstudioRegistrosMensualesView } from '../../estudio/application/views/estudio-registros-mensuales.view';
 import type { EstudioDistribucionPlanesView } from '../../estudio/application/views/estudio-distribucion-planes.view';
 import type { EstudioRecientesAdminView } from '../../estudio/application/views/estudio-recientes-admin.view';
+import type { EstudioTopTenantsView } from '../../estudio/application/views/estudio-top-tenants.view';
+import type { EstudioRegistrosRecientesView } from '../../estudio/application/views/estudio-registros-recientes.view';
 import type { UsuarioAdminKpisView } from '../../iam/application/views/usuario-admin-kpis.view';
 import type {
   AdminDashboardStats,
   GrowthDataPoint,
   KpiWithSparkline,
   RevenueDataPoint,
-  TopTenant,
-  RegistroReciente,
 } from '../queries/obtener-admin-dashboard-stats.query';
 
 /**
  * Computes dashboard stats by composing source-context public views.
  *
- * 12 of 14 queries are delegated to 6 views in estudio and iam contexts.
- * Only topTenants and registrosRecientes remain as raw SQL — they join
- * across estudio + iam + clientes contexts (cross-context UNION pattern
- * deferred to a future iteration).
+ * All 14 queries are delegated to 8 views in estudio and iam contexts.
+ * No raw SQL remains — all cross-context joins are encapsulated in views.
  */
 export class DashboardStatsComputer {
   constructor(
@@ -30,17 +27,20 @@ export class DashboardStatsComputer {
     private readonly distribucionPlanes: EstudioDistribucionPlanesView,
     private readonly estudiosRecientes: EstudioRecientesAdminView,
     private readonly usuarioKpis: UsuarioAdminKpisView,
-    private readonly em: EntityManager,
+    private readonly topTenantsView: EstudioTopTenantsView,
+    private readonly registrosRecientesView: EstudioRegistrosRecientesView,
   ) {}
 
   async compute(): Promise<AdminDashboardStats> {
-    const [kpis, sparkline, usuarios, registros, distribucion, recientes] = await Promise.all([
+    const [kpis, sparkline, usuarios, registros, distribucion, recientes, topTenants, registrosRecientes] = await Promise.all([
       this.estudioKpis.execute(),
       this.estudioSparkline.execute(),
       this.usuarioKpis.execute(),
       this.registrosMensuales.execute(),
       this.distribucionPlanes.execute(),
       this.estudiosRecientes.execute(),
+      this.topTenantsView.execute(),
+      this.registrosRecientesView.execute(),
     ]);
 
     const { estudiosActivos, subscripcionesActivas, subscripcionesPorVencer } = kpis;
@@ -77,76 +77,6 @@ export class DashboardStatsComputer {
       plan: e.plan,
       estado: e.isActive ? 'Activo' : 'Inactivo',
       creadoEn: e.createdAt,
-    }));
-
-    // Cross-context queries — remain as raw SQL (topTenants joins estudio +
-    // iam + clientes; registrosRecientes joins estudio + iam).
-    const conn = this.em.getConnection();
-
-    const topTenantsRaw: any[] = await conn.execute(
-      `SELECT
-         e.id,
-         e.nombre,
-         p.nombre as plan,
-         COALESCE(ue.usuarios_count, 0)::int as usuarios,
-         COALESCE(c.clientes_count, 0)::int as clientes,
-         (COALESCE(ue.usuarios_count, 0) * 3 + COALESCE(c.clientes_count, 0) * 2)::int as raw_score
-       FROM estudio e
-       JOIN plan p ON e.plan_id = p.id
-       LEFT JOIN (
-         SELECT estudio_id, COUNT(*)::int as usuarios_count
-         FROM usuario_estudio
-         WHERE is_active = true
-         GROUP BY estudio_id
-       ) ue ON ue.estudio_id = e.id
-       LEFT JOIN (
-         SELECT estudio_id, COUNT(*)::int as clientes_count
-         FROM cliente
-         GROUP BY estudio_id
-       ) c ON c.estudio_id = e.id
-       WHERE e.is_active = true
-       ORDER BY raw_score DESC
-       LIMIT 8`,
-    );
-
-    const maxScore = topTenantsRaw.length > 0
-      ? Math.max(...topTenantsRaw.map((t) => Number(t.raw_score)), 1)
-      : 1;
-
-    const topTenants: TopTenant[] = topTenantsRaw.map((t) => ({
-      id: t.id,
-      nombre: t.nombre,
-      plan: t.plan,
-      usuarios: Number(t.usuarios),
-      clientes: Number(t.clientes),
-      actividad: Math.round((Number(t.raw_score) / maxScore) * 100),
-    }));
-
-    const registrosRecientesRaw: any[] = await conn.execute(
-      `SELECT
-         e.id,
-         e.nombre,
-         p.nombre as plan,
-         e.created_at,
-         (
-           SELECT u.email FROM usuario_estudio ue2
-           JOIN usuario u ON u.id = ue2.usuario_id
-           WHERE ue2.estudio_id = e.id
-           ORDER BY ue2.created_at ASC
-           LIMIT 1
-         ) as email
-       FROM estudio e
-       JOIN plan p ON e.plan_id = p.id
-       ORDER BY e.created_at DESC
-       LIMIT 5`,
-    );
-
-    const registrosRecientes: RegistroReciente[] = registrosRecientesRaw.map((r) => ({
-      id: r.id,
-      nombre: r.nombre,
-      plan: r.plan,
-      email: r.email ?? '',
-      creadoEn: new Date(r.created_at).toISOString().split('T')[0],
     }));
 
     return {

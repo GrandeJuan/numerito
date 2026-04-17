@@ -1,4 +1,3 @@
-import { EntityManager } from '@mikro-orm/core';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
 import type { ClienteSummaryView } from '../../../clientes/application/views/cliente-summary.view';
@@ -9,6 +8,9 @@ import type { TareasPendientesView } from '../../../tareas/application/views/tar
 import type { CargaTrabajoView } from '../../../tareas/application/views/carga-trabajo.view';
 import type { FacturacionMesView } from '../../../facturacion/application/views/facturacion-mes.view';
 import type { FacturacionMensualView } from '../../../facturacion/application/views/facturacion-mensual.view';
+import type { UsuarioMembershipView } from '../../../iam/application/views/usuario-membership.view';
+import type { ActividadRecienteTareasView } from '../../../tareas/application/views/actividad-reciente-tareas.view';
+import type { ActividadRecienteVencimientosView } from '../../../obligaciones/application/views/actividad-reciente-vencimientos.view';
 
 export type { DashboardStats };
 
@@ -19,7 +21,6 @@ export interface DashboardStatsQuery {
 
 export class ObtenerDashboardStatsHandler {
   constructor(
-    private readonly em: EntityManager,
     private readonly clienteSummary: ClienteSummaryView,
     private readonly vencimientosProximos: VencimientosProximosView,
     private readonly tareasPendientes: TareasPendientesView,
@@ -28,34 +29,23 @@ export class ObtenerDashboardStatsHandler {
     private readonly cargaTrabajo: CargaTrabajoView,
     private readonly facturacionMes: FacturacionMesView,
     private readonly facturacionMensual: FacturacionMensualView,
+    private readonly membershipView: UsuarioMembershipView,
+    private readonly actividadTareas: ActividadRecienteTareasView,
+    private readonly actividadVencimientos: ActividadRecienteVencimientosView,
   ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
-    const conn = this.em.getConnection();
+    const membership = await this.membershipView.execute({
+      usuarioId: query.usuarioId,
+      estudioId: query.estudioId,
+    });
 
-    const [membership] = await conn.execute(
-      `SELECT ue.is_active, r.codigo as rol
-       FROM usuario_estudio ue
-       JOIN rol r ON ue.rol_id = r.id
-       WHERE ue.usuario_id = ? AND ue.estudio_id = ?
-       LIMIT 1`,
-      [query.usuarioId, query.estudioId],
-    );
-
-    if (!membership || !membership.is_active) {
+    if (!membership || !membership.isActive) {
       throw new RecursoNoEncontradoError('Membresía en estudio');
     }
 
-    const rol: string = membership.rol;
-    const permisosRaw = await conn.execute(
-      `SELECT p.codigo
-       FROM rol_permiso rp
-       JOIN rol r ON rp.rol_id = r.id
-       JOIN permiso p ON rp.permiso_id = p.id
-       WHERE r.codigo = ?`,
-      [rol],
-    );
-    const permisos: string[] = permisosRaw.map((r: any) => r.codigo);
+    const rol = membership.rol;
+    const permisos = membership.permisos;
     const tieneFacturacion = permisos.includes('VER_FACTURACION');
     const esEmpleado = rol === 'EMPLEADO';
     const esSocioOResponsable = rol === 'SOCIO' || rol === 'RESPONSABLE';
@@ -97,39 +87,20 @@ export class ObtenerDashboardStatsHandler {
       estudioId: query.estudioId,
     });
 
-    // Actividad reciente — cross-context query, remains as raw SQL
-    // until a dedicated cross-context view pattern is established.
-    const actividadFilter = esEmpleado
-      ? `AND (t.responsable_id = '${query.usuarioId}' OR c.responsable_id = '${query.usuarioId}')`
-      : '';
-    const actividadRaw = await conn.execute(
-      `(SELECT 'tarea' as tipo,
-              CONCAT('Tarea "', t.titulo, '" actualizada') as descripcion,
-              t.updated_at::text as fecha,
-              u.email as usuario
-       FROM tarea t
-       LEFT JOIN usuario u ON t.responsable_id = u.id
-       LEFT JOIN cliente c ON t.cliente_id = c.id
-       WHERE t.estudio_id = ? ${actividadFilter}
-       ORDER BY t.updated_at DESC LIMIT 5)
-      UNION ALL
-      (SELECT 'vencimiento' as tipo,
-              CONCAT('Vencimiento de ', c2.razon_social) as descripcion,
-              v.updated_at::text as fecha,
-              NULL as usuario
-       FROM vencimiento v
-       JOIN cliente c2 ON v.cliente_id = c2.id
-       WHERE v.estudio_id = ?
-       ORDER BY v.updated_at DESC LIMIT 5)
-      ORDER BY fecha DESC LIMIT 10`,
-      [query.estudioId, query.estudioId],
-    );
-    const actividadReciente = actividadRaw.map((r: any) => ({
-      tipo: r.tipo,
-      descripcion: r.descripcion,
-      fecha: r.fecha,
-      ...(r.usuario ? { usuario: r.usuario } : {}),
-    }));
+    // Actividad reciente — compose views from tareas + obligaciones contexts
+    const [tareasRecientes, vencimientosRecientes] = await Promise.all([
+      this.actividadTareas.execute({
+        estudioId: query.estudioId,
+        ...(esEmpleado ? { responsableId: query.usuarioId } : {}),
+      }),
+      this.actividadVencimientos.execute({
+        estudioId: query.estudioId,
+      }),
+    ]);
+
+    const actividadReciente = [...tareasRecientes, ...vencimientosRecientes]
+      .sort((a, b) => (b.fecha > a.fecha ? 1 : b.fecha < a.fecha ? -1 : 0))
+      .slice(0, 10);
 
     // Carga de trabajo — compose view from tareas context
     let cargaTrabajo: { usuario: string; tareas: number }[] | undefined;

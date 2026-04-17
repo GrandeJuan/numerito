@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { EntityManager } from '@mikro-orm/core';
 import { PortalController } from './infrastructure/controllers/portal.controller';
 import { ObtenerPortalStatsHandler } from './application/queries/obtener-portal-stats.query';
 import { IamModule } from '../iam/iam.module';
@@ -19,38 +18,41 @@ import { DOCUMENTOS_CLIENTE_COUNT_VIEW } from '../documentos/application/public-
 import type { DocumentosClienteCountView } from '../documentos/application/views/documentos-cliente-count.view';
 import { DOCUMENTOS_RECIENTES_CLIENTE_VIEW } from '../documentos/application/public-views';
 import type { DocumentosRecientesClienteView } from '../documentos/application/views/documentos-recientes-cliente.view';
+import { ClientesModule } from '../clientes/clientes.module';
+import { CLIENTE_POR_USUARIO_PORTAL_VIEW } from '../clientes/application/public-views';
+import type { ClientePorUsuarioPortalView } from '../clientes/application/views/cliente-por-usuario-portal.view';
 
 @Module({
-  imports: [IamModule, JwtModule.register({}), ObligacionesModule, FacturacionModule, DocumentosModule],
+  imports: [IamModule, JwtModule.register({}), ObligacionesModule, FacturacionModule, DocumentosModule, ClientesModule],
   controllers: [PortalController],
   providers: [
     {
       provide: ObtenerPortalStatsHandler,
       useFactory: (
-        em: EntityManager,
         vencimientosPendientesCliente: VencimientosPendientesClienteView,
         facturasPendientesCliente: FacturasPendientesClienteView,
         documentosClienteCount: DocumentosClienteCountView,
         vencimientosRecientesCliente: VencimientosRecientesClienteView,
         facturasRecientesCliente: FacturasRecientesClienteView,
         documentosRecientesCliente: DocumentosRecientesClienteView,
+        clientePorUsuario: ClientePorUsuarioPortalView,
       ) => new ObtenerPortalStatsHandler(
-        em,
         vencimientosPendientesCliente,
         facturasPendientesCliente,
         documentosClienteCount,
         vencimientosRecientesCliente,
         facturasRecientesCliente,
         documentosRecientesCliente,
+        clientePorUsuario,
       ),
       inject: [
-        EntityManager,
         VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
         FACTURAS_PENDIENTES_CLIENTE_VIEW,
         DOCUMENTOS_CLIENTE_COUNT_VIEW,
         VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
         FACTURAS_RECIENTES_CLIENTE_VIEW,
         DOCUMENTOS_RECIENTES_CLIENTE_VIEW,
+        CLIENTE_POR_USUARIO_PORTAL_VIEW,
       ],
     },
   ],

@@ -9,8 +9,9 @@ import { AsignarResponsableHandler } from './application/commands/asignar-respon
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
-import { CLIENTE_SUMMARY_VIEW } from './application/public-views';
+import { CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW } from './application/public-views';
 import { ClienteSummaryView } from './application/views/cliente-summary.view';
+import { ClientePorUsuarioPortalView } from './application/views/cliente-por-usuario-portal.view';
 
 @Module({
   imports: [],
@@ -52,7 +53,12 @@ import { ClienteSummaryView } from './application/views/cliente-summary.view';
       useFactory: (em: EntityManager) => new ClienteSummaryView(em),
       inject: [EntityManager],
     },
+    {
+      provide: CLIENTE_POR_USUARIO_PORTAL_VIEW,
+      useFactory: (em: EntityManager) => new ClientePorUsuarioPortalView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [CLIENTE_REPOSITORY, CLIENTE_SUMMARY_VIEW],
+  exports: [CLIENTE_REPOSITORY, CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW],
 })
 export class ClientesModule {}

@@ -8,8 +8,8 @@ describe('DashboardStatsComputer', () => {
   let mockDistribucionPlanes: any;
   let mockEstudiosRecientes: any;
   let mockUsuarioKpis: any;
-  let mockExecute: jest.Mock;
-  let mockEm: any;
+  let mockTopTenants: any;
+  let mockRegistrosRecientes: any;
 
   function setupDefaultViews() {
     mockEstudioKpis.execute.mockResolvedValue({
@@ -34,15 +34,14 @@ describe('DashboardStatsComputer', () => {
     mockDistribucionPlanes.execute.mockResolvedValue([]);
     mockEstudiosRecientes.execute.mockResolvedValue([]);
 
-    // Cross-context raw SQL: topTenants + registrosRecientes
-    mockExecute
-      .mockResolvedValueOnce([
-        { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: '10', clientes: '30', raw_score: '90' },
-        { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: '5', clientes: '20', raw_score: '55' },
-      ])
-      .mockResolvedValueOnce([
-        { id: 'r1', nombre: 'Nuevo Estudio', plan: 'Trial', email: 'admin@nuevo.com', created_at: '2026-04-10T00:00:00Z' },
-      ]);
+    mockTopTenants.execute.mockResolvedValue([
+      { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: 10, clientes: 30, actividad: 100 },
+      { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: 5, clientes: 20, actividad: 61 },
+    ]);
+
+    mockRegistrosRecientes.execute.mockResolvedValue([
+      { id: 'r1', nombre: 'Nuevo Estudio', plan: 'Trial', email: 'admin@nuevo.com', creadoEn: '2026-04-10' },
+    ]);
   }
 
   beforeEach(() => {
@@ -52,10 +51,8 @@ describe('DashboardStatsComputer', () => {
     mockDistribucionPlanes = { execute: jest.fn().mockResolvedValue([]) };
     mockEstudiosRecientes = { execute: jest.fn().mockResolvedValue([]) };
     mockUsuarioKpis = { execute: jest.fn().mockResolvedValue({ totalUsuarios: 0, sparkline: [] }) };
-    mockExecute = jest.fn().mockResolvedValue([]);
-    mockEm = {
-      getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
-    };
+    mockTopTenants = { execute: jest.fn().mockResolvedValue([]) };
+    mockRegistrosRecientes = { execute: jest.fn().mockResolvedValue([]) };
 
     computer = new DashboardStatsComputer(
       mockEstudioKpis,
@@ -64,7 +61,8 @@ describe('DashboardStatsComputer', () => {
       mockDistribucionPlanes,
       mockEstudiosRecientes,
       mockUsuarioKpis,
-      mockEm,
+      mockTopTenants,
+      mockRegistrosRecientes,
     );
   });
 
@@ -188,11 +186,12 @@ describe('DashboardStatsComputer', () => {
     expect(mockEstudiosRecientes.execute).toHaveBeenCalledTimes(1);
   });
 
-  it('should return topTenants with activity scores normalized to 0-100', async () => {
+  it('should delegate topTenants to EstudioTopTenantsView', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
+    expect(mockTopTenants.execute).toHaveBeenCalledTimes(1);
     expect(result.topTenants).toHaveLength(2);
     expect(result.topTenants[0]).toEqual({
       id: 'e2',
@@ -205,11 +204,12 @@ describe('DashboardStatsComputer', () => {
     expect(result.topTenants[1].actividad).toBe(61);
   });
 
-  it('should return registrosRecientes with email and formatted date', async () => {
+  it('should delegate registrosRecientes to EstudioRegistrosRecientesView', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
+    expect(mockRegistrosRecientes.execute).toHaveBeenCalledTimes(1);
     expect(result.registrosRecientes).toHaveLength(1);
     expect(result.registrosRecientes[0]).toEqual({
       id: 'r1',
@@ -243,12 +243,19 @@ describe('DashboardStatsComputer', () => {
     expect(result.alertas).toHaveLength(0);
   });
 
-  it('should only use raw SQL for cross-context queries (topTenants + registrosRecientes)', async () => {
+  it('should use zero raw SQL calls — all delegated to views', async () => {
     setupDefaultViews();
 
     await computer.compute();
 
-    // Only 2 raw SQL calls should remain (topTenants + registrosRecientes)
-    expect(mockExecute).toHaveBeenCalledTimes(2);
+    // All 8 views should be called, no raw SQL
+    expect(mockEstudioKpis.execute).toHaveBeenCalledTimes(1);
+    expect(mockEstudioSparkline.execute).toHaveBeenCalledTimes(1);
+    expect(mockUsuarioKpis.execute).toHaveBeenCalledTimes(1);
+    expect(mockRegistrosMensuales.execute).toHaveBeenCalledTimes(1);
+    expect(mockDistribucionPlanes.execute).toHaveBeenCalledTimes(1);
+    expect(mockEstudiosRecientes.execute).toHaveBeenCalledTimes(1);
+    expect(mockTopTenants.execute).toHaveBeenCalledTimes(1);
+    expect(mockRegistrosRecientes.execute).toHaveBeenCalledTimes(1);
   });
 });

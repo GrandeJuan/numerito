@@ -1,11 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
-import { EntityManager } from '@mikro-orm/core';
 import type { VencimientosPendientesClienteView } from '../../../obligaciones/application/views/vencimientos-pendientes-cliente.view';
 import type { FacturasPendientesClienteView } from '../../../facturacion/application/views/facturas-pendientes-cliente.view';
 import type { DocumentosClienteCountView } from '../../../documentos/application/views/documentos-cliente-count.view';
 import type { VencimientosRecientesClienteView } from '../../../obligaciones/application/views/vencimientos-recientes-cliente.view';
 import type { FacturasRecientesClienteView } from '../../../facturacion/application/views/facturas-recientes-cliente.view';
 import type { DocumentosRecientesClienteView } from '../../../documentos/application/views/documentos-recientes-cliente.view';
+import type { ClientePorUsuarioPortalView } from '../../../clientes/application/views/cliente-por-usuario-portal.view';
 
 export interface PortalStatsQuery {
   usuarioId: string;
@@ -26,13 +26,13 @@ export interface PortalStats {
 
 export class ObtenerPortalStatsHandler {
   constructor(
-    private readonly em: EntityManager,
     private readonly vencimientosPendientesCliente: VencimientosPendientesClienteView,
     private readonly facturasPendientesCliente: FacturasPendientesClienteView,
     private readonly documentosClienteCount: DocumentosClienteCountView,
     private readonly vencimientosRecientesCliente: VencimientosRecientesClienteView,
     private readonly facturasRecientesCliente: FacturasRecientesClienteView,
     private readonly documentosRecientesCliente: DocumentosRecientesClienteView,
+    private readonly clientePorUsuario: ClientePorUsuarioPortalView,
   ) {}
 
   async execute(query: PortalStatsQuery): Promise<PortalStats> {
@@ -40,20 +40,9 @@ export class ObtenerPortalStatsHandler {
       throw new ForbiddenException('Solo clientes pueden acceder al portal');
     }
 
-    const conn = this.em.getConnection();
+    const cliente = await this.clientePorUsuario.execute({ usuarioId: query.usuarioId });
 
-    // Find the cliente linked to this user (if any).
-    const clienteRows = await conn.execute(
-      `SELECT c.id, c.razon_social
-       FROM cliente c
-       JOIN usuario_estudio ue ON ue.estudio_id = c.estudio_id
-       JOIN rol r ON ue.rol_id = r.id
-       WHERE ue.usuario_id = ? AND r.codigo = 'CLIENTE'
-       LIMIT 1`,
-      [query.usuarioId],
-    );
-
-    if (clienteRows.length === 0) {
+    if (!cliente) {
       return {
         clienteNombre: '',
         kpis: { vencimientosPendientes: 0, facturasPendientes: 0, documentos: 0 },
@@ -63,8 +52,8 @@ export class ObtenerPortalStatsHandler {
       };
     }
 
-    const clienteId = clienteRows[0].id;
-    const clienteNombre = clienteRows[0].razon_social;
+    const clienteId = cliente.clienteId;
+    const clienteNombre = cliente.razonSocial;
 
     // KPIs + recent items — compose views from source contexts
     const [

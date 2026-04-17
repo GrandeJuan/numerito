@@ -3,24 +3,18 @@ import { ForbiddenException } from '@nestjs/common';
 
 describe('ObtenerPortalStatsHandler', () => {
   let handler: ObtenerPortalStatsHandler;
-  let mockEm: any;
-  let mockExecute: jest.Mock;
   let mockVencimientosPendientesCliente: any;
   let mockFacturasPendientesCliente: any;
   let mockDocumentosClienteCount: any;
   let mockVencimientosRecientesCliente: any;
   let mockFacturasRecientesCliente: any;
   let mockDocumentosRecientesCliente: any;
+  let mockClientePorUsuario: any;
 
   const usuarioId = 'user-uuid';
   const clienteId = 'cliente-uuid';
 
   beforeEach(() => {
-    mockExecute = jest.fn().mockResolvedValue([]);
-    mockEm = {
-      count: jest.fn().mockResolvedValue(0),
-      getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
-    };
     mockVencimientosPendientesCliente = {
       execute: jest.fn().mockResolvedValue({ totalVencimientosPendientes: 0 }),
     };
@@ -39,17 +33,20 @@ describe('ObtenerPortalStatsHandler', () => {
     mockDocumentosRecientesCliente = {
       execute: jest.fn().mockResolvedValue([]),
     };
+    mockClientePorUsuario = {
+      execute: jest.fn().mockResolvedValue(null),
+    };
   });
 
   function createHandler() {
     handler = new ObtenerPortalStatsHandler(
-      mockEm,
       mockVencimientosPendientesCliente,
       mockFacturasPendientesCliente,
       mockDocumentosClienteCount,
       mockVencimientosRecientesCliente,
       mockFacturasRecientesCliente,
       mockDocumentosRecientesCliente,
+      mockClientePorUsuario,
     );
   }
 
@@ -64,7 +61,7 @@ describe('ObtenerPortalStatsHandler', () => {
 
   describe('when user is CLIENTE but has no linked cliente', () => {
     it('should return empty stats', async () => {
-      mockExecute.mockResolvedValueOnce([]); // no cliente found
+      mockClientePorUsuario.execute.mockResolvedValueOnce(null);
       createHandler();
       const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(result.clienteNombre).toBe('');
@@ -74,9 +71,10 @@ describe('ObtenerPortalStatsHandler', () => {
 
   describe('when user is CLIENTE with linked cliente', () => {
     beforeEach(() => {
-      // First call: find cliente linked to user
-      mockExecute.mockResolvedValueOnce([{ id: clienteId, razon_social: 'Mi Empresa SRL' }]);
-      // Views return KPI values
+      mockClientePorUsuario.execute.mockResolvedValue({
+        clienteId,
+        razonSocial: 'Mi Empresa SRL',
+      });
       mockVencimientosPendientesCliente.execute.mockResolvedValue({ totalVencimientosPendientes: 3 });
       mockFacturasPendientesCliente.execute.mockResolvedValue({ totalFacturasPendientes: 2 });
       mockDocumentosClienteCount.execute.mockResolvedValue({ totalDocumentos: 10 });
@@ -86,6 +84,12 @@ describe('ObtenerPortalStatsHandler', () => {
       createHandler();
       const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(result.clienteNombre).toBe('Mi Empresa SRL');
+    });
+
+    it('should delegate client lookup to ClientePorUsuarioPortalView', async () => {
+      createHandler();
+      await handler.execute({ usuarioId, rol: 'CLIENTE' });
+      expect(mockClientePorUsuario.execute).toHaveBeenCalledWith({ usuarioId });
     });
 
     it('should return KPIs from composed views', async () => {
@@ -123,9 +127,10 @@ describe('ObtenerPortalStatsHandler', () => {
 
   describe('when recent data exists', () => {
     beforeEach(() => {
-      // find cliente
-      mockExecute.mockResolvedValueOnce([{ id: clienteId, razon_social: 'Empresa Test' }]);
-      // Views return recent items
+      mockClientePorUsuario.execute.mockResolvedValue({
+        clienteId,
+        razonSocial: 'Empresa Test',
+      });
       mockVencimientosRecientesCliente.execute.mockResolvedValue([
         { id: 'v1', obligacion: 'IVA', fecha: '2026-04-15', estado: 'Pendiente' },
       ]);

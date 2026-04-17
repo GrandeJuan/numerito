@@ -14,7 +14,8 @@ import { TareaListHandler } from './application/queries/tarea-list.query';
 import { TareaKpisHandler } from './application/queries/tarea-kpis.query';
 import { TareasPendientesView } from './application/views/tareas-pendientes.view';
 import { CargaTrabajoView } from './application/views/carga-trabajo.view';
-import { TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW } from './application/public-views';
+import { TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW, ACTIVIDAD_RECIENTE_TAREAS_VIEW } from './application/public-views';
+import { ActividadRecienteTareasView } from './application/views/actividad-reciente-tareas.view';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -74,7 +75,12 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new CargaTrabajoView(em),
       inject: [EntityManager],
     },
+    {
+      provide: ACTIVIDAD_RECIENTE_TAREAS_VIEW,
+      useFactory: (em: EntityManager) => new ActividadRecienteTareasView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [TAREA_REPOSITORY, TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW],
+  exports: [TAREA_REPOSITORY, TAREAS_PENDIENTES_VIEW, CARGA_TRABAJO_VIEW, ACTIVIDAD_RECIENTE_TAREAS_VIEW],
 })
 export class TareasModule {}

@@ -22,7 +22,9 @@ import {
   VENCIMIENTOS_POR_ESTADO_VIEW,
   PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
   VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
+  ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
 } from './application/public-views';
+import { ActividadRecienteVencimientosView } from './application/views/actividad-reciente-vencimientos.view';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -94,6 +96,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new VencimientosRecientesClienteView(em),
       inject: [EntityManager],
     },
+    {
+      provide: ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
+      useFactory: (em: EntityManager) => new ActividadRecienteVencimientosView(em),
+      inject: [EntityManager],
+    },
   ],
   exports: [
     VENCIMIENTO_REPOSITORY,
@@ -102,6 +109,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     VENCIMIENTOS_POR_ESTADO_VIEW,
     PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
     VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
+    ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
   ],
 })
 export class ObligacionesModule {}

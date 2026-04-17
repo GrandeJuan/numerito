@@ -23,6 +23,8 @@ import {
   ESTUDIO_REGISTROS_MENSUALES_VIEW,
   ESTUDIO_DISTRIBUCION_PLANES_VIEW,
   ESTUDIO_RECIENTES_ADMIN_VIEW,
+  ESTUDIO_TOP_TENANTS_VIEW,
+  ESTUDIO_REGISTROS_RECIENTES_VIEW,
 } from './application/public-views';
 import { EstudiosAdminListView } from './application/views/estudios-admin-list.view';
 import { EstudioAdminKpisView } from './application/views/estudio-admin-kpis.view';
@@ -30,6 +32,8 @@ import { EstudioAdminSparklineView } from './application/views/estudio-admin-spa
 import { EstudioRegistrosMensualesView } from './application/views/estudio-registros-mensuales.view';
 import { EstudioDistribucionPlanesView } from './application/views/estudio-distribucion-planes.view';
 import { EstudioRecientesAdminView } from './application/views/estudio-recientes-admin.view';
+import { EstudioTopTenantsView } from './application/views/estudio-top-tenants.view';
+import { EstudioRegistrosRecientesView } from './application/views/estudio-registros-recientes.view';
 
 @Module({
   imports: [],
@@ -97,7 +101,17 @@ import { EstudioRecientesAdminView } from './application/views/estudio-recientes
       useFactory: (em: EntityManager) => new EstudioRecientesAdminView(em),
       inject: [EntityManager],
     },
+    {
+      provide: ESTUDIO_TOP_TENANTS_VIEW,
+      useFactory: (em: EntityManager) => new EstudioTopTenantsView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIO_REGISTROS_RECIENTES_VIEW,
+      useFactory: (em: EntityManager) => new EstudioRegistrosRecientesView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY, ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW, ESTUDIO_ADMIN_KPIS_VIEW, ESTUDIO_ADMIN_SPARKLINE_VIEW, ESTUDIO_REGISTROS_MENSUALES_VIEW, ESTUDIO_DISTRIBUCION_PLANES_VIEW, ESTUDIO_RECIENTES_ADMIN_VIEW],
+  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY, ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW, ESTUDIO_ADMIN_KPIS_VIEW, ESTUDIO_ADMIN_SPARKLINE_VIEW, ESTUDIO_REGISTROS_MENSUALES_VIEW, ESTUDIO_DISTRIBUCION_PLANES_VIEW, ESTUDIO_RECIENTES_ADMIN_VIEW, ESTUDIO_TOP_TENANTS_VIEW, ESTUDIO_REGISTROS_RECIENTES_VIEW],
 })
 export class EstudioModule {}
