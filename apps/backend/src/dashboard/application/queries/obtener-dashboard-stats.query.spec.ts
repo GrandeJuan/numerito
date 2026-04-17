@@ -1,8 +1,3 @@
-// Mock entities to avoid ESM import issues
-jest.mock('../../../tareas/infrastructure/persistence/tarea.schema', () => ({
-  TareaEntity: class TareaEntity {},
-}));
-
 import { ObtenerDashboardStatsHandler } from './obtener-dashboard-stats.query';
 
 describe('ObtenerDashboardStatsHandler', () => {
@@ -11,6 +6,7 @@ describe('ObtenerDashboardStatsHandler', () => {
   let mockExecute: jest.Mock;
   let mockClienteSummary: any;
   let mockVencimientosProximos: any;
+  let mockTareasPendientes: any;
 
   const estudioId = 'estudio-uuid';
   const usuarioId = 'usuario-uuid';
@@ -28,10 +24,13 @@ describe('ObtenerDashboardStatsHandler', () => {
     mockVencimientosProximos = {
       execute: jest.fn().mockResolvedValue({ totalVencimientosProximos: 0 }),
     };
+    mockTareasPendientes = {
+      execute: jest.fn().mockResolvedValue({ totalTareasPendientes: 0 }),
+    };
   });
 
   function createHandler() {
-    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary, mockVencimientosProximos);
+    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary, mockVencimientosProximos, mockTareasPendientes);
   }
 
   function mockMembership(rol: string) {
@@ -103,6 +102,18 @@ describe('ObtenerDashboardStatsHandler', () => {
         estudioId,
       });
     });
+
+    it('should count tareas activas via tareasPendientes view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION', 'VER_CLIENTES', 'VER_TAREAS']);
+      mockTareasPendientes.execute.mockResolvedValueOnce({ totalTareasPendientes: 11 });
+
+      const result = await handler.execute({ estudioId, usuarioId });
+      expect(result.kpis.tareasActivas).toBe(11);
+      expect(mockTareasPendientes.execute).toHaveBeenCalledWith({
+        estudioId,
+      });
+    });
   });
 
   describe('RESPONSABLE role without VER_FACTURACION', () => {
@@ -168,6 +179,18 @@ describe('ObtenerDashboardStatsHandler', () => {
       expect(result).toHaveProperty('vencimientosPorEstado');
       expect(result).toHaveProperty('proximosVencimientos');
       expect(result).toHaveProperty('actividadReciente');
+    });
+
+    it('should pass responsableId to tareasPendientes view', async () => {
+      mockMembership('EMPLEADO');
+      mockPermisos(['VER_CLIENTES', 'VER_TAREAS']);
+
+      await handler.execute({ estudioId, usuarioId });
+
+      expect(mockTareasPendientes.execute).toHaveBeenCalledWith({
+        estudioId,
+        responsableId: usuarioId,
+      });
     });
   });
 

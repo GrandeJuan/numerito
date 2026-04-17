@@ -9,9 +9,12 @@ import type { ClienteSummaryView } from '../clientes/application/views/cliente-s
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { VENCIMIENTOS_PROXIMOS_VIEW } from '../obligaciones/application/public-views';
 import type { VencimientosProximosView } from '../obligaciones/application/views/vencimientos-proximos.view';
+import { TareasModule } from '../tareas/tareas.module';
+import { TAREAS_PENDIENTES_VIEW } from '../tareas/application/public-views';
+import type { TareasPendientesView } from '../tareas/application/views/tareas-pendientes.view';
 
 @Module({
-  imports: [JwtModule.register({}), ClientesModule, ObligacionesModule],
+  imports: [JwtModule.register({}), ClientesModule, ObligacionesModule, TareasModule],
   controllers: [DashboardController],
   providers: [
     {
@@ -20,8 +23,9 @@ import type { VencimientosProximosView } from '../obligaciones/application/views
         em: EntityManager,
         clienteSummary: ClienteSummaryView,
         vencimientosProximos: VencimientosProximosView,
-      ) => new ObtenerDashboardStatsHandler(em, clienteSummary, vencimientosProximos),
-      inject: [EntityManager, CLIENTE_SUMMARY_VIEW, VENCIMIENTOS_PROXIMOS_VIEW],
+        tareasPendientes: TareasPendientesView,
+      ) => new ObtenerDashboardStatsHandler(em, clienteSummary, vencimientosProximos, tareasPendientes),
+      inject: [EntityManager, CLIENTE_SUMMARY_VIEW, VENCIMIENTOS_PROXIMOS_VIEW, TAREAS_PENDIENTES_VIEW],
     },
   ],
 })

@@ -1,9 +1,9 @@
 import { EntityManager } from '@mikro-orm/core';
-import { TareaEntity } from '../../../tareas/infrastructure/persistence/tarea.schema';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
 import type { ClienteSummaryView } from '../../../clientes/application/views/cliente-summary.view';
 import type { VencimientosProximosView } from '../../../obligaciones/application/views/vencimientos-proximos.view';
+import type { TareasPendientesView } from '../../../tareas/application/views/tareas-pendientes.view';
 
 export type { DashboardStats };
 
@@ -17,6 +17,7 @@ export class ObtenerDashboardStatsHandler {
     private readonly em: EntityManager,
     private readonly clienteSummary: ClienteSummaryView,
     private readonly vencimientosProximos: VencimientosProximosView,
+    private readonly tareasPendientes: TareasPendientesView,
   ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
@@ -49,14 +50,8 @@ export class ObtenerDashboardStatsHandler {
     const esEmpleado = rol === 'EMPLEADO';
     const esSocioOResponsable = rol === 'SOCIO' || rol === 'RESPONSABLE';
 
-    // Build base filter — EMPLEADO sees only their assigned resources
-    const tareaFilter: Record<string, any> = { estudio: query.estudioId };
-    if (esEmpleado) {
-      tareaFilter.responsable = query.usuarioId;
-    }
-
     // KPIs
-    const [clienteSummary, vencimientosProximosSummary, tareasActivas] = await Promise.all([
+    const [clienteSummary, vencimientosProximosSummary, tareasPendientesSummary] = await Promise.all([
       this.clienteSummary.execute({
         estudioId: query.estudioId,
         ...(esEmpleado ? { responsableId: query.usuarioId } : {}),
@@ -64,9 +59,9 @@ export class ObtenerDashboardStatsHandler {
       this.vencimientosProximos.execute({
         estudioId: query.estudioId,
       }),
-      this.em.count(TareaEntity, {
-        ...tareaFilter,
-        estado: { codigo: { $nin: ['COMPLETADA', 'CANCELADA'] } },
+      this.tareasPendientes.execute({
+        estudioId: query.estudioId,
+        ...(esEmpleado ? { responsableId: query.usuarioId } : {}),
       }),
     ]);
 
@@ -200,7 +195,7 @@ export class ObtenerDashboardStatsHandler {
         clientes: clienteSummary.totalClientes,
         vencimientosProximos: vencimientosProximosSummary.totalVencimientosProximos,
         ...(tieneFacturacion ? { facturacionMes } : {}),
-        tareasActivas,
+        tareasActivas: tareasPendientesSummary.totalTareasPendientes,
       },
       vencimientosPorEstado,
       ...(tieneFacturacion ? { facturacionMensual } : {}),

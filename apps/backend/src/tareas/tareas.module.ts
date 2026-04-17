@@ -12,6 +12,8 @@ import { RegistrarHorasHandler } from './application/commands/registrar-horas.co
 import { AgregarComentarioHandler } from './application/commands/agregar-comentario.command';
 import { TareaListHandler } from './application/queries/tarea-list.query';
 import { TareaKpisHandler } from './application/queries/tarea-kpis.query';
+import { TareasPendientesView } from './application/views/tareas-pendientes.view';
+import { TAREAS_PENDIENTES_VIEW } from './application/public-views';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -65,7 +67,8 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new TareaKpisHandler(em),
       inject: [EntityManager],
     },
+    { provide: TAREAS_PENDIENTES_VIEW, useClass: TareasPendientesView },
   ],
-  exports: [TAREA_REPOSITORY],
+  exports: [TAREA_REPOSITORY, TAREAS_PENDIENTES_VIEW],
 })
 export class TareasModule {}
