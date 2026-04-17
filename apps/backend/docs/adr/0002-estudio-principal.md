@@ -1,8 +1,9 @@
 # ADR 0002 — EstudioPrincipal value object and migration coexistence
 
-**Status:** Proposed (awaiting reviewer sign-off)
+**Status:** Accepted
 **Date:** 2026-04-16
 **Issue:** #205 (PRD #193)
+**Approved by:** Federico Rossi (2026-04-16)
 
 ## Context
 
@@ -69,7 +70,7 @@ export interface EstudioPrincipal {
   unifies with the existing `@CurrentUser()` path.
 - **`roles` is carried but not validated by the principal itself.**
   Authorisation rules (RBAC, permissions) remain the responsibility of
-  the IAM guards and decorators. The principal is a *carrier*, not a
+  the IAM guards and decorators. The principal is a _carrier_, not a
   policy engine. Downstream guards read `principal.roles`; the
   principal does not enforce.
 - **Opaque to construction outside the interceptor in production;
@@ -173,7 +174,7 @@ interface ClienteRepository {
 
 - The base class (`TenantAwareRepository`) takes the principal as its
   first argument, applies the `where: { estudio: { id:
-  principal.estudioId } }` filter on every query, and verifies on
+principal.estudioId } }` filter on every query, and verifies on
   `save()` that the aggregate's `estudioId` matches
   `principal.estudioId`. Mismatch throws — defence in depth.
 - `GlobalRepository` (already exists) remains the escape hatch for
@@ -231,7 +232,7 @@ describe('TenantBoundary', () => {
 - **Positive:** `userId` on the principal eliminates the second
   decorator call in most handlers.
 - **Negative:** every repository method signature gains a leading
-  parameter. Worth it — the parameter *is* the contract.
+  parameter. Worth it — the parameter _is_ the contract.
 - **Negative:** migration touches every context. Phased rollout
   (#211 port, #225–#228 per context, #231 enforcement flip) keeps
   each slice small and CI green throughout.
@@ -250,22 +251,24 @@ describe('TenantBoundary', () => {
 - Replacing `@CurrentUser()` for endpoints that need the full user
   profile.
 
-## Open items for the reviewer
+## Reviewer decisions (2026-04-16)
 
-- Confirm `roles: readonly string[]` is the right shape, or whether
-  roles should stay on `@CurrentUser()` for now and be added to the
-  principal later.
-- Confirm that deprecation (not deletion) of `@EstudioId()` in Phase 3
-  is acceptable, or whether Phase 3 should hard-remove it.
-- Confirm the interceptor approach over a middleware variant.
+- **`roles: readonly string[]` carried on the principal.** Forward
+  compatibility is worth the one extra field; guards can migrate to
+  read from the principal later without reshaping handler signatures.
+- **`@EstudioId()` deprecated (not hard-removed) in Phase 3 (#231).**
+  Lower risk of surprise build breakages; the decorator is deleted in
+  a follow-up once the last caller has migrated.
+- **Construction via interceptor, not middleware.** Confirmed: runs
+  after auth guards so `req.user` is reliably populated.
 
 ## Migration plan summary
 
-| Phase | Issue | Scope |
-|---|---|---|
-| 1 | #211 | Land `EstudioPrincipal` type, interceptor, `@EstudioPrincipal()` decorator, repository-base overloads, non-blocking arch test. No call sites change. |
-| 2 | #225 | clientes + obligaciones migrate. |
-| 2 | #226 | tareas + contabilidad migrate. |
-| 2 | #227 | nomina + documentos + facturacion migrate. |
-| 2 | #228 | integraciones + iam + estudio migrate (GlobalRepository escape hatch documented where needed). |
-| 3 | #231 | Flip arch test to blocking; deprecate `@EstudioId()`; delete ambient `getTenantId()` reads outside the repository base; update CLAUDE.md. |
+| Phase | Issue | Scope                                                                                                                                                |
+| ----- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | #211  | Land `EstudioPrincipal` type, interceptor, `@EstudioPrincipal()` decorator, repository-base overloads, non-blocking arch test. No call sites change. |
+| 2     | #225  | clientes + obligaciones migrate.                                                                                                                     |
+| 2     | #226  | tareas + contabilidad migrate.                                                                                                                       |
+| 2     | #227  | nomina + documentos + facturacion migrate.                                                                                                           |
+| 2     | #228  | integraciones + iam + estudio migrate (GlobalRepository escape hatch documented where needed).                                                       |
+| 3     | #231  | Flip arch test to blocking; deprecate `@EstudioId()`; delete ambient `getTenantId()` reads outside the repository base; update CLAUDE.md.            |
