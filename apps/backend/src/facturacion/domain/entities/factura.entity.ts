@@ -28,7 +28,7 @@ const facturaReconstitutePropsSchema = z.object({
   fechaEmision: z.date(),
   fechaVencimiento: z.date(),
   concepto: z.string(),
-  lineas: z.array(z.instanceof(LineaFactura)),
+  lineas: z.array(z.custom<LineaFactura>((val) => val instanceof LineaFactura)),
   estado: z.enum(estadoFacturaValues),
   totalPagado: z.number(),
 });
@@ -52,7 +52,9 @@ export class Factura extends BaseEntity {
       throw new OperacionInvalidaError('La factura debe tener al menos una linea');
     }
     if (props.fechaEmision > props.fechaVencimiento) {
-      throw new OperacionInvalidaError('La fecha de emision no puede ser posterior a la fecha de vencimiento');
+      throw new OperacionInvalidaError(
+        'La fecha de emision no puede ser posterior a la fecha de vencimiento',
+      );
     }
     this._clienteId = props.clienteId;
     this._estudioId = props.estudioId;
@@ -98,22 +100,40 @@ export class Factura extends BaseEntity {
     return instance;
   }
 
-  get clienteId(): string { return this._clienteId; }
-  get estudioId(): string { return this._estudioId; }
-  get numero(): string { return this._numero; }
-  get fechaEmision(): Date { return this._fechaEmision; }
-  get fechaVencimiento(): Date { return this._fechaVencimiento; }
-  get concepto(): string { return this._concepto; }
-  get lineas(): readonly LineaFactura[] { return this._lineas; }
-  get estado(): EstadoFactura { return this._estado; }
-  get totalPagado(): number { return this._totalPagado; }
+  get clienteId(): string {
+    return this._clienteId;
+  }
+  get estudioId(): string {
+    return this._estudioId;
+  }
+  get numero(): string {
+    return this._numero;
+  }
+  get fechaEmision(): Date {
+    return this._fechaEmision;
+  }
+  get fechaVencimiento(): Date {
+    return this._fechaVencimiento;
+  }
+  get concepto(): string {
+    return this._concepto;
+  }
+  get lineas(): readonly LineaFactura[] {
+    return this._lineas;
+  }
+  get estado(): EstadoFactura {
+    return this._estado;
+  }
+  get totalPagado(): number {
+    return this._totalPagado;
+  }
 
   get subtotal(): number {
     return this._lineas.reduce((sum, l) => sum + l.subtotal, 0);
   }
 
   get iva(): number {
-    return this._lineas.reduce((sum, l) => sum + (l.subtotal * l.alicuotaIva / 100), 0);
+    return this._lineas.reduce((sum, l) => sum + (l.subtotal * l.alicuotaIva) / 100, 0);
   }
 
   get total(): number {
@@ -129,9 +149,8 @@ export class Factura extends BaseEntity {
       throw new OperacionInvalidaError('El pago excede el saldo pendiente');
     }
     this._totalPagado += monto;
-    this._estado = this.saldoPendiente === 0
-      ? ESTADO_FACTURA.PAGADA
-      : ESTADO_FACTURA.PARCIALMENTE_PAGADA;
+    this._estado =
+      this.saldoPendiente === 0 ? ESTADO_FACTURA.PAGADA : ESTADO_FACTURA.PARCIALMENTE_PAGADA;
     this.updatedAt = new Date();
   }
 
@@ -141,7 +160,10 @@ export class Factura extends BaseEntity {
   }
 
   marcarVencida(): void {
-    if (this._estado === ESTADO_FACTURA.EMITIDA || this._estado === ESTADO_FACTURA.PARCIALMENTE_PAGADA) {
+    if (
+      this._estado === ESTADO_FACTURA.EMITIDA ||
+      this._estado === ESTADO_FACTURA.PARCIALMENTE_PAGADA
+    ) {
       this._estado = ESTADO_FACTURA.VENCIDA;
       this.updatedAt = new Date();
     }

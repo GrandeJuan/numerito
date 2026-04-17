@@ -1,11 +1,11 @@
-import type { EstudioAdminKpisView } from '../../estudio/application/views/estudio-admin-kpis.view';
-import type { EstudioAdminSparklineView } from '../../estudio/application/views/estudio-admin-sparkline.view';
-import type { EstudioRegistrosMensualesView } from '../../estudio/application/views/estudio-registros-mensuales.view';
-import type { EstudioDistribucionPlanesView } from '../../estudio/application/views/estudio-distribucion-planes.view';
-import type { EstudioRecientesAdminView } from '../../estudio/application/views/estudio-recientes-admin.view';
-import type { EstudioTopTenantsView } from '../../estudio/application/views/estudio-top-tenants.view';
-import type { EstudioRegistrosRecientesView } from '../../estudio/application/views/estudio-registros-recientes.view';
-import type { UsuarioAdminKpisView } from '../../iam/application/views/usuario-admin-kpis.view';
+import type { EstudioAdminKpisView } from '../../../estudio/application/views/estudio-admin-kpis.view';
+import type { EstudioAdminSparklineView } from '../../../estudio/application/views/estudio-admin-sparkline.view';
+import type { EstudioRegistrosMensualesView } from '../../../estudio/application/views/estudio-registros-mensuales.view';
+import type { EstudioDistribucionPlanesView } from '../../../estudio/application/views/estudio-distribucion-planes.view';
+import type { EstudioRecientesAdminView } from '../../../estudio/application/views/estudio-recientes-admin.view';
+import type { EstudioTopTenantsView } from '../../../estudio/application/views/estudio-top-tenants.view';
+import type { EstudioRegistrosRecientesView } from '../../../estudio/application/views/estudio-registros-recientes.view';
+import type { UsuarioAdminKpisView } from '../../../iam/application/views/usuario-admin-kpis.view';
 import type {
   AdminDashboardStats,
   GrowthDataPoint,
@@ -32,7 +32,16 @@ export class DashboardStatsComputer {
   ) {}
 
   async compute(): Promise<AdminDashboardStats> {
-    const [kpis, sparkline, usuarios, registros, distribucion, recientes, topTenants, registrosRecientes] = await Promise.all([
+    const [
+      kpis,
+      sparkline,
+      usuarios,
+      registros,
+      distribucion,
+      recientes,
+      topTenants,
+      registrosRecientes,
+    ] = await Promise.all([
       this.estudioKpis.execute(),
       this.estudioSparkline.execute(),
       this.usuarioKpis.execute(),
@@ -44,7 +53,12 @@ export class DashboardStatsComputer {
     ]);
 
     const { estudiosActivos, subscripcionesActivas, subscripcionesPorVencer } = kpis;
-    const { estudios: estudiosSparkline, subscripciones: subscripcionesSparkline, mrr: mrrSparkline, churn: churnSparkline } = sparkline;
+    const {
+      estudios: estudiosSparkline,
+      subscripciones: subscripcionesSparkline,
+      mrr: mrrSparkline,
+      churn: churnSparkline,
+    } = sparkline;
     const { totalUsuarios, sparkline: usuariosSparkline } = usuarios;
 
     const currentMrr = mrrSparkline[mrrSparkline.length - 1] ?? 0;

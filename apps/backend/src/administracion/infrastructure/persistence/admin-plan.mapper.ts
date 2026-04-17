@@ -13,7 +13,7 @@ export const adminPlanPersistenceSchema = z.object({
   precio: z.number().nonnegative(),
   isPublico: z.boolean(),
   isActivo: z.boolean(),
-  condiciones: z.record(z.unknown()).optional(),
+  condiciones: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type AdminPlanPersistence = z.infer<typeof adminPlanPersistenceSchema>;

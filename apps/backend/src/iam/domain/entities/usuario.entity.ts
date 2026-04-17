@@ -24,7 +24,7 @@ const rolValues = Object.values(ROL) as [Rol, ...Rol[]];
 
 const usuarioReconstitutePropsSchema = z.object({
   email: z.instanceof(Email),
-  password: z.instanceof(Password),
+  password: z.custom<Password>((val) => val instanceof Password),
   nombre: z.string().min(1),
   apellido: z.string().min(1),
   rol: z.enum(rolValues),
