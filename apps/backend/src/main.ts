@@ -6,6 +6,7 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/infrastructure/filters/global-exception.filter';
 import { ResponseWrapperInterceptor } from './shared/infrastructure/interceptors/response-wrapper.interceptor';
+import { parseAllowedOrigins } from './shared/infrastructure/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -22,7 +23,7 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(logger));
   app.useGlobalInterceptors(new ResponseWrapperInterceptor());
   app.enableCors({
-    origin: process.env.FRONTEND_URL,
+    origin: parseAllowedOrigins(process.env.FRONTEND_URL),
   });
 
   const swaggerConfig = new DocumentBuilder()
