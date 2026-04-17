@@ -1,11 +1,12 @@
 import { VencimientoKpisHandler } from './vencimiento-kpis.query';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-uuid', userId: 'user-1', roles: [] };
 
 describe('VencimientoKpisHandler', () => {
   let handler: VencimientoKpisHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
-
-  const estudioId = 'estudio-uuid';
 
   beforeEach(() => {
     mockExecute = jest.fn();
@@ -25,7 +26,7 @@ describe('VencimientoKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result).toEqual({
       pendientes: 3,
@@ -45,7 +46,7 @@ describe('VencimientoKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(typeof result.pendientes).toBe('number');
     expect(typeof result.vencidos).toBe('number');
@@ -63,7 +64,7 @@ describe('VencimientoKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result.proximoVencimiento).toBeNull();
     expect(result.pendientes).toBe(0);
@@ -72,7 +73,7 @@ describe('VencimientoKpisHandler', () => {
   it('returns zeros when the aggregate row is missing (empty table)', async () => {
     mockExecute.mockResolvedValue([]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result).toEqual({
       pendientes: 0,
@@ -82,13 +83,13 @@ describe('VencimientoKpisHandler', () => {
     });
   });
 
-  it('scopes by estudioId and current month period', async () => {
+  it('scopes by principal.estudioId and current month period', async () => {
     mockExecute.mockResolvedValue([]);
 
     const now = new Date();
     const expectedPeriodo = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    await handler.execute({ estudioId });
+    await handler.execute(principal);
 
     expect(mockExecute).toHaveBeenCalledTimes(1);
     const [sql, params] = mockExecute.mock.calls[0];
@@ -96,7 +97,7 @@ describe('VencimientoKpisHandler', () => {
     expect(sql).toMatch(/JOIN estado_vencimiento ev/);
     expect(sql).toMatch(/WHERE v\.estudio_id = \?/);
     expect(sql).toMatch(/COUNT\(\*\) FILTER \(WHERE ev\.codigo = 'PENDIENTE'\)/);
-    expect(params).toEqual([expectedPeriodo, estudioId]);
+    expect(params).toEqual([expectedPeriodo, principal.estudioId]);
   });
 
   it('does not call findAll or any row-materialising API on the EntityManager', async () => {
@@ -104,7 +105,7 @@ describe('VencimientoKpisHandler', () => {
     mockEm.find = jest.fn();
     mockEm.findAll = jest.fn();
 
-    await handler.execute({ estudioId });
+    await handler.execute(principal);
 
     expect(mockEm.find).not.toHaveBeenCalled();
     expect(mockEm.findAll).not.toHaveBeenCalled();

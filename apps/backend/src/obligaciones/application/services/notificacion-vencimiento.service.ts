@@ -1,3 +1,4 @@
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
 import type { AlertaConfigRepository } from '../../domain/repositories/alerta-config.repository';
 import type { MailSenderPort } from '../../../shared/domain/ports/mail-sender.port';
@@ -16,7 +17,13 @@ export class NotificacionVencimientoService {
       return 0;
     }
 
-    const vencimientos = await this.vencimientoRepo.findProximosAVencer(config.diasAnticipacion);
+    const principal: EstudioPrincipal = {
+      estudioId: config.estudioId,
+      userId: 'SYSTEM',
+      roles: [],
+    };
+
+    const vencimientos = await this.vencimientoRepo.findProximosAVencer(principal, config.diasAnticipacion);
 
     for (const vencimiento of vencimientos) {
       const subject = `Vencimiento próximo: ${vencimiento.descripcion}`;

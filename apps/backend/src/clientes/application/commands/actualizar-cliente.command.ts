@@ -1,4 +1,5 @@
 import type { CondicionIVA } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import type { Regimen } from '../../domain/entities/cliente.entity';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
@@ -15,8 +16,8 @@ export interface ActualizarClienteCommand {
 export class ActualizarClienteHandler {
   constructor(private readonly clienteRepo: ClienteRepository) {}
 
-  async execute(command: ActualizarClienteCommand): Promise<Cliente> {
-    const cliente = await this.clienteRepo.findById(command.id);
+  async execute(principal: EstudioPrincipal, command: ActualizarClienteCommand): Promise<Cliente> {
+    const cliente = await this.clienteRepo.findById(principal, command.id);
     if (!cliente) throw new RecursoNoEncontradoError('Cliente');
 
     if (command.razonSocial) {
@@ -29,7 +30,7 @@ export class ActualizarClienteHandler {
       cliente.changeRegimen(command.regimen as Regimen);
     }
 
-    await this.clienteRepo.save(cliente);
+    await this.clienteRepo.save(principal, cliente);
     return cliente;
   }
 }

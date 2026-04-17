@@ -72,7 +72,10 @@ describe('NotificacionVencimientoService', () => {
 
     expect(count).toBe(2);
     expect(alertaConfigRepo.findConfig).toHaveBeenCalled();
-    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7);
+    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(
+      { estudioId, userId: 'SYSTEM', roles: [] },
+      7,
+    );
     expect(mailSender.send).toHaveBeenCalledTimes(2);
     expect(mailSender.send).toHaveBeenCalledWith(
       estudioId,
@@ -119,7 +122,10 @@ describe('NotificacionVencimientoService', () => {
     const count = await service.notificarProximos();
 
     expect(count).toBe(0);
-    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(7);
+    expect(vencimientoRepo.findProximosAVencer).toHaveBeenCalledWith(
+      { estudioId, userId: 'SYSTEM', roles: [] },
+      7,
+    );
     expect(mailSender.send).not.toHaveBeenCalled();
   });
 

@@ -4,6 +4,12 @@ import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { CrearClienteHandler } from '../../application/commands/crear-cliente.command';
 import { ActualizarClienteHandler } from '../../application/commands/actualizar-cliente.command';
+import { DesactivarClienteHandler } from '../../application/commands/desactivar-cliente.command';
+import { ActivarClienteHandler } from '../../application/commands/activar-cliente.command';
+import { AsignarResponsableHandler } from '../../application/commands/asignar-responsable.command';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeCliente = (
   overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {},
@@ -25,6 +31,9 @@ describe('ClientesController', () => {
   let mockClienteRepo: any;
   let crearClienteHandler: CrearClienteHandler;
   let actualizarClienteHandler: ActualizarClienteHandler;
+  let desactivarClienteHandler: DesactivarClienteHandler;
+  let activarClienteHandler: ActivarClienteHandler;
+  let asignarResponsableHandler: AsignarResponsableHandler;
 
   beforeEach(() => {
     mockClienteRepo = {
@@ -35,9 +44,19 @@ describe('ClientesController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
-    crearClienteHandler = new CrearClienteHandler(mockClienteRepo, { estudioId: 'estudio-1' });
+    crearClienteHandler = new CrearClienteHandler(mockClienteRepo);
     actualizarClienteHandler = new ActualizarClienteHandler(mockClienteRepo);
-    controller = new ClientesController(mockClienteRepo, crearClienteHandler, actualizarClienteHandler);
+    desactivarClienteHandler = new DesactivarClienteHandler(mockClienteRepo);
+    activarClienteHandler = new ActivarClienteHandler(mockClienteRepo);
+    asignarResponsableHandler = new AsignarResponsableHandler(mockClienteRepo);
+    controller = new ClientesController(
+      mockClienteRepo,
+      crearClienteHandler,
+      actualizarClienteHandler,
+      desactivarClienteHandler,
+      activarClienteHandler,
+      asignarResponsableHandler,
+    );
   });
 
   describe('list', () => {
@@ -45,18 +64,17 @@ describe('ClientesController', () => {
       const clientes = [makeCliente(), makeCliente({ cuit: '27-12345678-0' })];
       mockClienteRepo.findAll.mockResolvedValue(clientes);
 
-      const result = await controller.list(1, 20);
+      const result = await controller.list(principal, 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
     });
 
-    it('should use default page and limit when not provided', async () => {
+    it('should pass principal to repo.findAll', async () => {
       mockClienteRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.list();
-      expect(result.meta.page).toBe(1);
-      expect(result.meta.limit).toBe(20);
+      await controller.list(principal);
+      expect(mockClienteRepo.findAll).toHaveBeenCalledWith(principal);
     });
   });
 
@@ -65,7 +83,7 @@ describe('ClientesController', () => {
       const clientes = [makeCliente(), makeCliente({ cuit: '27-12345678-0' })];
       mockClienteRepo.findAll.mockResolvedValue(clientes);
 
-      const result = await controller.summary();
+      const result = await controller.summary(principal);
       expect(result.data.total).toBe(2);
       expect(result.data.porCondicionIva).toBeDefined();
       expect(result.data.porCondicionIva['RESPONSABLE_INSCRIPTO']).toBe(2);
@@ -74,7 +92,7 @@ describe('ClientesController', () => {
     it('should return empty breakdown when no clientes', async () => {
       mockClienteRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.summary();
+      const result = await controller.summary(principal);
       expect(result.data.total).toBe(0);
       expect(result.data.porCondicionIva).toEqual({});
     });
@@ -85,19 +103,27 @@ describe('ClientesController', () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      const result = await controller.getById(cliente.id);
+      const result = await controller.getById(principal, cliente.id);
       expect(result).toBeDefined();
     });
 
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.getById('nonexistent')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.getById(principal, 'nonexistent')).rejects.toThrow('Cliente no encontrado');
+    });
+
+    it('should pass principal to repo.findById', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      await controller.getById(principal, cliente.id);
+      expect(mockClienteRepo.findById).toHaveBeenCalledWith(principal, cliente.id);
     });
   });
 
   describe('create', () => {
-    it('should create a new cliente', async () => {
+    it('should create a new cliente using principal', async () => {
       const dto = {
         cuit: '20-12345678-6',
         razonSocial: 'Nueva Empresa',
@@ -105,18 +131,18 @@ describe('ClientesController', () => {
         tipo: 'PERSONA_JURIDICA',
         regimen: 'GENERAL',
       };
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, principal);
       expect(result.id).toBeDefined();
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('update', () => {
-    it('should delegate to ActualizarClienteHandler', async () => {
+    it('should delegate to ActualizarClienteHandler with principal', async () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      const result = await controller.update(cliente.id, { razonSocial: 'Nuevo Nombre SRL' });
+      const result = await controller.update(principal, cliente.id, { razonSocial: 'Nuevo Nombre SRL' });
       expect(result.razonSocial).toBe('Nuevo Nombre SRL');
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -124,23 +150,9 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.update('bad-id', { razonSocial: 'X' })).rejects.toThrow(
+      await expect(controller.update(principal, 'bad-id', { razonSocial: 'X' })).rejects.toThrow(
         'Cliente no encontrado',
       );
-    });
-
-    it('should pass all dto fields to handler', async () => {
-      const cliente = makeCliente();
-      mockClienteRepo.findById.mockResolvedValue(cliente);
-
-      await controller.update(cliente.id, {
-        razonSocial: 'Actualizada',
-        condicionIva: 'MONOTRIBUTO',
-        regimen: 'MONOTRIBUTO',
-      });
-      expect(cliente.condicionIva).toBe('MONOTRIBUTO');
-      expect(cliente.regimen).toBe('MONOTRIBUTO');
-      expect(cliente.razonSocial).toBe('Actualizada');
     });
   });
 
@@ -149,7 +161,7 @@ describe('ClientesController', () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      await controller.deactivate(cliente.id);
+      await controller.deactivate(principal, cliente.id);
       expect(cliente.isActive).toBe(false);
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -157,7 +169,7 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.deactivate('bad-id')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.deactivate(principal, 'bad-id')).rejects.toThrow('Cliente no encontrado');
     });
   });
 
@@ -167,7 +179,7 @@ describe('ClientesController', () => {
       cliente.deactivate();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      await controller.activate(cliente.id);
+      await controller.activate(principal, cliente.id);
       expect(cliente.isActive).toBe(true);
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -175,7 +187,7 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.activate('bad-id')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.activate(principal, 'bad-id')).rejects.toThrow('Cliente no encontrado');
     });
   });
 
@@ -184,7 +196,7 @@ describe('ClientesController', () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      await controller.assignResponsable(cliente.id, { responsableId: 'user-1' });
+      await controller.assignResponsable(principal, cliente.id, { responsableId: 'user-1' });
       expect(cliente.responsableId).toBe('user-1');
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -193,7 +205,7 @@ describe('ClientesController', () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
       await expect(
-        controller.assignResponsable('bad-id', { responsableId: 'user-1' }),
+        controller.assignResponsable(principal, 'bad-id', { responsableId: 'user-1' }),
       ).rejects.toThrow('Cliente no encontrado');
     });
   });

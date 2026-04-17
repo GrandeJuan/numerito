@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
 import { Vencimiento, type EstadoVencimiento } from '../../domain/entities/vencimiento.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
@@ -28,13 +29,12 @@ export class MikroOrmVencimientoRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Vencimiento | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Vencimiento | null> {
     const entity = await this.em.findOne(
       VencimientoEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
@@ -44,13 +44,12 @@ export class MikroOrmVencimientoRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByClienteId(clienteId: string): Promise<Vencimiento[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<Vencimiento[]> {
     const entities = await this.em.find(
       VencimientoEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
@@ -59,13 +58,12 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByPeriodo(periodo: string): Promise<Vencimiento[]> {
-    const tenantId = this.getTenantId();
+  async findByPeriodo(principal: EstudioPrincipal, periodo: string): Promise<Vencimiento[]> {
     const entities = await this.em.find(
       VencimientoEntity,
       {
         periodo,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
@@ -74,13 +72,12 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByEstado(estado: EstadoVencimiento): Promise<Vencimiento[]> {
-    const tenantId = this.getTenantId();
+  async findByEstado(principal: EstudioPrincipal, estado: EstadoVencimiento): Promise<Vencimiento[]> {
     const entities = await this.em.find(
       VencimientoEntity,
       {
         estado: { codigo: estado },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
@@ -89,8 +86,7 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findProximosAVencer(diasAnticipacion: number): Promise<Vencimiento[]> {
-    const tenantId = this.getTenantId();
+  async findProximosAVencer(principal: EstudioPrincipal, diasAnticipacion: number): Promise<Vencimiento[]> {
     const now = new Date();
     const limit = new Date();
     limit.setDate(limit.getDate() + diasAnticipacion);
@@ -98,7 +94,7 @@ export class MikroOrmVencimientoRepository
     const entities = await this.em.find(
       VencimientoEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
         estado: { codigo: 'PENDIENTE' },
         fechaVencimiento: { $gte: now, $lte: limit },
       },
@@ -109,12 +105,11 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<Vencimiento[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Vencimiento[]> {
     const entities = await this.em.find(
       VencimientoEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
@@ -123,7 +118,7 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(vencimiento: Vencimiento): Promise<void> {
+  async save(principal: EstudioPrincipal, vencimiento: Vencimiento): Promise<void> {
     const data = this.mapper.toPersistence(vencimiento);
     const [tipoObligacion, estado] = await Promise.all([
       this.em.findOneOrFail(TipoObligacionEntity, { codigo: data.tipoObligacion }),
@@ -132,8 +127,7 @@ export class MikroOrmVencimientoRepository
     const cliente = this.em.getReference(ClienteEntity, data.clienteId);
     const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(VencimientoEntity, { id: data.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(VencimientoEntity, { id: data.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -159,9 +153,8 @@ export class MikroOrmVencimientoRepository
     await this.em.flush();
   }
 
-  async delete(vencimiento: Vencimiento): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(VencimientoEntity, { id: vencimiento.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, vencimiento: Vencimiento): Promise<void> {
+    const entity = await this.em.findOne(VencimientoEntity, { id: vencimiento.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

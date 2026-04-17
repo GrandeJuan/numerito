@@ -1,7 +1,19 @@
-import { BaseRepository } from './base.repository';
 import { TenantContext } from './tenant-context';
 
-export abstract class TenantAwareRepository<T> implements BaseRepository<T> {
+/**
+ * Base class for tenant-aware repositories.
+ *
+ * Provides {@link getTenantId} for repositories still using ambient context,
+ * and serves as a marker for the architecture test (Phase 1 → Phase 3).
+ *
+ * Concrete repos define their own method signatures via domain-specific
+ * interfaces. During Phase 2 migration (#225–#228), migrated repos accept
+ * `EstudioPrincipal` as first parameter and stop calling `getTenantId()`.
+ * Non-migrated repos continue using `getTenantId()` until their turn.
+ *
+ * Phase 3 (#231) will deprecate `getTenantId()` entirely.
+ */
+export abstract class TenantAwareRepository<T> {
   constructor(protected readonly context: TenantContext) {}
 
   protected getTenantId(): string {
@@ -11,9 +23,4 @@ export abstract class TenantAwareRepository<T> implements BaseRepository<T> {
     }
     return tenantId;
   }
-
-  abstract findById(id: string): Promise<T | null>;
-  abstract findAll(): Promise<T[]>;
-  abstract save(entity: T): Promise<void>;
-  abstract delete(entity: T): Promise<void>;
 }

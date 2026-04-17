@@ -1,11 +1,12 @@
 import { VencimientoCalendarioHandler } from './vencimiento-calendario.query';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-uuid', userId: 'user-1', roles: [] };
 
 describe('VencimientoCalendarioHandler', () => {
   let handler: VencimientoCalendarioHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
-
-  const estudioId = 'estudio-uuid';
 
   beforeEach(() => {
     mockExecute = jest.fn();
@@ -33,8 +34,7 @@ describe('VencimientoCalendarioHandler', () => {
       rowFixture({ id: 'v-2', estado: 'PRESENTADO', tipo_obligacion: 'GANANCIAS' }),
     ]);
 
-    const result = await handler.execute({
-      estudioId,
+    const result = await handler.execute(principal, {
       fechaDesde: '2026-04-01',
       fechaHasta: '2026-04-30',
     });
@@ -66,8 +66,7 @@ describe('VencimientoCalendarioHandler', () => {
   it('returns empty array on empty result (empty range)', async () => {
     mockExecute.mockResolvedValueOnce([]);
 
-    const result = await handler.execute({
-      estudioId,
+    const result = await handler.execute(principal, {
       fechaDesde: '2026-04-10',
       fechaHasta: '2026-04-10',
     });
@@ -78,8 +77,7 @@ describe('VencimientoCalendarioHandler', () => {
   it('issues a single SQL query with the expected joins, filters, and order', async () => {
     mockExecute.mockResolvedValueOnce([]);
 
-    await handler.execute({
-      estudioId,
+    await handler.execute(principal, {
       fechaDesde: '2026-04-01',
       fechaHasta: '2026-04-30',
     });
@@ -94,14 +92,13 @@ describe('VencimientoCalendarioHandler', () => {
     expect(sql).toMatch(/AND v\.fecha_vencimiento >= \?/);
     expect(sql).toMatch(/AND v\.fecha_vencimiento <= \?/);
     expect(sql).toMatch(/ORDER BY v\.fecha_vencimiento ASC, v\.id ASC/);
-    expect(params).toEqual([estudioId, '2026-04-01', '2026-04-30']);
+    expect(params).toEqual([principal.estudioId, '2026-04-01', '2026-04-30']);
   });
 
   it('casts fecha_vencimiento to ::date::text to keep the YYYY-MM-DD wire format', async () => {
     mockExecute.mockResolvedValueOnce([]);
 
-    await handler.execute({
-      estudioId,
+    await handler.execute(principal, {
       fechaDesde: '2026-04-01',
       fechaHasta: '2026-04-30',
     });
@@ -116,8 +113,7 @@ describe('VencimientoCalendarioHandler', () => {
       rowFixture({ id: 'v-jan', periodo: '2026-01', fecha_vencimiento: '2026-01-05' }),
     ]);
 
-    const result = await handler.execute({
-      estudioId,
+    const result = await handler.execute(principal, {
       fechaDesde: '2025-12-15',
       fechaHasta: '2026-01-15',
     });
@@ -127,27 +123,26 @@ describe('VencimientoCalendarioHandler', () => {
     expect(result[1].fechaVencimiento).toBe('2026-01-05');
 
     const [, params] = mockExecute.mock.calls[0];
-    expect(params).toEqual([estudioId, '2025-12-15', '2026-01-15']);
+    expect(params).toEqual([principal.estudioId, '2025-12-15', '2026-01-15']);
   });
 
   it('handles a large (multi-year) range without mutating the params', async () => {
     mockExecute.mockResolvedValueOnce([]);
 
-    await handler.execute({
-      estudioId,
+    await handler.execute(principal, {
       fechaDesde: '2020-01-01',
       fechaHasta: '2030-12-31',
     });
 
     const [, params] = mockExecute.mock.calls[0];
-    expect(params).toEqual([estudioId, '2020-01-01', '2030-12-31']);
+    expect(params).toEqual([principal.estudioId, '2020-01-01', '2030-12-31']);
   });
 
-  it('scopes by estudioId — never queries without the tenant filter', async () => {
+  it('scopes by principal.estudioId — never queries without the tenant filter', async () => {
     mockExecute.mockResolvedValueOnce([]);
+    const otherPrincipal: EstudioPrincipal = { estudioId: 'other-estudio', userId: 'user-1', roles: [] };
 
-    await handler.execute({
-      estudioId: 'other-estudio',
+    await handler.execute(otherPrincipal, {
       fechaDesde: '2026-04-01',
       fechaHasta: '2026-04-30',
     });
@@ -162,8 +157,7 @@ describe('VencimientoCalendarioHandler', () => {
     mockEm.find = jest.fn();
     mockEm.findAll = jest.fn();
 
-    await handler.execute({
-      estudioId,
+    await handler.execute(principal, {
       fechaDesde: '2026-04-01',
       fechaHasta: '2026-04-30',
     });

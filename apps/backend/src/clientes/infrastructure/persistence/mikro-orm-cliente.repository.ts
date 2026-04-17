@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
@@ -30,13 +31,12 @@ export class MikroOrmClienteRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Cliente | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Cliente | null> {
     const entity = await this.em.findOne(
       ClienteEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
@@ -46,13 +46,12 @@ export class MikroOrmClienteRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByCuit(cuit: Cuit): Promise<Cliente | null> {
-    const tenantId = this.getTenantId();
+  async findByCuit(principal: EstudioPrincipal, cuit: Cuit): Promise<Cliente | null> {
     const entity = await this.em.findOne(
       ClienteEntity,
       {
         cuit: cuit.raw,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
@@ -62,12 +61,11 @@ export class MikroOrmClienteRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findAll(): Promise<Cliente[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Cliente[]> {
     const entities = await this.em.find(
       ClienteEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
@@ -76,13 +74,12 @@ export class MikroOrmClienteRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByResponsableId(responsableId: string): Promise<Cliente[]> {
-    const tenantId = this.getTenantId();
+  async findByResponsableId(principal: EstudioPrincipal, responsableId: string): Promise<Cliente[]> {
     const entities = await this.em.find(
       ClienteEntity,
       {
         responsable: { id: responsableId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['condicionIva', 'tipoCliente', 'regimen', 'estudio', 'responsable'],
@@ -91,7 +88,7 @@ export class MikroOrmClienteRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(cliente: Cliente): Promise<void> {
+  async save(principal: EstudioPrincipal, cliente: Cliente): Promise<void> {
     const data = this.mapper.toPersistence(cliente);
     const [condicionIva, tipoCliente, regimen] = await Promise.all([
       this.em.findOneOrFail(CondicionIvaEntity, { codigo: data.condicionIva }),
@@ -103,8 +100,7 @@ export class MikroOrmClienteRepository
       ? this.em.getReference(UsuarioEntity, data.responsableId)
       : undefined;
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(ClienteEntity, { id: data.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(ClienteEntity, { id: data.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cuit = data.cuit;
       existing.razonSocial = data.razonSocial;
@@ -132,9 +128,8 @@ export class MikroOrmClienteRepository
     await this.em.flush();
   }
 
-  async delete(cliente: Cliente): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(ClienteEntity, { id: cliente.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, cliente: Cliente): Promise<void> {
+    const entity = await this.em.findOne(ClienteEntity, { id: cliente.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

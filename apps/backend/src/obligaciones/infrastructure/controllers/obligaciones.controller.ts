@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { EstadoVencimiento } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { CrearVencimientoDto, crearVencimientoDtoSchema } from '../../application/dtos/crear-vencimiento.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import {
@@ -13,7 +14,7 @@ import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kp
 import { VencimientoListHandler } from '../../application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from '../../application/queries/vencimiento-calendario.query';
 import { VencimientoByIdHandler } from '../../application/queries/vencimiento-by-id.query';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Obligaciones')
@@ -31,15 +32,15 @@ export class ObligacionesController {
 
   @Get('kpis')
   @ApiOperation({ summary: 'KPIs de obligaciones del estudio' })
-  async kpis(@EstudioId() estudioId: string) {
-    const result = await this.vencimientoKpisHandler.execute({ estudioId });
+  async kpis(@Principal() principal: EstudioPrincipal) {
+    const result = await this.vencimientoKpisHandler.execute(principal);
     return successResponse(result);
   }
 
   @Get('vencimientos')
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(
-    @EstudioId() estudioId: string,
+    @Principal() principal: EstudioPrincipal,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
@@ -50,8 +51,7 @@ export class ObligacionesController {
   ) {
     const pageNum = +page;
     const limitNum = +limit;
-    const { items, total } = await this.vencimientoListHandler.execute({
-      estudioId,
+    const { items, total } = await this.vencimientoListHandler.execute(principal, {
       estado: estado as EstadoVencimiento | undefined,
       periodo,
       clienteId,
@@ -69,36 +69,35 @@ export class ObligacionesController {
 
   @Get('vencimientos/:id')
   @ApiOperation({ summary: 'Obtener vencimiento por ID' })
-  async getById(@EstudioId() estudioId: string, @Param('id') id: string) {
-    const vencimiento = await this.vencimientoByIdHandler.execute({ id, estudioId });
+  async getById(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const vencimiento = await this.vencimientoByIdHandler.execute(principal, { id });
     return successResponse(vencimiento);
   }
 
   @Post('vencimientos')
   @ApiOperation({ summary: 'Crear vencimiento' })
-  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto, @EstudioId() estudioId: string) {
-    const result = await this.crearVencimientoHandler.execute({ ...dto, estudioId } as CrearVencimientoCommand);
+  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto, @Principal() principal: EstudioPrincipal) {
+    const result = await this.crearVencimientoHandler.execute(principal, dto as CrearVencimientoCommand);
     return result;
   }
 
   @Patch('vencimientos/:id/presentar')
   @ApiOperation({ summary: 'Marcar vencimiento como presentado' })
-  async presentar(@Param('id') id: string) {
-    return this.presentarVencimientoHandler.execute({ vencimientoId: id });
+  async presentar(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    return this.presentarVencimientoHandler.execute(principal, { vencimientoId: id });
   }
 
   @Patch('vencimientos/:id/vencido')
   @ApiOperation({ summary: 'Marcar vencimiento como vencido' })
-  async marcarVencido(@Param('id') id: string) {
-    return this.marcarVencidoHandler.execute({ vencimientoId: id });
+  async marcarVencido(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    return this.marcarVencidoHandler.execute(principal, { vencimientoId: id });
   }
 
   @Get('calendario/:periodo')
   @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
-  async calendario(@EstudioId() estudioId: string, @Param('periodo') periodo: string) {
+  async calendario(@Principal() principal: EstudioPrincipal, @Param('periodo') periodo: string) {
     const { fechaDesde, fechaHasta } = periodoToRange(periodo);
-    const items = await this.vencimientoCalendarioHandler.execute({
-      estudioId,
+    const items = await this.vencimientoCalendarioHandler.execute(principal, {
       fechaDesde,
       fechaHasta,
     });

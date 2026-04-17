@@ -1,8 +1,8 @@
 import { EntityManager } from '@mikro-orm/core';
 import type { EstadoVencimiento, TipoObligacion } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 export interface VencimientoCalendarioQuery {
-  estudioId: string;
   fechaDesde: string;
   fechaHasta: string;
 }
@@ -22,6 +22,7 @@ export class VencimientoCalendarioHandler {
   constructor(private readonly em: EntityManager) {}
 
   async execute(
+    principal: EstudioPrincipal,
     query: VencimientoCalendarioQuery,
   ): Promise<VencimientoCalendarioItem[]> {
     const conn = this.em.getConnection();
@@ -43,7 +44,7 @@ export class VencimientoCalendarioHandler {
          AND v.fecha_vencimiento >= ?
          AND v.fecha_vencimiento <= ?
        ORDER BY v.fecha_vencimiento ASC, v.id ASC`,
-      [query.estudioId, query.fechaDesde, query.fechaHasta],
+      [principal.estudioId, query.fechaDesde, query.fechaHasta],
     );
 
     return rows.map((r: any) => ({

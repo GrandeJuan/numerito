@@ -1,5 +1,8 @@
 import { PresentarVencimientoHandler } from './presentar-vencimiento.command';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeVencimiento = () =>
   Vencimiento.create({
@@ -32,17 +35,17 @@ describe('PresentarVencimiento Command', () => {
     const v = makeVencimiento();
     mockRepo.findById.mockResolvedValue(v);
 
-    const result = await handler.execute({ vencimientoId: v.id });
+    const result = await handler.execute(principal, { vencimientoId: v.id });
 
     expect(result.estado).toBe('PRESENTADO');
-    expect(mockRepo.save).toHaveBeenCalledWith(v);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, v);
   });
 
   it('should publish domain events after save', async () => {
     const v = makeVencimiento();
     mockRepo.findById.mockResolvedValue(v);
 
-    await handler.execute({ vencimientoId: v.id });
+    await handler.execute(principal, { vencimientoId: v.id });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     const events = mockEventBus.publishAll.mock.calls[0][0];
@@ -54,7 +57,7 @@ describe('PresentarVencimiento Command', () => {
     const v = makeVencimiento();
     mockRepo.findById.mockResolvedValue(v);
 
-    await handler.execute({ vencimientoId: v.id });
+    await handler.execute(principal, { vencimientoId: v.id });
 
     expect(v.getDomainEvents()).toHaveLength(0);
   });
@@ -62,7 +65,7 @@ describe('PresentarVencimiento Command', () => {
   it('should throw when vencimiento not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
-    await expect(handler.execute({ vencimientoId: 'bad-id' })).rejects.toThrow(
+    await expect(handler.execute(principal, { vencimientoId: 'bad-id' })).rejects.toThrow(
       'Vencimiento no encontrado',
     );
     expect(mockRepo.save).not.toHaveBeenCalled();
@@ -75,7 +78,7 @@ describe('PresentarVencimiento Command', () => {
     v.clearDomainEvents();
     mockRepo.findById.mockResolvedValue(v);
 
-    await expect(handler.execute({ vencimientoId: v.id })).rejects.toThrow();
+    await expect(handler.execute(principal, { vencimientoId: v.id })).rejects.toThrow();
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
@@ -85,7 +88,17 @@ describe('PresentarVencimiento Command', () => {
     mockRepo.findById.mockResolvedValue(v);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute({ vencimientoId: v.id })).rejects.toThrow('DB error');
+    await expect(handler.execute(principal, { vencimientoId: v.id })).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
+  });
+
+  it('should pass principal to repo methods', async () => {
+    const v = makeVencimiento();
+    mockRepo.findById.mockResolvedValue(v);
+
+    await handler.execute(principal, { vencimientoId: v.id });
+
+    expect(mockRepo.findById).toHaveBeenCalledWith(principal, v.id);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, v);
   });
 });

@@ -3,6 +3,9 @@ import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { CONDICION_IVA, REGIMEN } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeCliente = (
   overrides: Partial<{ id: string; cuit: string; razonSocial: string; estudioId: string }> = {},
@@ -39,7 +42,7 @@ describe('ActualizarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       id: cliente.id,
       razonSocial: 'Nuevo Nombre SRL',
     });
@@ -52,7 +55,7 @@ describe('ActualizarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       id: cliente.id,
       condicionIva: CONDICION_IVA.MONOTRIBUTO,
     });
@@ -65,7 +68,7 @@ describe('ActualizarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       id: cliente.id,
       regimen: REGIMEN.MONOTRIBUTO,
     });
@@ -78,7 +81,7 @@ describe('ActualizarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       id: cliente.id,
       razonSocial: 'Actualizada S.A.',
       condicionIva: CONDICION_IVA.MONOTRIBUTO,
@@ -94,7 +97,7 @@ describe('ActualizarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    await handler.execute({ id: cliente.id });
+    await handler.execute(principal, { id: cliente.id });
 
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
     expect(cliente.razonSocial).toBe('Empresa Test');
@@ -104,7 +107,17 @@ describe('ActualizarCliente Command', () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({ id: 'nonexistent', razonSocial: 'X' }),
+      handler.execute(principal, { id: 'nonexistent', razonSocial: 'X' }),
     ).rejects.toThrow('Cliente no encontrado');
+  });
+
+  it('should pass principal to repo methods', async () => {
+    const cliente = makeCliente();
+    mockRepo.findById.mockResolvedValue(cliente);
+
+    await handler.execute(principal, { id: cliente.id, razonSocial: 'Nuevo' });
+
+    expect(mockRepo.findById).toHaveBeenCalledWith(principal, cliente.id);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, cliente);
   });
 });

@@ -1,10 +1,10 @@
 import { EntityManager } from '@mikro-orm/core';
 import type { EstadoVencimiento, TipoObligacion } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 export interface VencimientoByIdQuery {
   id: string;
-  estudioId: string;
 }
 
 export interface VencimientoByIdResult {
@@ -21,7 +21,7 @@ export interface VencimientoByIdResult {
 export class VencimientoByIdHandler {
   constructor(private readonly em: EntityManager) {}
 
-  async execute(query: VencimientoByIdQuery): Promise<VencimientoByIdResult> {
+  async execute(principal: EstudioPrincipal, query: VencimientoByIdQuery): Promise<VencimientoByIdResult> {
     const conn = this.em.getConnection();
     const rows = await conn.execute(
       `SELECT
@@ -39,7 +39,7 @@ export class VencimientoByIdHandler {
        JOIN estado_vencimiento ev ON v.estado_id = ev.id
        WHERE v.id = ? AND v.estudio_id = ?
        LIMIT 1`,
-      [query.id, query.estudioId],
+      [query.id, principal.estudioId],
     );
 
     const row = rows[0];

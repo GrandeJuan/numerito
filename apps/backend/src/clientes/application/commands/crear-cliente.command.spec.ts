@@ -1,5 +1,8 @@
 import { CrearClienteHandler } from './crear-cliente.command';
 import { CONDICION_IVA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 describe('CrearCliente Command', () => {
   let handler: CrearClienteHandler;
@@ -18,13 +21,12 @@ describe('CrearCliente Command', () => {
   });
 
   it('should create a new cliente', async () => {
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       cuit: '20-12345678-6',
       razonSocial: 'Test S.A.',
       condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
       tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
       regimen: REGIMEN.GENERAL,
-      estudioId: 'estudio-1',
     });
 
     expect(result.id).toBeDefined();
@@ -35,28 +37,41 @@ describe('CrearCliente Command', () => {
     mockRepo.findByCuit.mockResolvedValue({ id: 'existing' });
 
     await expect(
-      handler.execute({
+      handler.execute(principal, {
         cuit: '20-12345678-6',
         razonSocial: 'Test S.A.',
         condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
         tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
         regimen: REGIMEN.GENERAL,
-        estudioId: 'estudio-1',
       }),
     ).rejects.toThrow('CUIT ya registrado en este estudio');
   });
 
-  it('should use estudioId from command', async () => {
-    await handler.execute({
+  it('should use estudioId from principal', async () => {
+    const customPrincipal: EstudioPrincipal = { estudioId: 'estudio-99', userId: 'user-1', roles: [] };
+
+    await handler.execute(customPrincipal, {
       cuit: '20-12345678-6',
       razonSocial: 'Test S.A.',
       condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
       tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
       regimen: REGIMEN.GENERAL,
-      estudioId: 'estudio-99',
     });
 
-    const savedCliente = mockRepo.save.mock.calls[0][0];
+    const savedCliente = mockRepo.save.mock.calls[0][1];
     expect(savedCliente.estudioId).toBe('estudio-99');
+  });
+
+  it('should pass principal to repo.findByCuit and repo.save', async () => {
+    await handler.execute(principal, {
+      cuit: '20-12345678-6',
+      razonSocial: 'Test S.A.',
+      condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+      tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+      regimen: REGIMEN.GENERAL,
+    });
+
+    expect(mockRepo.findByCuit).toHaveBeenCalledWith(principal, expect.anything());
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, expect.anything());
   });
 });

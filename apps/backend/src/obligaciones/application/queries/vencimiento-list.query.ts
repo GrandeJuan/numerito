@@ -1,8 +1,8 @@
 import { EntityManager } from '@mikro-orm/core';
 import type { EstadoVencimiento, TipoObligacion } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 export interface VencimientoListQuery {
-  estudioId: string;
   estado?: EstadoVencimiento;
   clienteId?: string;
   periodo?: string;
@@ -34,13 +34,13 @@ const DEFAULT_LIMIT = 20;
 export class VencimientoListHandler {
   constructor(private readonly em: EntityManager) {}
 
-  async execute(query: VencimientoListQuery): Promise<VencimientoListResult> {
+  async execute(principal: EstudioPrincipal, query: VencimientoListQuery): Promise<VencimientoListResult> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.max(1, Number(query.limit) || DEFAULT_LIMIT);
     const offset = (page - 1) * limit;
 
     const whereParts: string[] = ['v.estudio_id = ?'];
-    const whereParams: unknown[] = [query.estudioId];
+    const whereParams: unknown[] = [principal.estudioId];
 
     if (query.estado) {
       whereParts.push('ev.codigo = ?');

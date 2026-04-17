@@ -1,5 +1,8 @@
 import { ObligacionesController } from './obligaciones.controller';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 describe('ObligacionesController', () => {
   let controller: ObligacionesController;
@@ -61,7 +64,7 @@ describe('ObligacionesController', () => {
   });
 
   describe('kpis', () => {
-    it('should delegate to VencimientoKpisHandler with the estudioId', async () => {
+    it('should delegate to VencimientoKpisHandler with the principal', async () => {
       mockVencimientoKpisHandler.execute.mockResolvedValue({
         pendientes: 1,
         vencidos: 1,
@@ -69,9 +72,9 @@ describe('ObligacionesController', () => {
         proximoVencimiento: '2026-04-20',
       });
 
-      const result = await controller.kpis('estudio-1');
+      const result = await controller.kpis(principal);
 
-      expect(mockVencimientoKpisHandler.execute).toHaveBeenCalledWith({ estudioId: 'estudio-1' });
+      expect(mockVencimientoKpisHandler.execute).toHaveBeenCalledWith(principal);
       expect(result.data).toEqual({
         pendientes: 1,
         vencidos: 1,
@@ -88,7 +91,7 @@ describe('ObligacionesController', () => {
         proximoVencimiento: null,
       });
 
-      const result = await controller.kpis('estudio-1');
+      const result = await controller.kpis(principal);
       expect(result.data.proximoVencimiento).toBeNull();
     });
   });
@@ -105,16 +108,15 @@ describe('ObligacionesController', () => {
       estado: 'PENDIENTE',
     };
 
-    it('should delegate to VencimientoListHandler with estudioId', async () => {
+    it('should delegate to VencimientoListHandler with principal', async () => {
       mockVencimientoListHandler.execute.mockResolvedValue({
         items: [listItem, listItem],
         total: 7,
       });
 
-      const result = await controller.list('estudio-1', 1, 20);
+      const result = await controller.list(principal, 1, 20);
 
-      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(principal, {
         estado: undefined,
         periodo: undefined,
         clienteId: undefined,
@@ -128,28 +130,30 @@ describe('ObligacionesController', () => {
     });
 
     it('should use default page and limit when not provided', async () => {
-      const result = await controller.list('estudio-1');
+      const result = await controller.list(principal);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
 
     it('should forward periodo filter', async () => {
-      await controller.list('estudio-1', 1, 20, undefined, '2026-03');
+      await controller.list(principal, 1, 20, undefined, '2026-03');
       expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(
+        principal,
         expect.objectContaining({ periodo: '2026-03' }),
       );
     });
 
     it('should forward estado filter', async () => {
-      await controller.list('estudio-1', 1, 20, 'PENDIENTE');
+      await controller.list(principal, 1, 20, 'PENDIENTE');
       expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(
+        principal,
         expect.objectContaining({ estado: 'PENDIENTE' }),
       );
     });
 
     it('should forward clienteId and date-range filters', async () => {
       await controller.list(
-        'estudio-1',
+        principal,
         2,
         50,
         undefined,
@@ -158,8 +162,7 @@ describe('ObligacionesController', () => {
         '2026-04-01',
         '2026-04-30',
       );
-      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoListHandler.execute).toHaveBeenCalledWith(principal, {
         estado: undefined,
         periodo: undefined,
         clienteId: 'cli-42',
@@ -172,12 +175,11 @@ describe('ObligacionesController', () => {
   });
 
   describe('getById', () => {
-    it('should delegate to VencimientoByIdHandler with id and estudioId', async () => {
-      const result = await controller.getById('estudio-1', 'v-1');
+    it('should delegate to VencimientoByIdHandler with principal and id', async () => {
+      const result = await controller.getById(principal, 'v-1');
 
-      expect(mockVencimientoByIdHandler.execute).toHaveBeenCalledWith({
+      expect(mockVencimientoByIdHandler.execute).toHaveBeenCalledWith(principal, {
         id: 'v-1',
-        estudioId: 'estudio-1',
       });
       expect(result.data).toEqual(byIdFixture);
     });
@@ -187,14 +189,14 @@ describe('ObligacionesController', () => {
         new RecursoNoEncontradoError('Vencimiento'),
       );
 
-      await expect(controller.getById('estudio-1', 'bad-id')).rejects.toThrow(
+      await expect(controller.getById(principal, 'bad-id')).rejects.toThrow(
         'Vencimiento no encontrado',
       );
     });
   });
 
   describe('create', () => {
-    it('should delegate to CrearVencimientoHandler', async () => {
+    it('should delegate to CrearVencimientoHandler with principal', async () => {
       const dto = {
         clienteId: 'cliente-1',
         tipoObligacion: 'IVA',
@@ -203,30 +205,27 @@ describe('ObligacionesController', () => {
         descripcion: 'DDJJ IVA',
       };
 
-      const result = await controller.create(dto as any, 'estudio-1');
+      const result = await controller.create(dto as any, principal);
       expect(result.id).toBe('new-vencimiento-id');
-      expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith({
-        ...dto,
-        estudioId: 'estudio-1',
-      });
+      expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith(principal, dto);
     });
   });
 
   describe('presentar', () => {
-    it('should delegate to PresentarVencimientoHandler', async () => {
-      await controller.presentar('vencimiento-1');
+    it('should delegate to PresentarVencimientoHandler with principal', async () => {
+      await controller.presentar(principal, 'vencimiento-1');
 
-      expect(mockPresentarVencimientoHandler.execute).toHaveBeenCalledWith({
+      expect(mockPresentarVencimientoHandler.execute).toHaveBeenCalledWith(principal, {
         vencimientoId: 'vencimiento-1',
       });
     });
   });
 
   describe('marcarVencido', () => {
-    it('should delegate to MarcarVencidoHandler', async () => {
-      await controller.marcarVencido('vencimiento-1');
+    it('should delegate to MarcarVencidoHandler with principal', async () => {
+      await controller.marcarVencido(principal, 'vencimiento-1');
 
-      expect(mockMarcarVencidoHandler.execute).toHaveBeenCalledWith({
+      expect(mockMarcarVencidoHandler.execute).toHaveBeenCalledWith(principal, {
         vencimientoId: 'vencimiento-1',
       });
     });
@@ -247,10 +246,9 @@ describe('ObligacionesController', () => {
     it('should delegate to VencimientoCalendarioHandler with the derived date range', async () => {
       mockVencimientoCalendarioHandler.execute.mockResolvedValue([calendarioItem]);
 
-      const result = await controller.calendario('estudio-1', '2026-04');
+      const result = await controller.calendario(principal, '2026-04');
 
-      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith(principal, {
         fechaDesde: '2026-04-01',
         fechaHasta: '2026-04-30',
       });
@@ -258,30 +256,27 @@ describe('ObligacionesController', () => {
     });
 
     it('should compute the last day of months with 31 days', async () => {
-      await controller.calendario('estudio-1', '2026-01');
+      await controller.calendario(principal, '2026-01');
 
-      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith(principal, {
         fechaDesde: '2026-01-01',
         fechaHasta: '2026-01-31',
       });
     });
 
     it('should compute the last day of February in a non-leap year', async () => {
-      await controller.calendario('estudio-1', '2026-02');
+      await controller.calendario(principal, '2026-02');
 
-      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith(principal, {
         fechaDesde: '2026-02-01',
         fechaHasta: '2026-02-28',
       });
     });
 
     it('should compute the last day of February in a leap year', async () => {
-      await controller.calendario('estudio-1', '2028-02');
+      await controller.calendario(principal, '2028-02');
 
-      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockVencimientoCalendarioHandler.execute).toHaveBeenCalledWith(principal, {
         fechaDesde: '2028-02-01',
         fechaHasta: '2028-02-29',
       });

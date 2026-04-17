@@ -1,12 +1,14 @@
 import { VencimientoByIdHandler } from './vencimiento-by-id.query';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-uuid', userId: 'user-1', roles: [] };
 
 describe('VencimientoByIdHandler', () => {
   let handler: VencimientoByIdHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
 
-  const estudioId = 'estudio-uuid';
   const id = 'v-1';
 
   beforeEach(() => {
@@ -32,7 +34,7 @@ describe('VencimientoByIdHandler', () => {
   it('returns a DTO-shaped result (no domain-entity leakage)', async () => {
     mockExecute.mockResolvedValueOnce([rowFixture()]);
 
-    const result = await handler.execute({ id, estudioId });
+    const result = await handler.execute(principal, { id });
 
     expect(result).toEqual({
       id: 'v-1',
@@ -49,15 +51,15 @@ describe('VencimientoByIdHandler', () => {
   it('throws RecursoNoEncontradoError when no row is returned', async () => {
     mockExecute.mockResolvedValueOnce([]);
 
-    await expect(handler.execute({ id: 'missing', estudioId })).rejects.toThrow(
+    await expect(handler.execute(principal, { id: 'missing' })).rejects.toThrow(
       RecursoNoEncontradoError,
     );
   });
 
-  it('issues a single SQL query scoped by id AND estudio_id', async () => {
+  it('issues a single SQL query scoped by id AND principal.estudioId', async () => {
     mockExecute.mockResolvedValueOnce([rowFixture()]);
 
-    await handler.execute({ id, estudioId });
+    await handler.execute(principal, { id });
 
     expect(mockExecute).toHaveBeenCalledTimes(1);
     const [sql, params] = mockExecute.mock.calls[0];
@@ -67,24 +69,24 @@ describe('VencimientoByIdHandler', () => {
     expect(sql).toMatch(/JOIN estado_vencimiento ev/);
     expect(sql).toMatch(/WHERE v\.id = \? AND v\.estudio_id = \?/);
     expect(sql).toMatch(/LIMIT 1/);
-    expect(params).toEqual([id, estudioId]);
+    expect(params).toEqual([id, principal.estudioId]);
   });
 
   it('casts fecha_vencimiento to ::date::text to keep the YYYY-MM-DD wire format', async () => {
     mockExecute.mockResolvedValueOnce([rowFixture()]);
 
-    await handler.execute({ id, estudioId });
+    await handler.execute(principal, { id });
 
     const [sql] = mockExecute.mock.calls[0];
     expect(sql).toMatch(/v\.fecha_vencimiento::date::text AS fecha_vencimiento/);
   });
 
   it('treats tenant mismatch as not-found — vencimientos from other estudios are invisible', async () => {
-    // DB returns no row because the WHERE clause filters by estudio_id
     mockExecute.mockResolvedValueOnce([]);
+    const otherPrincipal: EstudioPrincipal = { estudioId: 'my-estudio', userId: 'user-1', roles: [] };
 
     await expect(
-      handler.execute({ id: 'v-from-other-tenant', estudioId: 'my-estudio' }),
+      handler.execute(otherPrincipal, { id: 'v-from-other-tenant' }),
     ).rejects.toThrow(RecursoNoEncontradoError);
 
     const [, params] = mockExecute.mock.calls[0];
@@ -96,7 +98,7 @@ describe('VencimientoByIdHandler', () => {
     mockEm.find = jest.fn();
     mockEm.findAll = jest.fn();
 
-    await handler.execute({ id, estudioId });
+    await handler.execute(principal, { id });
 
     expect(mockEm.find).not.toHaveBeenCalled();
     expect(mockEm.findAll).not.toHaveBeenCalled();

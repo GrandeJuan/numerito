@@ -2,6 +2,9 @@ import { DesactivarClienteHandler } from './desactivar-cliente.command';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeCliente = (id = 'cliente-1') =>
   Cliente.create(
@@ -36,17 +39,17 @@ describe('DesactivarCliente Command', () => {
     const cliente = makeCliente();
     mockRepo.findById.mockResolvedValue(cliente);
 
-    const result = await handler.execute({ id: 'cliente-1' });
+    const result = await handler.execute(principal, { id: 'cliente-1' });
 
     expect(result.isActive).toBe(false);
-    expect(mockRepo.save).toHaveBeenCalledWith(cliente);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, cliente);
   });
 
   it('should throw when cliente not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({ id: 'nonexistent' }),
+      handler.execute(principal, { id: 'nonexistent' }),
     ).rejects.toThrow('Cliente no encontrado');
     expect(mockRepo.save).not.toHaveBeenCalled();
   });
