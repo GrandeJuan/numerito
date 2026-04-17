@@ -6,12 +6,15 @@ import type {
   OrganismoFiscalData,
 } from '../../domain/repositories/organismo-fiscal.repository';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
+import { OrganismoFiscalMapper } from './organismo-fiscal.mapper';
 
 @Injectable()
 export class MikroOrmOrganismoFiscalRepository
   extends GlobalRepository<OrganismoFiscalData>
   implements OrganismoFiscalRepository
 {
+  private readonly mapper = new OrganismoFiscalMapper();
+
   constructor(private readonly em: EntityManager) {
     super();
   }
@@ -27,17 +30,17 @@ export class MikroOrmOrganismoFiscalRepository
   async findByCodigo(codigo: string): Promise<OrganismoFiscalData | null> {
     const entity = await this.em.findOne(OrganismoFiscalEntity, { codigo });
     if (!entity) return null;
-    return this.toData(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<OrganismoFiscalData[]> {
     const entities = await this.em.findAll(OrganismoFiscalEntity);
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findActivos(): Promise<OrganismoFiscalData[]> {
     const entities = await this.em.find(OrganismoFiscalEntity, { activo: true });
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(organismo: OrganismoFiscalData): Promise<void> {
@@ -62,18 +65,5 @@ export class MikroOrmOrganismoFiscalRepository
       });
     }
     await this.em.flush();
-  }
-
-  private toData(entity: OrganismoFiscalEntity): OrganismoFiscalData {
-    return {
-      id: String(entity.id),
-      codigo: entity.codigo,
-      nombre: entity.nombre,
-      jurisdiccion: entity.jurisdiccion,
-      urlPortal: entity.urlPortal,
-      requiereScraping: entity.requiereScraping,
-      tieneWebService: entity.tieneWebService,
-      activo: entity.activo,
-    };
   }
 }

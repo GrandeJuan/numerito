@@ -1,19 +1,22 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { NotificacionRepository } from '../../domain/repositories/notificacion.repository';
-import { Notificacion, TipoNotificacion } from '../../domain/entities/notificacion.entity';
+import { Notificacion } from '../../domain/entities/notificacion.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
   REQUEST_CONTEXT,
 } from '../../../shared/infrastructure/services/request-context.service';
 import { NotificacionEntity } from './notificacion.schema';
+import { NotificacionMapper } from './notificacion.mapper';
 
 @Injectable()
 export class MikroOrmNotificacionRepository
   extends TenantAwareRepository<Notificacion>
   implements NotificacionRepository
 {
+  private readonly mapper = new NotificacionMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -28,7 +31,7 @@ export class MikroOrmNotificacionRepository
       estudioId: tenantId,
     });
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<Notificacion[]> {
@@ -42,7 +45,7 @@ export class MikroOrmNotificacionRepository
         orderBy: { createdAt: 'DESC' },
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByUsuario(
@@ -61,7 +64,7 @@ export class MikroOrmNotificacionRepository
       offset: options?.offset ?? 0,
     });
 
-    return { data: entities.map((e) => this.toDomain(e)), total };
+    return { data: entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e))), total };
   }
 
   async countUnread(usuarioId: string): Promise<number> {
@@ -100,18 +103,5 @@ export class MikroOrmNotificacionRepository
       this.em.remove(entity);
       await this.em.flush();
     }
-  }
-
-  private toDomain(entity: NotificacionEntity): Notificacion {
-    return Notificacion.reconstitute(
-      {
-        usuarioId: entity.usuarioId,
-        estudioId: entity.estudioId || undefined,
-        tipo: entity.tipo as TipoNotificacion,
-        mensaje: entity.mensaje,
-        leida: entity.leida,
-      },
-      entity.id,
-    );
   }
 }

@@ -10,12 +10,15 @@ import {
 import { EmpleadoEntity } from './empleado.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { EmpleadoMapper } from './empleado.mapper';
 
 @Injectable()
 export class MikroOrmEmpleadoRepository
   extends TenantAwareRepository<Empleado>
   implements EmpleadoRepository
 {
+  private readonly mapper = new EmpleadoMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -36,7 +39,7 @@ export class MikroOrmEmpleadoRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByClienteId(clienteId: string): Promise<Empleado[]> {
@@ -51,7 +54,7 @@ export class MikroOrmEmpleadoRepository
         populate: ['cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<Empleado[]> {
@@ -65,7 +68,7 @@ export class MikroOrmEmpleadoRepository
         populate: ['cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(empleado: Empleado): Promise<void> {
@@ -114,21 +117,4 @@ export class MikroOrmEmpleadoRepository
     }
   }
 
-  private toDomain(entity: EmpleadoEntity): Empleado {
-    return Empleado.reconstitute(
-      {
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        nombre: entity.nombre,
-        apellido: entity.apellido,
-        cuil: entity.cuil,
-        fechaIngreso: entity.fechaIngreso,
-        fechaEgreso: entity.fechaEgreso,
-        sueldoBasico: entity.sueldoBasico,
-        categoriaConvenio: entity.categoriaConvenio,
-        isActive: entity.isActive,
-      },
-      entity.id,
-    );
-  }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { DocumentoRepository } from '../../domain/repositories/documento.repository';
-import { Documento, type TipoDocumento } from '../../domain/entities/documento.entity';
+import { Documento } from '../../domain/entities/documento.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -11,12 +11,15 @@ import { DocumentoEntity } from './documento.schema';
 import { TipoDocumentoEntity } from '../../../shared/infrastructure/persistence/tipo-documento.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { DocumentoMapper } from './documento.mapper';
 
 @Injectable()
 export class MikroOrmDocumentoRepository
   extends TenantAwareRepository<Documento>
   implements DocumentoRepository
 {
+  private readonly mapper = new DocumentoMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -37,7 +40,7 @@ export class MikroOrmDocumentoRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByClienteId(clienteId: string): Promise<Documento[]> {
@@ -52,7 +55,7 @@ export class MikroOrmDocumentoRepository
         populate: ['tipoDocumento', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<Documento[]> {
@@ -66,7 +69,7 @@ export class MikroOrmDocumentoRepository
         populate: ['tipoDocumento', 'cliente', 'estudio'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(documento: Documento): Promise<void> {
@@ -114,19 +117,4 @@ export class MikroOrmDocumentoRepository
     }
   }
 
-  private toDomain(entity: DocumentoEntity): Documento {
-    return Documento.reconstitute(
-      {
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        tipo: entity.tipoDocumento.codigo as TipoDocumento,
-        nombre: entity.nombre,
-        s3Key: entity.s3Key,
-        mimeType: entity.mimeType,
-        sizeBytes: entity.sizeBytes,
-        version: entity.version,
-      },
-      entity.id,
-    );
-  }
 }

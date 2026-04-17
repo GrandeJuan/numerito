@@ -13,12 +13,15 @@ import { CredencialFiscalEntity } from './credencial-fiscal.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
+import { CredencialFiscalMapper } from './credencial-fiscal.mapper';
 
 @Injectable()
 export class MikroOrmCredencialFiscalRepository
   extends TenantAwareRepository<CredencialFiscalData>
   implements CredencialFiscalRepository
 {
+  private readonly mapper = new CredencialFiscalMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -39,7 +42,7 @@ export class MikroOrmCredencialFiscalRepository
       },
     );
     if (!entity) return null;
-    return this.toData(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findAll(): Promise<CredencialFiscalData[]> {
@@ -53,7 +56,7 @@ export class MikroOrmCredencialFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByClienteId(clienteId: string): Promise<CredencialFiscalData[]> {
@@ -68,7 +71,7 @@ export class MikroOrmCredencialFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findByOrganismo(organismo: string): Promise<CredencialFiscalData[]> {
@@ -83,7 +86,7 @@ export class MikroOrmCredencialFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAllActivas(): Promise<CredencialFiscalData[]> {
@@ -98,7 +101,7 @@ export class MikroOrmCredencialFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toData(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(credencial: CredencialFiscalData): Promise<void> {
@@ -157,16 +160,4 @@ export class MikroOrmCredencialFiscalRepository
     }
   }
 
-  private toData(entity: CredencialFiscalEntity): CredencialFiscalData {
-    return {
-      id: entity.id,
-      clienteId: entity.cliente.id,
-      estudioId: entity.estudio.id,
-      organismoId: String(entity.organismo.id),
-      cuit: entity.cuit,
-      secretArn: entity.secretArn,
-      ultimaSincronizacion: entity.ultimaSincronizacion,
-      estado: entity.estado,
-    };
-  }
 }

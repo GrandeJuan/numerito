@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { NotificacionFiscalRepository } from '../../domain/repositories/notificacion-fiscal.repository';
-import { NotificacionFiscal, type EstadoNotificacion } from '../../domain/entities/notificacion-fiscal.entity';
+import { NotificacionFiscal } from '../../domain/entities/notificacion-fiscal.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -11,12 +11,15 @@ import { NotificacionFiscalEntity } from './notificacion-fiscal.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { OrganismoFiscalEntity } from '../../../shared/infrastructure/persistence/organismo-fiscal.schema';
+import { NotificacionFiscalMapper } from './notificacion-fiscal.mapper';
 
 @Injectable()
 export class MikroOrmNotificacionFiscalRepository
   extends TenantAwareRepository<NotificacionFiscal>
   implements NotificacionFiscalRepository
 {
+  private readonly mapper = new NotificacionFiscalMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -37,7 +40,7 @@ export class MikroOrmNotificacionFiscalRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByClienteId(clienteId: string): Promise<NotificacionFiscal[]> {
@@ -52,7 +55,7 @@ export class MikroOrmNotificacionFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<NotificacionFiscal[]> {
@@ -66,7 +69,7 @@ export class MikroOrmNotificacionFiscalRepository
         populate: ['cliente', 'estudio', 'organismo'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(notificacion: NotificacionFiscal): Promise<void> {
@@ -116,20 +119,4 @@ export class MikroOrmNotificacionFiscalRepository
     }
   }
 
-  private toDomain(entity: NotificacionFiscalEntity): NotificacionFiscal {
-    return NotificacionFiscal.reconstitute(
-      {
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        organismoId: String(entity.organismo.id),
-        cuitCliente: entity.cuitCliente,
-        asunto: entity.asunto,
-        contenido: entity.contenido,
-        fechaNotificacion: entity.fechaNotificacion,
-        estado: entity.estado as EstadoNotificacion,
-        notaGestion: entity.notaGestion,
-      },
-      entity.id,
-    );
-  }
 }
