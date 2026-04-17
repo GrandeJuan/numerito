@@ -24,6 +24,12 @@ import { AdminEstudiosService } from './application/services/admin-estudios.serv
 import { AdminPlanesService } from './application/services/admin-planes.service';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
+import { ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW } from '../estudio/application/public-views';
+import type { EstudioSearchView } from '../estudio/application/views/estudio-search.view';
+import type { EstudiosAdminListView } from '../estudio/application/views/estudios-admin-list.view';
+import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from '../iam/application/public-views';
+import type { UsuarioSearchView } from '../iam/application/views/usuario-search.view';
+import type { UsuariosAdminListView } from '../iam/application/views/usuarios-admin-list.view';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
@@ -41,8 +47,8 @@ import { IamModule } from '../iam/iam.module';
     },
     {
       provide: AdminEstudiosService,
-      useFactory: (em: EntityManager) => new AdminEstudiosService(em),
-      inject: [EntityManager],
+      useFactory: (estudiosAdminList: EstudiosAdminListView) => new AdminEstudiosService(estudiosAdminList),
+      inject: [ESTUDIOS_ADMIN_LIST_VIEW],
     },
     {
       provide: AdminPlanesService,
@@ -52,8 +58,8 @@ import { IamModule } from '../iam/iam.module';
     ObtenerAdminDashboardStatsHandler,
     {
       provide: ObtenerAdminUsuariosHandler,
-      useFactory: (em: EntityManager) => new ObtenerAdminUsuariosHandler(em),
-      inject: [EntityManager],
+      useFactory: (usuariosAdminList: UsuariosAdminListView) => new ObtenerAdminUsuariosHandler(usuariosAdminList),
+      inject: [USUARIOS_ADMIN_LIST_VIEW],
     },
     {
       provide: HealthCheckHandler,
@@ -62,8 +68,9 @@ import { IamModule } from '../iam/iam.module';
     },
     {
       provide: AdminSearchHandler,
-      useFactory: (em: EntityManager) => new AdminSearchHandler(em),
-      inject: [EntityManager],
+      useFactory: (estudioSearch: EstudioSearchView, usuarioSearch: UsuarioSearchView) =>
+        new AdminSearchHandler(estudioSearch, usuarioSearch),
+      inject: [ESTUDIO_SEARCH_VIEW, USUARIO_SEARCH_VIEW],
     },
   ],
 })

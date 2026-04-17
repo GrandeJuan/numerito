@@ -1,0 +1,9 @@
+/**
+ * Public views from the iam context.
+ * Read-model contexts consume these tokens and types — never import views/*.view.ts directly.
+ */
+export const USUARIO_SEARCH_VIEW = Symbol('USUARIO_SEARCH_VIEW');
+export const USUARIOS_ADMIN_LIST_VIEW = Symbol('USUARIOS_ADMIN_LIST_VIEW');
+
+export type { UsuarioSearchViewInput, UsuarioSearchResultDto } from './views/usuario-search.view';
+export type { UsuariosAdminListViewInput, AdminUsuarioItemDto, UsuariosAdminListDto, UsuariosAdminStatsDto } from './views/usuarios-admin-list.view';

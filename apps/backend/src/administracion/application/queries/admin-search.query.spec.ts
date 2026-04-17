@@ -1,35 +1,23 @@
-jest.mock('../../../estudio/infrastructure/persistence/estudio.schema', () => ({
-  EstudioEntity: class EstudioEntity {},
-}));
-jest.mock('../../../iam/infrastructure/persistence/usuario.schema', () => ({
-  UsuarioEntity: class UsuarioEntity {},
-}));
-jest.mock('../../../shared/infrastructure/persistence/plan.schema', () => ({
-  PlanEntity: class PlanEntity {},
-}));
-jest.mock('../../../shared/infrastructure/persistence/rol.schema', () => ({
-  RolEntity: class RolEntity {},
-}));
-
 import { AdminSearchHandler } from './admin-search.query';
 
 describe('AdminSearchHandler', () => {
   let handler: AdminSearchHandler;
-  let mockEm: any;
+  let mockEstudioSearchView: any;
+  let mockUsuarioSearchView: any;
 
   const mockEstudios = [
     {
       id: 'est-1',
       nombre: 'Estudio Contable Perez',
       cuit: '20-12345678-9',
-      plan: { nombre: 'Profesional' },
+      plan: 'Profesional',
       isActive: true,
     },
     {
       id: 'est-2',
       nombre: 'Estudio Garcia',
       cuit: '30-98765432-1',
-      plan: { nombre: 'Enterprise' },
+      plan: 'Enterprise',
       isActive: true,
     },
   ];
@@ -40,74 +28,67 @@ describe('AdminSearchHandler', () => {
       email: 'juan@perez.com',
       nombre: 'Juan',
       apellido: 'Perez',
-      rol: { codigo: 'SOCIO' },
+      rol: 'SOCIO',
       isActive: true,
     },
   ];
 
   beforeEach(() => {
-    mockEm = {
-      find: jest.fn().mockResolvedValue([]),
+    mockEstudioSearchView = {
+      execute: jest.fn().mockResolvedValue([]),
     };
-    handler = new AdminSearchHandler(mockEm);
+    mockUsuarioSearchView = {
+      execute: jest.fn().mockResolvedValue([]),
+    };
+    handler = new AdminSearchHandler(mockEstudioSearchView, mockUsuarioSearchView);
   });
 
   it('should return empty results for empty query', async () => {
     const result = await handler.execute('');
 
     expect(result).toEqual({ estudios: [], usuarios: [] });
-    expect(mockEm.find).not.toHaveBeenCalled();
+    expect(mockEstudioSearchView.execute).not.toHaveBeenCalled();
+    expect(mockUsuarioSearchView.execute).not.toHaveBeenCalled();
   });
 
   it('should return empty results for whitespace-only query', async () => {
     const result = await handler.execute('   ');
 
     expect(result).toEqual({ estudios: [], usuarios: [] });
-    expect(mockEm.find).not.toHaveBeenCalled();
+    expect(mockEstudioSearchView.execute).not.toHaveBeenCalled();
+    expect(mockUsuarioSearchView.execute).not.toHaveBeenCalled();
   });
 
-  it('should search estudios by nombre and CUIT', async () => {
-    mockEm.find.mockResolvedValueOnce(mockEstudios).mockResolvedValueOnce([]);
+  it('should call estudio search view with correct input', async () => {
+    mockEstudioSearchView.execute.mockResolvedValue(mockEstudios);
 
     await handler.execute('perez');
 
-    const estudiosCall = mockEm.find.mock.calls[0];
-    const where = estudiosCall[1];
-    expect(where.$or).toHaveLength(2);
-    expect(where.$or[0]).toHaveProperty('nombre');
-    expect(where.$or[1]).toHaveProperty('cuit');
+    expect(mockEstudioSearchView.execute).toHaveBeenCalledWith({
+      query: 'perez',
+      limit: 5,
+    });
   });
 
-  it('should search usuarios by email, nombre, and apellido', async () => {
-    mockEm.find.mockResolvedValueOnce([]).mockResolvedValueOnce(mockUsuarios);
+  it('should call usuario search view with correct input', async () => {
+    mockUsuarioSearchView.execute.mockResolvedValue(mockUsuarios);
 
     await handler.execute('perez');
 
-    const usuariosCall = mockEm.find.mock.calls[1];
-    const where = usuariosCall[1];
-    expect(where.$or).toHaveLength(3);
-    expect(where.$or[0]).toHaveProperty('email');
-    expect(where.$or[1]).toHaveProperty('nombre');
-    expect(where.$or[2]).toHaveProperty('apellido');
+    expect(mockUsuarioSearchView.execute).toHaveBeenCalledWith({
+      query: 'perez',
+      limit: 5,
+    });
   });
 
-  it('should limit results to 5 per entity type', async () => {
-    mockEm.find.mockResolvedValueOnce(mockEstudios).mockResolvedValueOnce(mockUsuarios);
-
-    await handler.execute('test');
-
-    const estudiosOptions = mockEm.find.mock.calls[0][2];
-    const usuariosOptions = mockEm.find.mock.calls[1][2];
-    expect(estudiosOptions.limit).toBe(5);
-    expect(usuariosOptions.limit).toBe(5);
-  });
-
-  it('should map estudio fields correctly', async () => {
-    mockEm.find.mockResolvedValueOnce(mockEstudios).mockResolvedValueOnce([]);
+  it('should compose results from both views', async () => {
+    mockEstudioSearchView.execute.mockResolvedValue(mockEstudios);
+    mockUsuarioSearchView.execute.mockResolvedValue(mockUsuarios);
 
     const result = await handler.execute('perez');
 
     expect(result.estudios).toHaveLength(2);
+    expect(result.usuarios).toHaveLength(1);
     expect(result.estudios[0]).toEqual({
       id: 'est-1',
       nombre: 'Estudio Contable Perez',
@@ -115,14 +96,6 @@ describe('AdminSearchHandler', () => {
       plan: 'Profesional',
       isActive: true,
     });
-  });
-
-  it('should map usuario fields correctly', async () => {
-    mockEm.find.mockResolvedValueOnce([]).mockResolvedValueOnce(mockUsuarios);
-
-    const result = await handler.execute('perez');
-
-    expect(result.usuarios).toHaveLength(1);
     expect(result.usuarios[0]).toEqual({
       id: 'usr-1',
       email: 'juan@perez.com',
@@ -133,40 +106,22 @@ describe('AdminSearchHandler', () => {
     });
   });
 
-  it('should handle estudio without plan gracefully', async () => {
-    const estudioSinPlan = [{ ...mockEstudios[0], plan: null }];
-    mockEm.find.mockResolvedValueOnce(estudioSinPlan).mockResolvedValueOnce([]);
+  it('should search both views in parallel', async () => {
+    mockEstudioSearchView.execute.mockResolvedValue(mockEstudios);
+    mockUsuarioSearchView.execute.mockResolvedValue(mockUsuarios);
 
-    const result = await handler.execute('perez');
+    await handler.execute('test');
 
-    expect(result.estudios[0].plan).toBe('Sin plan');
+    expect(mockEstudioSearchView.execute).toHaveBeenCalledTimes(1);
+    expect(mockUsuarioSearchView.execute).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle usuario without rol gracefully', async () => {
-    const usuarioSinRol = [{ ...mockUsuarios[0], rol: null }];
-    mockEm.find.mockResolvedValueOnce([]).mockResolvedValueOnce(usuarioSinRol);
+  it('should trim the query before passing to views', async () => {
+    await handler.execute('  perez  ');
 
-    const result = await handler.execute('perez');
-
-    expect(result.usuarios[0].rol).toBe('UNKNOWN');
-  });
-
-  it('should use case-insensitive search (ILIKE pattern)', async () => {
-    mockEm.find.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
-
-    await handler.execute('Perez');
-
-    const estudiosWhere = mockEm.find.mock.calls[0][1];
-    expect(estudiosWhere.$or[0].nombre.$ilike).toBe('%perez%');
-  });
-
-  it('should search both entity types in parallel', async () => {
-    mockEm.find.mockResolvedValueOnce(mockEstudios).mockResolvedValueOnce(mockUsuarios);
-
-    const result = await handler.execute('test');
-
-    expect(mockEm.find).toHaveBeenCalledTimes(2);
-    expect(result.estudios).toHaveLength(2);
-    expect(result.usuarios).toHaveLength(1);
+    expect(mockEstudioSearchView.execute).toHaveBeenCalledWith({
+      query: 'perez',
+      limit: 5,
+    });
   });
 });

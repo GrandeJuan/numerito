@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { EntityManager } from '@mikro-orm/core';
 import { AuthController } from './infrastructure/controllers/auth.controller';
 import { UsuarioController } from './infrastructure/controllers/usuario.controller';
 import { JwtTokenService } from './infrastructure/services/jwt-token.service';
@@ -49,6 +50,9 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { AVATAR_STORAGE } from './domain/ports/avatar-storage.port';
 import { LocalAvatarStorageAdapter } from './infrastructure/adapters/local-avatar-storage.adapter';
 import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-storage.adapter';
+import { UsuarioSearchView } from './application/views/usuario-search.view';
+import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from './application/public-views';
+import { UsuariosAdminListView } from './application/views/usuarios-admin-list.view';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
@@ -127,7 +131,17 @@ import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-stor
     RolesGuard,
     AdminGuard,
     EstudioMemberGuard,
+    {
+      provide: USUARIO_SEARCH_VIEW,
+      useFactory: (em: EntityManager) => new UsuarioSearchView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: USUARIOS_ADMIN_LIST_VIEW,
+      useFactory: (em: EntityManager) => new UsuariosAdminListView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard],
+  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard, USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW],
 })
 export class IamModule {}

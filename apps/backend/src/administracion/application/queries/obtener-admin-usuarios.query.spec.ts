@@ -1,41 +1,75 @@
-jest.mock('../../../iam/infrastructure/persistence/usuario.schema', () => ({
-  UsuarioEntity: class UsuarioEntity {},
-}));
-jest.mock('../../../shared/infrastructure/persistence/rol.schema', () => ({
-  RolEntity: class RolEntity {},
-}));
-
 import { ObtenerAdminUsuariosHandler } from './obtener-admin-usuarios.query';
 
 describe('ObtenerAdminUsuariosHandler', () => {
   let handler: ObtenerAdminUsuariosHandler;
-  let mockEm: any;
+  let mockUsuariosAdminListView: any;
 
-  const mockUsuarios = [
-    {
-      id: 'u1',
-      email: 'juan@test.com',
-      nombre: 'Juan',
-      apellido: 'Perez',
-      isActive: true,
-      emailVerified: true,
-      provider: 'google',
-      createdAt: new Date('2026-01-01'),
-      updatedAt: new Date('2026-03-01'),
-      rol: { codigo: 'ADMIN', nombre: 'Administrador' },
-    },
-  ];
+  const mockListResult = {
+    items: [
+      {
+        id: 'u1',
+        email: 'juan@test.com',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        rol: 'ADMIN',
+        provider: 'google',
+        emailVerified: true,
+        isActive: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-03-01T00:00:00.000Z',
+      },
+    ],
+    total: 1,
+    page: 1,
+    limit: 20,
+  };
 
   beforeEach(() => {
-    mockEm = {
-      findAndCount: jest.fn().mockResolvedValue([mockUsuarios, 1]),
-      count: jest.fn().mockResolvedValue(0),
+    mockUsuariosAdminListView = {
+      execute: jest.fn().mockResolvedValue(mockListResult),
+      getStats: jest.fn().mockResolvedValue({
+        total: 50,
+        activos: 30,
+        verificados: 10,
+        sinVerificar: 40,
+      }),
     };
-    handler = new ObtenerAdminUsuariosHandler(mockEm);
+    handler = new ObtenerAdminUsuariosHandler(mockUsuariosAdminListView);
   });
 
   describe('execute', () => {
-    it('should return paginated users with default params', async () => {
+    it('should delegate to view with empty filters', async () => {
+      const result = await handler.execute({});
+
+      expect(mockUsuariosAdminListView.execute).toHaveBeenCalledWith({});
+      expect(result).toEqual(mockListResult);
+    });
+
+    it('should pass search filter to view', async () => {
+      await handler.execute({ search: 'juan' });
+
+      expect(mockUsuariosAdminListView.execute).toHaveBeenCalledWith({ search: 'juan' });
+    });
+
+    it('should pass rol filter to view', async () => {
+      await handler.execute({ rol: 'ADMIN' });
+
+      expect(mockUsuariosAdminListView.execute).toHaveBeenCalledWith({ rol: 'ADMIN' });
+    });
+
+    it('should pass isActive filter to view', async () => {
+      await handler.execute({ isActive: true });
+
+      expect(mockUsuariosAdminListView.execute).toHaveBeenCalledWith({ isActive: true });
+    });
+
+    it('should pass page and limit to view', async () => {
+      await handler.execute({ page: 2, limit: 10 });
+
+      expect(mockUsuariosAdminListView.execute).toHaveBeenCalledWith({ page: 2, limit: 10 });
+    });
+
+    it('should return paginated users from view', async () => {
       const result = await handler.execute({});
 
       expect(result.items).toHaveLength(1);
@@ -44,54 +78,7 @@ describe('ObtenerAdminUsuariosHandler', () => {
       expect(result.limit).toBe(20);
     });
 
-    it('should call findAndCount with correct options', async () => {
-      await handler.execute({});
-
-      expect(mockEm.findAndCount).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.any(Object),
-        expect.objectContaining({
-          populate: ['rol'],
-          orderBy: { createdAt: 'DESC' },
-          limit: 20,
-          offset: 0,
-        }),
-      );
-    });
-
-    it('should apply search filter on nombre, apellido, and email', async () => {
-      await handler.execute({ search: 'juan' });
-
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.$or).toBeDefined();
-      expect(where.$or).toHaveLength(3);
-    });
-
-    it('should apply rol filter', async () => {
-      await handler.execute({ rol: 'ADMIN' });
-
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.rol).toEqual({ codigo: 'ADMIN' });
-    });
-
-    it('should apply isActive filter', async () => {
-      await handler.execute({ isActive: true });
-
-      const where = mockEm.findAndCount.mock.calls[0][1];
-      expect(where.isActive).toBe(true);
-    });
-
-    it('should respect page and limit params', async () => {
-      await handler.execute({ page: 2, limit: 10 });
-
-      expect(mockEm.findAndCount).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.any(Object),
-        expect.objectContaining({ limit: 10, offset: 10 }),
-      );
-    });
-
-    it('should map usuario fields correctly', async () => {
+    it('should return user fields from view', async () => {
       const result = await handler.execute({});
 
       expect(result.items[0]).toEqual(
@@ -110,14 +97,10 @@ describe('ObtenerAdminUsuariosHandler', () => {
   });
 
   describe('getStats', () => {
-    it('should return stats with correct shape', async () => {
-      mockEm.count
-        .mockResolvedValueOnce(50)  // total
-        .mockResolvedValueOnce(30)  // active
-        .mockResolvedValueOnce(10); // verified
-
+    it('should delegate to view getStats', async () => {
       const result = await handler.getStats();
 
+      expect(mockUsuariosAdminListView.getStats).toHaveBeenCalled();
       expect(result.total).toBe(50);
       expect(result.activos).toBe(30);
       expect(result.verificados).toBe(10);

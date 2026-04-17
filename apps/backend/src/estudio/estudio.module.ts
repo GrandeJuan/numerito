@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EntityManager } from '@mikro-orm/core';
 import { EstudioController } from './infrastructure/controllers/estudio.controller';
 import { ESTUDIO_REPOSITORY } from './domain/repositories/estudio.repository';
 import { MikroOrmEstudioRepository } from './infrastructure/persistence/mikro-orm-estudio.repository';
@@ -13,6 +14,9 @@ import { MarcarSubscripcionVencidaHandler } from './application/commands/marcar-
 import { CambiarPlanSubscripcionHandler } from './application/commands/cambiar-plan-subscripcion.command';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
+import { EstudioSearchView } from './application/views/estudio-search.view';
+import { ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW } from './application/public-views';
+import { EstudiosAdminListView } from './application/views/estudios-admin-list.view';
 
 @Module({
   imports: [],
@@ -45,7 +49,17 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         new CambiarPlanSubscripcionHandler(repo, eventBus),
       inject: [SUBSCRIPCION_REPOSITORY, EVENT_BUS],
     },
+    {
+      provide: ESTUDIO_SEARCH_VIEW,
+      useFactory: (em: EntityManager) => new EstudioSearchView(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ESTUDIOS_ADMIN_LIST_VIEW,
+      useFactory: (em: EntityManager) => new EstudiosAdminListView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY],
+  exports: [ESTUDIO_REPOSITORY, SUBSCRIPCION_REPOSITORY, PLAN_REPOSITORY, ESTUDIO_SEARCH_VIEW, ESTUDIOS_ADMIN_LIST_VIEW],
 })
 export class EstudioModule {}
