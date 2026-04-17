@@ -1,3 +1,4 @@
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { SubscripcionRepository } from '../../domain/repositories/subscripcion.repository';
 import type { EventBus } from '../../../shared/domain/event-bus';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -12,12 +13,12 @@ export class RenovarSubscripcionHandler {
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(command: RenovarSubscripcionCommand) {
-    const subscripcion = await this.subscripcionRepo.findActiva();
+  async execute(principal: EstudioPrincipal, command: RenovarSubscripcionCommand) {
+    const subscripcion = await this.subscripcionRepo.findActiva(principal);
     if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
 
     subscripcion.renovar(new Date(command.nuevaFechaFin));
-    await this.subscripcionRepo.save(subscripcion);
+    await this.subscripcionRepo.save(principal, subscripcion);
 
     this.eventBus.publishAll(subscripcion.getDomainEvents());
     subscripcion.clearDomainEvents();

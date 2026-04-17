@@ -4,6 +4,7 @@ import type {
   CredencialFiscalRepository,
   CredencialFiscalData,
 } from '../../domain/repositories/credencial-fiscal.repository';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -29,13 +30,12 @@ export class MikroOrmCredencialFiscalRepository
     super(context);
   }
 
-  async findById(id: string): Promise<CredencialFiscalData | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<CredencialFiscalData | null> {
     const entity = await this.em.findOne(
       CredencialFiscalEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -45,12 +45,11 @@ export class MikroOrmCredencialFiscalRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findAll(): Promise<CredencialFiscalData[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(
       CredencialFiscalEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -59,13 +58,12 @@ export class MikroOrmCredencialFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByClienteId(clienteId: string): Promise<CredencialFiscalData[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(
       CredencialFiscalEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -74,13 +72,12 @@ export class MikroOrmCredencialFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByOrganismo(organismo: string): Promise<CredencialFiscalData[]> {
-    const tenantId = this.getTenantId();
+  async findByOrganismo(principal: EstudioPrincipal, organismo: string): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(
       CredencialFiscalEntity,
       {
         organismo: { codigo: organismo },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -89,13 +86,12 @@ export class MikroOrmCredencialFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAllActivas(): Promise<CredencialFiscalData[]> {
-    const tenantId = this.getTenantId();
+  async findAllActivas(principal: EstudioPrincipal): Promise<CredencialFiscalData[]> {
     const entities = await this.em.find(
       CredencialFiscalEntity,
       {
         estado: 'ACTIVA',
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -104,15 +100,14 @@ export class MikroOrmCredencialFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(credencial: CredencialFiscalData): Promise<void> {
+  async save(principal: EstudioPrincipal, credencial: CredencialFiscalData): Promise<void> {
     const cliente = this.em.getReference(ClienteEntity, credencial.clienteId);
     const estudio = this.em.getReference(EstudioEntity, credencial.estudioId);
     const organismo = await this.em.findOneOrFail(OrganismoFiscalEntity, {
       id: Number(credencial.organismoId),
     });
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -138,11 +133,10 @@ export class MikroOrmCredencialFiscalRepository
     await this.em.flush();
   }
 
-  async updateEstado(id: string, estado: string, ultimaSincronizacion?: Date): Promise<void> {
-    const tenantId = this.getTenantId();
+  async updateEstado(principal: EstudioPrincipal, id: string, estado: string, ultimaSincronizacion?: Date): Promise<void> {
     const entity = await this.em.findOneOrFail(CredencialFiscalEntity, {
       id,
-      estudio: { id: tenantId },
+      estudio: { id: principal.estudioId },
     });
     entity.estado = estado;
     if (ultimaSincronizacion) {
@@ -151,9 +145,8 @@ export class MikroOrmCredencialFiscalRepository
     await this.em.flush();
   }
 
-  async delete(credencial: CredencialFiscalData): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, credencial: CredencialFiscalData): Promise<void> {
+    const entity = await this.em.findOne(CredencialFiscalEntity, { id: credencial.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

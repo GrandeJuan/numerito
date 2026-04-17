@@ -1,9 +1,16 @@
 import { RenovarSubscripcionHandler } from './renovar-subscripcion.command';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import {
   Subscripcion,
   EstadoSubscripcion,
   CicloFacturacion,
 } from '../../domain/entities/subscripcion.entity';
+
+const principal: EstudioPrincipal = {
+  estudioId: 'estudio-1',
+  userId: 'user-1',
+  roles: ['SOCIO'],
+};
 
 const makeSubscripcion = () => {
   const sub = Subscripcion.create({
@@ -40,18 +47,19 @@ describe('RenovarSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    const result = await handler.execute({ nuevaFechaFin: '2027-12-31' });
+    const result = await handler.execute(principal, { nuevaFechaFin: '2027-12-31' });
 
     expect(result.fechaFin).toEqual(new Date('2027-12-31'));
     expect(result.estado).toBe(EstadoSubscripcion.ACTIVA);
-    expect(mockRepo.save).toHaveBeenCalledWith(sub);
+    expect(mockRepo.findActiva).toHaveBeenCalledWith(principal);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, sub);
   });
 
   it('should publish SubscripcionRenovada event after save', async () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute({ nuevaFechaFin: '2027-12-31' });
+    await handler.execute(principal, { nuevaFechaFin: '2027-12-31' });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     const events = mockEventBus.publishAll.mock.calls[0][0];
@@ -63,7 +71,7 @@ describe('RenovarSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute({ nuevaFechaFin: '2027-12-31' });
+    await handler.execute(principal, { nuevaFechaFin: '2027-12-31' });
 
     expect(sub.getDomainEvents()).toHaveLength(0);
   });
@@ -71,7 +79,7 @@ describe('RenovarSubscripcion Command', () => {
   it('should throw when no active subscription found', async () => {
     mockRepo.findActiva.mockResolvedValue(null);
 
-    await expect(handler.execute({ nuevaFechaFin: '2027-12-31' })).rejects.toThrow(
+    await expect(handler.execute(principal, { nuevaFechaFin: '2027-12-31' })).rejects.toThrow(
       'Subscripcion no encontrad',
     );
     expect(mockRepo.save).not.toHaveBeenCalled();
@@ -83,7 +91,7 @@ describe('RenovarSubscripcion Command', () => {
     mockRepo.findActiva.mockResolvedValue(sub);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute({ nuevaFechaFin: '2027-12-31' })).rejects.toThrow('DB error');
+    await expect(handler.execute(principal, { nuevaFechaFin: '2027-12-31' })).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
 
@@ -93,7 +101,7 @@ describe('RenovarSubscripcion Command', () => {
     sub.clearDomainEvents();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await expect(handler.execute({ nuevaFechaFin: '2027-12-31' })).rejects.toThrow();
+    await expect(handler.execute(principal, { nuevaFechaFin: '2027-12-31' })).rejects.toThrow();
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { NotificacionFiscalRepository } from '../../domain/repositories/notificacion-fiscal.repository';
 import { NotificacionFiscal } from '../../domain/entities/notificacion-fiscal.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -27,13 +28,12 @@ export class MikroOrmNotificacionFiscalRepository
     super(context);
   }
 
-  async findById(id: string): Promise<NotificacionFiscal | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<NotificacionFiscal | null> {
     const entity = await this.em.findOne(
       NotificacionFiscalEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -43,13 +43,12 @@ export class MikroOrmNotificacionFiscalRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByClienteId(clienteId: string): Promise<NotificacionFiscal[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<NotificacionFiscal[]> {
     const entities = await this.em.find(
       NotificacionFiscalEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -58,12 +57,11 @@ export class MikroOrmNotificacionFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<NotificacionFiscal[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<NotificacionFiscal[]> {
     const entities = await this.em.find(
       NotificacionFiscalEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['cliente', 'estudio', 'organismo'],
@@ -72,15 +70,14 @@ export class MikroOrmNotificacionFiscalRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(notificacion: NotificacionFiscal): Promise<void> {
+  async save(principal: EstudioPrincipal, notificacion: NotificacionFiscal): Promise<void> {
     const cliente = this.em.getReference(ClienteEntity, notificacion.clienteId);
     const estudio = this.em.getReference(EstudioEntity, notificacion.estudioId);
     const organismo = await this.em.findOneOrFail(OrganismoFiscalEntity, {
       id: Number(notificacion.organismoId),
     });
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -110,9 +107,8 @@ export class MikroOrmNotificacionFiscalRepository
     await this.em.flush();
   }
 
-  async delete(notificacion: NotificacionFiscal): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, notificacion: NotificacionFiscal): Promise<void> {
+    const entity = await this.em.findOne(NotificacionFiscalEntity, { id: notificacion.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

@@ -5,6 +5,7 @@ import {
   type Subscripcion,
   EstadoSubscripcion,
 } from '../../domain/entities/subscripcion.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -31,13 +32,12 @@ export class MikroOrmSubscripcionRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Subscripcion | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Subscripcion | null> {
     const entity = await this.em.findOne(
       SubscripcionEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
@@ -47,12 +47,11 @@ export class MikroOrmSubscripcionRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findAll(): Promise<Subscripcion[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Subscripcion[]> {
     const entities = await this.em.find(
       SubscripcionEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['plan', 'estadoSubscripcion', 'cicloFacturacion'],
@@ -61,12 +60,11 @@ export class MikroOrmSubscripcionRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findActiva(): Promise<Subscripcion | null> {
-    const tenantId = this.getTenantId();
+  async findActiva(principal: EstudioPrincipal): Promise<Subscripcion | null> {
     const entity = await this.em.findOne(
       SubscripcionEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
         estadoSubscripcion: {
           codigo: { $in: [EstadoSubscripcion.ACTIVA, EstadoSubscripcion.TRIAL] },
         },
@@ -79,9 +77,8 @@ export class MikroOrmSubscripcionRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async save(subscripcion: Subscripcion): Promise<void> {
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: tenantId } });
+  async save(principal: EstudioPrincipal, subscripcion: Subscripcion): Promise<void> {
+    const existing = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: principal.estudioId } });
     const plan = await this.em.findOneOrFail(PlanEntity, { id: Number(subscripcion.planId) });
     const estado = await this.em.findOneOrFail(EstadoSubscripcionEntity, {
       codigo: subscripcion.estado,
@@ -114,9 +111,8 @@ export class MikroOrmSubscripcionRepository
     await this.em.flush();
   }
 
-  async delete(subscripcion: Subscripcion): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, subscripcion: Subscripcion): Promise<void> {
+    const entity = await this.em.findOne(SubscripcionEntity, { id: subscripcion.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

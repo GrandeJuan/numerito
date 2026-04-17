@@ -13,7 +13,8 @@ import {
   renovarSubscripcionDtoSchema,
 } from '../../application/dtos/renovar-subscripcion.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import { RenovarSubscripcionHandler } from '../../application/commands/renovar-subscripcion.command';
 import { CancelarSubscripcionHandler } from '../../application/commands/cancelar-subscripcion.command';
@@ -36,8 +37,8 @@ export class EstudioController {
 
   @Get('me')
   @ApiOperation({ summary: 'Obtener estudio actual del usuario' })
-  async getMine(@EstudioId() estudioId: string) {
-    const estudio = await this.estudioRepo.findById(estudioId);
+  async getMine(@Principal() principal: EstudioPrincipal) {
+    const estudio = await this.estudioRepo.findById(principal.estudioId);
     if (!estudio) throw new RecursoNoEncontradoError('Estudio');
     return {
       nombre: estudio.nombre.value,
@@ -48,16 +49,16 @@ export class EstudioController {
 
   @Get('equipo')
   @ApiOperation({ summary: 'Obtener equipo del estudio actual' })
-  async getEquipo(@EstudioId() _estudioId: string) {
+  async getEquipo(@Principal() _principal: EstudioPrincipal) {
     return [];
   }
 
   @Get('plan')
   @ApiOperation({ summary: 'Obtener plan del estudio actual' })
-  async getPlan(@EstudioId() estudioId: string) {
-    const estudio = await this.estudioRepo.findById(estudioId);
+  async getPlan(@Principal() principal: EstudioPrincipal) {
+    const estudio = await this.estudioRepo.findById(principal.estudioId);
     if (!estudio) throw new RecursoNoEncontradoError('Estudio');
-    const subscripcion = await this.subscripcionRepo.findActiva().catch(() => null);
+    const subscripcion = await this.subscripcionRepo.findActiva(principal).catch(() => null);
     return {
       nombre: estudio.plan.value,
       estado: subscripcion ? 'ACTIVA' : 'SIN_SUBSCRIPCION',
@@ -95,8 +96,8 @@ export class EstudioController {
 
   @Get(':id/subscripcion')
   @ApiOperation({ summary: 'Obtener subscripcion activa del estudio' })
-  async getSubscripcion(@Param('id') _id: string) {
-    const subscripcion = await this.subscripcionRepo.findActiva();
+  async getSubscripcion(@Principal() principal: EstudioPrincipal, @Param('id') _id: string) {
+    const subscripcion = await this.subscripcionRepo.findActiva(principal);
     if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
     return subscripcion;
   }
@@ -104,30 +105,32 @@ export class EstudioController {
   @Post(':id/subscripcion/cambiar-plan')
   @ApiOperation({ summary: 'Cambiar plan de subscripcion' })
   async cambiarPlan(
+    @Principal() principal: EstudioPrincipal,
     @Param('id') _id: string,
     @Body(new ZodValidationPipe(cambiarPlanDtoSchema)) dto: CambiarPlanDto,
   ) {
-    return this.cambiarPlanHandler.execute({ planId: dto.planId });
+    return this.cambiarPlanHandler.execute(principal, { planId: dto.planId });
   }
 
   @Post(':id/subscripcion/renovar')
   @ApiOperation({ summary: 'Renovar subscripcion' })
   async renovar(
+    @Principal() principal: EstudioPrincipal,
     @Param('id') _id: string,
     @Body(new ZodValidationPipe(renovarSubscripcionDtoSchema)) dto: RenovarSubscripcionDto,
   ) {
-    return this.renovarHandler.execute({ nuevaFechaFin: dto.nuevaFechaFin });
+    return this.renovarHandler.execute(principal, { nuevaFechaFin: dto.nuevaFechaFin });
   }
 
   @Post(':id/subscripcion/cancelar')
   @ApiOperation({ summary: 'Cancelar subscripcion' })
-  async cancelar(@Param('id') _id: string) {
-    return this.cancelarHandler.execute();
+  async cancelar(@Principal() principal: EstudioPrincipal, @Param('id') _id: string) {
+    return this.cancelarHandler.execute(principal);
   }
 
   @Post(':id/subscripcion/marcar-vencida')
   @ApiOperation({ summary: 'Marcar subscripcion como vencida' })
-  async marcarVencida(@Param('id') _id: string) {
-    return this.marcarVencidaHandler.execute({ subscripcionId: _id });
+  async marcarVencida(@Principal() principal: EstudioPrincipal, @Param('id') _id: string) {
+    return this.marcarVencidaHandler.execute(principal, { subscripcionId: _id });
   }
 }

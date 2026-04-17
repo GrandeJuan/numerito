@@ -1,3 +1,4 @@
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { UsuarioEstudioRepository } from '../../domain/repositories/usuario-estudio.repository';
 import type { RolPermisoRepository } from '../../domain/repositories/rol-permiso.repository';
 import type { Permiso } from '../../domain/value-objects/permiso.vo';
@@ -14,8 +15,18 @@ export class ObtenerPermisosUsuarioHandler {
   ) {}
 
   async execute(query: ObtenerPermisosUsuarioQuery): Promise<Permiso[]> {
-    const memberships = await this.usuarioEstudioRepo.findByUsuarioId(query.usuarioId);
-    const membership = memberships.find((m) => m.estudioId === query.estudioId);
+    // Construct a lookup principal from query params — this handler is called
+    // from UsuarioController which operates outside a tenant HTTP context.
+    const principal: EstudioPrincipal = {
+      estudioId: query.estudioId,
+      userId: query.usuarioId,
+      roles: [],
+    };
+
+    const membership = await this.usuarioEstudioRepo.findByUsuarioAndEstudio(
+      principal,
+      query.usuarioId,
+    );
 
     if (!membership || !membership.isActive) {
       return [];

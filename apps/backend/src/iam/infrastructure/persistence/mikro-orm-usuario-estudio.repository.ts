@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { UsuarioEstudioRepository } from '../../domain/repositories/usuario-estudio.repository';
 import type { UsuarioEstudio } from '../../domain/entities/usuario-estudio.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -27,19 +28,21 @@ export class MikroOrmUsuarioEstudioRepository
     super(context);
   }
 
-  async findById(id: string): Promise<UsuarioEstudio | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<UsuarioEstudio | null> {
     const entity = await this.em.findOne(
       UsuarioEstudioEntity,
-      { id, estudio: { id: tenantId } },
+      { id, estudio: { id: principal.estudioId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entity ? this.mapper.toDomain(this.mapper.fromSchema(entity)) : null;
   }
 
+  /**
+   * Intentionally cross-tenant: discovers which estudios a user belongs to.
+   * Called before a tenant context exists (e.g., estudio picker after login).
+   * GlobalRepository escape — documented per ADR.
+   */
   async findByUsuarioId(usuarioId: string): Promise<UsuarioEstudio[]> {
-    // Intentionally tenant-unscoped: this endpoint discovers which estudios
-    // the user belongs to, which is needed BEFORE a tenant context exists.
     const entities = await this.em.find(
       UsuarioEstudioEntity,
       { usuario: { id: usuarioId } },
@@ -48,31 +51,28 @@ export class MikroOrmUsuarioEstudioRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByUsuarioAndEstudio(usuarioId: string): Promise<UsuarioEstudio | null> {
-    const tenantId = this.getTenantId();
+  async findByUsuarioAndEstudio(principal: EstudioPrincipal, usuarioId: string): Promise<UsuarioEstudio | null> {
     const entity = await this.em.findOne(
       UsuarioEstudioEntity,
-      { usuario: { id: usuarioId }, estudio: { id: tenantId } },
+      { usuario: { id: usuarioId }, estudio: { id: principal.estudioId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entity ? this.mapper.toDomain(this.mapper.fromSchema(entity)) : null;
   }
 
-  async findAll(): Promise<UsuarioEstudio[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<UsuarioEstudio[]> {
     const entities = await this.em.find(
       UsuarioEstudioEntity,
-      { estudio: { id: tenantId } },
+      { estudio: { id: principal.estudioId } },
       { populate: ['rol', 'usuario', 'estudio'] },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(membership: UsuarioEstudio): Promise<void> {
-    const tenantId = this.getTenantId();
+  async save(principal: EstudioPrincipal, membership: UsuarioEstudio): Promise<void> {
     const existing = await this.em.findOne(UsuarioEstudioEntity, {
       id: membership.id,
-      estudio: { id: tenantId },
+      estudio: { id: principal.estudioId },
     });
     if (existing) {
       const rolEntity = await this.em.findOneOrFail(RolEntity, { codigo: membership.rol });
@@ -95,11 +95,10 @@ export class MikroOrmUsuarioEstudioRepository
     await this.em.flush();
   }
 
-  async delete(membership: UsuarioEstudio): Promise<void> {
-    const tenantId = this.getTenantId();
+  async delete(principal: EstudioPrincipal, membership: UsuarioEstudio): Promise<void> {
     const entity = await this.em.findOne(UsuarioEstudioEntity, {
       id: membership.id,
-      estudio: { id: tenantId },
+      estudio: { id: principal.estudioId },
     });
     if (entity) {
       this.em.remove(entity);

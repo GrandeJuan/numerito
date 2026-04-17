@@ -1,9 +1,16 @@
 import { CambiarPlanSubscripcionHandler } from './cambiar-plan-subscripcion.command';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import {
   Subscripcion,
   EstadoSubscripcion,
   CicloFacturacion,
 } from '../../domain/entities/subscripcion.entity';
+
+const principal: EstudioPrincipal = {
+  estudioId: 'estudio-1',
+  userId: 'user-1',
+  roles: ['SOCIO'],
+};
 
 const makeSubscripcion = () => {
   const sub = Subscripcion.create({
@@ -40,17 +47,18 @@ describe('CambiarPlanSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    const result = await handler.execute({ planId: 'plan-2' });
+    const result = await handler.execute(principal, { planId: 'plan-2' });
 
     expect(result.planId).toBe('plan-2');
-    expect(mockRepo.save).toHaveBeenCalledWith(sub);
+    expect(mockRepo.findActiva).toHaveBeenCalledWith(principal);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, sub);
   });
 
   it('should publish domain events after save', async () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute({ planId: 'plan-2' });
+    await handler.execute(principal, { planId: 'plan-2' });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
   });
@@ -59,7 +67,7 @@ describe('CambiarPlanSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute({ planId: 'plan-2' });
+    await handler.execute(principal, { planId: 'plan-2' });
 
     expect(sub.getDomainEvents()).toHaveLength(0);
   });
@@ -67,7 +75,7 @@ describe('CambiarPlanSubscripcion Command', () => {
   it('should throw when no active subscription found', async () => {
     mockRepo.findActiva.mockResolvedValue(null);
 
-    await expect(handler.execute({ planId: 'plan-2' })).rejects.toThrow(
+    await expect(handler.execute(principal, { planId: 'plan-2' })).rejects.toThrow(
       'Subscripcion no encontrad',
     );
     expect(mockRepo.save).not.toHaveBeenCalled();
@@ -79,7 +87,7 @@ describe('CambiarPlanSubscripcion Command', () => {
     mockRepo.findActiva.mockResolvedValue(sub);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute({ planId: 'plan-2' })).rejects.toThrow('DB error');
+    await expect(handler.execute(principal, { planId: 'plan-2' })).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
 
@@ -89,7 +97,7 @@ describe('CambiarPlanSubscripcion Command', () => {
     sub.clearDomainEvents();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await expect(handler.execute({ planId: 'plan-2' })).rejects.toThrow();
+    await expect(handler.execute(principal, { planId: 'plan-2' })).rejects.toThrow();
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });

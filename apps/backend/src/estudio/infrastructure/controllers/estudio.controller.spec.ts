@@ -1,4 +1,5 @@
 import { EstudioController } from './estudio.controller';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { Estudio } from '../../domain/entities/estudio.entity';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import { PlanSubscripcion } from '../../domain/value-objects/plan-subscripcion.vo';
@@ -7,6 +8,12 @@ import {
   EstadoSubscripcion,
   CicloFacturacion,
 } from '../../domain/entities/subscripcion.entity';
+
+const principal: EstudioPrincipal = {
+  estudioId: 'est-1',
+  userId: 'user-1',
+  roles: ['SOCIO'],
+};
 
 const makeEstudio = (id?: string) =>
   Estudio.create(
@@ -67,6 +74,27 @@ describe('EstudioController', () => {
     );
   });
 
+  describe('getMine', () => {
+    it('should return current estudio using principal', async () => {
+      const estudio = makeEstudio('est-1');
+      mockEstudioRepo.findById.mockResolvedValue(estudio);
+
+      const result = await controller.getMine(principal);
+      expect(result).toBeDefined();
+      expect(mockEstudioRepo.findById).toHaveBeenCalledWith(principal.estudioId);
+    });
+  });
+
+  describe('getPlan', () => {
+    it('should pass principal to subscripcionRepo.findActiva', async () => {
+      const estudio = makeEstudio('est-1');
+      mockEstudioRepo.findById.mockResolvedValue(estudio);
+
+      await controller.getPlan(principal);
+      expect(mockSubscripcionRepo.findActiva).toHaveBeenCalledWith(principal);
+    });
+  });
+
   describe('getById', () => {
     it('should return estudio', async () => {
       const estudio = makeEstudio('est-1');
@@ -113,65 +141,66 @@ describe('EstudioController', () => {
   });
 
   describe('getSubscripcion', () => {
-    it('should return active subscripcion', async () => {
+    it('should pass principal to findActiva', async () => {
       const sub = makeSubscripcion('est-1');
       mockSubscripcionRepo.findActiva.mockResolvedValue(sub);
 
-      const result = await controller.getSubscripcion('est-1');
+      const result = await controller.getSubscripcion(principal, 'est-1');
       expect(result).toBeDefined();
       expect(result.estado).toBe(EstadoSubscripcion.ACTIVA);
+      expect(mockSubscripcionRepo.findActiva).toHaveBeenCalledWith(principal);
     });
 
     it('should throw when no active subscripcion', async () => {
       mockSubscripcionRepo.findActiva.mockResolvedValue(null);
 
-      await expect(controller.getSubscripcion('est-1')).rejects.toThrow(
+      await expect(controller.getSubscripcion(principal, 'est-1')).rejects.toThrow(
         'Subscripcion no encontrad',
       );
     });
   });
 
   describe('cambiarPlan', () => {
-    it('should delegate to CambiarPlanSubscripcionHandler', async () => {
+    it('should delegate to CambiarPlanSubscripcionHandler with principal', async () => {
       const sub = makeSubscripcion('est-1');
       mockCambiarPlanHandler.execute.mockResolvedValue(sub);
 
-      await controller.cambiarPlan('est-1', { planId: '3' });
+      await controller.cambiarPlan(principal, 'est-1', { planId: '3' });
 
-      expect(mockCambiarPlanHandler.execute).toHaveBeenCalledWith({ planId: '3' });
+      expect(mockCambiarPlanHandler.execute).toHaveBeenCalledWith(principal, { planId: '3' });
     });
   });
 
   describe('renovar', () => {
-    it('should delegate to RenovarSubscripcionHandler', async () => {
+    it('should delegate to RenovarSubscripcionHandler with principal', async () => {
       const sub = makeSubscripcion('est-1');
       mockRenovarHandler.execute.mockResolvedValue(sub);
 
-      await controller.renovar('est-1', { nuevaFechaFin: '2028-01-01' });
+      await controller.renovar(principal, 'est-1', { nuevaFechaFin: '2028-01-01' });
 
-      expect(mockRenovarHandler.execute).toHaveBeenCalledWith({ nuevaFechaFin: '2028-01-01' });
+      expect(mockRenovarHandler.execute).toHaveBeenCalledWith(principal, { nuevaFechaFin: '2028-01-01' });
     });
   });
 
   describe('cancelar', () => {
-    it('should delegate to CancelarSubscripcionHandler', async () => {
+    it('should delegate to CancelarSubscripcionHandler with principal', async () => {
       const sub = makeSubscripcion('est-1');
       mockCancelarHandler.execute.mockResolvedValue(sub);
 
-      await controller.cancelar('est-1');
+      await controller.cancelar(principal, 'est-1');
 
-      expect(mockCancelarHandler.execute).toHaveBeenCalledTimes(1);
+      expect(mockCancelarHandler.execute).toHaveBeenCalledWith(principal);
     });
   });
 
   describe('marcarVencida', () => {
-    it('should delegate to MarcarSubscripcionVencidaHandler', async () => {
+    it('should delegate to MarcarSubscripcionVencidaHandler with principal', async () => {
       const sub = makeSubscripcion('est-1');
       mockMarcarVencidaHandler.execute.mockResolvedValue(sub);
 
-      await controller.marcarVencida('est-1');
+      await controller.marcarVencida(principal, 'est-1');
 
-      expect(mockMarcarVencidaHandler.execute).toHaveBeenCalledWith({ subscripcionId: 'est-1' });
+      expect(mockMarcarVencidaHandler.execute).toHaveBeenCalledWith(principal, { subscripcionId: 'est-1' });
     });
   });
 });

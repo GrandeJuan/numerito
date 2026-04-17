@@ -1,9 +1,16 @@
 import { CancelarSubscripcionHandler } from './cancelar-subscripcion.command';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import {
   Subscripcion,
   EstadoSubscripcion,
   CicloFacturacion,
 } from '../../domain/entities/subscripcion.entity';
+
+const principal: EstudioPrincipal = {
+  estudioId: 'estudio-1',
+  userId: 'user-1',
+  roles: ['SOCIO'],
+};
 
 const makeSubscripcion = () => {
   const sub = Subscripcion.create({
@@ -40,17 +47,18 @@ describe('CancelarSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    const result = await handler.execute();
+    const result = await handler.execute(principal);
 
     expect(result.estado).toBe(EstadoSubscripcion.CANCELADA);
-    expect(mockRepo.save).toHaveBeenCalledWith(sub);
+    expect(mockRepo.findActiva).toHaveBeenCalledWith(principal);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, sub);
   });
 
   it('should publish SubscripcionCancelada event after save', async () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute();
+    await handler.execute(principal);
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     const events = mockEventBus.publishAll.mock.calls[0][0];
@@ -62,7 +70,7 @@ describe('CancelarSubscripcion Command', () => {
     const sub = makeSubscripcion();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await handler.execute();
+    await handler.execute(principal);
 
     expect(sub.getDomainEvents()).toHaveLength(0);
   });
@@ -70,7 +78,7 @@ describe('CancelarSubscripcion Command', () => {
   it('should throw when no active subscription found', async () => {
     mockRepo.findActiva.mockResolvedValue(null);
 
-    await expect(handler.execute()).rejects.toThrow('Subscripcion no encontrad');
+    await expect(handler.execute(principal)).rejects.toThrow('Subscripcion no encontrad');
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
@@ -80,7 +88,7 @@ describe('CancelarSubscripcion Command', () => {
     mockRepo.findActiva.mockResolvedValue(sub);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute()).rejects.toThrow('DB error');
+    await expect(handler.execute(principal)).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
 
@@ -90,7 +98,7 @@ describe('CancelarSubscripcion Command', () => {
     sub.clearDomainEvents();
     mockRepo.findActiva.mockResolvedValue(sub);
 
-    await expect(handler.execute()).rejects.toThrow();
+    await expect(handler.execute(principal)).rejects.toThrow();
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });

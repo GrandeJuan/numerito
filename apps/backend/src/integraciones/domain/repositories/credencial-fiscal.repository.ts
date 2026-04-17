@@ -3,6 +3,8 @@
  * Stored encrypted in DB, actual secrets in AWS Secrets Manager.
  */
 
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
 export interface CredencialFiscalData {
   id: string;
   clienteId: string;
@@ -15,14 +17,14 @@ export interface CredencialFiscalData {
 }
 
 export interface CredencialFiscalRepository {
-  findById(id: string): Promise<CredencialFiscalData | null>;
-  findAll(): Promise<CredencialFiscalData[]>;
-  findByClienteId(clienteId: string): Promise<CredencialFiscalData[]>;
-  findByOrganismo(organismo: string): Promise<CredencialFiscalData[]>;
-  findAllActivas(): Promise<CredencialFiscalData[]>;
-  save(credencial: CredencialFiscalData): Promise<void>;
-  updateEstado(id: string, estado: string, ultimaSincronizacion?: Date): Promise<void>;
-  delete(credencial: CredencialFiscalData): Promise<void>;
+  findById(principal: EstudioPrincipal, id: string): Promise<CredencialFiscalData | null>;
+  findAll(principal: EstudioPrincipal): Promise<CredencialFiscalData[]>;
+  findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<CredencialFiscalData[]>;
+  findByOrganismo(principal: EstudioPrincipal, organismo: string): Promise<CredencialFiscalData[]>;
+  findAllActivas(principal: EstudioPrincipal): Promise<CredencialFiscalData[]>;
+  save(principal: EstudioPrincipal, credencial: CredencialFiscalData): Promise<void>;
+  updateEstado(principal: EstudioPrincipal, id: string, estado: string, ultimaSincronizacion?: Date): Promise<void>;
+  delete(principal: EstudioPrincipal, credencial: CredencialFiscalData): Promise<void>;
 }
 
 export const CREDENCIAL_FISCAL_REPOSITORY = Symbol('CredencialFiscalRepository');
