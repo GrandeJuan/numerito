@@ -483,20 +483,31 @@ describe('Architecture rules', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // TenantBoundary — Phase 1 (non-blocking)
+  // TenantBoundary — blocking
   //
-  // These tests report violations as warnings. They become blocking assertions
-  // in Phase 3 (#231) once every context has migrated to EstudioPrincipal.
+  // Every tenant-aware repository method must accept EstudioPrincipal as its
+  // first parameter. Application-layer code must not read tenant context
+  // directly — all scoping flows through the principal.
   //
+  // Flipped from advisory (Phase 1) to blocking in Phase 3 (#231).
   // See ADR 0002 for the full rationale and migration plan.
   // ---------------------------------------------------------------------------
-  describe('TenantBoundary (Phase 1 — non-blocking)', () => {
+  describe('TenantBoundary (blocking)', () => {
     function readFileContent(filePath: string): string {
       return fs.readFileSync(filePath, 'utf-8');
     }
 
-    it('(advisory) tenant-aware repository methods should accept EstudioPrincipal as first parameter', () => {
-      const warnings: string[] = [];
+    // Documented cross-tenant methods that intentionally omit EstudioPrincipal.
+    // Each entry must be justified with a comment explaining why.
+    // See ADR 0002 for the GlobalRepository escape hatch pattern.
+    const CROSS_TENANT_ALLOWLIST: Record<string, string[]> = {
+      // findByUsuarioId discovers which estudios a user belongs to.
+      // Called before tenant context exists (estudio picker after login).
+      'mikro-orm-usuario-estudio.repository.ts': ['findByUsuarioId'],
+    };
+
+    it('tenant-aware repository methods must accept EstudioPrincipal as first parameter', () => {
+      const violations: string[] = [];
 
       for (const ctx of BOUNDED_CONTEXTS) {
         const persistenceDir = path.join(SRC_DIR, ctx, 'infrastructure', 'persistence');
@@ -505,6 +516,9 @@ describe('Architecture rules', () => {
         for (const file of repoFiles) {
           const content = readFileContent(file);
           if (!content.includes('TenantAwareRepository')) continue;
+
+          const fileName = path.basename(file);
+          const allowedMethods = CROSS_TENANT_ALLOWLIST[fileName] ?? [];
 
           // Extract public method signatures (async methodName(...))
           const methodPattern = /async\s+(\w+)\s*\(([^)]*)\)/g;
@@ -516,9 +530,12 @@ describe('Architecture rules', () => {
             // Skip private/internal methods
             if (methodName.startsWith('_')) continue;
 
+            // Skip documented cross-tenant methods
+            if (allowedMethods.includes(methodName)) continue;
+
             // Check if first parameter is typed as EstudioPrincipal
             if (!params.startsWith('principal') && !params.includes('EstudioPrincipal')) {
-              warnings.push(
+              violations.push(
                 `${relativeTo(file)} → ${methodName}() missing EstudioPrincipal as first parameter`,
               );
             }
@@ -526,21 +543,11 @@ describe('Architecture rules', () => {
         }
       }
 
-      if (warnings.length > 0) {
-        // Non-blocking: log warnings but do not fail.
-        // Becomes expect(warnings).toEqual([]) in Phase 3 (#231).
-        console.warn(
-          `[TenantBoundary] ${warnings.length} repository method(s) missing EstudioPrincipal parameter (non-blocking):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n'),
-        );
-      }
-
-      // Intentionally no assertion — this is advisory in Phase 1.
-      // Phase 3 (#231) will flip to: expect(warnings).toEqual([]);
+      expect(violations).toEqual([]);
     });
 
-    it('(advisory) application-layer code should not call getTenantId() directly', () => {
-      const warnings: string[] = [];
+    it('application-layer code must not call getTenantId() directly', () => {
+      const violations: string[] = [];
 
       for (const ctx of BOUNDED_CONTEXTS) {
         const appDir = path.join(SRC_DIR, ctx, 'application');
@@ -549,26 +556,18 @@ describe('Architecture rules', () => {
         for (const file of files) {
           const content = readFileContent(file);
           if (content.includes('getTenantId(')) {
-            warnings.push(
-              `${relativeTo(file)} calls getTenantId() — should receive EstudioPrincipal instead`,
+            violations.push(
+              `${relativeTo(file)} calls getTenantId() — must receive EstudioPrincipal instead`,
             );
           }
         }
       }
 
-      if (warnings.length > 0) {
-        console.warn(
-          `[TenantBoundary] ${warnings.length} application file(s) call getTenantId() directly (non-blocking):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n'),
-        );
-      }
-
-      // Intentionally no assertion — this is advisory in Phase 1.
-      // Phase 3 (#231) will flip to: expect(warnings).toEqual([]);
+      expect(violations).toEqual([]);
     });
 
-    it('(advisory) application-layer code should not read RequestContextService.estudioId directly', () => {
-      const warnings: string[] = [];
+    it('application-layer code must not read RequestContextService.estudioId directly', () => {
+      const violations: string[] = [];
 
       for (const ctx of BOUNDED_CONTEXTS) {
         const appDir = path.join(SRC_DIR, ctx, 'application');
@@ -580,22 +579,14 @@ describe('Architecture rules', () => {
             content.includes('RequestContextService') &&
             content.includes('.estudioId')
           ) {
-            warnings.push(
-              `${relativeTo(file)} reads RequestContextService.estudioId — should receive EstudioPrincipal instead`,
+            violations.push(
+              `${relativeTo(file)} reads RequestContextService.estudioId — must receive EstudioPrincipal instead`,
             );
           }
         }
       }
 
-      if (warnings.length > 0) {
-        console.warn(
-          `[TenantBoundary] ${warnings.length} application file(s) read RequestContextService.estudioId directly (non-blocking):\n` +
-            warnings.map((w) => `  - ${w}`).join('\n'),
-        );
-      }
-
-      // Intentionally no assertion — this is advisory in Phase 1.
-      // Phase 3 (#231) will flip to: expect(warnings).toEqual([]);
+      expect(violations).toEqual([]);
     });
   });
 

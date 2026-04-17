@@ -129,6 +129,34 @@ Each publishing context exports public event names and payload interfaces from `
 - Public event contracts: `{context}/application/public-events.ts`
 - Sole listener: `administracion/application/listeners/dashboard-stats.listener.ts`
 
+## Tenant Boundary (Multi-tenancy enforcement)
+
+Tenant scoping is a **structural invariant** enforced by `architecture.spec.ts`. The architecture test fails CI on any violation.
+
+### How it works
+
+1. `RequestContextMiddleware` reads `x-estudio-id` header from every request.
+2. `EstudioPrincipalInterceptor` builds a typed `EstudioPrincipal` (`{ estudioId, userId, roles }`) from the header + authenticated user.
+3. Controllers receive it via `@Principal()` decorator and thread it to handlers.
+4. Every command/query handler takes `EstudioPrincipal` as its first parameter.
+5. Every tenant-aware repository method takes `EstudioPrincipal` as its first parameter — the architecture test enforces this.
+
+### Key rules
+
+- **New code must use `@Principal()`** — the legacy `@EstudioId()` decorator is deprecated.
+- **Repository methods must take `EstudioPrincipal` as first param** — no ambient `getTenantId()` calls in new code.
+- **Cross-tenant operations** use `GlobalRepository` (admin dashboards, reference data, system jobs).
+- **Architecture test** blocks CI if a bounded-context tenant-aware repo method omits the principal.
+
+### Key files
+
+- Principal type: `shared/domain/estudio-principal.ts`
+- Interceptor: `shared/infrastructure/interceptors/estudio-principal.interceptor.ts`
+- Decorator: `shared/infrastructure/decorators/estudio-principal.decorator.ts`
+- Repository base: `shared/domain/tenant-aware.repository.ts`
+- Global escape: `shared/domain/global.repository.ts`
+- Architecture test: `shared/architecture/architecture.spec.ts` (TenantBoundary section)
+
 ## Reglas Generales
 - **Idioma de negocio:** Espanol para entidades de dominio (Cliente, Vencimiento, Factura, etc.)
 - **Idioma tecnico:** Ingles para infra, config, utils, nombres de archivos tecnicos
