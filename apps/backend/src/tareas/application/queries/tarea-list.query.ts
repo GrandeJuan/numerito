@@ -1,8 +1,8 @@
 import { EntityManager } from '@mikro-orm/core';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { EstadoTarea, Prioridad } from '@numerito/shared';
 
 export interface TareaListQuery {
-  estudioId: string;
   estado?: EstadoTarea;
   clienteId?: string;
   responsableId?: string;
@@ -35,13 +35,13 @@ const DEFAULT_LIMIT = 20;
 export class TareaListHandler {
   constructor(private readonly em: EntityManager) {}
 
-  async execute(query: TareaListQuery): Promise<TareaListResult> {
+  async execute(principal: EstudioPrincipal, query: TareaListQuery): Promise<TareaListResult> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.max(1, Number(query.limit) || DEFAULT_LIMIT);
     const offset = (page - 1) * limit;
 
     const whereParts: string[] = ['t.estudio_id = ?'];
-    const whereParams: unknown[] = [query.estudioId];
+    const whereParams: unknown[] = [principal.estudioId];
 
     if (query.estado) {
       whereParts.push('et.codigo = ?');

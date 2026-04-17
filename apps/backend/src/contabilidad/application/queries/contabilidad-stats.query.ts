@@ -1,3 +1,4 @@
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { LibroContableRepository } from '../../domain/repositories/libro-contable.repository';
 import type { AsientoContableRepository } from '../../domain/repositories/asiento-contable.repository';
 import type { TipoLibro } from '../../domain/entities/libro-contable.entity';
@@ -40,10 +41,10 @@ export class ContabilidadStatsQuery {
     private readonly asientoRepo: AsientoContableRepository,
   ) {}
 
-  async execute(): Promise<ContabilidadStats> {
+  async execute(principal: EstudioPrincipal): Promise<ContabilidadStats> {
     const [libros, asientos] = await Promise.all([
-      this.libroRepo.findAll(),
-      this.asientoRepo.findAll(),
+      this.libroRepo.findAll(principal),
+      this.asientoRepo.findAll(principal),
     ]);
 
     const asientosDelPeriodo = asientos.length;

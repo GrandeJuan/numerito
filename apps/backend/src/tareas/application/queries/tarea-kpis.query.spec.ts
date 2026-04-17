@@ -1,11 +1,12 @@
 import { TareaKpisHandler } from './tarea-kpis.query';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 describe('TareaKpisHandler', () => {
   let handler: TareaKpisHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
 
-  const estudioId = 'estudio-uuid';
+  const principal: EstudioPrincipal = { estudioId: 'estudio-uuid', userId: 'user-1', roles: [] };
 
   beforeEach(() => {
     mockExecute = jest.fn();
@@ -25,7 +26,7 @@ describe('TareaKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result).toEqual({
       pendientes: 3,
@@ -45,7 +46,7 @@ describe('TareaKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(typeof result.pendientes).toBe('number');
     expect(typeof result.enProgreso).toBe('number');
@@ -57,7 +58,7 @@ describe('TareaKpisHandler', () => {
   it('returns zeros when the aggregate row is missing (empty table)', async () => {
     mockExecute.mockResolvedValue([]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result).toEqual({
       pendientes: 0,
@@ -77,7 +78,7 @@ describe('TareaKpisHandler', () => {
       },
     ]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal);
 
     expect(result.totalHoras).toBe(0);
   });
@@ -85,7 +86,7 @@ describe('TareaKpisHandler', () => {
   it('scopes by estudioId and aggregates via SQL FILTER clauses', async () => {
     mockExecute.mockResolvedValue([]);
 
-    await handler.execute({ estudioId });
+    await handler.execute(principal);
 
     expect(mockExecute).toHaveBeenCalledTimes(1);
     const [sql, params] = mockExecute.mock.calls[0];
@@ -96,7 +97,7 @@ describe('TareaKpisHandler', () => {
     expect(sql).toMatch(/COUNT\(\*\) FILTER \(WHERE et\.codigo = 'EN_PROGRESO'\)/);
     expect(sql).toMatch(/COUNT\(\*\) FILTER \(WHERE et\.codigo = 'COMPLETADO'\)/);
     expect(sql).toMatch(/COALESCE\(SUM\(t\.horas_registradas\), 0\)/);
-    expect(params).toEqual([estudioId]);
+    expect(params).toEqual(['estudio-uuid']);
   });
 
   it('does not call findAll or any row-materialising API on the EntityManager', async () => {
@@ -104,7 +105,7 @@ describe('TareaKpisHandler', () => {
     mockEm.find = jest.fn();
     mockEm.findAll = jest.fn();
 
-    await handler.execute({ estudioId });
+    await handler.execute(principal);
 
     expect(mockEm.find).not.toHaveBeenCalled();
     expect(mockEm.findAll).not.toHaveBeenCalled();

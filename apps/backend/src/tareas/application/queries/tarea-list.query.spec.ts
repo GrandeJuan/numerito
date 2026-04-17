@@ -1,11 +1,12 @@
 import { TareaListHandler } from './tarea-list.query';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 describe('TareaListHandler', () => {
   let handler: TareaListHandler;
   let mockExecute: jest.Mock;
   let mockEm: any;
 
-  const estudioId = 'estudio-uuid';
+  const principal: EstudioPrincipal = { estudioId: 'estudio-uuid', userId: 'user-1', roles: [] };
 
   beforeEach(() => {
     mockExecute = jest.fn();
@@ -53,7 +54,7 @@ describe('TareaListHandler', () => {
       2,
     );
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal, {});
 
     expect(result.total).toBe(2);
     expect(typeof result.total).toBe('number');
@@ -88,7 +89,7 @@ describe('TareaListHandler', () => {
   it('returns zero total and empty items on empty result', async () => {
     mockQueries([], 0);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal, {});
 
     expect(result).toEqual({ items: [], total: 0 });
   });
@@ -97,7 +98,7 @@ describe('TareaListHandler', () => {
     mockExecute.mockResolvedValueOnce([]);
     mockExecute.mockResolvedValueOnce([]);
 
-    const result = await handler.execute({ estudioId });
+    const result = await handler.execute(principal, {});
 
     expect(result.total).toBe(0);
   });
@@ -105,7 +106,7 @@ describe('TareaListHandler', () => {
   it('scopes by estudioId with no filters', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId });
+    await handler.execute(principal, {});
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
     expect(listSql).toMatch(/FROM tarea t/);
@@ -116,63 +117,62 @@ describe('TareaListHandler', () => {
     expect(listSql).toMatch(/WHERE t\.estudio_id = \?/);
     expect(listSql).toMatch(/ORDER BY t\.created_at DESC/);
     expect(listSql).toMatch(/LIMIT \? OFFSET \?/);
-    expect(listParams).toEqual([estudioId, 20, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 20, 0]);
 
     const [countSql, countParams] = mockExecute.mock.calls[1];
     expect(countSql).toMatch(/COUNT\(\*\) AS total/);
     expect(countSql).toMatch(/WHERE t\.estudio_id = \?/);
-    expect(countParams).toEqual([estudioId]);
+    expect(countParams).toEqual(['estudio-uuid']);
   });
 
   it('adds estado filter bound to the et.codigo column', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, estado: 'PENDIENTE' });
+    await handler.execute(principal, { estado: 'PENDIENTE' });
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
     expect(listSql).toMatch(/et\.codigo = \?/);
-    expect(listParams).toEqual([estudioId, 'PENDIENTE', 20, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 'PENDIENTE', 20, 0]);
 
     const [countSql, countParams] = mockExecute.mock.calls[1];
     expect(countSql).toMatch(/et\.codigo = \?/);
-    expect(countParams).toEqual([estudioId, 'PENDIENTE']);
+    expect(countParams).toEqual(['estudio-uuid', 'PENDIENTE']);
   });
 
   it('adds clienteId filter', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, clienteId: 'cli-42' });
+    await handler.execute(principal, { clienteId: 'cli-42' });
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
     expect(listSql).toMatch(/t\.cliente_id = \?/);
-    expect(listParams).toEqual([estudioId, 'cli-42', 20, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 'cli-42', 20, 0]);
   });
 
   it('adds responsableId filter', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, responsableId: 'u-42' });
+    await handler.execute(principal, { responsableId: 'u-42' });
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
     expect(listSql).toMatch(/t\.responsable_id = \?/);
-    expect(listParams).toEqual([estudioId, 'u-42', 20, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 'u-42', 20, 0]);
   });
 
   it('adds prioridad filter bound to the p.codigo column', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, prioridad: 'URGENTE' });
+    await handler.execute(principal, { prioridad: 'URGENTE' });
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
     expect(listSql).toMatch(/p\.codigo = \?/);
-    expect(listParams).toEqual([estudioId, 'URGENTE', 20, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 'URGENTE', 20, 0]);
   });
 
   it('combines multiple filters with AND', async () => {
     mockQueries([], 0);
 
-    await handler.execute({
-      estudioId,
+    await handler.execute(principal, {
       estado: 'EN_PROGRESO',
       clienteId: 'cli-1',
       responsableId: 'u-1',
@@ -184,7 +184,7 @@ describe('TareaListHandler', () => {
       /t\.estudio_id = \? AND et\.codigo = \? AND t\.cliente_id = \? AND t\.responsable_id = \? AND p\.codigo = \?/,
     );
     expect(listParams).toEqual([
-      estudioId,
+      'estudio-uuid',
       'EN_PROGRESO',
       'cli-1',
       'u-1',
@@ -197,19 +197,19 @@ describe('TareaListHandler', () => {
   it('applies pagination via LIMIT/OFFSET', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, page: 3, limit: 50 });
+    await handler.execute(principal, { page: 3, limit: 50 });
 
     const [, listParams] = mockExecute.mock.calls[0];
-    expect(listParams).toEqual([estudioId, 50, 100]);
+    expect(listParams).toEqual(['estudio-uuid', 50, 100]);
   });
 
   it('clamps page and limit to minimum 1 when invalid values are provided', async () => {
     mockQueries([], 0);
 
-    await handler.execute({ estudioId, page: 0, limit: -5 });
+    await handler.execute(principal, { page: 0, limit: -5 });
 
     const [, listParams] = mockExecute.mock.calls[0];
-    expect(listParams).toEqual([estudioId, 1, 0]);
+    expect(listParams).toEqual(['estudio-uuid', 1, 0]);
   });
 
   it('does not call em.find or em.findAll — filtering lives in SQL', async () => {
@@ -217,7 +217,7 @@ describe('TareaListHandler', () => {
     mockEm.find = jest.fn();
     mockEm.findAll = jest.fn();
 
-    await handler.execute({ estudioId, estado: 'PENDIENTE' });
+    await handler.execute(principal, { estado: 'PENDIENTE' });
 
     expect(mockEm.find).not.toHaveBeenCalled();
     expect(mockEm.findAll).not.toHaveBeenCalled();

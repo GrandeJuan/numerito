@@ -1,5 +1,8 @@
 import { RegistrarHorasHandler } from './registrar-horas.command';
 import { Tarea } from '../../domain/entities/tarea.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeTarea = () =>
   Tarea.create({
@@ -31,18 +34,18 @@ describe('RegistrarHoras Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    const result = await handler.execute({ tareaId: t.id, horas: 2.5 });
+    const result = await handler.execute(principal, { tareaId: t.id, horas: 2.5 });
 
     expect(result.horasRegistradas).toBe(2.5);
-    expect(mockRepo.save).toHaveBeenCalledWith(t);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, t);
   });
 
   it('should accumulate horas across multiple executions', async () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, horas: 1.5 });
-    await handler.execute({ tareaId: t.id, horas: 0.5 });
+    await handler.execute(principal, { tareaId: t.id, horas: 1.5 });
+    await handler.execute(principal, { tareaId: t.id, horas: 0.5 });
 
     expect(t.horasRegistradas).toBe(2);
   });
@@ -51,7 +54,7 @@ describe('RegistrarHoras Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, horas: 1 });
+    await handler.execute(principal, { tareaId: t.id, horas: 1 });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
@@ -64,7 +67,7 @@ describe('RegistrarHoras Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, horas: 1 });
+    await handler.execute(principal, { tareaId: t.id, horas: 1 });
 
     expect(t.getDomainEvents()).toHaveLength(0);
   });
@@ -72,7 +75,7 @@ describe('RegistrarHoras Command', () => {
   it('should throw when tarea not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
-    await expect(handler.execute({ tareaId: 'bad-id', horas: 1 })).rejects.toThrow(
+    await expect(handler.execute(principal, { tareaId: 'bad-id', horas: 1 })).rejects.toThrow(
       'Tarea no encontrad',
     );
     expect(mockRepo.save).not.toHaveBeenCalled();
@@ -83,7 +86,7 @@ describe('RegistrarHoras Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await expect(handler.execute({ tareaId: t.id, horas: 0 })).rejects.toThrow(
+    await expect(handler.execute(principal, { tareaId: t.id, horas: 0 })).rejects.toThrow(
       'Las horas deben ser mayor a 0',
     );
     expect(mockRepo.save).not.toHaveBeenCalled();
@@ -95,7 +98,7 @@ describe('RegistrarHoras Command', () => {
     mockRepo.findById.mockResolvedValue(t);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute({ tareaId: t.id, horas: 1 })).rejects.toThrow('DB error');
+    await expect(handler.execute(principal, { tareaId: t.id, horas: 1 })).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
 });

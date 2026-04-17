@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { LibroContableRepository } from '../../domain/repositories/libro-contable.repository';
 import { LibroContable } from '../../domain/entities/libro-contable.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
@@ -27,13 +28,12 @@ export class MikroOrmLibroContableRepository
     super(context);
   }
 
-  async findById(id: string): Promise<LibroContable | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<LibroContable | null> {
     const entity = await this.em.findOne(
       LibroContableEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoLibro', 'cliente', 'estudio'],
@@ -43,13 +43,12 @@ export class MikroOrmLibroContableRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByClienteId(clienteId: string): Promise<LibroContable[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<LibroContable[]> {
     const entities = await this.em.find(
       LibroContableEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoLibro', 'cliente', 'estudio'],
@@ -58,12 +57,11 @@ export class MikroOrmLibroContableRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<LibroContable[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<LibroContable[]> {
     const entities = await this.em.find(
       LibroContableEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['tipoLibro', 'cliente', 'estudio'],
@@ -72,14 +70,13 @@ export class MikroOrmLibroContableRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(libro: LibroContable): Promise<void> {
+  async save(principal: EstudioPrincipal, libro: LibroContable): Promise<void> {
     const data = this.mapper.toPersistence(libro);
     const tipoLibro = await this.em.findOneOrFail(TipoLibroEntity, { codigo: data.tipo });
     const cliente = this.em.getReference(ClienteEntity, data.clienteId);
     const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(LibroContableEntity, { id: data.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(LibroContableEntity, { id: data.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -103,9 +100,8 @@ export class MikroOrmLibroContableRepository
     await this.em.flush();
   }
 
-  async delete(libro: LibroContable): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(LibroContableEntity, { id: libro.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, libro: LibroContable): Promise<void> {
+    const entity = await this.em.findOne(LibroContableEntity, { id: libro.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

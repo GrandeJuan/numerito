@@ -1,5 +1,8 @@
 import { AsignarTareaHandler } from './asignar-tarea.command';
 import { Tarea } from '../../domain/entities/tarea.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeTarea = () =>
   Tarea.create({
@@ -31,17 +34,17 @@ describe('AsignarTarea Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    const result = await handler.execute({ tareaId: t.id, responsableId: 'user-1' });
+    const result = await handler.execute(principal, { tareaId: t.id, responsableId: 'user-1' });
 
     expect(result.responsableId).toBe('user-1');
-    expect(mockRepo.save).toHaveBeenCalledWith(t);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, t);
   });
 
   it('should publish collected domain events after save', async () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, responsableId: 'user-1' });
+    await handler.execute(principal, { tareaId: t.id, responsableId: 'user-1' });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
@@ -54,7 +57,7 @@ describe('AsignarTarea Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, responsableId: 'user-1' });
+    await handler.execute(principal, { tareaId: t.id, responsableId: 'user-1' });
 
     expect(t.getDomainEvents()).toHaveLength(0);
   });
@@ -63,7 +66,7 @@ describe('AsignarTarea Command', () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({ tareaId: 'bad-id', responsableId: 'user-1' }),
+      handler.execute(principal, { tareaId: 'bad-id', responsableId: 'user-1' }),
     ).rejects.toThrow('Tarea no encontrad');
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
@@ -75,7 +78,7 @@ describe('AsignarTarea Command', () => {
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
     await expect(
-      handler.execute({ tareaId: t.id, responsableId: 'user-1' }),
+      handler.execute(principal, { tareaId: t.id, responsableId: 'user-1' }),
     ).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });

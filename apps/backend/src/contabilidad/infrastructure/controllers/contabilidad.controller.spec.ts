@@ -1,6 +1,9 @@
 import { ContabilidadController } from './contabilidad.controller';
 import { LibroContable } from '../../domain/entities/libro-contable.entity';
 import { AsientoContable, LineaAsiento } from '../../domain/entities/asiento-contable.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeLibro = (overrides: Partial<{ id: string; estudioId: string }> = {}) =>
   LibroContable.create(
@@ -67,7 +70,7 @@ describe('ContabilidadController', () => {
       mockLibroRepo.findAll.mockResolvedValue(libros);
       mockAsientoRepo.findAll.mockResolvedValue(asientos);
 
-      const result = await controller.stats();
+      const result = await controller.stats(principal);
       expect(result.data.asientosDelPeriodo).toBe(1);
       expect(result.data.totalLibros).toBe(2);
       expect(result.data.balanceCuadrado).toBe(true);
@@ -76,7 +79,7 @@ describe('ContabilidadController', () => {
     it('should return zero stats when no data', async () => {
       mockAsientoRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.stats();
+      const result = await controller.stats(principal);
       expect(result.data.asientosDelPeriodo).toBe(0);
       expect(result.data.totalLibros).toBe(0);
     });
@@ -87,7 +90,7 @@ describe('ContabilidadController', () => {
       const libros = [makeLibro(), makeLibro()];
       mockLibroRepo.findAll.mockResolvedValue(libros);
 
-      const result = await controller.listLibros(1, 20);
+      const result = await controller.listLibros(principal, 1, 20);
       expect(result.data).toHaveLength(2);
       expect(result.meta.total).toBe(2);
       expect(result.meta.page).toBe(1);
@@ -96,7 +99,7 @@ describe('ContabilidadController', () => {
     it('should use default page and limit when not provided', async () => {
       mockLibroRepo.findAll.mockResolvedValue([]);
 
-      const result = await controller.listLibros();
+      const result = await controller.listLibros(principal);
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -105,7 +108,7 @@ describe('ContabilidadController', () => {
   describe('createLibro', () => {
     it('should create a new libro', async () => {
       const dto = { clienteId: 'cliente-1', tipo: 'DIARIO', periodo: '2026-01' };
-      const result = await controller.createLibro(dto as any, 'estudio-1');
+      const result = await controller.createLibro(dto as any, principal);
       expect(result.id).toBeDefined();
       expect(mockLibroRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -116,7 +119,7 @@ describe('ContabilidadController', () => {
       const libro = makeLibro();
       mockLibroRepo.findById.mockResolvedValue(libro);
 
-      await controller.rubricarLibro(libro.id, { numeroRubrica: 'RUB-001' } as any);
+      await controller.rubricarLibro(principal, libro.id, { numeroRubrica: 'RUB-001' } as any);
       expect(libro.isRubricado).toBe(true);
       expect(libro.numeroRubrica).toBe('RUB-001');
       expect(mockLibroRepo.save).toHaveBeenCalledTimes(1);
@@ -126,7 +129,7 @@ describe('ContabilidadController', () => {
       mockLibroRepo.findById.mockResolvedValue(null);
 
       await expect(
-        controller.rubricarLibro('bad-id', { numeroRubrica: 'RUB-001' } as any),
+        controller.rubricarLibro(principal, 'bad-id', { numeroRubrica: 'RUB-001' } as any),
       ).rejects.toThrow('LibroContable no encontrado');
     });
   });
@@ -138,7 +141,7 @@ describe('ContabilidadController', () => {
       const asientos = [makeAsiento({ libroId: 'libro-1' })];
       mockAsientoRepo.findByLibroId.mockResolvedValue(asientos);
 
-      const result = await controller.listAsientosByLibro('libro-1', 1, 20);
+      const result = await controller.listAsientosByLibro(principal, 'libro-1', 1, 20);
       expect(result.data).toHaveLength(1);
     });
 
@@ -147,7 +150,7 @@ describe('ContabilidadController', () => {
       mockLibroRepo.findById.mockResolvedValue(libro);
       mockAsientoRepo.findByLibroId.mockResolvedValue([]);
 
-      const result = await controller.listAsientosByLibro('libro-1');
+      const result = await controller.listAsientosByLibro(principal, 'libro-1');
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(20);
     });
@@ -155,7 +158,7 @@ describe('ContabilidadController', () => {
     it('should throw when libro not found', async () => {
       mockLibroRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.listAsientosByLibro('bad-id', 1, 20)).rejects.toThrow(
+      await expect(controller.listAsientosByLibro(principal, 'bad-id', 1, 20)).rejects.toThrow(
         'LibroContable no encontrado',
       );
     });
@@ -170,7 +173,7 @@ describe('ContabilidadController', () => {
         descripcion: 'Test asiento',
         lineas: balancedLineas,
       };
-      const result = await controller.createAsiento(dto as any, 'estudio-1');
+      const result = await controller.createAsiento(dto as any, principal);
       expect(result.id).toBeDefined();
       expect(mockAsientoRepo.save).toHaveBeenCalledTimes(1);
     });
@@ -184,7 +187,7 @@ describe('ContabilidadController', () => {
         lineas: unbalancedLineas,
       };
 
-      await expect(controller.createAsiento(dto as any, 'estudio-1')).rejects.toThrow(
+      await expect(controller.createAsiento(dto as any, principal)).rejects.toThrow(
         'El asiento contable debe estar balanceado',
       );
       expect(mockAsientoRepo.save).not.toHaveBeenCalled();

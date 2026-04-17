@@ -1,5 +1,8 @@
 import { AgregarComentarioHandler } from './agregar-comentario.command';
 import { Tarea } from '../../domain/entities/tarea.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeTarea = () =>
   Tarea.create({
@@ -31,7 +34,7 @@ describe('AgregarComentario Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    const result = await handler.execute({
+    const result = await handler.execute(principal, {
       tareaId: t.id,
       autorId: 'user-1',
       texto: 'Avanzando bien',
@@ -40,15 +43,15 @@ describe('AgregarComentario Command', () => {
     expect(result.comentarios).toHaveLength(1);
     expect(result.comentarios[0].usuarioId).toBe('user-1');
     expect(result.comentarios[0].texto).toBe('Avanzando bien');
-    expect(mockRepo.save).toHaveBeenCalledWith(t);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, t);
   });
 
   it('should accumulate comentarios across multiple executions', async () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, autorId: 'user-1', texto: 'primero' });
-    await handler.execute({ tareaId: t.id, autorId: 'user-2', texto: 'segundo' });
+    await handler.execute(principal, { tareaId: t.id, autorId: 'user-1', texto: 'primero' });
+    await handler.execute(principal, { tareaId: t.id, autorId: 'user-2', texto: 'segundo' });
 
     expect(t.comentarios).toHaveLength(2);
     expect(t.comentarios[0].texto).toBe('primero');
@@ -59,7 +62,7 @@ describe('AgregarComentario Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, autorId: 'user-1', texto: 'hola' });
+    await handler.execute(principal, { tareaId: t.id, autorId: 'user-1', texto: 'hola' });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
@@ -72,7 +75,7 @@ describe('AgregarComentario Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id, autorId: 'user-1', texto: 'hola' });
+    await handler.execute(principal, { tareaId: t.id, autorId: 'user-1', texto: 'hola' });
 
     expect(t.getDomainEvents()).toHaveLength(0);
   });
@@ -81,7 +84,7 @@ describe('AgregarComentario Command', () => {
     mockRepo.findById.mockResolvedValue(null);
 
     await expect(
-      handler.execute({ tareaId: 'bad-id', autorId: 'user-1', texto: 'hola' }),
+      handler.execute(principal, { tareaId: 'bad-id', autorId: 'user-1', texto: 'hola' }),
     ).rejects.toThrow('Tarea no encontrad');
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
@@ -93,7 +96,7 @@ describe('AgregarComentario Command', () => {
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
     await expect(
-      handler.execute({ tareaId: t.id, autorId: 'user-1', texto: 'hola' }),
+      handler.execute(principal, { tareaId: t.id, autorId: 'user-1', texto: 'hola' }),
     ).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });

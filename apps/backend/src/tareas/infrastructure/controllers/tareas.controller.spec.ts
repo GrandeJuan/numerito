@@ -1,4 +1,5 @@
 import { TareasController } from './tareas.controller';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 describe('TareasController', () => {
   let controller: TareasController;
@@ -10,6 +11,8 @@ describe('TareasController', () => {
   let mockAgregarComentarioHandler: { execute: jest.Mock };
   let mockTareaListHandler: { execute: jest.Mock };
   let mockTareaKpisHandler: { execute: jest.Mock };
+
+  const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
   beforeEach(() => {
     mockCrearTareaHandler = { execute: jest.fn() };
@@ -33,13 +36,12 @@ describe('TareasController', () => {
   });
 
   describe('list', () => {
-    it('delegates to TareaListHandler with estudioId and default pagination', async () => {
+    it('delegates to TareaListHandler with principal and default pagination', async () => {
       mockTareaListHandler.execute.mockResolvedValue({ items: [], total: 0 });
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list(principal);
 
-      expect(mockTareaListHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockTareaListHandler.execute).toHaveBeenCalledWith(principal, {
         estado: undefined,
         clienteId: undefined,
         responsableId: undefined,
@@ -69,17 +71,16 @@ describe('TareasController', () => {
       ];
       mockTareaListHandler.execute.mockResolvedValue({ items, total: 1 });
 
-      const result = await controller.list('estudio-1');
+      const result = await controller.list(principal);
 
       expect(result.data).toEqual(items);
       expect(result.meta.total).toBe(1);
     });
 
     it('forwards estado, clienteId, responsableId and prioridad filters to the handler', async () => {
-      await controller.list('estudio-1', 2, 50, 'EN_PROGRESO', 'u-1', 'cli-1', 'ALTA');
+      await controller.list(principal, 2, 50, 'EN_PROGRESO', 'u-1', 'cli-1', 'ALTA');
 
-      expect(mockTareaListHandler.execute).toHaveBeenCalledWith({
-        estudioId: 'estudio-1',
+      expect(mockTareaListHandler.execute).toHaveBeenCalledWith(principal, {
         estado: 'EN_PROGRESO',
         clienteId: 'cli-1',
         responsableId: 'u-1',
@@ -91,24 +92,24 @@ describe('TareasController', () => {
   });
 
   describe('kpis', () => {
-    it('delegates to TareaKpisHandler with the estudioId', async () => {
+    it('delegates to TareaKpisHandler with the principal', async () => {
       const kpis = { pendientes: 3, enProgreso: 2, completadas: 5, totalHoras: 12.5 };
       mockTareaKpisHandler.execute.mockResolvedValue(kpis);
 
-      const result = await controller.kpis('estudio-1');
+      const result = await controller.kpis(principal);
 
-      expect(mockTareaKpisHandler.execute).toHaveBeenCalledWith({ estudioId: 'estudio-1' });
+      expect(mockTareaKpisHandler.execute).toHaveBeenCalledWith(principal);
       expect(result.data).toEqual(kpis);
     });
 
     it('propagates handler errors', async () => {
       mockTareaKpisHandler.execute.mockRejectedValue(new Error('db down'));
-      await expect(controller.kpis('estudio-1')).rejects.toThrow('db down');
+      await expect(controller.kpis(principal)).rejects.toThrow('db down');
     });
   });
 
   describe('create', () => {
-    it('should delegate to CrearTareaHandler with dto fields + estudioId', async () => {
+    it('should delegate to CrearTareaHandler with principal and dto', async () => {
       const dto = {
         titulo: 'Preparar DDJJ',
         descripcion: 'DDJJ mensual',
@@ -126,15 +127,9 @@ describe('TareasController', () => {
       };
       mockCrearTareaHandler.execute.mockResolvedValue(createdTarea);
 
-      const result = await controller.create(dto, 'estudio-1');
+      const result = await controller.create(dto, principal);
 
-      expect(mockCrearTareaHandler.execute).toHaveBeenCalledWith({
-        titulo: 'Preparar DDJJ',
-        descripcion: 'DDJJ mensual',
-        clienteId: 'cliente-1',
-        prioridad: 'ALTA',
-        estudioId: 'estudio-1',
-      });
+      expect(mockCrearTareaHandler.execute).toHaveBeenCalledWith(principal, dto);
       expect(result.data).toBe(createdTarea);
     });
 
@@ -143,54 +138,54 @@ describe('TareasController', () => {
       await expect(
         controller.create(
           { titulo: 't', prioridad: 'MEDIA' as const } as any,
-          'estudio-1',
+          principal,
         ),
       ).rejects.toThrow('DB error');
     });
   });
 
   describe('iniciar', () => {
-    it('should delegate to IniciarTareaHandler with the tarea id', async () => {
+    it('should delegate to IniciarTareaHandler with principal and tarea id', async () => {
       const tarea = { id: 't-1', estado: 'EN_PROGRESO' };
       mockIniciarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.iniciar('t-1');
+      const result = await controller.iniciar(principal, 't-1');
 
-      expect(mockIniciarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: 't-1' });
+      expect(mockIniciarTareaHandler.execute).toHaveBeenCalledWith(principal, { tareaId: 't-1' });
       expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
       mockIniciarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
-      await expect(controller.iniciar('bad-id')).rejects.toThrow('Tarea no encontrad');
+      await expect(controller.iniciar(principal, 'bad-id')).rejects.toThrow('Tarea no encontrad');
     });
   });
 
   describe('completar', () => {
-    it('should delegate to CompletarTareaHandler with the tarea id', async () => {
+    it('should delegate to CompletarTareaHandler with principal and tarea id', async () => {
       const tarea = { id: 't-1', estado: 'COMPLETADO' };
       mockCompletarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.completar('t-1');
+      const result = await controller.completar(principal, 't-1');
 
-      expect(mockCompletarTareaHandler.execute).toHaveBeenCalledWith({ tareaId: 't-1' });
+      expect(mockCompletarTareaHandler.execute).toHaveBeenCalledWith(principal, { tareaId: 't-1' });
       expect(result.data).toBe(tarea);
     });
 
     it('should propagate handler errors', async () => {
       mockCompletarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
-      await expect(controller.completar('bad-id')).rejects.toThrow('Tarea no encontrad');
+      await expect(controller.completar(principal, 'bad-id')).rejects.toThrow('Tarea no encontrad');
     });
   });
 
   describe('asignar', () => {
-    it('should delegate to AsignarTareaHandler with tarea id and responsableId', async () => {
+    it('should delegate to AsignarTareaHandler with principal, tarea id and responsableId', async () => {
       const tarea = { id: 't-1', responsableId: 'user-1' };
       mockAsignarTareaHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.asignar('t-1', { responsableId: 'user-1' });
+      const result = await controller.asignar(principal, 't-1', { responsableId: 'user-1' });
 
-      expect(mockAsignarTareaHandler.execute).toHaveBeenCalledWith({
+      expect(mockAsignarTareaHandler.execute).toHaveBeenCalledWith(principal, {
         tareaId: 't-1',
         responsableId: 'user-1',
       });
@@ -199,23 +194,23 @@ describe('TareasController', () => {
 
     it('should propagate handler errors', async () => {
       mockAsignarTareaHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
-      await expect(controller.asignar('bad-id', { responsableId: 'user-1' })).rejects.toThrow(
+      await expect(controller.asignar(principal, 'bad-id', { responsableId: 'user-1' })).rejects.toThrow(
         'Tarea no encontrad',
       );
     });
   });
 
   describe('registrarHoras', () => {
-    it('should delegate to RegistrarHorasHandler with tarea id and horas', async () => {
+    it('should delegate to RegistrarHorasHandler with principal, tarea id and horas', async () => {
       const tarea = { id: 't-1', horasRegistradas: 2.5 };
       mockRegistrarHorasHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.registrarHoras('t-1', {
+      const result = await controller.registrarHoras(principal, 't-1', {
         horas: 2.5,
         descripcion: 'Trabajo en balance',
       });
 
-      expect(mockRegistrarHorasHandler.execute).toHaveBeenCalledWith({
+      expect(mockRegistrarHorasHandler.execute).toHaveBeenCalledWith(principal, {
         tareaId: 't-1',
         horas: 2.5,
       });
@@ -225,22 +220,22 @@ describe('TareasController', () => {
     it('should propagate handler errors', async () => {
       mockRegistrarHorasHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(
-        controller.registrarHoras('bad-id', { horas: 1, descripcion: 'x' }),
+        controller.registrarHoras(principal, 'bad-id', { horas: 1, descripcion: 'x' }),
       ).rejects.toThrow('Tarea no encontrad');
     });
   });
 
   describe('agregarComentario', () => {
-    it('should delegate to AgregarComentarioHandler with tarea id, autorId, and texto', async () => {
+    it('should delegate to AgregarComentarioHandler with principal, tarea id, autorId, and texto', async () => {
       const tarea = { id: 't-1', comentarios: [{ texto: 'Avanzando bien' }] };
       mockAgregarComentarioHandler.execute.mockResolvedValue(tarea);
 
-      const result = await controller.agregarComentario('t-1', {
+      const result = await controller.agregarComentario(principal, 't-1', {
         autorId: 'user-1',
         texto: 'Avanzando bien',
       });
 
-      expect(mockAgregarComentarioHandler.execute).toHaveBeenCalledWith({
+      expect(mockAgregarComentarioHandler.execute).toHaveBeenCalledWith(principal, {
         tareaId: 't-1',
         autorId: 'user-1',
         texto: 'Avanzando bien',
@@ -251,7 +246,7 @@ describe('TareasController', () => {
     it('should propagate handler errors', async () => {
       mockAgregarComentarioHandler.execute.mockRejectedValue(new Error('Tarea no encontrada'));
       await expect(
-        controller.agregarComentario('bad-id', { autorId: 'u', texto: 't' }),
+        controller.agregarComentario(principal, 'bad-id', { autorId: 'u', texto: 't' }),
       ).rejects.toThrow('Tarea no encontrad');
     });
   });

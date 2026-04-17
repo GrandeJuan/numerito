@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { EstadoTarea, Prioridad } from '@numerito/shared';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { CrearTareaDto, crearTareaDtoSchema } from '../../application/dtos/crear-tarea.dto';
 import { AsignarTareaDto, asignarTareaDtoSchema } from '../../application/dtos/asignar-tarea.dto';
 import { RegistrarHorasDto, registrarHorasDtoSchema } from '../../application/dtos/registrar-horas.dto';
@@ -14,7 +15,7 @@ import { RegistrarHorasHandler } from '../../application/commands/registrar-hora
 import { AgregarComentarioHandler } from '../../application/commands/agregar-comentario.command';
 import { TareaListHandler } from '../../application/queries/tarea-list.query';
 import { TareaKpisHandler } from '../../application/queries/tarea-kpis.query';
-import { EstudioId } from '../../../shared/infrastructure/decorators/estudio-id.decorator';
+import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Tareas')
@@ -34,7 +35,7 @@ export class TareasController {
   @Get()
   @ApiOperation({ summary: 'Listar tareas del estudio' })
   async list(
-    @EstudioId() estudioId: string,
+    @Principal() principal: EstudioPrincipal,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('estado') estado?: string,
@@ -44,8 +45,7 @@ export class TareasController {
   ) {
     const pageNum = +page;
     const limitNum = +limit;
-    const { items, total } = await this.tareaListHandler.execute({
-      estudioId,
+    const { items, total } = await this.tareaListHandler.execute(principal, {
       estado: estado as EstadoTarea | undefined,
       clienteId,
       responsableId,
@@ -58,36 +58,36 @@ export class TareasController {
 
   @Get('kpis')
   @ApiOperation({ summary: 'KPIs de tareas del estudio' })
-  async kpis(@EstudioId() estudioId: string) {
-    const result = await this.tareaKpisHandler.execute({ estudioId });
+  async kpis(@Principal() principal: EstudioPrincipal) {
+    const result = await this.tareaKpisHandler.execute(principal);
     return successResponse(result);
   }
 
   @Post()
   @ApiOperation({ summary: 'Crear tarea' })
-  async create(@Body(new ZodValidationPipe(crearTareaDtoSchema)) dto: CrearTareaDto, @EstudioId() estudioId: string) {
-    const tarea = await this.crearTareaHandler.execute({ ...dto, estudioId });
+  async create(@Body(new ZodValidationPipe(crearTareaDtoSchema)) dto: CrearTareaDto, @Principal() principal: EstudioPrincipal) {
+    const tarea = await this.crearTareaHandler.execute(principal, dto);
     return successResponse(tarea);
   }
 
   @Patch(':id/iniciar')
   @ApiOperation({ summary: 'Iniciar tarea' })
-  async iniciar(@Param('id') id: string) {
-    const tarea = await this.iniciarTareaHandler.execute({ tareaId: id });
+  async iniciar(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const tarea = await this.iniciarTareaHandler.execute(principal, { tareaId: id });
     return successResponse(tarea);
   }
 
   @Patch(':id/completar')
   @ApiOperation({ summary: 'Completar tarea' })
-  async completar(@Param('id') id: string) {
-    const tarea = await this.completarTareaHandler.execute({ tareaId: id });
+  async completar(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
+    const tarea = await this.completarTareaHandler.execute(principal, { tareaId: id });
     return successResponse(tarea);
   }
 
   @Patch(':id/asignar')
   @ApiOperation({ summary: 'Asignar responsable a tarea' })
-  async asignar(@Param('id') id: string, @Body(new ZodValidationPipe(asignarTareaDtoSchema)) dto: AsignarTareaDto) {
-    const tarea = await this.asignarTareaHandler.execute({
+  async asignar(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(asignarTareaDtoSchema)) dto: AsignarTareaDto) {
+    const tarea = await this.asignarTareaHandler.execute(principal, {
       tareaId: id,
       responsableId: dto.responsableId,
     });
@@ -96,8 +96,8 @@ export class TareasController {
 
   @Post(':id/horas')
   @ApiOperation({ summary: 'Registrar horas en tarea' })
-  async registrarHoras(@Param('id') id: string, @Body(new ZodValidationPipe(registrarHorasDtoSchema)) dto: RegistrarHorasDto) {
-    const tarea = await this.registrarHorasHandler.execute({
+  async registrarHoras(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(registrarHorasDtoSchema)) dto: RegistrarHorasDto) {
+    const tarea = await this.registrarHorasHandler.execute(principal, {
       tareaId: id,
       horas: dto.horas,
     });
@@ -106,8 +106,8 @@ export class TareasController {
 
   @Post(':id/comentarios')
   @ApiOperation({ summary: 'Agregar comentario a tarea' })
-  async agregarComentario(@Param('id') id: string, @Body(new ZodValidationPipe(agregarComentarioDtoSchema)) dto: AgregarComentarioDto) {
-    const tarea = await this.agregarComentarioHandler.execute({
+  async agregarComentario(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(agregarComentarioDtoSchema)) dto: AgregarComentarioDto) {
+    const tarea = await this.agregarComentarioHandler.execute(principal, {
       tareaId: id,
       autorId: dto.autorId,
       texto: dto.texto,

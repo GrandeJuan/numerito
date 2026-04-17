@@ -1,8 +1,5 @@
 import { EntityManager } from '@mikro-orm/core';
-
-export interface TareaKpisQuery {
-  estudioId: string;
-}
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
 export interface TareaKpisResult {
   pendientes: number;
@@ -14,7 +11,7 @@ export interface TareaKpisResult {
 export class TareaKpisHandler {
   constructor(private readonly em: EntityManager) {}
 
-  async execute(query: TareaKpisQuery): Promise<TareaKpisResult> {
+  async execute(principal: EstudioPrincipal): Promise<TareaKpisResult> {
     const conn = this.em.getConnection();
     const [row] = await conn.execute(
       `SELECT
@@ -25,7 +22,7 @@ export class TareaKpisHandler {
        FROM tarea t
        JOIN estado_tarea et ON t.estado_id = et.id
        WHERE t.estudio_id = ?`,
-      [query.estudioId],
+      [principal.estudioId],
     );
 
     return {

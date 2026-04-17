@@ -1,3 +1,4 @@
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
 import type { EventBus } from '../../../shared/domain/event-bus';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
@@ -12,12 +13,12 @@ export class CompletarTareaHandler {
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(command: CompletarTareaCommand) {
-    const tarea = await this.tareaRepo.findById(command.tareaId);
+  async execute(principal: EstudioPrincipal, command: CompletarTareaCommand) {
+    const tarea = await this.tareaRepo.findById(principal, command.tareaId);
     if (!tarea) throw new RecursoNoEncontradoError('Tarea');
 
     tarea.completar();
-    await this.tareaRepo.save(tarea);
+    await this.tareaRepo.save(principal, tarea);
 
     this.eventBus.publishAll(tarea.getDomainEvents());
     tarea.clearDomainEvents();

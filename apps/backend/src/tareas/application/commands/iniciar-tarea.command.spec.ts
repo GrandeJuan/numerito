@@ -1,5 +1,8 @@
 import { IniciarTareaHandler } from './iniciar-tarea.command';
 import { Tarea } from '../../domain/entities/tarea.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeTarea = () =>
   Tarea.create({
@@ -31,17 +34,17 @@ describe('IniciarTarea Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    const result = await handler.execute({ tareaId: t.id });
+    const result = await handler.execute(principal, { tareaId: t.id });
 
     expect(result.estado).toBe('EN_PROGRESO');
-    expect(mockRepo.save).toHaveBeenCalledWith(t);
+    expect(mockRepo.save).toHaveBeenCalledWith(principal, t);
   });
 
   it('should publish collected domain events after save', async () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id });
+    await handler.execute(principal, { tareaId: t.id });
 
     expect(mockEventBus.publishAll).toHaveBeenCalledTimes(1);
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
@@ -54,7 +57,7 @@ describe('IniciarTarea Command', () => {
     const t = makeTarea();
     mockRepo.findById.mockResolvedValue(t);
 
-    await handler.execute({ tareaId: t.id });
+    await handler.execute(principal, { tareaId: t.id });
 
     expect(t.getDomainEvents()).toHaveLength(0);
   });
@@ -62,7 +65,7 @@ describe('IniciarTarea Command', () => {
   it('should throw when tarea not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
-    await expect(handler.execute({ tareaId: 'bad-id' })).rejects.toThrow('Tarea no encontrad');
+    await expect(handler.execute(principal, { tareaId: 'bad-id' })).rejects.toThrow('Tarea no encontrad');
     expect(mockRepo.save).not.toHaveBeenCalled();
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
@@ -72,7 +75,7 @@ describe('IniciarTarea Command', () => {
     mockRepo.findById.mockResolvedValue(t);
     mockRepo.save.mockRejectedValue(new Error('DB error'));
 
-    await expect(handler.execute({ tareaId: t.id })).rejects.toThrow('DB error');
+    await expect(handler.execute(principal, { tareaId: t.id })).rejects.toThrow('DB error');
     expect(mockEventBus.publishAll).not.toHaveBeenCalled();
   });
 });

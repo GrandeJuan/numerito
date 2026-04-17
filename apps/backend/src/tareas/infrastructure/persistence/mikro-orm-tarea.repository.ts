@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { TareaRepository } from '../../domain/repositories/tarea.repository';
 import { Tarea } from '../../domain/entities/tarea.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
@@ -29,13 +30,12 @@ export class MikroOrmTareaRepository
     super(context);
   }
 
-  async findById(id: string): Promise<Tarea | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<Tarea | null> {
     const entity = await this.em.findOne(
       TareaEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
@@ -45,13 +45,12 @@ export class MikroOrmTareaRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByResponsableId(responsableId: string): Promise<Tarea[]> {
-    const tenantId = this.getTenantId();
+  async findByResponsableId(principal: EstudioPrincipal, responsableId: string): Promise<Tarea[]> {
     const entities = await this.em.find(
       TareaEntity,
       {
         responsable: { id: responsableId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
@@ -60,12 +59,11 @@ export class MikroOrmTareaRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<Tarea[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<Tarea[]> {
     const entities = await this.em.find(
       TareaEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['estado', 'prioridad', 'cliente', 'estudio', 'responsable'],
@@ -74,7 +72,7 @@ export class MikroOrmTareaRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(tarea: Tarea): Promise<void> {
+  async save(principal: EstudioPrincipal, tarea: Tarea): Promise<void> {
     const data = this.mapper.toPersistence(tarea);
     const [estado, prioridad] = await Promise.all([
       this.em.findOneOrFail(EstadoTareaEntity, { codigo: data.estado }),
@@ -88,8 +86,7 @@ export class MikroOrmTareaRepository
       ? this.em.getReference(UsuarioEntity, data.responsableId)
       : undefined;
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(TareaEntity, { id: data.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(TareaEntity, { id: data.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.titulo = data.titulo;
       existing.descripcion = data.descripcion;
@@ -119,9 +116,8 @@ export class MikroOrmTareaRepository
     await this.em.flush();
   }
 
-  async delete(tarea: Tarea): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(TareaEntity, { id: tarea.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, tarea: Tarea): Promise<void> {
+    const entity = await this.em.findOne(TareaEntity, { id: tarea.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

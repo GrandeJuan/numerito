@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { AsientoContableRepository } from '../../domain/repositories/asiento-contable.repository';
 import { AsientoContable } from '../../domain/entities/asiento-contable.entity';
 import { TenantAwareRepository } from '../../../shared/domain';
@@ -27,13 +28,12 @@ export class MikroOrmAsientoContableRepository
     super(context);
   }
 
-  async findById(id: string): Promise<AsientoContable | null> {
-    const tenantId = this.getTenantId();
+  async findById(principal: EstudioPrincipal, id: string): Promise<AsientoContable | null> {
     const entity = await this.em.findOne(
       AsientoContableEntity,
       {
         id,
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['libro', 'cliente', 'estudio'],
@@ -43,13 +43,12 @@ export class MikroOrmAsientoContableRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
-  async findByLibroId(libroId: string): Promise<AsientoContable[]> {
-    const tenantId = this.getTenantId();
+  async findByLibroId(principal: EstudioPrincipal, libroId: string): Promise<AsientoContable[]> {
     const entities = await this.em.find(
       AsientoContableEntity,
       {
         libro: { id: libroId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['libro', 'cliente', 'estudio'],
@@ -58,13 +57,12 @@ export class MikroOrmAsientoContableRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findByClienteId(clienteId: string): Promise<AsientoContable[]> {
-    const tenantId = this.getTenantId();
+  async findByClienteId(principal: EstudioPrincipal, clienteId: string): Promise<AsientoContable[]> {
     const entities = await this.em.find(
       AsientoContableEntity,
       {
         cliente: { id: clienteId },
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['libro', 'cliente', 'estudio'],
@@ -73,12 +71,11 @@ export class MikroOrmAsientoContableRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async findAll(): Promise<AsientoContable[]> {
-    const tenantId = this.getTenantId();
+  async findAll(principal: EstudioPrincipal): Promise<AsientoContable[]> {
     const entities = await this.em.find(
       AsientoContableEntity,
       {
-        estudio: { id: tenantId },
+        estudio: { id: principal.estudioId },
       },
       {
         populate: ['libro', 'cliente', 'estudio'],
@@ -87,14 +84,13 @@ export class MikroOrmAsientoContableRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
-  async save(asiento: AsientoContable): Promise<void> {
+  async save(principal: EstudioPrincipal, asiento: AsientoContable): Promise<void> {
     const data = this.mapper.toPersistence(asiento);
     const libro = this.em.getReference(LibroContableEntity, data.libroId);
     const cliente = this.em.getReference(ClienteEntity, data.clienteId);
     const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
-    const tenantId = this.getTenantId();
-    const existing = await this.em.findOne(AsientoContableEntity, { id: data.id, estudio: { id: tenantId } });
+    const existing = await this.em.findOne(AsientoContableEntity, { id: data.id, estudio: { id: principal.estudioId } });
     if (existing) {
       existing.libro = libro;
       existing.cliente = cliente;
@@ -118,9 +114,8 @@ export class MikroOrmAsientoContableRepository
     await this.em.flush();
   }
 
-  async delete(asiento: AsientoContable): Promise<void> {
-    const tenantId = this.getTenantId();
-    const entity = await this.em.findOne(AsientoContableEntity, { id: asiento.id, estudio: { id: tenantId } });
+  async delete(principal: EstudioPrincipal, asiento: AsientoContable): Promise<void> {
+    const entity = await this.em.findOne(AsientoContableEntity, { id: asiento.id, estudio: { id: principal.estudioId } });
     if (entity) {
       this.em.remove(entity);
       await this.em.flush();

@@ -1,6 +1,9 @@
 import { ContabilidadStatsQuery } from './contabilidad-stats.query';
 import { LibroContable } from '../../domain/entities/libro-contable.entity';
 import { AsientoContable, LineaAsiento } from '../../domain/entities/asiento-contable.entity';
+import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+
+const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeLibro = (overrides: { tipo?: string; id?: string } = {}) =>
   LibroContable.create(
@@ -47,7 +50,7 @@ describe('ContabilidadStatsQuery', () => {
   });
 
   it('should return zero stats when no data', async () => {
-    const result = await query.execute();
+    const result = await query.execute(principal);
 
     expect(result.asientosDelPeriodo).toBe(0);
     expect(result.librosRubricados).toBe(0);
@@ -62,7 +65,7 @@ describe('ContabilidadStatsQuery', () => {
     const asientos = [makeAsiento(), makeAsiento({ id: 'a2' })];
     mockAsientoRepo.findAll.mockResolvedValue(asientos);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.asientosDelPeriodo).toBe(2);
   });
 
@@ -72,7 +75,7 @@ describe('ContabilidadStatsQuery', () => {
     l1.rubricar('RUB-001');
     mockLibroRepo.findAll.mockResolvedValue([l1, l2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.librosRubricados).toBe(1);
     expect(result.totalLibros).toBe(2);
   });
@@ -81,7 +84,7 @@ describe('ContabilidadStatsQuery', () => {
     const asientos = [makeAsiento({ debe: 1000 }), makeAsiento({ debe: 2000, id: 'a2' })];
     mockAsientoRepo.findAll.mockResolvedValue(asientos);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.balanceCuadrado).toBe(true);
   });
 
@@ -91,7 +94,7 @@ describe('ContabilidadStatsQuery', () => {
     l1.rubricar('RUB-001');
     mockLibroRepo.findAll.mockResolvedValue([l1, l2]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.libros).toHaveLength(2);
     const diario = result.libros.find((l) => l.tipo === 'DIARIO');
     expect(diario?.isRubricado).toBe(true);
@@ -105,7 +108,7 @@ describe('ContabilidadStatsQuery', () => {
     const a3 = makeAsiento({ fecha: '2026-02-10', debe: 3000, id: 'a3' });
     mockAsientoRepo.findAll.mockResolvedValue([a1, a2, a3]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     const enero = result.mensualDebeHaber.find((m) => m.mes === '2026-01');
     const febrero = result.mensualDebeHaber.find((m) => m.mes === '2026-02');
 
@@ -121,9 +124,16 @@ describe('ContabilidadStatsQuery', () => {
     const a3 = makeAsiento({ fecha: '2026-02-10', id: 'a3' });
     mockAsientoRepo.findAll.mockResolvedValue([a1, a2, a3]);
 
-    const result = await query.execute();
+    const result = await query.execute(principal);
     expect(result.asientosRecientes[0].id).toBe('a2');
     expect(result.asientosRecientes[1].id).toBe('a3');
     expect(result.asientosRecientes[2].id).toBe('a1');
+  });
+
+  it('should pass principal to repository calls', async () => {
+    await query.execute(principal);
+
+    expect(mockLibroRepo.findAll).toHaveBeenCalledWith(principal);
+    expect(mockAsientoRepo.findAll).toHaveBeenCalledWith(principal);
   });
 });
