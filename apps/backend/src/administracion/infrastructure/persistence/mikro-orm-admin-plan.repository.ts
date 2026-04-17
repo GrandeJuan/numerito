@@ -6,30 +6,33 @@ import type {
   AdminPlanData,
   AdminPlanRepository,
 } from '../../domain/repositories/admin-plan.repository';
+import { AdminPlanMapper } from './admin-plan.mapper';
 
 @Injectable()
 export class MikroOrmAdminPlanRepository
   extends GlobalRepository<AdminPlanData>
   implements AdminPlanRepository
 {
+  private readonly mapper = new AdminPlanMapper();
+
   constructor(private readonly em: EntityManager) {
     super();
   }
 
   async findAll(): Promise<AdminPlanData[]> {
     const plans = await this.em.findAll(PlanEntity, { orderBy: { id: 'ASC' } });
-    return plans.map(this.toData);
+    return plans.map((p) => this.mapper.toDomain(this.mapper.fromSchema(p)));
   }
 
   async findById(id: string | number): Promise<AdminPlanData | null> {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const plan = await this.em.findOne(PlanEntity, { id: numericId });
-    return plan ? this.toData(plan) : null;
+    return plan ? this.mapper.toDomain(this.mapper.fromSchema(plan)) : null;
   }
 
   async findByCodigo(codigo: string): Promise<AdminPlanData | null> {
     const plan = await this.em.findOne(PlanEntity, { codigo });
-    return plan ? this.toData(plan) : null;
+    return plan ? this.mapper.toDomain(this.mapper.fromSchema(plan)) : null;
   }
 
   async save(data: AdminPlanData): Promise<any> {
@@ -61,25 +64,10 @@ export class MikroOrmAdminPlanRepository
     }
 
     await this.em.flush();
-    return this.toData(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async delete(_entity: AdminPlanData): Promise<void> {
     throw new Error('Not implemented');
-  }
-
-  private toData(entity: PlanEntity): AdminPlanData {
-    return {
-      id: entity.id,
-      codigo: entity.codigo,
-      nombre: entity.nombre,
-      descripcion: entity.descripcion,
-      maxClientes: entity.maxClientes,
-      maxUsuarios: entity.maxUsuarios,
-      precio: entity.precio,
-      isPublico: entity.isPublico,
-      isActivo: entity.isActivo,
-      condiciones: entity.condiciones,
-    };
   }
 }

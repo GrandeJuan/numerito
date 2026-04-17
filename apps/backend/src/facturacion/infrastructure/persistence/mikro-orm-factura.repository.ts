@@ -2,8 +2,6 @@ import { Injectable, Inject } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import type { FacturaRepository } from '../../domain/repositories/factura.repository';
 import { Factura } from '../../domain/entities/factura.entity';
-import { LineaFactura } from '../../domain/entities/linea-factura.entity';
-import type { EstadoFactura } from '@numerito/shared';
 import { TenantAwareRepository } from '../../../shared/domain';
 import {
   RequestContextService,
@@ -14,12 +12,15 @@ import { LineaFacturaEntity } from './linea-factura.schema';
 import { EstadoFacturaEntity } from '../../../shared/infrastructure/persistence/estado-factura.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { FacturaMapper } from './factura.mapper';
 
 @Injectable()
 export class MikroOrmFacturaRepository
   extends TenantAwareRepository<Factura>
   implements FacturaRepository
 {
+  private readonly mapper = new FacturaMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -40,7 +41,7 @@ export class MikroOrmFacturaRepository
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByClienteId(clienteId: string): Promise<Factura[]> {
@@ -55,7 +56,7 @@ export class MikroOrmFacturaRepository
         populate: ['estado', 'cliente', 'estudio', 'lineas'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<Factura[]> {
@@ -69,7 +70,7 @@ export class MikroOrmFacturaRepository
         populate: ['estado', 'cliente', 'estudio', 'lineas'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(factura: Factura): Promise<void> {
@@ -154,33 +155,4 @@ export class MikroOrmFacturaRepository
     }
   }
 
-  private toDomain(entity: FacturaEntity): Factura {
-    const lineas = entity.lineas.getItems().map((l) =>
-      LineaFactura.reconstitute(
-        {
-          facturaId: entity.id,
-          descripcion: l.descripcion,
-          cantidad: l.cantidad,
-          precioUnitario: l.precioUnitario,
-          alicuotaIva: l.alicuotaIva,
-        },
-        l.id,
-      ),
-    );
-
-    return Factura.reconstitute(
-      {
-        clienteId: entity.cliente.id,
-        estudioId: entity.estudio.id,
-        numero: entity.numero,
-        fechaEmision: entity.fechaEmision,
-        fechaVencimiento: entity.fechaVencimiento,
-        concepto: entity.concepto,
-        lineas,
-        estado: entity.estado.codigo as EstadoFactura,
-        totalPagado: entity.totalPagado,
-      },
-      entity.id,
-    );
-  }
 }

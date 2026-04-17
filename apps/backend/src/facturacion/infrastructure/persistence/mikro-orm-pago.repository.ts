@@ -11,9 +11,12 @@ import { PagoEntity } from './pago.schema';
 import { FacturaEntity } from './factura.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { MedioPagoEntity } from '../../../shared/infrastructure/persistence/medio-pago.schema';
+import { PagoMapper } from './pago.mapper';
 
 @Injectable()
 export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implements PagoRepository {
+  private readonly mapper = new PagoMapper();
+
   constructor(
     @Inject(REQUEST_CONTEXT) context: RequestContextService,
     private readonly em: EntityManager,
@@ -34,7 +37,7 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
       },
     );
     if (!entity) return null;
-    return this.toDomain(entity);
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
   async findByFacturaId(facturaId: string): Promise<Pago[]> {
@@ -49,7 +52,7 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
         populate: ['factura', 'estudio', 'medioPago'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async findAll(): Promise<Pago[]> {
@@ -63,7 +66,7 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
         populate: ['factura', 'estudio', 'medioPago'],
       },
     );
-    return entities.map((e) => this.toDomain(e));
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
   async save(pago: Pago): Promise<void> {
@@ -105,17 +108,4 @@ export class MikroOrmPagoRepository extends TenantAwareRepository<Pago> implemen
     }
   }
 
-  private toDomain(entity: PagoEntity): Pago {
-    return Pago.reconstitute(
-      {
-        facturaId: entity.factura.id,
-        estudioId: entity.estudio.id,
-        fecha: entity.fecha,
-        monto: entity.monto,
-        medioPagoId: entity.medioPago.id,
-        referencia: entity.referencia,
-      },
-      entity.id,
-    );
-  }
 }
