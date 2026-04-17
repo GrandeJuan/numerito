@@ -1,6 +1,8 @@
 import { Module, Global, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RequestContextService, REQUEST_CONTEXT } from './services/request-context.service';
 import { RequestContextMiddleware } from './middleware/request-context.middleware';
+import { EstudioPrincipalInterceptor } from './interceptors/estudio-principal.interceptor';
 
 @Global()
 @Module({
@@ -8,6 +10,10 @@ import { RequestContextMiddleware } from './middleware/request-context.middlewar
     {
       provide: REQUEST_CONTEXT,
       useClass: RequestContextService,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: EstudioPrincipalInterceptor,
     },
   ],
   exports: [REQUEST_CONTEXT],
