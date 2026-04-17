@@ -6,16 +6,22 @@ import { ObtenerDashboardStatsHandler } from './application/queries/obtener-dash
 import { ClientesModule } from '../clientes/clientes.module';
 import { CLIENTE_SUMMARY_VIEW } from '../clientes/application/public-views';
 import type { ClienteSummaryView } from '../clientes/application/views/cliente-summary.view';
+import { ObligacionesModule } from '../obligaciones/obligaciones.module';
+import { VENCIMIENTOS_PROXIMOS_VIEW } from '../obligaciones/application/public-views';
+import type { VencimientosProximosView } from '../obligaciones/application/views/vencimientos-proximos.view';
 
 @Module({
-  imports: [JwtModule.register({}), ClientesModule],
+  imports: [JwtModule.register({}), ClientesModule, ObligacionesModule],
   controllers: [DashboardController],
   providers: [
     {
       provide: ObtenerDashboardStatsHandler,
-      useFactory: (em: EntityManager, clienteSummary: ClienteSummaryView) =>
-        new ObtenerDashboardStatsHandler(em, clienteSummary),
-      inject: [EntityManager, CLIENTE_SUMMARY_VIEW],
+      useFactory: (
+        em: EntityManager,
+        clienteSummary: ClienteSummaryView,
+        vencimientosProximos: VencimientosProximosView,
+      ) => new ObtenerDashboardStatsHandler(em, clienteSummary, vencimientosProximos),
+      inject: [EntityManager, CLIENTE_SUMMARY_VIEW, VENCIMIENTOS_PROXIMOS_VIEW],
     },
   ],
 })

@@ -1,9 +1,9 @@
 import { EntityManager } from '@mikro-orm/core';
-import { VencimientoEntity } from '../../../obligaciones/infrastructure/persistence/vencimiento.schema';
 import { TareaEntity } from '../../../tareas/infrastructure/persistence/tarea.schema';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { DashboardStats } from '@numerito/shared';
 import type { ClienteSummaryView } from '../../../clientes/application/views/cliente-summary.view';
+import type { VencimientosProximosView } from '../../../obligaciones/application/views/vencimientos-proximos.view';
 
 export type { DashboardStats };
 
@@ -16,6 +16,7 @@ export class ObtenerDashboardStatsHandler {
   constructor(
     private readonly em: EntityManager,
     private readonly clienteSummary: ClienteSummaryView,
+    private readonly vencimientosProximos: VencimientosProximosView,
   ) {}
 
   async execute(query: DashboardStatsQuery): Promise<DashboardStats> {
@@ -55,15 +56,13 @@ export class ObtenerDashboardStatsHandler {
     }
 
     // KPIs
-    const [clienteSummary, vencimientosProximos, tareasActivas] = await Promise.all([
+    const [clienteSummary, vencimientosProximosSummary, tareasActivas] = await Promise.all([
       this.clienteSummary.execute({
         estudioId: query.estudioId,
         ...(esEmpleado ? { responsableId: query.usuarioId } : {}),
       }),
-      this.em.count(VencimientoEntity, {
-        estudio: query.estudioId,
-        fechaVencimiento: { $gte: new Date(), $lte: this.addDays(new Date(), 30) },
-        ...(esEmpleado ? {} : {}),
+      this.vencimientosProximos.execute({
+        estudioId: query.estudioId,
       }),
       this.em.count(TareaEntity, {
         ...tareaFilter,
@@ -199,7 +198,7 @@ export class ObtenerDashboardStatsHandler {
     return {
       kpis: {
         clientes: clienteSummary.totalClientes,
-        vencimientosProximos,
+        vencimientosProximos: vencimientosProximosSummary.totalVencimientosProximos,
         ...(tieneFacturacion ? { facturacionMes } : {}),
         tareasActivas,
       },
@@ -211,9 +210,4 @@ export class ObtenerDashboardStatsHandler {
     };
   }
 
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
 }

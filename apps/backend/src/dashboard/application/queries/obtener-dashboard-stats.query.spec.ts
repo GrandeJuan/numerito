@@ -1,10 +1,4 @@
 // Mock entities to avoid ESM import issues
-jest.mock('../../../obligaciones/infrastructure/persistence/vencimiento.schema', () => ({
-  VencimientoEntity: class VencimientoEntity {},
-}));
-jest.mock('../../../facturacion/infrastructure/persistence/factura.schema', () => ({
-  FacturaEntity: class FacturaEntity {},
-}));
 jest.mock('../../../tareas/infrastructure/persistence/tarea.schema', () => ({
   TareaEntity: class TareaEntity {},
 }));
@@ -16,6 +10,7 @@ describe('ObtenerDashboardStatsHandler', () => {
   let mockEm: any;
   let mockExecute: jest.Mock;
   let mockClienteSummary: any;
+  let mockVencimientosProximos: any;
 
   const estudioId = 'estudio-uuid';
   const usuarioId = 'usuario-uuid';
@@ -30,10 +25,13 @@ describe('ObtenerDashboardStatsHandler', () => {
     mockClienteSummary = {
       execute: jest.fn().mockResolvedValue({ totalClientes: 0 }),
     };
+    mockVencimientosProximos = {
+      execute: jest.fn().mockResolvedValue({ totalVencimientosProximos: 0 }),
+    };
   });
 
   function createHandler() {
-    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary);
+    handler = new ObtenerDashboardStatsHandler(mockEm, mockClienteSummary, mockVencimientosProximos);
   }
 
   function mockMembership(rol: string) {
@@ -90,6 +88,18 @@ describe('ObtenerDashboardStatsHandler', () => {
       const result = await handler.execute({ estudioId, usuarioId });
       expect(result.kpis.clientes).toBe(15);
       expect(mockClienteSummary.execute).toHaveBeenCalledWith({
+        estudioId,
+      });
+    });
+
+    it('should count vencimientos proximos via vencimientosProximos view', async () => {
+      mockMembership('SOCIO');
+      mockPermisos(['VER_FACTURACION', 'VER_CLIENTES', 'VER_TAREAS']);
+      mockVencimientosProximos.execute.mockResolvedValueOnce({ totalVencimientosProximos: 8 });
+
+      const result = await handler.execute({ estudioId, usuarioId });
+      expect(result.kpis.vencimientosProximos).toBe(8);
+      expect(mockVencimientosProximos.execute).toHaveBeenCalledWith({
         estudioId,
       });
     });
