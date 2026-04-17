@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EntityManager } from '@mikro-orm/core';
 import { FACTURA_REPOSITORY } from './domain/repositories/factura.repository';
 import type { FacturaRepository } from './domain/repositories/factura.repository';
 import { MikroOrmFacturaRepository } from './infrastructure/persistence/mikro-orm-factura.repository';
@@ -9,6 +10,8 @@ import { FacturacionController } from './infrastructure/controllers/facturacion.
 import { CrearFacturaHandler } from './application/commands/crear-factura.command';
 import { RegistrarPagoHandler } from './application/commands/registrar-pago.command';
 import { AnularFacturaHandler } from './application/commands/anular-factura.command';
+import { FacturasPendientesClienteView } from './application/views/facturas-pendientes-cliente.view';
+import { FACTURAS_PENDIENTES_CLIENTE_VIEW } from './application/public-views';
 
 @Module({
   controllers: [FacturacionController],
@@ -33,7 +36,12 @@ import { AnularFacturaHandler } from './application/commands/anular-factura.comm
         new AnularFacturaHandler(repo),
       inject: [FACTURA_REPOSITORY],
     },
+    {
+      provide: FACTURAS_PENDIENTES_CLIENTE_VIEW,
+      useFactory: (em: EntityManager) => new FacturasPendientesClienteView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [FACTURA_REPOSITORY, PAGO_REPOSITORY],
+  exports: [FACTURA_REPOSITORY, PAGO_REPOSITORY, FACTURAS_PENDIENTES_CLIENTE_VIEW],
 })
 export class FacturacionModule {}

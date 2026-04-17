@@ -1,13 +1,3 @@
-jest.mock('../../../documentos/infrastructure/persistence/documento.schema', () => ({
-  DocumentoEntity: class DocumentoEntity {},
-}));
-jest.mock('../../../obligaciones/infrastructure/persistence/vencimiento.schema', () => ({
-  VencimientoEntity: class VencimientoEntity {},
-}));
-jest.mock('../../../facturacion/infrastructure/persistence/factura.schema', () => ({
-  FacturaEntity: class FacturaEntity {},
-}));
-
 import { ObtenerPortalStatsHandler } from './obtener-portal-stats.query';
 import { ForbiddenException } from '@nestjs/common';
 
@@ -15,6 +5,9 @@ describe('ObtenerPortalStatsHandler', () => {
   let handler: ObtenerPortalStatsHandler;
   let mockEm: any;
   let mockExecute: jest.Mock;
+  let mockVencimientosPendientesCliente: any;
+  let mockFacturasPendientesCliente: any;
+  let mockDocumentosClienteCount: any;
 
   const usuarioId = 'user-uuid';
   const clienteId = 'cliente-uuid';
@@ -25,10 +18,24 @@ describe('ObtenerPortalStatsHandler', () => {
       count: jest.fn().mockResolvedValue(0),
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
+    mockVencimientosPendientesCliente = {
+      execute: jest.fn().mockResolvedValue({ totalVencimientosPendientes: 0 }),
+    };
+    mockFacturasPendientesCliente = {
+      execute: jest.fn().mockResolvedValue({ totalFacturasPendientes: 0 }),
+    };
+    mockDocumentosClienteCount = {
+      execute: jest.fn().mockResolvedValue({ totalDocumentos: 0 }),
+    };
   });
 
   function createHandler() {
-    handler = new ObtenerPortalStatsHandler(mockEm);
+    handler = new ObtenerPortalStatsHandler(
+      mockEm,
+      mockVencimientosPendientesCliente,
+      mockFacturasPendientesCliente,
+      mockDocumentosClienteCount,
+    );
   }
 
   describe('when user has no CLIENTE rol', () => {
@@ -41,12 +48,12 @@ describe('ObtenerPortalStatsHandler', () => {
   });
 
   describe('when user is CLIENTE but has no linked cliente', () => {
-    it('should throw ForbiddenException', async () => {
+    it('should return empty stats', async () => {
       mockExecute.mockResolvedValueOnce([]); // no cliente found
       createHandler();
-      await expect(
-        handler.execute({ usuarioId, rol: 'CLIENTE' }),
-      ).rejects.toThrow(ForbiddenException);
+      const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
+      expect(result.clienteNombre).toBe('');
+      expect(result.kpis).toEqual({ vencimientosPendientes: 0, facturasPendientes: 0, documentos: 0 });
     });
   });
 
@@ -54,11 +61,10 @@ describe('ObtenerPortalStatsHandler', () => {
     beforeEach(() => {
       // First call: find cliente linked to user
       mockExecute.mockResolvedValueOnce([{ id: clienteId, razon_social: 'Mi Empresa SRL' }]);
-      // Subsequent calls for stats
-      mockEm.count
-        .mockResolvedValueOnce(3)  // vencimientos pendientes
-        .mockResolvedValueOnce(2)  // facturas pendientes
-        .mockResolvedValueOnce(10); // documentos
+      // Views return KPI values
+      mockVencimientosPendientesCliente.execute.mockResolvedValue({ totalVencimientosPendientes: 3 });
+      mockFacturasPendientesCliente.execute.mockResolvedValue({ totalFacturasPendientes: 2 });
+      mockDocumentosClienteCount.execute.mockResolvedValue({ totalDocumentos: 10 });
     });
 
     it('should return clienteNombre', async () => {
@@ -67,12 +73,20 @@ describe('ObtenerPortalStatsHandler', () => {
       expect(result.clienteNombre).toBe('Mi Empresa SRL');
     });
 
-    it('should return KPIs', async () => {
+    it('should return KPIs from composed views', async () => {
       createHandler();
       const result = await handler.execute({ usuarioId, rol: 'CLIENTE' });
       expect(result.kpis.vencimientosPendientes).toBe(3);
       expect(result.kpis.facturasPendientes).toBe(2);
       expect(result.kpis.documentos).toBe(10);
+    });
+
+    it('should call views with clienteId', async () => {
+      createHandler();
+      await handler.execute({ usuarioId, rol: 'CLIENTE' });
+      expect(mockVencimientosPendientesCliente.execute).toHaveBeenCalledWith({ clienteId });
+      expect(mockFacturasPendientesCliente.execute).toHaveBeenCalledWith({ clienteId });
+      expect(mockDocumentosClienteCount.execute).toHaveBeenCalledWith({ clienteId });
     });
 
     it('should return empty arrays when no recent data', async () => {
@@ -89,7 +103,6 @@ describe('ObtenerPortalStatsHandler', () => {
       // find cliente
       mockExecute
         .mockResolvedValueOnce([{ id: clienteId, razon_social: 'Empresa Test' }]);
-      mockEm.count.mockResolvedValue(0);
       // vencimientos recientes
       mockExecute.mockResolvedValueOnce([
         { id: 'v1', obligacion: 'IVA', fecha: '2026-04-15', estado: 'Pendiente' },

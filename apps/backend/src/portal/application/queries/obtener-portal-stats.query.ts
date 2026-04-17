@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { VencimientoEntity } from '../../../obligaciones/infrastructure/persistence/vencimiento.schema';
-import { FacturaEntity } from '../../../facturacion/infrastructure/persistence/factura.schema';
-import { DocumentoEntity } from '../../../documentos/infrastructure/persistence/documento.schema';
+import type { VencimientosPendientesClienteView } from '../../../obligaciones/application/views/vencimientos-pendientes-cliente.view';
+import type { FacturasPendientesClienteView } from '../../../facturacion/application/views/facturas-pendientes-cliente.view';
+import type { DocumentosClienteCountView } from '../../../documentos/application/views/documentos-cliente-count.view';
 
 export interface PortalStatsQuery {
   usuarioId: string;
@@ -22,7 +22,12 @@ export interface PortalStats {
 }
 
 export class ObtenerPortalStatsHandler {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly vencimientosPendientesCliente: VencimientosPendientesClienteView,
+    private readonly facturasPendientesCliente: FacturasPendientesClienteView,
+    private readonly documentosClienteCount: DocumentosClienteCountView,
+  ) {}
 
   async execute(query: PortalStatsQuery): Promise<PortalStats> {
     if (query.rol !== 'CLIENTE') {
@@ -55,17 +60,11 @@ export class ObtenerPortalStatsHandler {
     const clienteId = clienteRows[0].id;
     const clienteNombre = clienteRows[0].razon_social;
 
-    // KPIs
-    const [vencimientosPendientes, facturasPendientes, documentos] = await Promise.all([
-      this.em.count(VencimientoEntity, {
-        cliente: clienteId,
-        estado: { nombre: 'Pendiente' },
-      }),
-      this.em.count(FacturaEntity, {
-        cliente: clienteId,
-        estado: { nombre: { $nin: ['Pagada', 'Anulada'] } },
-      }),
-      this.em.count(DocumentoEntity, { cliente: clienteId }),
+    // KPIs — compose views from source contexts
+    const [vencimientosSummary, facturasSummary, documentosSummary] = await Promise.all([
+      this.vencimientosPendientesCliente.execute({ clienteId }),
+      this.facturasPendientesCliente.execute({ clienteId }),
+      this.documentosClienteCount.execute({ clienteId }),
     ]);
 
     // Recent vencimientos (5)
@@ -121,7 +120,11 @@ export class ObtenerPortalStatsHandler {
 
     return {
       clienteNombre,
-      kpis: { vencimientosPendientes, facturasPendientes, documentos },
+      kpis: {
+        vencimientosPendientes: vencimientosSummary.totalVencimientosPendientes,
+        facturasPendientes: facturasSummary.totalFacturasPendientes,
+        documentos: documentosSummary.totalDocumentos,
+      },
       vencimientosRecientes,
       facturasRecientes,
       documentosRecientes,

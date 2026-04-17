@@ -12,7 +12,8 @@ import { VencimientoListHandler } from './application/queries/vencimiento-list.q
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
 import { VencimientoByIdHandler } from './application/queries/vencimiento-by-id.query';
 import { VencimientosProximosView } from './application/views/vencimientos-proximos.view';
-import { VENCIMIENTOS_PROXIMOS_VIEW } from './application/public-views';
+import { VencimientosPendientesClienteView } from './application/views/vencimientos-pendientes-cliente.view';
+import { VENCIMIENTOS_PROXIMOS_VIEW, VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW } from './application/public-views';
 import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
@@ -64,7 +65,12 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new VencimientosProximosView(em),
       inject: [EntityManager],
     },
+    {
+      provide: VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
+      useFactory: (em: EntityManager) => new VencimientosPendientesClienteView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [VENCIMIENTO_REPOSITORY, VENCIMIENTOS_PROXIMOS_VIEW],
+  exports: [VENCIMIENTO_REPOSITORY, VENCIMIENTOS_PROXIMOS_VIEW, VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW],
 })
 export class ObligacionesModule {}
