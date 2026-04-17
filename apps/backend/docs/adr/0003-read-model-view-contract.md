@@ -1,8 +1,9 @@
 # ADR 0003 — Read-model view contract shape
 
-**Status:** Proposed (awaiting reviewer sign-off)
+**Status:** Accepted
 **Date:** 2026-04-16
 **Issue:** #208 (PRD #196)
+**Approved by:** Federico Rossi (2026-04-16)
 
 ## Context
 
@@ -128,7 +129,7 @@ Two variants, distinguished by **input shape**:
 ```ts
 // Tenant-scoped (the common case)
 export interface ClienteSummaryViewInput {
-  estudioId: string;          // Phase 1 — plain id
+  estudioId: string; // Phase 1 — plain id
   // → principal: EstudioPrincipal after PRD #193 Phase 3 lands.
   // Additional filters as needed.
 }
@@ -168,7 +169,7 @@ export interface AllEstudiosOverviewViewInput {
   composes, but against a smaller number of views.
 - **Not permitted: SQL-level joins across context schemas.** The
   current dashboard handler joins `vencimiento → cliente → tipo_
-  obligacion → estado_vencimiento` in one query. After the
+obligacion → estado_vencimiento` in one query. After the
   migration, each source context owns its join; the dashboard
   composes the projections. This is the whole point of the PRD.
 - **Read-model-owned tables stay with raw SQL.** Administracion
@@ -180,7 +181,7 @@ export interface AllEstudiosOverviewViewInput {
 
 - Tenant-scoped views accept the same principal that command and
   query handlers accept. The signature is `execute(principal,
-  input)` **after** #211 lands; `execute(input)` with
+input)` **after** #211 lands; `execute(input)` with
   `input.estudioId` until then.
 - The `GlobalRepository`/`TenantAwareRepository` split from ADR
   0002 extends naturally: tenant-scoped views read via
@@ -325,35 +326,33 @@ forbidden. The current `READ_MODEL_CONTEXTS`-relaxed exemption at
 - Code generation for views. Hand-written, same as queries and
   commands.
 
-## Open items for the reviewer
+## Reviewer decisions (2026-04-16)
 
-- Confirm **class + `execute()`** over a plain function. A plain
-  function is simpler but breaks from the established handler
-  convention and loses DI ergonomics for consumers that inject
-  multiple views.
-- Confirm **`public-views.ts` barrel** alongside `public-events.ts`.
-  Alternative: expose views from the existing `index.ts` / module
-  file. The dedicated barrel matches the events pattern and makes
-  the "what does this context publish?" answer grepable.
-- Confirm the **tenant input shape migration** —
-  `{ estudioId: string }` today, upgrade to `EstudioPrincipal` when
-  #211 lands. Alternative: block on #211 and ship views with
-  principal from day one. The proposed approach lets #222-#224
-  land before #211 if needed; the tradeoff is one mechanical
-  per-view rename later.
-- Confirm **in-memory composition** as the default. Alternative:
-  allow a "supersized view" pattern where one context owns a
-  cross-cutting projection. Proposed approach is cleaner but may
-  need escape-hatch policy if dashboard composition measurably
-  regresses.
+- **Class + `execute()` confirmed.** Matches the existing query-
+  handler convention; DI ergonomics and grepable class names win
+  over plain-function simplicity.
+- **`public-views.ts` barrel confirmed** alongside
+  `public-events.ts`. Dedicated barrel per context, one grepable
+  answer to "what does this context publish?". Consumers import
+  tokens + types from the barrel; `views/*.view.ts` is private.
+- **Tenant input ships with `{ estudioId: string }` today**, and is
+  mechanically migrated to `EstudioPrincipal` after PRD #193 Phase
+  3 (#231) lands. Lets #222–#224 proceed without blocking on #211;
+  accepted cost is a one-line signature rename per view at
+  enforcement-flip time.
+- **In-memory composition is the default.** No SQL-level joins
+  across context schemas. Escape hatch: add a coarser pre-
+  aggregated view in the source context if a projection is
+  measurably slow. "Supersized" cross-cutting views explicitly
+  rejected — they re-introduce the coupling the PRD removes.
 
 ## Migration plan summary
 
-| Phase | Issue | Scope |
-|---|---|---|
-| 1 | #222 | Tracer-bullet: `clienteSummaryView` in clientes, dashboard swaps its `ClienteEntity` schema import for the view. Non-blocking arch test rules added. |
-| 2 | #223 | `vencimientosProximosView` in obligaciones; dashboard migrates. |
-| 2 | #224 | `tareasPendientesView` in tareas; dashboard migrates. |
-| 2 | #229 | Portal migrates all cross-context schema imports to views (new views added to source contexts as needed). |
-| 2 | #230 | Administracion migrates cross-context schema imports to views (global variants in source contexts as needed). |
-| 3 | #232 | Arch-test rules flipped to blocking: read-model contexts must not import cross-context schemas. `READ_MODEL_CONTEXTS` schema-import exemption deleted. CLAUDE.md updated. |
+| Phase | Issue | Scope                                                                                                                                                                     |
+| ----- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | #222  | Tracer-bullet: `clienteSummaryView` in clientes, dashboard swaps its `ClienteEntity` schema import for the view. Non-blocking arch test rules added.                      |
+| 2     | #223  | `vencimientosProximosView` in obligaciones; dashboard migrates.                                                                                                           |
+| 2     | #224  | `tareasPendientesView` in tareas; dashboard migrates.                                                                                                                     |
+| 2     | #229  | Portal migrates all cross-context schema imports to views (new views added to source contexts as needed).                                                                 |
+| 2     | #230  | Administracion migrates cross-context schema imports to views (global variants in source contexts as needed).                                                             |
+| 3     | #232  | Arch-test rules flipped to blocking: read-model contexts must not import cross-context schemas. `READ_MODEL_CONTEXTS` schema-import exemption deleted. CLAUDE.md updated. |
