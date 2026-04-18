@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Build
 dist/
@@ -62,5 +63,12 @@ packages/*/src/**/*.js.map
 # Plans
 /plans
 
+# Prototypes — personal UI exploration
+/prototypes
+
 # Ralph temp
 .ralph-prompt.tmp
+/ralph
+
+# Sandcastle (Matt Pocock) — personal AI orchestration setup, not shared
+.sandcastle/
