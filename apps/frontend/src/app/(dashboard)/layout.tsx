@@ -1,5 +1,5 @@
-import { ProtectedLayout } from '@/components/shared/protected-layout';
+import { RedesignProtectedLayout } from '@/components/redesign';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <ProtectedLayout>{children}</ProtectedLayout>;
+  return <RedesignProtectedLayout>{children}</RedesignProtectedLayout>;
 }
