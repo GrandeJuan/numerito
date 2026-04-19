@@ -66,12 +66,21 @@ export function MisDocumentosPage() {
                 <div className="flex gap-1 justify-end">
                   {d.url && (
                     <>
-                      <Button size="sm" variant="ghost" as="a" href={d.url} target="_blank">
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center h-7 px-2.5 text-[11.5px] text-[var(--text-2)] border border-[var(--border)] rounded-md hover:bg-[var(--surface-2)] no-underline"
+                      >
                         Ver
-                      </Button>
-                      <Button size="sm" variant="primary" as="a" href={d.url} download>
+                      </a>
+                      <a
+                        href={d.url}
+                        download
+                        className="inline-flex items-center h-7 px-2.5 text-[11.5px] bg-[var(--text)] text-[var(--surface)] rounded-md no-underline"
+                      >
                         Descargar
-                      </Button>
+                      </a>
                     </>
                   )}
                 </div>

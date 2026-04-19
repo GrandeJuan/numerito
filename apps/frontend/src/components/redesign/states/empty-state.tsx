@@ -30,11 +30,14 @@ export function EmptyState({ icon, title, description, action, className = '' }:
       {action && (
         <div className="mt-5">
           {action.href ? (
-            <Button as="a" href={action.href} variant="primary">
+            <a
+              href={action.href}
+              className="inline-flex items-center h-9 px-4 bg-[var(--brand)] text-[var(--brand-on)] rounded-lg text-[13px] font-medium no-underline hover:opacity-90 transition-opacity"
+            >
               {action.label}
-            </Button>
+            </a>
           ) : (
-            <Button onClick={action.onClick} variant="primary">
+            <Button onClick={action.onClick} variant="brand">
               {action.label}
             </Button>
           )}

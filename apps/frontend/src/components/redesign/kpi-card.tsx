@@ -12,13 +12,16 @@ export interface KpiCardProps {
   delta?: KpiDelta;
   icon?: ReactNode;
   size?: 'sm' | 'md';
+  /** HTML title attribute — useful for full-precision values on hover. */
+  title?: string;
 }
 
-export function KpiCard({ label, value, delta, icon, size = 'md' }: KpiCardProps) {
+export function KpiCard({ label, value, delta, icon, size = 'md', title }: KpiCardProps) {
   const padding = size === 'md' ? 'px-[18px] py-[16px]' : 'px-4 py-[14px]';
   const valueSize = size === 'md' ? 'text-[24px]' : 'text-[20px]';
   return (
     <div
+      title={title}
       className={`bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-[var(--shadow-sm)] ${padding}`}
     >
       <div className="flex items-center justify-between">

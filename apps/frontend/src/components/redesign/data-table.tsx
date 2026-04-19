@@ -14,6 +14,7 @@ export interface DataTableProps<T> {
   /** Function to derive a stable key per row. Falls back to index. */
   rowKey?: (row: T, index: number) => string | number;
   emptyMessage?: string;
+  onRowClick?: (row: T) => void;
 }
 
 export function DataTable<T>({
@@ -22,6 +23,7 @@ export function DataTable<T>({
   footer,
   rowKey,
   emptyMessage = 'Sin datos.',
+  onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden shadow-[var(--shadow-sm)]">
@@ -54,9 +56,10 @@ export function DataTable<T>({
               rows.map((r, ri) => (
                 <tr
                   key={rowKey ? rowKey(r, ri) : ri}
+                  onClick={onRowClick ? () => onRowClick(r) : undefined}
                   className={`transition-colors hover:bg-[var(--surface-2)] ${
-                    ri === rows.length - 1 ? '' : 'border-b border-[var(--border)]'
-                  }`}
+                    onRowClick ? 'cursor-pointer' : ''
+                  } ${ri === rows.length - 1 ? '' : 'border-b border-[var(--border)]'}`}
                 >
                   {columns.map((c, ci) => {
                     const value = c.render

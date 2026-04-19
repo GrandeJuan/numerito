@@ -1,5 +1,5 @@
-import { ProtectedLayout } from '@/components/shared/protected-layout';
+import { PortalShell } from '@/components/redesign/portal/portal-shell';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  return <ProtectedLayout>{children}</ProtectedLayout>;
+  return <PortalShell>{children}</PortalShell>;
 }

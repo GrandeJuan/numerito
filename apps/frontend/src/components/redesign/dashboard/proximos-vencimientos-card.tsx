@@ -10,7 +10,7 @@ export interface ProximoVencimiento {
   cliente: string;
   obligacion: string;
   fecha: string;
-  estado: 'PENDIENTE' | 'VENCIDO' | 'PRESENTADO';
+  estado: string;
 }
 
 export interface ProximosVencimientosCardProps {

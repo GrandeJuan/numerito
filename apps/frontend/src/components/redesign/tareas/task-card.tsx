@@ -28,7 +28,7 @@ export interface TaskCardProps {
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
   const today = new Date().toISOString().slice(0, 10);
-  const overdue = task.estado !== 'COMPLETADO' && task.fecha < today;
+  const overdue = task.estado !== 'COMPLETADO' && !!task.fecha && task.fecha < today;
   const prio = PRIO[task.prioridad] ?? { tone: 'neutral' as const, label: task.prioridad };
 
   return (
@@ -48,19 +48,21 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       <div className="flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5">
           <div className="w-[18px] h-[18px] rounded-full bg-[var(--brand-soft)] text-[var(--brand-ink)] flex items-center justify-center text-[9px] font-semibold">
-            {initials(task.responsable)}
+            {initials(task.responsable ?? '')}
           </div>
-          <span className="text-[var(--text-2)]">{task.responsable.split(' ')[0]}</span>
+          <span className="text-[var(--text-2)]">{(task.responsable ?? '').split(' ')[0]}</span>
         </div>
         <div
           className="flex items-center gap-2"
           style={{ color: overdue ? 'var(--rose)' : 'var(--text-3)' }}
         >
-          {task.horas > 0 && <span className="font-mono">{task.horas}h</span>}
-          <span className="font-mono inline-flex items-center gap-[3px]">
-            {Icons.clock}
-            {formatFecha(task.fecha).slice(0, 5)}
-          </span>
+          {(task.horas ?? 0) > 0 && <span className="font-mono">{task.horas}h</span>}
+          {task.fecha && (
+            <span className="font-mono inline-flex items-center gap-[3px]">
+              {Icons.clock}
+              {formatFecha(task.fecha).slice(0, 5)}
+            </span>
+          )}
         </div>
       </div>
     </div>

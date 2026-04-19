@@ -5,12 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthShell } from './auth-shell';
 import { Button } from '../button';
-// Mantener el hook auth existente
 import { useAuth } from '@/lib/auth-context';
 
 export function LoginPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,11 +20,10 @@ export function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await signIn({ email, password });
-      if (result?.requires2FA) router.push('/2fa');
-      else router.push('/');
-    } catch (err: any) {
-      setError(err.message ?? 'Error de autenticación');
+      await login(email, password);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error de autenticación');
     } finally {
       setLoading(false);
     }
@@ -37,9 +35,12 @@ export function LoginPage() {
       subtitle="Accedé a tu estudio con tu email y contraseña."
       footer={
         <>
-          ¿No tenés cuenta?{' '}
-          <Link href="/signup" className="text-[var(--brand-ink)] font-medium no-underline hover:underline">
-            Crear una
+          ¿Problemas para ingresar?{' '}
+          <Link
+            href="/support"
+            className="text-[var(--brand-ink)] font-medium no-underline hover:underline"
+          >
+            Contactá soporte
           </Link>
         </>
       }
@@ -60,7 +61,10 @@ export function LoginPage() {
         <Field
           label="Contraseña"
           right={
-            <Link href="/forgot" className="text-[11.5px] text-[var(--brand-ink)] no-underline hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-[11.5px] text-[var(--brand-ink)] no-underline hover:underline"
+            >
               ¿Olvidaste?
             </Link>
           }
@@ -85,8 +89,8 @@ export function LoginPage() {
           </div>
         )}
 
-        <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-2">
-          Ingresar
+        <Button type="submit" variant="brand" disabled={loading} className="mt-2">
+          {loading ? 'Ingresando…' : 'Ingresar'}
         </Button>
       </form>
     </AuthShell>

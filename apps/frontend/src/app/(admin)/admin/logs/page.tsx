@@ -1,5 +1,1 @@
-import { ComingSoonPage } from '../_stub-page';
-
-export default function Page() {
-  return <ComingSoonPage title="Logs" description="Auditoría y eventos de la plataforma." />;
-}
+export { LogsPage as default } from '@/components/redesign/admin/logs-page';

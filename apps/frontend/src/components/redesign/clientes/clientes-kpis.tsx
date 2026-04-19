@@ -21,9 +21,8 @@ export function ClientesKpis({ rows }: { rows: Cliente[] }) {
       <KpiCard label="Monotributistas" value={monotrib} />
       <KpiCard
         label="Saldo total"
-        value={moneyK(saldo)}
+        value={<span title={formatCurrency(saldo)}>{moneyK(saldo)}</span>}
         delta={conDeuda > 0 ? { tone: 'amber', text: `${conDeuda} con deuda` } : undefined}
-        title={formatCurrency(saldo)}
       />
     </div>
   );

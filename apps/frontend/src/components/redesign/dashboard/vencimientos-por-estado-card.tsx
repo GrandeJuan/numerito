@@ -5,7 +5,7 @@ import { Pill } from '../pill';
 
 interface Item {
   estado: string;
-  count: number;
+  cantidad: number;
 }
 
 const LABEL: Record<string, string> = {
@@ -25,9 +25,9 @@ export interface VencimientosPorEstadoCardProps {
 }
 
 export function VencimientosPorEstadoCard({ data }: VencimientosPorEstadoCardProps) {
-  const total = data.reduce((s, v) => s + v.count, 0);
-  const max = Math.max(1, ...data.map((v) => v.count));
-  const vencidos = data.find((v) => v.estado === 'VENCIDO')?.count ?? 0;
+  const total = data.reduce((s, v) => s + v.cantidad, 0);
+  const max = Math.max(1, ...data.map((v) => v.cantidad));
+  const vencidos = data.find((v) => v.estado === 'VENCIDO')?.cantidad ?? 0;
 
   return (
     <Card
@@ -61,10 +61,10 @@ export function VencimientosPorEstadoCard({ data }: VencimientosPorEstadoCardPro
               </div>
               <div className="ml-auto flex items-center gap-2.5">
                 <span className="font-mono text-[11.5px] text-[var(--text-3)]">
-                  {Math.round((v.count / Math.max(1, total)) * 100)}%
+                  {Math.round((v.cantidad / Math.max(1, total)) * 100)}%
                 </span>
                 <span className="font-mono text-[13.5px] font-semibold text-[var(--text)] min-w-[22px] text-right">
-                  {v.count}
+                  {v.cantidad}
                 </span>
               </div>
             </div>
@@ -72,7 +72,7 @@ export function VencimientosPorEstadoCard({ data }: VencimientosPorEstadoCardPro
               <div
                 className="h-full rounded-[3px] transition-[width] duration-500"
                 style={{
-                  width: `${(v.count / max) * 100}%`,
+                  width: `${(v.cantidad / max) * 100}%`,
                   background: TONE[v.estado] ?? 'var(--text-3)',
                 }}
               />

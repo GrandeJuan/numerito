@@ -49,7 +49,7 @@ export function PerfilPage() {
           <Section title="Información personal" subtitle="Datos visibles para el equipo">
             <p className="text-[12.5px] text-[var(--text-3)]">
               Formulario a migrar desde la implementación actual. Mantener los
-              `<input>`/`<label>` existentes y solo aplicar los tokens del sistema.
+              inputs y labels existentes y solo aplicar los tokens del sistema.
             </p>
           </Section>
         )}

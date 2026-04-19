@@ -1,5 +1,5 @@
-import { ProtectedLayout } from '@/components/shared/protected-layout';
+import { AdminShell } from '@/components/redesign/admin/admin-shell';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <ProtectedLayout>{children}</ProtectedLayout>;
+  return <AdminShell>{children}</AdminShell>;
 }

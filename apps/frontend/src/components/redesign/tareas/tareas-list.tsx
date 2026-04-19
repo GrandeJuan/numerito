@@ -73,9 +73,9 @@ export function TareasList({ rows, onRowClick }: TareasListProps) {
           render: (t) => (
             <div className="flex items-center gap-1.5">
               <div className="w-[22px] h-[22px] rounded-full bg-[var(--brand-soft)] text-[var(--brand-ink)] flex items-center justify-center text-[10px] font-semibold">
-                {initials(t.responsable)}
+                {initials(t.responsable ?? '')}
               </div>
-              <span className="text-[12px] text-[var(--text)]">{t.responsable}</span>
+              <span className="text-[12px] text-[var(--text)]">{t.responsable ?? '—'}</span>
             </div>
           ),
         },
@@ -83,7 +83,7 @@ export function TareasList({ rows, onRowClick }: TareasListProps) {
           header: 'Vencimiento',
           render: (t) => (
             <span className="font-mono text-[11.5px] text-[var(--text-2)]">
-              {formatFecha(t.fecha)}
+              {t.fecha ? formatFecha(t.fecha) : '—'}
             </span>
           ),
         },
