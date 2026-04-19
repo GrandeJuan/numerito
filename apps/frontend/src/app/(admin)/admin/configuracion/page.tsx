@@ -1,1 +1,1 @@
-export { ConfiguracionAdminPage as default } from '@/components/redesign/admin/configuracion-page';
+export { ConfiguracionAdminPage as default } from '@/components/admin/configuracion-page';

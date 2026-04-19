@@ -1,1 +1,1 @@
-export { ForgotPage as default } from '@/components/redesign/auth/forgot-page';
+export { ForgotPage as default } from '@/components/auth/forgot-page';

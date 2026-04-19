@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { PageHeader, Card, Button } from '@/components/redesign';
+import { PageHeader, Card, Button } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 

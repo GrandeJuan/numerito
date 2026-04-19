@@ -1,1 +1,1 @@
-export { MisObligacionesPage as default } from '@/components/redesign/portal/mis-obligaciones-page';
+export { MisObligacionesPage as default } from '@/components/portal/mis-obligaciones-page';

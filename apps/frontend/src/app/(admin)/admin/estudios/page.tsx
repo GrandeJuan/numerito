@@ -1,1 +1,1 @@
-export { EstudiosAdminPage as default } from '@/components/redesign/admin/estudios-page';
+export { EstudiosAdminPage as default } from '@/components/admin/estudios-page';

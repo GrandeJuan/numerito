@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 import type { EstudioInfo } from '@/lib/auth-context';
-import { LoadingSkeleton } from '@/components/redesign/states/loading-skeleton';
-import { ErrorState } from '@/components/redesign/states/error-state';
+import { LoadingSkeleton } from '@/components/states/loading-skeleton';
+import { ErrorState } from '@/components/states/error-state';
 
 interface PageStateGuardProps {
   estudioActual?: EstudioInfo | null;

@@ -1,1 +1,1 @@
-export { MetricasAdminPage as default } from '@/components/redesign/admin/metricas-page';
+export { MetricasAdminPage as default } from '@/components/admin/metricas-page';

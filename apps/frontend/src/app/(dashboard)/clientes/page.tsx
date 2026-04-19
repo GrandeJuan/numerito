@@ -1,1 +1,1 @@
-export { ClientesPage as default } from '@/components/redesign/clientes/clientes-page';
+export { ClientesPage as default } from '@/components/clientes/clientes-page';

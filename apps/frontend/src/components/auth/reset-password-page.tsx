@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AuthShell, Button } from '@/components/redesign';
+import { AuthShell, Button } from '@/components';
 import { apiFetch } from '@/lib/api-client';
 
 const INPUT = 'h-10 px-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[13.5px] text-[var(--text)] placeholder:text-[var(--text-3)] outline-none focus:border-[var(--brand)] w-full';

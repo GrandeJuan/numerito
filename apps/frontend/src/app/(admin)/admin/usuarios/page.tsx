@@ -1,1 +1,1 @@
-export { UsuariosAdminPage as default } from '@/components/redesign/admin/usuarios-page';
+export { UsuariosAdminPage as default } from '@/components/admin/usuarios-page';

@@ -1,1 +1,1 @@
-export { ReportesPage as default } from '@/components/redesign/contabilidad/reportes-page';
+export { ReportesPage as default } from '@/components/contabilidad/reportes-page';

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { PageHeader, SideNav } from '@/components/redesign';
+import { PageHeader, SideNav } from '@/components';
 
 const NAV = [
   { href: '/configuracion/estudio', label: 'Estudio' },

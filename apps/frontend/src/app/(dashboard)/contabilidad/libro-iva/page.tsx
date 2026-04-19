@@ -1,1 +1,1 @@
-export { LibroIVAPage as default } from '@/components/redesign/contabilidad/libro-iva-page';
+export { LibroIVAPage as default } from '@/components/contabilidad/libro-iva-page';

@@ -1,1 +1,1 @@
-export { SuscripcionesPage as default } from '@/components/redesign/admin/suscripciones-page';
+export { SuscripcionesPage as default } from '@/components/admin/suscripciones-page';

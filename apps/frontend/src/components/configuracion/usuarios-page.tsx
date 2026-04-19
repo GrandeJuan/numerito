@@ -1,6 +1,6 @@
 'use client';
 
-import { PageHeader, DataTable, Button, Pill, Avatar, type Column } from '@/components/redesign';
+import { PageHeader, DataTable, Button, Pill, Avatar, type Column } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { Can } from '@/components/shared/can';

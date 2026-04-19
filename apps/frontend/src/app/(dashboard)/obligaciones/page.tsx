@@ -1,1 +1,1 @@
-export { ObligacionesPage as default } from '@/components/redesign/obligaciones/obligaciones-page';
+export { ObligacionesPage as default } from '@/components/obligaciones/obligaciones-page';

@@ -1,1 +1,1 @@
-export { UsuariosConfigPage as default } from '@/components/redesign/configuracion/usuarios-page';
+export { UsuariosConfigPage as default } from '@/components/configuracion/usuarios-page';

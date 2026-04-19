@@ -1,6 +1,6 @@
 'use client';
 
-import { PageHeader, DataTable, Pill, Button, type Column } from '@/components/redesign';
+import { PageHeader, DataTable, Pill, Button, type Column } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { formatCurrency } from '@/lib/formatters';

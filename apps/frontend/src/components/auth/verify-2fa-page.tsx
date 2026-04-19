@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { AuthShell, Button } from '@/components/redesign';
+import { AuthShell, Button } from '@/components';
 import { apiFetch } from '@/lib/api-client';
 
 export function Verify2FAPage() {

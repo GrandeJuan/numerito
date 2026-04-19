@@ -1,6 +1,6 @@
 'use client';
 
-import { PageHeader, KpiCard, Card } from '@/components/redesign';
+import { PageHeader, KpiCard, Card } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';

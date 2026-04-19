@@ -1,1 +1,1 @@
-export { IntegracionesPage as default } from '@/components/redesign/configuracion/integraciones-page';
+export { IntegracionesPage as default } from '@/components/configuracion/integraciones-page';

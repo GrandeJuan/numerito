@@ -1,1 +1,1 @@
-export { EstudioConfigPage as default } from '@/components/redesign/configuracion/estudio-page';
+export { EstudioConfigPage as default } from '@/components/configuracion/estudio-page';

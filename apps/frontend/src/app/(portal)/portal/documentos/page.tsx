@@ -1,1 +1,1 @@
-export { MisDocumentosPage as default } from '@/components/redesign/portal/mis-documentos-page';
+export { MisDocumentosPage as default } from '@/components/portal/mis-documentos-page';

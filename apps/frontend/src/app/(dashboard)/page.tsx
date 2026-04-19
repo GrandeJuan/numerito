@@ -1,1 +1,1 @@
-export { DashboardPage as default } from '@/components/redesign/dashboard/dashboard-page';
+export { DashboardPage as default } from '@/components/dashboard/dashboard-page';

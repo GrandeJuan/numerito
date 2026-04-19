@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { PageHeader, Card } from '@/components/redesign';
-import { Icons } from '@/components/redesign/icons';
+import { PageHeader, Card } from '@/components';
+import { Icons } from '@/components/icons';
 
 interface Reporte {
   key: string;

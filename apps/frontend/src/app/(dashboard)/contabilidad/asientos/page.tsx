@@ -1,1 +1,1 @@
-export { AsientosPage as default } from '@/components/redesign/contabilidad/asientos-page';
+export { AsientosPage as default } from '@/components/contabilidad/asientos-page';

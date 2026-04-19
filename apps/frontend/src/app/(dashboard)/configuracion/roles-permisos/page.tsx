@@ -1,1 +1,1 @@
-export { RolesPermisosPage as default } from '@/components/redesign/configuracion/roles-permisos-page';
+export { RolesPermisosPage as default } from '@/components/configuracion/roles-permisos-page';

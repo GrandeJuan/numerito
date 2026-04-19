@@ -1,5 +1,5 @@
-import { EmptyState } from '@/components/redesign/states/empty-state';
-import { Icons } from '@/components/redesign';
+import { EmptyState } from '@/components/states/empty-state';
+import { Icons } from '@/components';
 
 export default function NotFound() {
   return (

@@ -1,1 +1,1 @@
-export { MiPortalPage as default } from '@/components/redesign/portal/mi-portal-page';
+export { MiPortalPage as default } from '@/components/portal/mi-portal-page';

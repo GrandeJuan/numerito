@@ -1,1 +1,1 @@
-export { FacturacionAdminPage as default } from '@/components/redesign/admin/facturacion-page';
+export { FacturacionAdminPage as default } from '@/components/admin/facturacion-page';

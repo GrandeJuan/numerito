@@ -1,1 +1,1 @@
-export { TareasPage as default } from '@/components/redesign/tareas/tareas-page';
+export { TareasPage as default } from '@/components/tareas/tareas-page';

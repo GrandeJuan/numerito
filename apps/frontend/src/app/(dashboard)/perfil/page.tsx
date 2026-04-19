@@ -1,1 +1,1 @@
-export { PerfilPage as default } from '@/components/redesign/perfil/perfil-page';
+export { PerfilPage as default } from '@/components/perfil/perfil-page';

@@ -1,1 +1,1 @@
-export { IntegracionesAdminPage as default } from '@/components/redesign/admin/integraciones-page';
+export { IntegracionesAdminPage as default } from '@/components/admin/integraciones-page';

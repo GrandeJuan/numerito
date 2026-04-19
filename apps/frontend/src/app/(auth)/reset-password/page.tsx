@@ -1,1 +1,1 @@
-export { ResetPasswordPage as default } from '@/components/redesign/auth/reset-password-page';
+export { ResetPasswordPage as default } from '@/components/auth/reset-password-page';

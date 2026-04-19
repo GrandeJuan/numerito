@@ -1,6 +1,6 @@
 'use client';
 
-import { PageHeader, Card, Button, Pill } from '@/components/redesign';
+import { PageHeader, Card, Button, Pill } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar, Topbar } from '@/components/redesign';
+import { Sidebar, Topbar } from '@/components';
 import { useAuth } from '@/lib/auth-context';
 import { ADMIN_NAV } from './admin-nav';
 

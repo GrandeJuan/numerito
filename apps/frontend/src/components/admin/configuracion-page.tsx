@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PageHeader, Card, Section, Button } from '@/components/redesign';
+import { PageHeader, Card, Section, Button } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { apiFetch } from '@/lib/api-client';

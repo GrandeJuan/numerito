@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
-import { PageHeader } from '@/components/redesign/page-header';
-import { Card } from '@/components/redesign/card';
-import { Tabs } from '@/components/redesign/tabs';
-import { Avatar } from '@/components/redesign/avatar';
-import { Section } from '@/components/redesign/section';
+import { PageHeader } from '@/components/page-header';
+import { Card } from '@/components/card';
+import { Tabs } from '@/components/tabs';
+import { Avatar } from '@/components/avatar';
+import { Section } from '@/components/section';
 
 type Tab = 'datos' | 'seguridad' | 'sesiones' | '2fa';
 
