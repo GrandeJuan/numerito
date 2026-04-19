@@ -1,7 +1,106 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================
+   Numerito design tokens — unified CSS variables
+   Target: Dashboard Graphs.html (dark). Dark = DEFAULT, light = variante.
+   ============================================================ */
+:root {
+  /* Neutrals — dark */
+  --bg: #0a0f0d;
+  --surface: #111715;
+  --surface-2: #161d1b;
+  --border: #1f2724;
+  --border-strong: #2a322f;
+  --text: #f1f4f2;
+  --text-2: #a9b1ae;
+  --text-3: #6e7673;
+  --text-4: #4a5250;
+
+  /* Brand — dark */
+  --brand: #2ee6a8;
+  --brand-ink: #a7f3d0;
+  --brand-on: #052e1b;
+  --brand-soft: #0f3b2e;
+  --brand-softer: #0a271f;
+
+  /* Semantic — dark */
+  --amber: #fbbf24;
+  --amber-ink: #fde68a;
+  --amber-soft: #3b2a0a;
+  --rose: #fb7185;
+  --rose-ink: #fecdd3;
+  --rose-soft: #3b1017;
+  --indigo: #a5b4fc;
+  --indigo-ink: #c7d2fe;
+  --indigo-soft: #1e1b4b;
+  --blue: #7dd3fc;
+  --blue-ink: #bae6fd;
+  --blue-soft: #0c2840;
+
+  /* Sidebar — siempre oscuro */
+  --sidebar: #060908;
+  --sidebar-2: #0c1110;
+  --sidebar-text: #e7eae8;
+  --sidebar-muted: #8a9290;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  /* Shadows — dark */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, .4), 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-lg: 0 10px 30px -12px rgba(0, 0, 0, .6), 0 4px 8px rgba(0, 0, 0, .3);
+}
+
+html[data-theme="light"] {
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --border: #e6e8eb;
+  --border-strong: #d3d7dc;
+  --text: #0b0f14;
+  --text-2: #4b5563;
+  --text-3: #8a9199;
+  --text-4: #b0b6bd;
+
+  --brand: #10b981;
+  --brand-ink: #065f46;
+  --brand-on: #ffffff;
+  --brand-soft: #d1fae5;
+  --brand-softer: #ecfdf5;
+
+  --amber: #f59e0b;
+  --amber-ink: #78350f;
+  --amber-soft: #fef3c7;
+  --rose: #e11d48;
+  --rose-ink: #881337;
+  --rose-soft: #ffe4e6;
+  --indigo: #6366f1;
+  --indigo-ink: #312e81;
+  --indigo-soft: #e0e7ff;
+  --blue: #0284c7;
+  --blue-ink: #0c4a6e;
+  --blue-soft: #e0f2fe;
+
+  /* Sidebar queda oscuro también en light */
+  --sidebar: #0a0f0d;
+  --sidebar-2: #111715;
+  --sidebar-text: #e7eae8;
+  --sidebar-muted: #8a9290;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(10, 15, 20, .04);
+  --shadow-md: 0 1px 3px rgba(10, 15, 20, .06), 0 1px 2px rgba(10, 15, 20, .04);
+  --shadow-lg: 0 10px 30px -12px rgba(10, 15, 20, .18), 0 4px 8px rgba(10, 15, 20, .06);
+}
 
 body {
+  background-color: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.mono {
+  font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-feature-settings: "tnum" 1, "cv11" 1;
 }

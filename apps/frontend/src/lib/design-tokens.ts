@@ -1,98 +1,87 @@
-// Design System Tokens — Single source of truth for Numerito brand
-// All pages must import from here instead of defining local color maps.
+/**
+ * Numerito design tokens — unified system.
+ *
+ * Target visual: mockup `Dashboard Graphs.html`.
+ * Dark es el tema DEFAULT; light es la variante (`html[data-theme="light"]`).
+ * Los componentes consumen CSS variables (ver globals.css) y el objeto `tokens`
+ * se usa solo donde se necesita un string JS (Recharts, SVG inline, cálculos).
+ */
 
-export const BRAND = {
-  primary: '#091426',
-  accent: '#4edea3',
-  accentSecondary: '#00a472',
-  lightBg: '#faf8ff',
-  darkBg: '#0d1f3c',
-  cardDark: '#162a4a',
-  textPrimary: '#131b2e',
-  textSecondary: '#45474c',
-  textMuted: '#75777d',
-  borderLight: '#e2e8f0',
+export const tokens = {
+  /* ===== DARK (default) ===== */
+  bg:            '#0a0f0d',
+  surface:       '#111715',
+  surface2:      '#161d1b',
+  border:        '#1f2724',
+  borderStrong:  '#2a322f',
+  text:          '#f1f4f2',
+  text2:         '#a9b1ae',
+  text3:         '#6e7673',
+  text4:         '#4a5250',
+
+  brand:         '#2ee6a8',
+  brandInk:      '#a7f3d0',
+  brandOn:       '#052e1b',
+  brandSoft:     '#0f3b2e',
+  brandSofter:   '#0a271f',
+
+  amber:         '#fbbf24',
+  amberInk:      '#fde68a',
+  amberSoft:     '#3b2a0a',
+  rose:          '#fb7185',
+  roseInk:       '#fecdd3',
+  roseSoft:      '#3b1017',
+  indigo:        '#a5b4fc',
+  indigoInk:     '#c7d2fe',
+  indigoSoft:    '#1e1b4b',
+  blue:          '#7dd3fc',
+  blueInk:       '#bae6fd',
+  blueSoft:      '#0c2840',
+
+  sidebar:       '#060908',
+  sidebar2:      '#0c1110',
+  sidebarText:   '#e7eae8',
+  sidebarMuted:  '#8a9290',
+
+  /* ===== LIGHT ===== */
+  lightBg:           '#f6f7f8',
+  lightSurface:      '#ffffff',
+  lightSurface2:     '#fafbfc',
+  lightBorder:       '#e6e8eb',
+  lightBorderStrong: '#d3d7dc',
+  lightText:         '#0b0f14',
+  lightText2:        '#4b5563',
+  lightText3:        '#8a9199',
+  lightText4:        '#b0b6bd',
+
+  lightBrand:        '#10b981',
+  lightBrandInk:     '#065f46',
+  lightBrandSoft:    '#d1fae5',
+  lightBrandSofter:  '#ecfdf5',
+
+  lightAmber:        '#f59e0b',
+  lightAmberSoft:    '#fef3c7',
+  lightRose:         '#e11d48',
+  lightRoseSoft:     '#ffe4e6',
+  lightIndigo:       '#6366f1',
+  lightIndigoSoft:   '#e0e7ff',
+  lightBlue:         '#0284c7',
+  lightBlueSoft:     '#e0f2fe',
+
+  lightSidebar:      '#0a0f0d',
+  lightSidebar2:     '#111715',
 } as const;
 
-// --- Status badges (Tailwind className strings) ---
-
-export const STATUS_COLORS: Record<string, string> = {
-  // Spanish-cased keys used by portal / dashboard home
-  Pendiente: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  Cumplido: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  Presentada: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  Vencido: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  Pagada: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  Activo: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  Inactivo: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-
-  // UPPER_CASE keys used by obligaciones / facturacion / configuracion
-  PENDIENTE: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  PRESENTADO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  VENCIDO: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  ACTIVO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  INACTIVO: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-
-  // Facturacion states
-  EMITIDA: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  PARCIALMENTE_PAGADA: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  PAGADA: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  VENCIDA: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  ANULADA: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-};
-
-export const ROL_COLORS: Record<string, string> = {
-  SUPERADMIN: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  SOCIO: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  RESPONSABLE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  EMPLEADO: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  CLIENTE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-};
-
-export const PRIORIDAD_COLORS: Record<string, string> = {
-  BAJA: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-  MEDIA: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  ALTA: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  URGENTE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-};
-
-// --- KPI icon style (brand accent) ---
-export const KPI_ICON_STYLE = {
-  bg: 'bg-[#4edea3]/10',
-  text: 'text-[#4edea3]',
-  className: 'bg-[#4edea3]/10 text-[#4edea3]',
+/** Tonal mapping para pills/estados. Consume CSS vars. */
+export const STATUS_TONES = {
+  PENDIENTE:    { bar: 'var(--amber)',  soft: 'var(--amber-soft)',  ink: 'var(--amber-ink)'  },
+  PRESENTADO:   { bar: 'var(--brand)',  soft: 'var(--brand-soft)',  ink: 'var(--brand-ink)'  },
+  VENCIDO:      { bar: 'var(--rose)',   soft: 'var(--rose-soft)',   ink: 'var(--rose-ink)'   },
+  PAGADA:       { bar: 'var(--brand)',  soft: 'var(--brand-soft)',  ink: 'var(--brand-ink)'  },
+  VENCIDA:      { bar: 'var(--rose)',   soft: 'var(--rose-soft)',   ink: 'var(--rose-ink)'   },
+  PARCIAL:      { bar: 'var(--indigo)', soft: 'var(--indigo-soft)', ink: 'var(--indigo-ink)' },
+  EN_PROGRESO:  { bar: 'var(--indigo)', soft: 'var(--indigo-soft)', ink: 'var(--indigo-ink)' },
+  COMPLETADO:   { bar: 'var(--brand)',  soft: 'var(--brand-soft)',  ink: 'var(--brand-ink)'  },
 } as const;
 
-// --- Card classes ---
-export const CARD_CLASSES = {
-  base: 'rounded-xl shadow-sm',
-  light: 'bg-white shadow-[#091426]/5 border border-[#e2e8f0]',
-  dark: 'dark:bg-[#162a4a] dark:border-white/10',
-  full: 'bg-white shadow-sm shadow-[#091426]/5 border border-[#e2e8f0] dark:bg-[#162a4a] dark:border-white/10 rounded-xl',
-} as const;
-
-// --- Table classes ---
-export const TABLE_CLASSES = {
-  header: 'bg-[#f0f4f8] dark:bg-[#162a4a]',
-  headerText: 'text-[#45474c] dark:text-gray-400 text-xs font-semibold uppercase tracking-wider',
-  rowHover: 'hover:bg-[#4edea3]/5 dark:hover:bg-[#4edea3]/5',
-  rowBorder: 'border-b border-gray-100 dark:border-gray-700/50',
-} as const;
-
-// --- Button classes ---
-export const BUTTON_PRIMARY =
-  'bg-[#091426] text-white font-bold rounded-xl shadow-lg shadow-[#091426]/20 hover:opacity-90 transition-all';
-
-// --- Chart theme ---
-export const CHART_THEME = {
-  primaryFill: '#4edea3',
-  secondaryFill: '#091426',
-  gridLight: '#e2e8f0',
-  gridDark: '#1e3a5f',
-  tooltipStyle: {
-    backgroundColor: '#091426',
-    border: 'none',
-    borderRadius: '8px',
-    color: '#fff',
-  },
-} as const;
+export type StatusToneKey = keyof typeof STATUS_TONES;
