@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -39,7 +39,11 @@ describe('UsuariosAdminPage', () => {
     vi.clearAllMocks();
     mockApiFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ data: mockUsuarios, meta: { total: 1 } }),
+      json: () =>
+        Promise.resolve({
+          data: mockUsuarios,
+          meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
     });
   });
 
@@ -50,10 +54,16 @@ describe('UsuariosAdminPage', () => {
     });
   });
 
-  it('calls /v1/admin/usuarios endpoint', async () => {
+  it('calls /v1/admin/usuarios endpoint with pagination params', async () => {
     render(<UsuariosAdminPage />);
     await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledWith('/v1/admin/usuarios', expect.any(Object));
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/v1/admin/usuarios'),
+        expect.any(Object),
+      );
+      const url = mockApiFetch.mock.calls[0][0] as string;
+      expect(url).toContain('page=1');
+      expect(url).toContain('limit=20');
     });
   });
 
@@ -61,6 +71,26 @@ describe('UsuariosAdminPage', () => {
     render(<UsuariosAdminPage />);
     await waitFor(() => {
       expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+    });
+  });
+
+  it('renders search input', async () => {
+    render(<UsuariosAdminPage />);
+    expect(screen.getByPlaceholderText('Buscar por nombre o email…')).toBeInTheDocument();
+  });
+
+  it('search changes the fetch URL', async () => {
+    render(<UsuariosAdminPage />);
+    await waitFor(() => {
+      expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText('Buscar por nombre o email…');
+    fireEvent.change(input, { target: { value: 'admin' } });
+
+    await waitFor(() => {
+      const lastCall = mockApiFetch.mock.calls[mockApiFetch.mock.calls.length - 1][0] as string;
+      expect(lastCall).toContain('search=admin');
     });
   });
 });

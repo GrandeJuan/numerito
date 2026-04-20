@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, useCallback, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button, Card, PageHeader, SegmentedControl } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetch } from '@/lib/use-fetch';
@@ -113,11 +114,38 @@ const TONE_COLOR: Record<PlanTone, string> = {
 
 const MODULE_TONE_ORDER: PlanTone[] = ['brand', 'brand', 'indigo', 'indigo', 'amber', 'amber'];
 
+function exportDashboardCsv(data: AdminDashboardStats) {
+  const rows: string[] = ['Métrica,Valor'];
+  rows.push(`MRR,"${data.kpis.mrr.value}"`);
+  rows.push(`Estudios activos,"${data.kpis.estudiosActivos.value}"`);
+  if (data.kpis.dauMau) {
+    rows.push(`DAU,"${data.kpis.dauMau.dau}"`);
+    rows.push(`MAU,"${data.kpis.dauMau.mau}"`);
+  }
+  rows.push(`Uptime %,"${data.kpis.uptime.value}"`);
+  rows.push('');
+  rows.push('Estudio,CUIT,Plan,Usuarios,Clientes,MRR,Estado');
+  for (const s of data.topStudios) {
+    rows.push(
+      `"${s.nombre}","${s.cuit}","${s.plan}",${s.usuarios},${s.clientes},${s.mrr ?? ''},${s.status}`,
+    );
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `admin-dashboard-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function AdminDashboardPage() {
+  const router = useRouter();
   const [period, setPeriod] = useState<PeriodValue>('30d');
   const [growthMetric, setGrowthMetric] = useState<GrowthMetric>('mrr');
 
-  const { data, loading, error } = useFetch<AdminDashboardStats>('/v1/admin/dashboard/stats');
+  const endpoint = `/v1/admin/dashboard/stats?period=${period}`;
+  const { data, loading, error } = useFetch<AdminDashboardStats>(endpoint);
 
   return (
     <>
@@ -127,7 +155,7 @@ export function AdminDashboardPage() {
         actions={
           <>
             <SegmentedControl options={PERIODS} value={period} onChange={setPeriod} />
-            <Button variant="ghost">
+            <Button variant="ghost" onClick={() => data && exportDashboardCsv(data)}>
               <DownloadIcon /> Exportar
             </Button>
           </>
@@ -138,8 +166,10 @@ export function AdminDashboardPage() {
         {data && (
           <AdminDashboardContent
             data={data}
+            period={period}
             growthMetric={growthMetric}
             onGrowthMetricChange={setGrowthMetric}
+            router={router}
           />
         )}
       </PageStateGuard>
@@ -147,16 +177,63 @@ export function AdminDashboardPage() {
   );
 }
 
+type ChipFilter = 'all' | 'active' | 'trial' | 'suspended' | 'risk';
+
+const CHIP_STATUS_MAP: Record<ChipFilter, StudioRow['status'][] | null> = {
+  all: null,
+  active: ['active'],
+  trial: ['trial'],
+  suspended: ['suspended', 'payment_failed'],
+  risk: ['risk'],
+};
+
 function AdminDashboardContent({
   data,
+  period,
   growthMetric,
   onGrowthMetricChange,
+  router,
 }: {
   data: AdminDashboardStats;
+  period: PeriodValue;
   growthMetric: GrowthMetric;
   onGrowthMetricChange: (v: GrowthMetric) => void;
+  router: ReturnType<typeof useRouter>;
 }) {
   const totalStudios = data.planDistribution.reduce((a, d) => a + d.count, 0);
+  const [chipFilter, setChipFilter] = useState<ChipFilter>('all');
+  const [search, setSearch] = useState('');
+
+  const filteredStudios = useMemo(() => {
+    let rows = data.topStudios;
+    const statuses = CHIP_STATUS_MAP[chipFilter];
+    if (statuses) {
+      rows = rows.filter((r) => statuses.includes(r.status));
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.nombre.toLowerCase().includes(q) ||
+          r.cuit.includes(q) ||
+          r.id.toLowerCase().includes(q),
+      );
+    }
+    return rows;
+  }, [data.topStudios, chipFilter, search]);
+
+  const handleViewStudio = useCallback(
+    (r: StudioRow) => router.push(`/admin/estudios/${r.id}`),
+    [router],
+  );
+
+  const handleVerTodos = useCallback(() => {
+    const params = new URLSearchParams();
+    if (chipFilter !== 'all') params.set('estado', chipFilter);
+    if (search.trim()) params.set('search', search.trim());
+    const qs = params.toString();
+    router.push(`/admin/estudios${qs ? `?${qs}` : ''}`);
+  }, [router, chipFilter, search]);
 
   const mrrSparkPoints = useMemo(
     () => normalize(data.kpis.mrr.sparkline),
@@ -260,7 +337,7 @@ function AdminDashboardContent({
             <LegendDot color="var(--indigo)" label="Nuevos estudios" />
             <LegendDot color="var(--text-4)" label="Churn" />
           </div>
-          <GrowthChart growth={data.growth} />
+          <GrowthChart growth={data.growth} metric={growthMetric} />
         </Card>
 
         <Card padding={0}>
@@ -325,16 +402,21 @@ function AdminDashboardContent({
           title="Top estudios por uso"
           subtitle="Ordenados por usuarios activos en los últimos 30 días"
           right={
-            <>
-              <Button variant="ghost">
-                <FilterIcon /> Filtros
-              </Button>
-              <Button variant="primary">Ver todos</Button>
-            </>
+            <Button variant="primary" onClick={handleVerTodos}>Ver todos</Button>
           }
         />
-        <StudiosTableControls total={totalStudios} shown={data.topStudios.length} />
-        <AdminStudiosTable rows={data.topStudios} />
+        <StudiosTableControls
+          total={totalStudios}
+          shown={filteredStudios.length}
+          chipFilter={chipFilter}
+          onChipFilterChange={setChipFilter}
+          search={search}
+          onSearchChange={setSearch}
+        />
+        <AdminStudiosTable
+          rows={filteredStudios}
+          onView={handleViewStudio}
+        />
       </Card>
     </>
   );
@@ -393,25 +475,43 @@ function EmptyState({ label }: { label: string }) {
   return <div className="px-[18px] py-8 text-center text-[12px] text-[var(--text-3)]">{label}</div>;
 }
 
-function StudiosTableControls({ total, shown }: { total: number; shown: number }) {
-  const [filter, setFilter] = useState<'activos' | 'trial' | 'suspended' | 'risk'>('activos');
+function StudiosTableControls({
+  total,
+  shown,
+  chipFilter,
+  onChipFilterChange,
+  search,
+  onSearchChange,
+}: {
+  total: number;
+  shown: number;
+  chipFilter: ChipFilter;
+  onChipFilterChange: (f: ChipFilter) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
+}) {
   return (
     <div className="flex items-center gap-2 px-3.5 py-2.5 bg-[var(--surface-2)] border-b border-[var(--border)]">
       <input
         type="search"
         placeholder="Buscar por nombre, CUIT o ID…"
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
         className="h-8 w-[260px] bg-[var(--surface)] border border-[var(--border)] rounded-[7px] px-2.5 text-[12.5px] text-[var(--text)] outline-none focus:border-[var(--brand)]"
       />
-      <Chip on={filter === 'activos'} onClick={() => setFilter('activos')}>
+      <Chip on={chipFilter === 'all'} onClick={() => onChipFilterChange('all')}>
+        Todos
+      </Chip>
+      <Chip on={chipFilter === 'active'} onClick={() => onChipFilterChange('active')}>
         Activos
       </Chip>
-      <Chip on={filter === 'trial'} onClick={() => setFilter('trial')}>
+      <Chip on={chipFilter === 'trial'} onClick={() => onChipFilterChange('trial')}>
         Trial
       </Chip>
-      <Chip on={filter === 'suspended'} onClick={() => setFilter('suspended')}>
+      <Chip on={chipFilter === 'suspended'} onClick={() => onChipFilterChange('suspended')}>
         Suspendidos
       </Chip>
-      <Chip on={filter === 'risk'} onClick={() => setFilter('risk')}>
+      <Chip on={chipFilter === 'risk'} onClick={() => onChipFilterChange('risk')}>
         Riesgo churn
       </Chip>
       <span className="ml-auto text-[11.5px] text-[var(--text-3)]">
@@ -445,7 +545,7 @@ function Chip({
   );
 }
 
-function GrowthChart({ growth }: { growth: GrowthPoint[] }) {
+function GrowthChart({ growth, metric }: { growth: GrowthPoint[]; metric: GrowthMetric }) {
   if (growth.length === 0) {
     return <EmptyState label="Sin datos de crecimiento" />;
   }
@@ -459,8 +559,14 @@ function GrowthChart({ growth }: { growth: GrowthPoint[] }) {
   const chartW = width - padL - padR;
   const chartH = height - padT - padB;
 
-  const maxMrr = Math.max(...growth.map((g) => g.mrr), 1);
-  const yTickStep = Math.ceil(maxMrr / 5 / 100000) * 100000 || Math.ceil(maxMrr / 5) || 1;
+  const getValue = (g: GrowthPoint) =>
+    metric === 'mrr' ? g.mrr : metric === 'studios' ? g.newStudios : g.churn;
+  const isCurrency = metric === 'mrr';
+
+  const maxVal = Math.max(...growth.map(getValue), 1);
+  const yTickStep = isCurrency
+    ? Math.ceil(maxVal / 5 / 100000) * 100000 || Math.ceil(maxVal / 5) || 1
+    : Math.ceil(maxVal / 5) || 1;
   const yTicks = [1, 2, 3, 4, 5].map((n) => n * yTickStep);
   const yMax = yTicks[yTicks.length - 1];
   const yToPx = (v: number) => padT + chartH - (v / yMax) * chartH;
@@ -468,13 +574,16 @@ function GrowthChart({ growth }: { growth: GrowthPoint[] }) {
   const step = growth.length > 1 ? chartW / (growth.length - 1) : 0;
   const xOf = (i: number) => padL + i * step;
 
-  const maxNew = Math.max(...growth.map((g) => g.newStudios), 1);
-  const barW = Math.max(8, step * 0.38);
+  const lineColor = metric === 'mrr' ? 'var(--brand)' : metric === 'studios' ? 'var(--indigo)' : 'var(--text-4)';
+  const gradientId = `gr-${metric}`;
 
   const linePoints = growth
-    .map((g, i) => `${i === 0 ? 'M' : 'L'}${xOf(i)} ${yToPx(g.mrr)}`)
+    .map((g, i) => `${i === 0 ? 'M' : 'L'}${xOf(i)} ${yToPx(getValue(g))}`)
     .join(' ');
   const areaPath = `${linePoints} L${xOf(growth.length - 1)} ${padT + chartH} L${padL} ${padT + chartH} Z`;
+
+  const maxNew = Math.max(...growth.map((g) => g.newStudios), 1);
+  const barW = Math.max(8, step * 0.38);
 
   return (
     <div className="px-1.5 pb-2.5">
@@ -494,7 +603,7 @@ function GrowthChart({ growth }: { growth: GrowthPoint[] }) {
             const y = padT + chartH - (chartH * (i + 1)) / yTicks.length;
             return (
               <text key={i} x={padL - 4} y={y + 3} textAnchor="end">
-                {formatCurrencyCompact(v)}
+                {isCurrency ? formatCurrencyCompact(v) : String(v)}
               </text>
             );
           })}
@@ -505,40 +614,42 @@ function GrowthChart({ growth }: { growth: GrowthPoint[] }) {
           ))}
         </g>
         <defs>
-          <linearGradient id="mrrGr" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="var(--brand)" stopOpacity="0.28" />
-            <stop offset="1" stopColor="var(--brand)" stopOpacity="0" />
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor={lineColor} stopOpacity="0.28" />
+            <stop offset="1" stopColor={lineColor} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={areaPath} fill="url(#mrrGr)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
         <path
           d={linePoints}
-          stroke="var(--brand)"
+          stroke={lineColor}
           strokeWidth="2"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <g fill="var(--indigo)" opacity="0.75">
-          {growth.map((g, i) => {
-            const h = (g.newStudios / maxNew) * (chartH * 0.35);
-            return (
-              <rect
-                key={`${g.month}-${i}-bar`}
-                x={xOf(i) - barW / 2}
-                y={padT + chartH - h}
-                width={barW}
-                height={Math.max(2, h)}
-                rx="2"
-              />
-            );
-          })}
-        </g>
+        {metric === 'mrr' && (
+          <g fill="var(--indigo)" opacity="0.75">
+            {growth.map((g, i) => {
+              const h = (g.newStudios / maxNew) * (chartH * 0.35);
+              return (
+                <rect
+                  key={`${g.month}-${i}-bar`}
+                  x={xOf(i) - barW / 2}
+                  y={padT + chartH - h}
+                  width={barW}
+                  height={Math.max(2, h)}
+                  rx="2"
+                />
+              );
+            })}
+          </g>
+        )}
         <circle
           cx={xOf(growth.length - 1)}
-          cy={yToPx(growth[growth.length - 1].mrr)}
+          cy={yToPx(getValue(growth[growth.length - 1]))}
           r="4"
-          fill="var(--brand)"
+          fill={lineColor}
           stroke="var(--bg)"
           strokeWidth="2"
         />
@@ -563,22 +674,7 @@ function DownloadIcon() {
     </svg>
   );
 }
-function FilterIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 6h18M6 12h12M10 18h4" />
-    </svg>
-  );
-}
+
 function DollarIcon() {
   return (
     <svg

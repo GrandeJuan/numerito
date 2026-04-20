@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -36,7 +36,11 @@ describe('EstudiosAdminPage', () => {
     vi.clearAllMocks();
     mockApiFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ data: mockEstudios, meta: { total: 1 } }),
+      json: () =>
+        Promise.resolve({
+          data: mockEstudios,
+          meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
     });
   });
 
@@ -47,10 +51,16 @@ describe('EstudiosAdminPage', () => {
     });
   });
 
-  it('calls /v1/admin/estudios endpoint', async () => {
+  it('calls /v1/admin/estudios endpoint with pagination params', async () => {
     render(<EstudiosAdminPage />);
     await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledWith('/v1/admin/estudios', expect.any(Object));
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/v1/admin/estudios'),
+        expect.any(Object),
+      );
+      const url = mockApiFetch.mock.calls[0][0] as string;
+      expect(url).toContain('page=1');
+      expect(url).toContain('limit=20');
     });
   });
 
@@ -58,6 +68,26 @@ describe('EstudiosAdminPage', () => {
     render(<EstudiosAdminPage />);
     await waitFor(() => {
       expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+    });
+  });
+
+  it('renders search input', async () => {
+    render(<EstudiosAdminPage />);
+    expect(screen.getByPlaceholderText('Buscar por nombre o CUIT…')).toBeInTheDocument();
+  });
+
+  it('search changes the fetch URL', async () => {
+    render(<EstudiosAdminPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText('Buscar por nombre o CUIT…');
+    fireEvent.change(input, { target: { value: 'Alpha' } });
+
+    await waitFor(() => {
+      const lastCall = mockApiFetch.mock.calls[mockApiFetch.mock.calls.length - 1][0] as string;
+      expect(lastCall).toContain('search=Alpha');
     });
   });
 });
