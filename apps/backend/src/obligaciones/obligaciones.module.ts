@@ -22,9 +22,6 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { EstudioModule } from '../estudio/estudio.module';
 import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../estudio/domain/repositories/estudio.repository';
-import { EstudioModule } from '../estudio/estudio.module';
-import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
-import type { EstudioRepository } from '../estudio/domain/repositories/estudio.repository';
 import { CLIENTE_REPOSITORY } from '../clientes/domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../clientes/domain/repositories/cliente.repository';
 import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikro-orm-vencimiento.repository';
@@ -101,7 +98,7 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [forwardRef(() => ClientesModule), EstudioModule, NotificacionesModule],
+  imports: [forwardRef(() => ClientesModule), forwardRef(() => EstudioModule), NotificacionesModule],
   controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController, SugerenciasProrrogaController, ProyeccionMensualController],
   providers: [
     // ── Repositories ──
@@ -209,7 +206,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       inject: [CLIENTE_REPOSITORY, ProyectarCalendarioMensualHandler, EVENT_BUS],
     },
 
-    // ── Proyección Mensual Scheduler ──
+    // ── Scheduler (monthly batch across all estudios) ──
     {
       provide: ProyeccionMensualScheduler,
       useFactory: (
