@@ -10,6 +10,7 @@ export interface VencimientoRepository {
   findByPeriodo(principal: EstudioPrincipal, periodo: string): Promise<Vencimiento[]>;
   findByEstado(principal: EstudioPrincipal, estado: EstadoVencimiento): Promise<Vencimiento[]>;
   findProximosAVencer(principal: EstudioPrincipal, diasAnticipacion: number): Promise<Vencimiento[]>;
+  findByClienteAndPeriodo(principal: EstudioPrincipal, clienteId: string, periodo: string): Promise<Vencimiento[]>;
 }
 
 export const VENCIMIENTO_REPOSITORY = Symbol('VencimientoRepository');

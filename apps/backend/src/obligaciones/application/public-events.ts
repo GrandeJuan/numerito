@@ -5,6 +5,7 @@
 export const OBLIGACIONES_EVENTS = {
   VENCIMIENTO_CUMPLIDO: 'obligaciones.vencimiento-cumplido',
   VENCIMIENTO_VENCIDO: 'obligaciones.vencimiento-vencido',
+  VENCIMIENTO_PROYECTADO: 'obligaciones.vencimiento-proyectado',
 } as const;
 
 export interface VencimientoCumplidoPayload {
@@ -20,5 +21,14 @@ export interface VencimientoVencidoPayload {
   clienteId: string;
   tipoObligacion: string;
   periodo: string;
+  occurredOn: Date;
+}
+
+export interface VencimientoProyectadoPayload {
+  vencimientoId: string;
+  clienteId: string;
+  tipoObligacion: string;
+  periodo: string;
+  estudioId: string;
   occurredOn: Date;
 }

@@ -105,6 +105,21 @@ export class MikroOrmVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
+  async findByClienteAndPeriodo(principal: EstudioPrincipal, clienteId: string, periodo: string): Promise<Vencimiento[]> {
+    const entities = await this.em.find(
+      VencimientoEntity,
+      {
+        cliente: { id: clienteId },
+        periodo,
+        estudio: { id: principal.estudioId },
+      },
+      {
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+      },
+    );
+    return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
+  }
+
   async findAll(principal: EstudioPrincipal): Promise<Vencimiento[]> {
     const entities = await this.em.find(
       VencimientoEntity,

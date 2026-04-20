@@ -7,6 +7,7 @@ const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', 
 describe('ObligacionesController', () => {
   let controller: ObligacionesController;
   let mockCrearVencimientoHandler: any;
+  let mockProyectarCalendarioHandler: any;
   let mockPresentarVencimientoHandler: any;
   let mockMarcarVencidoHandler: any;
   let mockVencimientoKpisHandler: any;
@@ -28,6 +29,9 @@ describe('ObligacionesController', () => {
   beforeEach(() => {
     mockCrearVencimientoHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'new-vencimiento-id' }),
+    };
+    mockProyectarCalendarioHandler = {
+      execute: jest.fn().mockResolvedValue({ proyectados: 3, omitidos: 0, errores: [] }),
     };
     mockPresentarVencimientoHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
@@ -54,6 +58,7 @@ describe('ObligacionesController', () => {
     };
     controller = new ObligacionesController(
       mockCrearVencimientoHandler,
+      mockProyectarCalendarioHandler,
       mockPresentarVencimientoHandler,
       mockMarcarVencidoHandler,
       mockVencimientoKpisHandler,
@@ -208,6 +213,27 @@ describe('ObligacionesController', () => {
       const result = await controller.create(dto as any, principal);
       expect(result.id).toBe('new-vencimiento-id');
       expect(mockCrearVencimientoHandler.execute).toHaveBeenCalledWith(principal, dto);
+    });
+  });
+
+  describe('proyectarCalendario', () => {
+    it('should delegate to ProyectarCalendarioMensualHandler with principal', async () => {
+      const dto = { clienteId: 'cliente-1', periodo: '2026-05' };
+
+      const result = await controller.proyectarCalendario(dto, principal);
+
+      expect(mockProyectarCalendarioHandler.execute).toHaveBeenCalledWith(principal, dto);
+      expect(result.data).toEqual({ proyectados: 3, omitidos: 0, errores: [] });
+    });
+
+    it('should propagate errors from handler', async () => {
+      mockProyectarCalendarioHandler.execute.mockRejectedValue(
+        new RecursoNoEncontradoError('Cliente'),
+      );
+
+      await expect(
+        controller.proyectarCalendario({ clienteId: 'bad', periodo: '2026-05' }, principal),
+      ).rejects.toThrow('Cliente no encontrado');
     });
   });
 

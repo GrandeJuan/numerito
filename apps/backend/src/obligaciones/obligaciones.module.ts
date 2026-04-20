@@ -12,6 +12,9 @@ import {
 import type {
   ReglaVencimientoEntityRepository,
 } from './domain/repositories/regla-vencimiento.repository';
+import { ClientesModule } from '../clientes/clientes.module';
+import { CLIENTE_REPOSITORY } from '../clientes/domain/repositories/cliente.repository';
+import type { ClienteRepository } from '../clientes/domain/repositories/cliente.repository';
 import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikro-orm-vencimiento.repository';
 import { MikroOrmCatalogoObligacionRepository } from './infrastructure/persistence/mikro-orm-catalogo-obligacion.repository';
 import { MikroOrmReglaVencimientoRepository } from './infrastructure/persistence/mikro-orm-regla-vencimiento.repository';
@@ -23,6 +26,7 @@ import { CrearCatalogoObligacionHandler } from './application/commands/crear-cat
 import { ActualizarCatalogoObligacionHandler } from './application/commands/actualizar-catalogo-obligacion.command';
 import { CrearReglaVencimientoHandler } from './application/commands/crear-regla-vencimiento.command';
 import { ActualizarReglaVencimientoHandler } from './application/commands/actualizar-regla-vencimiento.command';
+import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
@@ -47,7 +51,7 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [],
+  imports: [ClientesModule],
   controllers: [ObligacionesController, CatalogoAdminController],
   providers: [
     // ── Repositories ──
@@ -81,6 +85,32 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (repo: VencimientoRepository, eventBus: EventBus) =>
         new MarcarVencidoHandler(repo, eventBus),
       inject: [VENCIMIENTO_REPOSITORY, EVENT_BUS],
+    },
+
+    // ── Proyector ──
+    {
+      provide: ProyectarCalendarioMensualHandler,
+      useFactory: (
+        vencimientoRepo: VencimientoRepository,
+        clienteRepo: ClienteRepository,
+        catalogoRepo: CatalogoObligacionRepository,
+        reglaService: ReglaVencimientoService,
+        eventBus: EventBus,
+      ) =>
+        new ProyectarCalendarioMensualHandler(
+          vencimientoRepo,
+          clienteRepo,
+          catalogoRepo,
+          reglaService,
+          eventBus,
+        ),
+      inject: [
+        VENCIMIENTO_REPOSITORY,
+        CLIENTE_REPOSITORY,
+        CATALOGO_OBLIGACION_REPOSITORY,
+        ReglaVencimientoService,
+        EVENT_BUS,
+      ],
     },
 
     // ── Catálogo/Regla commands ──

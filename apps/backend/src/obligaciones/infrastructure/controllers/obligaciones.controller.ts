@@ -6,11 +6,16 @@ import {
   CrearVencimientoDto,
   crearVencimientoDtoSchema,
 } from '../../application/dtos/crear-vencimiento.dto';
+import {
+  type ProyectarCalendarioDto,
+  proyectarCalendarioDtoSchema,
+} from '../../application/dtos/proyectar-calendario.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import {
   CrearVencimientoHandler,
   type CrearVencimientoCommand,
 } from '../../application/commands/crear-vencimiento.command';
+import { ProyectarCalendarioMensualHandler } from '../../application/commands/proyectar-calendario-mensual.command';
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
@@ -25,6 +30,7 @@ import { successResponse } from '../../../shared/infrastructure/responses/api-re
 export class ObligacionesController {
   constructor(
     private readonly crearVencimientoHandler: CrearVencimientoHandler,
+    private readonly proyectarCalendarioHandler: ProyectarCalendarioMensualHandler,
     private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
@@ -92,6 +98,16 @@ export class ObligacionesController {
       dto as CrearVencimientoCommand,
     );
     return result;
+  }
+
+  @Post('calendario/proyectar')
+  @ApiOperation({ summary: 'Proyectar calendario mensual de un cliente' })
+  async proyectarCalendario(
+    @Body(new ZodValidationPipe(proyectarCalendarioDtoSchema)) dto: ProyectarCalendarioDto,
+    @Principal() principal: EstudioPrincipal,
+  ) {
+    const result = await this.proyectarCalendarioHandler.execute(principal, dto);
+    return successResponse(result);
   }
 
   @Get(':id')

@@ -117,7 +117,8 @@ Each publishing context exports public event names and payload interfaces from `
 | `estudio.subscripcion-vencida` | Estudio | `Subscripcion.marcarVencida()` | `MarcarSubscripcionVencidaHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-cumplido` | Obligaciones | `Vencimiento.presentar()` | `PresentarVencimientoHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-vencido` | Obligaciones | `Vencimiento.marcarVencido()` | `MarcarVencidoHandler` | `DashboardStatsListener` |
-| `clientes.perfil-fiscal-actualizado` | Clientes | `Cliente.actualizarPerfilFiscal()` | `ActualizarPerfilFiscalHandler` | _(none yet — consumed by proyector in S3)_ |
+| `obligaciones.vencimiento-proyectado` | Obligaciones | _(created in handler)_ | `ProyectarCalendarioMensualHandler` | _(none yet)_ |
+| `clientes.perfil-fiscal-actualizado` | Clientes | `Cliente.actualizarPerfilFiscal()` | `ActualizarPerfilFiscalHandler` | _(none yet)_ |
 
 **Contexts without events:** Contabilidad, Nomina, Documentos, Tareas, Facturacion, Integraciones.
 
