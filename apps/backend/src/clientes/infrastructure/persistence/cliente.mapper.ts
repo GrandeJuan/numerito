@@ -35,6 +35,7 @@ export const clientePersistenceSchema = z.object({
   responsableId: z.string().min(1).optional(),
   isActive: z.boolean(),
   inscripciones: z.array(inscripcionPersistenceSchema).optional(),
+  overridesResponsable: z.record(z.string(), z.string()).optional(),
 });
 
 export type ClientePersistence = z.infer<typeof clientePersistenceSchema>;
@@ -53,6 +54,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
         isActive: data.isActive,
         responsableId: data.responsableId,
         inscripciones: data.inscripciones,
+        overridesResponsable: data.overridesResponsable,
       },
       data.id,
     );
@@ -70,6 +72,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
       responsableId: domain.responsableId,
       isActive: domain.isActive,
       inscripciones: domain.inscripciones.map((i) => i.toPlain()),
+      overridesResponsable: domain.overridesResponsable,
     };
   }
 
@@ -85,6 +88,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
       responsableId: entity.responsable?.id,
       isActive: entity.isActive,
       inscripciones: (entity.inscripciones ?? []) as ClientePersistence['inscripciones'],
+      overridesResponsable: (entity.overridesResponsable ?? {}) as Record<string, string>,
     };
   }
 }

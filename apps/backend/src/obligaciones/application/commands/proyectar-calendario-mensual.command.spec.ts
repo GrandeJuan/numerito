@@ -234,6 +234,7 @@ describe('ProyectarCalendarioMensual Command', () => {
         estado: 'PENDIENTE',
         motivo: null,
         fechaProrrogada: null,
+        responsableId: null,
       },
       'existing-v-1',
     );
@@ -421,5 +422,56 @@ describe('ProyectarCalendarioMensual Command', () => {
 
     const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1] as Vencimiento;
     expect(savedVencimiento.estudioId).toBe('estudio-99');
+  });
+
+  it('should resolve responsable from override > default on projected vencimientos', async () => {
+    const inscripciones = [
+      InscripcionJurisdiccion.create({
+        jurisdiccion: JURISDICCION.ARCA,
+        regimen: 'GENERAL',
+        activa: true,
+        desde: '2024-01-01',
+      }),
+    ];
+    const cliente = makeCliente(inscripciones);
+    cliente.assignResponsable('user-default');
+    cliente.asignarResponsablePorObligacion(TIPO_OBLIGACION.IVA, 'user-override');
+    mockClienteRepo.findById.mockResolvedValue(cliente);
+
+    const catalogo = makeCatalogo(TIPO_OBLIGACION.IVA, JURISDICCION.ARCA);
+    mockCatalogoRepo.findByJurisdiccion.mockResolvedValue([catalogo]);
+
+    const futureDate = makeFutureDate(20);
+    mockReglaService.calcularFechaConPerfil.mockResolvedValue(futureDate);
+
+    await handler.execute(principal, { clienteId: 'cliente-1', periodo });
+
+    const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1] as Vencimiento;
+    expect(savedVencimiento.responsableId).toBe('user-override');
+  });
+
+  it('should use default responsable when no override exists', async () => {
+    const inscripciones = [
+      InscripcionJurisdiccion.create({
+        jurisdiccion: JURISDICCION.ARCA,
+        regimen: 'GENERAL',
+        activa: true,
+        desde: '2024-01-01',
+      }),
+    ];
+    const cliente = makeCliente(inscripciones);
+    cliente.assignResponsable('user-default');
+    mockClienteRepo.findById.mockResolvedValue(cliente);
+
+    const catalogo = makeCatalogo(TIPO_OBLIGACION.IVA, JURISDICCION.ARCA);
+    mockCatalogoRepo.findByJurisdiccion.mockResolvedValue([catalogo]);
+
+    const futureDate = makeFutureDate(20);
+    mockReglaService.calcularFechaConPerfil.mockResolvedValue(futureDate);
+
+    await handler.execute(principal, { clienteId: 'cliente-1', periodo });
+
+    const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1] as Vencimiento;
+    expect(savedVencimiento.responsableId).toBe('user-default');
   });
 });

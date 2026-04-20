@@ -18,6 +18,7 @@ interface CreateVencimientoProps {
   fechaVencimiento: Date;
   fechaNominal?: Date | null;
   descripcion: string;
+  responsableId?: string | null;
 }
 
 const tipoObligacionValues = Object.values(TIPO_OBLIGACION) as [
@@ -40,6 +41,7 @@ const vencimientoReconstitutePropsSchema = z.object({
   estado: z.enum(estadoVencimientoValues),
   motivo: z.string().nullable(),
   fechaProrrogada: z.date().nullable(),
+  responsableId: z.string().nullable(),
 });
 
 export type ReconstituteVencimientoProps = z.input<typeof vencimientoReconstitutePropsSchema>;
@@ -55,6 +57,7 @@ export class Vencimiento extends BaseEntity {
   private _estado!: EstadoVencimiento;
   private _motivo!: string | null;
   private _fechaProrrogada!: Date | null;
+  private _responsableId!: string | null;
 
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
@@ -82,6 +85,7 @@ export class Vencimiento extends BaseEntity {
     this._estado = ESTADO_VENCIMIENTO.PENDIENTE;
     this._motivo = null;
     this._fechaProrrogada = null;
+    this._responsableId = props.responsableId ?? null;
   }
 
   static create(props: CreateVencimientoProps, id?: string): Vencimiento {
@@ -104,6 +108,7 @@ export class Vencimiento extends BaseEntity {
     instance._estado = data.estado;
     instance._motivo = data.motivo;
     instance._fechaProrrogada = data.fechaProrrogada;
+    instance._responsableId = data.responsableId;
     return instance;
   }
 
@@ -136,6 +141,9 @@ export class Vencimiento extends BaseEntity {
   }
   get fechaProrrogada(): Date | null {
     return this._fechaProrrogada;
+  }
+  get responsableId(): string | null {
+    return this._responsableId;
   }
 
   private static readonly ESTADOS_TERMINALES: ReadonlySet<EstadoVencimiento> = new Set([
@@ -209,6 +217,11 @@ export class Vencimiento extends BaseEntity {
     }
     this._estado = ESTADO_VENCIMIENTO.NO_APLICA;
     this._motivo = motivo.trim();
+    this.updatedAt = new Date();
+  }
+
+  reasignarResponsable(responsableId: string): void {
+    this._responsableId = responsableId;
     this.updatedAt = new Date();
   }
 

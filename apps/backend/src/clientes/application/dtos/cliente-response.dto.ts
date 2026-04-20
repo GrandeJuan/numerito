@@ -21,6 +21,7 @@ export interface ClienteResponseDto {
   responsableId?: string;
   provincias?: string[];
   inscripciones: InscripcionJurisdiccionResponseDto[];
+  overridesResponsable: Record<string, string>;
 }
 
 export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
@@ -43,5 +44,6 @@ export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
       activa: i.activa,
       desde: i.desde,
     })),
+    overridesResponsable: c.overridesResponsable,
   };
 }

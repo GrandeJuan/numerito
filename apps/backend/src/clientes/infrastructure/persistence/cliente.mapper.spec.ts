@@ -22,6 +22,7 @@ describe('ClienteMapper', () => {
     responsableId: 'user-42',
     isActive: true,
     inscripciones: [],
+    overridesResponsable: {},
   };
 
   describe('toDomain', () => {
@@ -164,6 +165,16 @@ describe('ClienteMapper', () => {
       expect(mapper.toPersistence(cliente)).toEqual(validPersistence);
     });
 
+    it('round-trips overridesResponsable through toDomain -> toPersistence', () => {
+      const withOverrides: ClientePersistence = {
+        ...validPersistence,
+        overridesResponsable: { IVA: 'user-200', IIBB: 'user-300' },
+      };
+      const cliente = mapper.toDomain(withOverrides);
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-200', IIBB: 'user-300' });
+      expect(mapper.toPersistence(cliente)).toEqual(withOverrides);
+    });
+
     it('round-trips inscripciones through toDomain -> toPersistence', () => {
       const withInscripciones: ClientePersistence = {
         ...validPersistence,
@@ -190,6 +201,7 @@ describe('ClienteMapper', () => {
       responsable: { id: 'user-42' },
       isActive: true,
       inscripciones: [],
+      overridesResponsable: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     } as unknown as ClienteEntity;

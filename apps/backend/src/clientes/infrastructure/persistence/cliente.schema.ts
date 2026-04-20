@@ -16,6 +16,7 @@ export class ClienteEntity {
   responsable?: UsuarioEntity;
   isActive!: boolean;
   inscripciones!: Record<string, unknown>[];
+  overridesResponsable!: Record<string, string>;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -34,6 +35,7 @@ export const ClienteSchema = new EntitySchema<ClienteEntity>({
     responsable: { kind: 'm:1', entity: () => UsuarioEntity, fieldName: 'responsable_id', nullable: true },
     isActive: { type: 'boolean', fieldName: 'is_active', default: true },
     inscripciones: { type: 'json', default: '[]' },
+    overridesResponsable: { type: 'json', fieldName: 'overrides_responsable', default: '{}' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

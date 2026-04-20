@@ -21,6 +21,7 @@ export interface VencimientoListItem {
   fechaVencimiento: string;
   descripcion: string;
   estado: EstadoVencimiento;
+  responsable: string | null;
 }
 
 export interface VencimientoListResult {
@@ -75,11 +76,13 @@ export class VencimientoListHandler {
          v.periodo,
          v.fecha_vencimiento::date::text AS fecha_vencimiento,
          v.descripcion,
-         ev.codigo AS estado
+         ev.codigo AS estado,
+         CASE WHEN u.id IS NOT NULL THEN u.nombre || ' ' || u.apellido ELSE NULL END AS responsable
        FROM vencimiento v
        JOIN cliente c ON v.cliente_id = c.id
        JOIN tipo_obligacion tobl ON v.tipo_obligacion_id = tobl.id
        JOIN estado_vencimiento ev ON v.estado_id = ev.id
+       LEFT JOIN usuario u ON v.responsable_id = u.id
        WHERE ${whereClause}
        ORDER BY v.fecha_vencimiento DESC, v.id ASC
        LIMIT ? OFFSET ?`,
@@ -103,6 +106,7 @@ export class VencimientoListHandler {
       fechaVencimiento: r.fecha_vencimiento,
       descripcion: r.descripcion,
       estado: r.estado as EstadoVencimiento,
+      responsable: r.responsable ?? null,
     }));
 
     return {

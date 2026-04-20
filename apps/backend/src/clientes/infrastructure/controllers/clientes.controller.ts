@@ -33,6 +33,14 @@ import {
   ActualizarPerfilFiscalDto,
   actualizarPerfilFiscalDtoSchema,
 } from '../../application/dtos/actualizar-perfil-fiscal.dto';
+import {
+  AsignarResponsablePorObligacionHandler,
+  type AsignarResponsablePorObligacionCommand,
+} from '../../application/commands/asignar-responsable-por-obligacion.command';
+import {
+  type AsignarResponsablePorObligacionDto,
+  asignarResponsablePorObligacionDtoSchema,
+} from '../../application/dtos/asignar-responsable-por-obligacion.dto';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Inject } from '@nestjs/common';
@@ -52,6 +60,7 @@ export class ClientesController {
     private readonly activarClienteHandler: ActivarClienteHandler,
     private readonly asignarResponsableHandler: AsignarResponsableHandler,
     private readonly actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler,
+    private readonly asignarResponsablePorObligacionHandler: AsignarResponsablePorObligacionHandler,
   ) {}
 
   @Get()
@@ -147,6 +156,22 @@ export class ClientesController {
       id,
       inscripciones: dto.inscripciones,
     } as ActualizarPerfilFiscalCommand);
+    return successResponse({ ok: true });
+  }
+
+  @Patch(':id/responsable-por-obligacion')
+  @ApiOperation({ summary: 'Asignar responsable override por tipo de obligación' })
+  async assignResponsablePorObligacion(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(asignarResponsablePorObligacionDtoSchema))
+    dto: AsignarResponsablePorObligacionDto,
+  ) {
+    await this.asignarResponsablePorObligacionHandler.execute(principal, {
+      clienteId: id,
+      tipoObligacion: dto.tipoObligacion,
+      responsableId: dto.responsableId,
+    } as AsignarResponsablePorObligacionCommand);
     return successResponse({ ok: true });
   }
 }

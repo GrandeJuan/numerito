@@ -7,6 +7,7 @@ import { DesactivarClienteHandler } from './application/commands/desactivar-clie
 import { ActivarClienteHandler } from './application/commands/activar-cliente.command';
 import { AsignarResponsableHandler } from './application/commands/asignar-responsable.command';
 import { ActualizarPerfilFiscalHandler } from './application/commands/actualizar-perfil-fiscal.command';
+import { AsignarResponsablePorObligacionHandler } from './application/commands/asignar-responsable-por-obligacion.command';
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { EVENT_BUS } from '../shared/domain/event-bus';
@@ -50,6 +51,12 @@ import { ClienteCountPorEstudioView } from './application/views/cliente-count-po
       provide: AsignarResponsableHandler,
       useFactory: (repo: ClienteRepository) =>
         new AsignarResponsableHandler(repo),
+      inject: [CLIENTE_REPOSITORY],
+    },
+    {
+      provide: AsignarResponsablePorObligacionHandler,
+      useFactory: (repo: ClienteRepository) =>
+        new AsignarResponsablePorObligacionHandler(repo),
       inject: [CLIENTE_REPOSITORY],
     },
     {

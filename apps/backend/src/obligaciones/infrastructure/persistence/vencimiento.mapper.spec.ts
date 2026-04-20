@@ -26,6 +26,7 @@ describe('VencimientoMapper', () => {
     estado: ESTADO_VENCIMIENTO.PENDIENTE,
     motivo: null,
     fechaProrrogada: null,
+    responsableId: null,
   };
 
   describe('toDomain', () => {
@@ -43,6 +44,15 @@ describe('VencimientoMapper', () => {
       expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
       expect(vencimiento.motivo).toBeNull();
       expect(vencimiento.fechaProrrogada).toBeNull();
+      expect(vencimiento.responsableId).toBeNull();
+    });
+
+    it('preserves responsableId', () => {
+      const vencimiento = mapper.toDomain({
+        ...validPersistence,
+        responsableId: 'user-42',
+      });
+      expect(vencimiento.responsableId).toBe('user-42');
     });
 
     it('preserves PRESENTADO state', () => {
@@ -143,6 +153,7 @@ describe('VencimientoMapper', () => {
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
           motivo: null,
           fechaProrrogada: null,
+          responsableId: null,
         },
         validId,
       );
@@ -213,6 +224,7 @@ describe('VencimientoMapper', () => {
       estado: { codigo: ESTADO_VENCIMIENTO.PENDIENTE },
       motivo: null,
       fechaProrrogada: null,
+      responsable: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     } as unknown as VencimientoEntity;
@@ -228,6 +240,19 @@ describe('VencimientoMapper', () => {
       expect(vencimiento.estudioId).toBe(estudioId);
       expect(vencimiento.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
       expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+    });
+
+    it('handles schema entity with responsable', () => {
+      const withResponsable = {
+        ...schemaEntity,
+        responsable: { id: 'user-42' },
+      } as unknown as VencimientoEntity;
+
+      const persistence = mapper.fromSchema(withResponsable);
+      expect(persistence.responsableId).toBe('user-42');
+
+      const domain = mapper.toDomain(persistence);
+      expect(domain.responsableId).toBe('user-42');
     });
 
     it('handles PRORROGADO schema entity with motivo and fechaProrrogada', () => {

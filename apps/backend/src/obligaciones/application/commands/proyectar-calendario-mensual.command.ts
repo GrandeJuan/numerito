@@ -107,6 +107,8 @@ export class ProyectarCalendarioMensualHandler {
             continue;
           }
 
+          const responsableId = cliente.resolverResponsable(obligacion.tipoObligacion);
+
           const vencimiento = Vencimiento.create({
             clienteId: command.clienteId,
             estudioId: principal.estudioId,
@@ -115,6 +117,7 @@ export class ProyectarCalendarioMensualHandler {
             fechaVencimiento: fechaAjustada,
             fechaNominal,
             descripcion: obligacion.nombre,
+            responsableId: responsableId ?? null,
           });
 
           await this.vencimientoRepo.save(principal, vencimiento);

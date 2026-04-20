@@ -28,6 +28,7 @@ import { PresentarVencimientoHandler } from './application/commands/presentar-ve
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
 import { ProrrogarVencimientoHandler } from './application/commands/prorrogar-vencimiento.command';
 import { MarcarNoAplicaHandler } from './application/commands/marcar-no-aplica.command';
+import { ReasignarResponsableHandler } from './application/commands/reasignar-responsable.command';
 import { CrearCatalogoObligacionHandler } from './application/commands/crear-catalogo-obligacion.command';
 import { ActualizarCatalogoObligacionHandler } from './application/commands/actualizar-catalogo-obligacion.command';
 import { CrearReglaVencimientoHandler } from './application/commands/crear-regla-vencimiento.command';
@@ -111,6 +112,13 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (repo: VencimientoRepository) =>
         new MarcarNoAplicaHandler(repo),
       inject: [VENCIMIENTO_REPOSITORY],
+    },
+
+    {
+      provide: ReasignarResponsableHandler,
+      useFactory: (vencimientoRepo: VencimientoRepository, clienteRepo: ClienteRepository) =>
+        new ReasignarResponsableHandler(vencimientoRepo, clienteRepo),
+      inject: [VENCIMIENTO_REPOSITORY, CLIENTE_REPOSITORY],
     },
 
     // ── Proyector ──

@@ -8,6 +8,7 @@ import { DesactivarClienteHandler } from '../../application/commands/desactivar-
 import { ActivarClienteHandler } from '../../application/commands/activar-cliente.command';
 import { AsignarResponsableHandler } from '../../application/commands/asignar-responsable.command';
 import { ActualizarPerfilFiscalHandler } from '../../application/commands/actualizar-perfil-fiscal.command';
+import { AsignarResponsablePorObligacionHandler } from '../../application/commands/asignar-responsable-por-obligacion.command';
 import { JURISDICCION } from '@numerito/shared';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { EventBus } from '../../../shared/domain/event-bus';
@@ -38,6 +39,7 @@ describe('ClientesController', () => {
   let activarClienteHandler: ActivarClienteHandler;
   let asignarResponsableHandler: AsignarResponsableHandler;
   let actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler;
+  let asignarResponsablePorObligacionHandler: AsignarResponsablePorObligacionHandler;
   let mockEventBus: EventBus;
 
   beforeEach(() => {
@@ -56,6 +58,7 @@ describe('ClientesController', () => {
     asignarResponsableHandler = new AsignarResponsableHandler(mockClienteRepo);
     mockEventBus = { publish: jest.fn(), publishAll: jest.fn() };
     actualizarPerfilFiscalHandler = new ActualizarPerfilFiscalHandler(mockClienteRepo, mockEventBus);
+    asignarResponsablePorObligacionHandler = new AsignarResponsablePorObligacionHandler(mockClienteRepo);
     controller = new ClientesController(
       mockClienteRepo,
       crearClienteHandler,
@@ -64,6 +67,7 @@ describe('ClientesController', () => {
       activarClienteHandler,
       asignarResponsableHandler,
       actualizarPerfilFiscalHandler,
+      asignarResponsablePorObligacionHandler,
     );
   });
 
@@ -222,6 +226,33 @@ describe('ClientesController', () => {
 
       await expect(
         controller.assignResponsable(principal, 'bad-id', { responsableId: 'user-1' }),
+      ).rejects.toThrow('Cliente no encontrado');
+    });
+  });
+
+  describe('assignResponsablePorObligacion', () => {
+    it('should set override responsable on the client', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      const result = await controller.assignResponsablePorObligacion(principal, cliente.id, {
+        tipoObligacion: 'IVA',
+        responsableId: 'user-200',
+      });
+
+      expect(result.data.ok).toBe(true);
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-200' });
+      expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when cliente not found', async () => {
+      mockClienteRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        controller.assignResponsablePorObligacion(principal, 'bad-id', {
+          tipoObligacion: 'IVA',
+          responsableId: 'user-200',
+        }),
       ).rejects.toThrow('Cliente no encontrado');
     });
   });

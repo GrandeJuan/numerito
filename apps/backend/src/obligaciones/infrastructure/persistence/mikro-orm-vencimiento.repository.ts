@@ -13,6 +13,7 @@ import { TipoObligacionEntity } from '../../../shared/infrastructure/persistence
 import { EstadoVencimientoEntity } from '../../../shared/infrastructure/persistence/estado-vencimiento.schema';
 import { ClienteEntity } from '../../../clientes/infrastructure/persistence/cliente.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
 import { VencimientoMapper } from './vencimiento.mapper';
 
 @Injectable()
@@ -37,7 +38,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     if (!entity) return null;
@@ -52,7 +53,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -66,7 +67,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -80,7 +81,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -99,7 +100,7 @@ export class MikroOrmVencimientoRepository
         fechaVencimiento: { $gte: now, $lte: limit },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -114,7 +115,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -127,7 +128,7 @@ export class MikroOrmVencimientoRepository
         estudio: { id: principal.estudioId },
       },
       {
-        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio'],
+        populate: ['tipoObligacion', 'estado', 'cliente', 'estudio', 'responsable'],
       },
     );
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
@@ -143,6 +144,10 @@ export class MikroOrmVencimientoRepository
     const estudio = this.em.getReference(EstudioEntity, data.estudioId);
 
     const existing = await this.em.findOne(VencimientoEntity, { id: data.id, estudio: { id: principal.estudioId } });
+    const responsable = data.responsableId
+      ? this.em.getReference(UsuarioEntity, data.responsableId)
+      : undefined;
+
     if (existing) {
       existing.cliente = cliente;
       existing.estudio = estudio;
@@ -154,6 +159,7 @@ export class MikroOrmVencimientoRepository
       existing.estado = estado;
       existing.motivo = data.motivo;
       existing.fechaProrrogada = data.fechaProrrogada;
+      existing.responsable = responsable;
     } else {
       this.em.create(VencimientoEntity, {
         id: data.id,
@@ -167,6 +173,7 @@ export class MikroOrmVencimientoRepository
         estado,
         motivo: data.motivo,
         fechaProrrogada: data.fechaProrrogada,
+        responsable,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

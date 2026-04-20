@@ -98,6 +98,27 @@ describe('Vencimiento Entity', () => {
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
     expect(v.motivo).toBeNull();
     expect(v.fechaProrrogada).toBeNull();
+    expect(v.responsableId).toBeNull();
+  });
+
+  it('should store responsableId when provided on create', () => {
+    const v = Vencimiento.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      tipoObligacion: TIPO_OBLIGACION.IVA,
+      periodo: '2030-03',
+      fechaVencimiento: new Date('2030-04-15'),
+      descripcion: 'IVA',
+      responsableId: 'user-42',
+    });
+    expect(v.responsableId).toBe('user-42');
+  });
+
+  it('should reasignar responsable', () => {
+    const v = createVencimiento();
+    expect(v.responsableId).toBeNull();
+    v.reasignarResponsable('user-99');
+    expect(v.responsableId).toBe('user-99');
   });
 
   it('should store fechaNominal when provided', () => {
@@ -275,6 +296,7 @@ describe('Vencimiento Entity', () => {
           estado: ESTADO_VENCIMIENTO.VENCIDO,
           motivo: null,
           fechaProrrogada: null,
+          responsableId: null,
         },
         'existing-id',
       );
@@ -297,6 +319,7 @@ describe('Vencimiento Entity', () => {
           estado: ESTADO_VENCIMIENTO.PRESENTADO,
           motivo: null,
           fechaProrrogada: null,
+          responsableId: null,
         },
         'reconstituted-id',
       );
@@ -308,6 +331,26 @@ describe('Vencimiento Entity', () => {
       expect(v.periodo).toBe('2025-06');
       expect(v.descripcion).toBe('Monotributo Junio');
       expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
+    });
+
+    it('should preserve responsableId on reconstitute', () => {
+      const v = Vencimiento.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          tipoObligacion: TIPO_OBLIGACION.IVA,
+          periodo: '2025-06',
+          fechaVencimiento: new Date('2025-06-20'),
+          fechaNominal: null,
+          descripcion: 'IVA',
+          estado: ESTADO_VENCIMIENTO.PENDIENTE,
+          motivo: null,
+          fechaProrrogada: null,
+          responsableId: 'user-42',
+        },
+        'resp-id',
+      );
+      expect(v.responsableId).toBe('user-42');
     });
 
     it('should preserve motivo and fechaProrrogada on reconstitute', () => {
@@ -324,6 +367,7 @@ describe('Vencimiento Entity', () => {
           estado: ESTADO_VENCIMIENTO.PRORROGADO,
           motivo: 'Prórroga RG 1234',
           fechaProrrogada,
+          responsableId: null,
         },
         'prorrogado-id',
       );
@@ -346,6 +390,7 @@ describe('Vencimiento Entity', () => {
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
           motivo: null,
           fechaProrrogada: null,
+          responsableId: null,
         },
         'some-id',
       );

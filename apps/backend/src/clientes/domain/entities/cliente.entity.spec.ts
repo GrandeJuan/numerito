@@ -231,6 +231,58 @@ describe('Cliente Entity (Aggregate Root)', () => {
     });
   });
 
+  describe('overridesResponsable', () => {
+    it('should start with empty overrides', () => {
+      const cliente = createCliente();
+      expect(cliente.overridesResponsable).toEqual({});
+    });
+
+    it('should assign a responsable override for a specific obligation type', () => {
+      const cliente = createCliente();
+      cliente.asignarResponsablePorObligacion('IVA', 'user-200');
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-200' });
+    });
+
+    it('should allow multiple overrides for different obligation types', () => {
+      const cliente = createCliente();
+      cliente.asignarResponsablePorObligacion('IVA', 'user-200');
+      cliente.asignarResponsablePorObligacion('IIBB', 'user-300');
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-200', IIBB: 'user-300' });
+    });
+
+    it('should replace an existing override for the same obligation type', () => {
+      const cliente = createCliente();
+      cliente.asignarResponsablePorObligacion('IVA', 'user-200');
+      cliente.asignarResponsablePorObligacion('IVA', 'user-999');
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-999' });
+    });
+
+    it('should remove an override', () => {
+      const cliente = createCliente();
+      cliente.asignarResponsablePorObligacion('IVA', 'user-200');
+      cliente.quitarOverrideResponsable('IVA');
+      expect(cliente.overridesResponsable).toEqual({});
+    });
+
+    it('should resolve override over default responsable', () => {
+      const cliente = createCliente();
+      cliente.assignResponsable('user-default');
+      cliente.asignarResponsablePorObligacion('IVA', 'user-override');
+      expect(cliente.resolverResponsable('IVA')).toBe('user-override');
+    });
+
+    it('should fall back to default responsable when no override exists', () => {
+      const cliente = createCliente();
+      cliente.assignResponsable('user-default');
+      expect(cliente.resolverResponsable('IVA')).toBe('user-default');
+    });
+
+    it('should return undefined when no override and no default', () => {
+      const cliente = createCliente();
+      expect(cliente.resolverResponsable('IVA')).toBeUndefined();
+    });
+  });
+
   describe('reconstitute', () => {
     it('should preserve all fields including persisted state', () => {
       const cliente = Cliente.reconstitute({
@@ -275,6 +327,24 @@ describe('Cliente Entity (Aggregate Root)', () => {
       expect(cliente.inscripciones).toHaveLength(2);
       expect(cliente.inscripciones[0].jurisdiccion).toBe(JURISDICCION.ARCA);
       expect(cliente.inscripciones[1].activa).toBe(false);
+    });
+
+    it('should preserve overridesResponsable on reconstitute', () => {
+      const cliente = Cliente.reconstitute({
+        cuit: Cuit.create('20-12345678-6'),
+        razonSocial: RazonSocial.create('Test S.A.'),
+        condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+        tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+        regimen: REGIMEN.GENERAL,
+        estudioId: 'estudio-1',
+        isActive: true,
+        responsableId: 'user-42',
+        overridesResponsable: { IVA: 'user-200', IIBB: 'user-300' },
+      }, 'id-overrides');
+
+      expect(cliente.overridesResponsable).toEqual({ IVA: 'user-200', IIBB: 'user-300' });
+      expect(cliente.resolverResponsable('IVA')).toBe('user-200');
+      expect(cliente.resolverResponsable('GANANCIAS')).toBe('user-42');
     });
 
     it('should not emit domain events on reconstitute', () => {

@@ -156,6 +156,24 @@ export function ClienteDetallePage() {
                 calendario.
               </p>
             )}
+            {Object.keys((cliente as any).overridesResponsable ?? {}).length > 0 && (
+              <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-3)] mb-1.5">
+                  Responsables por obligaci&oacute;n
+                </p>
+                <ul className="space-y-1 text-sm">
+                  {Object.entries((cliente as any).overridesResponsable as Record<string, string>).map(
+                    ([tipo, responsableId]) => (
+                      <li key={tipo} className="flex items-center gap-2 text-[var(--text-2)]">
+                        <span className="font-medium">{tipo}</span>
+                        <span className="text-[var(--text-3)]">&rarr;</span>
+                        <span>{responsableId}</span>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </div>
+            )}
           </Card>
         </div>
       )}

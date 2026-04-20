@@ -24,6 +24,7 @@ describe('ProrrogarVencimientoHandler', () => {
         estado,
         motivo: null,
         fechaProrrogada: null,
+        responsableId: null,
       },
       'v-1',
     );

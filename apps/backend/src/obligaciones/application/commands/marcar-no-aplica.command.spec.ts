@@ -23,6 +23,7 @@ describe('MarcarNoAplicaHandler', () => {
         estado,
         motivo: null,
         fechaProrrogada: null,
+        responsableId: null,
       },
       'v-1',
     );

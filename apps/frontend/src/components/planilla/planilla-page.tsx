@@ -56,11 +56,11 @@ function getCurrentPeriodo(): string {
 
 function exportPlanillaXlsx(items: VencimientoApi[]) {
   const rows: string[] = [
-    'Cliente,Obligación,Período,Vencimiento,Estado,Motivo,Fecha Prórroga',
+    'Cliente,Obligación,Período,Vencimiento,Estado,Responsable,Motivo,Fecha Prórroga',
   ];
   for (const v of items) {
     rows.push(
-      `"${v.cliente}","${v.tipoObligacion}","${v.periodo}","${v.fechaVencimiento}","${v.estado}","${v.motivo ?? ''}","${v.fechaProrrogada ?? ''}"`,
+      `"${v.cliente}","${v.tipoObligacion}","${v.periodo}","${v.fechaVencimiento}","${v.estado}","${v.responsable ?? ''}","${v.motivo ?? ''}","${v.fechaProrrogada ?? ''}"`,
     );
   }
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -302,6 +302,15 @@ export function PlanillaPage() {
                   </Pill>
                 );
               },
+            },
+            {
+              header: 'Responsable',
+              render: (v) =>
+                v.responsable ? (
+                  <span className="text-[11.5px] text-[var(--text-2)]">{v.responsable}</span>
+                ) : (
+                  <span className="text-[11px] text-[var(--text-3)]">—</span>
+                ),
             },
             {
               header: 'Motivo',

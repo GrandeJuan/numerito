@@ -20,10 +20,15 @@ import { PresentarVencimientoHandler } from '../../application/commands/presenta
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { ProrrogarVencimientoHandler } from '../../application/commands/prorrogar-vencimiento.command';
 import { MarcarNoAplicaHandler } from '../../application/commands/marcar-no-aplica.command';
+import { ReasignarResponsableHandler } from '../../application/commands/reasignar-responsable.command';
 import {
   type ProrrogarVencimientoDto,
   prorrogarVencimientoDtoSchema,
 } from '../../application/dtos/prorrogar-vencimiento.dto';
+import {
+  type ReasignarResponsableDto,
+  reasignarResponsableDtoSchema,
+} from '../../application/dtos/reasignar-responsable.dto';
 import {
   type MarcarNoAplicaDto,
   marcarNoAplicaDtoSchema,
@@ -45,6 +50,7 @@ export class ObligacionesController {
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
     private readonly prorrogarVencimientoHandler: ProrrogarVencimientoHandler,
     private readonly marcarNoAplicaHandler: MarcarNoAplicaHandler,
+    private readonly reasignarResponsableHandler: ReasignarResponsableHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
     private readonly vencimientoListHandler: VencimientoListHandler,
     private readonly vencimientoCalendarioHandler: VencimientoCalendarioHandler,
@@ -166,6 +172,15 @@ export class ObligacionesController {
       vencimientoId: id,
       motivo: dto.motivo,
     });
+  }
+  @Post('reasignar-responsable')
+  @ApiOperation({ summary: 'Reasignar responsable de vencimientos futuros por tipo de obligación' })
+  async reasignarResponsable(
+    @Body(new ZodValidationPipe(reasignarResponsableDtoSchema)) dto: ReasignarResponsableDto,
+    @Principal() principal: EstudioPrincipal,
+  ) {
+    const result = await this.reasignarResponsableHandler.execute(principal, dto);
+    return successResponse(result);
   }
 }
 

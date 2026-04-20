@@ -5,7 +5,7 @@ import { RazonSocial } from '../value-objects/razon-social.vo';
 import { InscripcionJurisdiccion } from '../value-objects/inscripcion-jurisdiccion.vo';
 import type { InscripcionJurisdiccionProps } from '../value-objects/inscripcion-jurisdiccion.vo';
 import { PerfilFiscalActualizado } from '../events/perfil-fiscal-actualizado.event';
-import { InscripcionDuplicadaError } from '../../../shared/domain/exceptions';
+import { InscripcionDuplicadaError, OperacionInvalidaError } from '../../../shared/domain/exceptions';
 import { CONDICION_IVA, PROVINCIA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 import type { CondicionIVA, Provincia, TipoCliente, Regimen } from '@numerito/shared';
 
@@ -33,6 +33,8 @@ const inscripcionJurisdiccionPropsSchema = z.object({
   desde: z.string().min(1),
 });
 
+const overrideResponsableSchema = z.record(z.string().min(1), z.string().min(1));
+
 const clienteReconstitutePropsSchema = z.object({
   cuit: z.instanceof(Cuit),
   razonSocial: z.instanceof(RazonSocial),
@@ -44,6 +46,7 @@ const clienteReconstitutePropsSchema = z.object({
   responsableId: z.string().min(1).optional(),
   provincias: z.array(z.enum(provinciaValues)).optional(),
   inscripciones: z.array(inscripcionJurisdiccionPropsSchema).optional(),
+  overridesResponsable: overrideResponsableSchema.optional(),
 });
 
 export type ReconstituteClienteProps = z.input<typeof clienteReconstitutePropsSchema>;
@@ -59,6 +62,7 @@ export class Cliente extends BaseEntity {
   private _responsableId?: string;
   private _provincias!: Provincia[];
   private _inscripciones!: InscripcionJurisdiccion[];
+  private _overridesResponsable!: Map<string, string>;
 
   private constructor(props: CreateClienteProps, id?: string) {
     super(id);
@@ -71,6 +75,7 @@ export class Cliente extends BaseEntity {
     this._isActive = true;
     this._provincias = props.provincias ?? [];
     this._inscripciones = [];
+    this._overridesResponsable = new Map();
   }
 
   static create(props: CreateClienteProps, id?: string): Cliente {
@@ -95,6 +100,9 @@ export class Cliente extends BaseEntity {
     instance._inscripciones = (data.inscripciones ?? []).map((i) =>
       InscripcionJurisdiccion.reconstitute(i as InscripcionJurisdiccionProps),
     );
+    instance._overridesResponsable = new Map(
+      Object.entries(data.overridesResponsable ?? {}),
+    );
     return instance;
   }
 
@@ -108,6 +116,7 @@ export class Cliente extends BaseEntity {
   get responsableId(): string | undefined { return this._responsableId; }
   get provincias(): Provincia[] { return [...this._provincias]; }
   get inscripciones(): InscripcionJurisdiccion[] { return [...this._inscripciones]; }
+  get overridesResponsable(): Record<string, string> { return Object.fromEntries(this._overridesResponsable); }
 
   changeCondicionIva(condicion: CondicionIVA): void {
     this._condicionIva = condicion;
@@ -153,6 +162,23 @@ export class Cliente extends BaseEntity {
     this._inscripciones = inscripciones;
     this.updatedAt = new Date();
     this.addDomainEvent(new PerfilFiscalActualizado(this.id, this._estudioId));
+  }
+
+  asignarResponsablePorObligacion(tipoObligacion: string, responsableId: string): void {
+    if (!tipoObligacion || !responsableId) {
+      throw new OperacionInvalidaError('Tipo de obligación y responsable son requeridos');
+    }
+    this._overridesResponsable.set(tipoObligacion, responsableId);
+    this.updatedAt = new Date();
+  }
+
+  quitarOverrideResponsable(tipoObligacion: string): void {
+    this._overridesResponsable.delete(tipoObligacion);
+    this.updatedAt = new Date();
+  }
+
+  resolverResponsable(tipoObligacion: string): string | undefined {
+    return this._overridesResponsable.get(tipoObligacion) ?? this._responsableId;
   }
 
   deactivate(): void {

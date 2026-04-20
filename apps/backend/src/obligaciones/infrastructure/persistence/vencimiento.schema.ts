@@ -3,6 +3,7 @@ import { ClienteEntity } from '../../../clientes/infrastructure/persistence/clie
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
 import { TipoObligacionEntity } from '../../../shared/infrastructure/persistence/tipo-obligacion.schema';
 import { EstadoVencimientoEntity } from '../../../shared/infrastructure/persistence/estado-vencimiento.schema';
+import { UsuarioEntity } from '../../../iam/infrastructure/persistence/usuario.schema';
 
 export class VencimientoEntity {
   id!: string;
@@ -16,6 +17,7 @@ export class VencimientoEntity {
   estado!: EstadoVencimientoEntity;
   motivo!: string | null;
   fechaProrrogada!: Date | null;
+  responsable?: UsuarioEntity;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -35,6 +37,7 @@ export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
     estado: { kind: 'm:1', entity: () => EstadoVencimientoEntity, fieldName: 'estado_id' },
     motivo: { type: 'string', nullable: true },
     fechaProrrogada: { type: 'Date', fieldName: 'fecha_prorrogada', nullable: true },
+    responsable: { kind: 'm:1', entity: () => UsuarioEntity, fieldName: 'responsable_id', nullable: true },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },
