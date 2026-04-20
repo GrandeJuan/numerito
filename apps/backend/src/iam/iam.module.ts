@@ -57,11 +57,13 @@ import {
   USUARIO_ADMIN_KPIS_VIEW,
   USUARIO_MEMBERSHIP_VIEW,
   ESTUDIO_EQUIPO_VIEW,
+  USUARIO_COUNT_POR_ESTUDIO_VIEW,
 } from './application/public-views';
 import { UsuariosAdminListView } from './application/views/usuarios-admin-list.view';
 import { UsuarioAdminKpisView } from './application/views/usuario-admin-kpis.view';
 import { UsuarioMembershipView } from './application/views/usuario-membership.view';
 import { EstudioEquipoView } from './application/views/estudio-equipo.view';
+import { UsuarioCountPorEstudioView } from './application/views/usuario-count-por-estudio.view';
 
 @Module({
   imports: [JwtModule.register({}), ConfigModule, PassportModule],
@@ -170,6 +172,11 @@ import { EstudioEquipoView } from './application/views/estudio-equipo.view';
       useFactory: (em: EntityManager) => new EstudioEquipoView(em),
       inject: [EntityManager],
     },
+    {
+      provide: USUARIO_COUNT_POR_ESTUDIO_VIEW,
+      useFactory: (em: EntityManager) => new UsuarioCountPorEstudioView(em),
+      inject: [EntityManager],
+    },
   ],
   exports: [
     TOKEN_SERVICE,
@@ -188,6 +195,7 @@ import { EstudioEquipoView } from './application/views/estudio-equipo.view';
     USUARIO_ADMIN_KPIS_VIEW,
     USUARIO_MEMBERSHIP_VIEW,
     ESTUDIO_EQUIPO_VIEW,
+    USUARIO_COUNT_POR_ESTUDIO_VIEW,
   ],
 })
 export class IamModule {}

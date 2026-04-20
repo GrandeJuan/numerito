@@ -9,9 +9,10 @@ import { AsignarResponsableHandler } from './application/commands/asignar-respon
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
-import { CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW } from './application/public-views';
+import { CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW, CLIENTE_COUNT_POR_ESTUDIO_VIEW } from './application/public-views';
 import { ClienteSummaryView } from './application/views/cliente-summary.view';
 import { ClientePorUsuarioPortalView } from './application/views/cliente-por-usuario-portal.view';
+import { ClienteCountPorEstudioView } from './application/views/cliente-count-por-estudio.view';
 
 @Module({
   imports: [],
@@ -58,7 +59,12 @@ import { ClientePorUsuarioPortalView } from './application/views/cliente-por-usu
       useFactory: (em: EntityManager) => new ClientePorUsuarioPortalView(em),
       inject: [EntityManager],
     },
+    {
+      provide: CLIENTE_COUNT_POR_ESTUDIO_VIEW,
+      useFactory: (em: EntityManager) => new ClienteCountPorEstudioView(em),
+      inject: [EntityManager],
+    },
   ],
-  exports: [CLIENTE_REPOSITORY, CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW],
+  exports: [CLIENTE_REPOSITORY, CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW, CLIENTE_COUNT_POR_ESTUDIO_VIEW],
 })
 export class ClientesModule {}

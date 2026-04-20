@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { EstudioController } from './infrastructure/controllers/estudio.controller';
 import { IamModule } from '../iam/iam.module';
+import { ClientesModule } from '../clientes/clientes.module';
 import { ESTUDIO_REPOSITORY } from './domain/repositories/estudio.repository';
 import { MikroOrmEstudioRepository } from './infrastructure/persistence/mikro-orm-estudio.repository';
 import { SUBSCRIPCION_REPOSITORY } from './domain/repositories/subscripcion.repository';
@@ -37,7 +38,7 @@ import { EstudioTopTenantsView } from './application/views/estudio-top-tenants.v
 import { EstudioRegistrosRecientesView } from './application/views/estudio-registros-recientes.view';
 
 @Module({
-  imports: [forwardRef(() => IamModule)],
+  imports: [forwardRef(() => IamModule), ClientesModule],
   controllers: [EstudioController],
   providers: [
     { provide: ESTUDIO_REPOSITORY, useClass: MikroOrmEstudioRepository },

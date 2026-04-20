@@ -41,6 +41,8 @@ describe('EstudioController', () => {
   let mockEstudioRepo: any;
   let mockSubscripcionRepo: any;
   let mockEquipoView: any;
+  let mockUsuarioCountView: any;
+  let mockClienteCountView: any;
   let mockRenovarHandler: any;
   let mockCancelarHandler: any;
   let mockMarcarVencidaHandler: any;
@@ -61,6 +63,8 @@ describe('EstudioController', () => {
       delete: jest.fn(),
     };
     mockEquipoView = { execute: jest.fn().mockResolvedValue([]) };
+    mockUsuarioCountView = { execute: jest.fn().mockResolvedValue({ count: 0 }) };
+    mockClienteCountView = { execute: jest.fn().mockResolvedValue({ count: 0 }) };
     mockRenovarHandler = { execute: jest.fn() };
     mockCancelarHandler = { execute: jest.fn() };
     mockMarcarVencidaHandler = { execute: jest.fn() };
@@ -70,6 +74,8 @@ describe('EstudioController', () => {
       mockEstudioRepo,
       mockSubscripcionRepo,
       mockEquipoView,
+      mockUsuarioCountView,
+      mockClienteCountView,
       mockRenovarHandler,
       mockCancelarHandler,
       mockMarcarVencidaHandler,
@@ -125,6 +131,48 @@ describe('EstudioController', () => {
 
       await controller.getPlan(principal);
       expect(mockSubscripcionRepo.findActiva).toHaveBeenCalledWith(principal);
+    });
+
+    it('should return real counts from count views', async () => {
+      const estudio = makeEstudio('est-1');
+      mockEstudioRepo.findById.mockResolvedValue(estudio);
+      mockSubscripcionRepo.findActiva.mockResolvedValue(makeSubscripcion('est-1'));
+      mockClienteCountView.execute.mockResolvedValue({ count: 12 });
+      mockUsuarioCountView.execute.mockResolvedValue({ count: 3 });
+
+      const result = await controller.getPlan(principal);
+
+      expect(result.clientesActuales).toBe(12);
+      expect(result.usuariosActuales).toBe(3);
+      expect(result.clientesMax).toBe(50);
+      expect(result.usuariosMax).toBe(5);
+      expect(result.estado).toBe('ACTIVA');
+    });
+
+    it('should call count views with estudioId from principal', async () => {
+      const estudio = makeEstudio('est-1');
+      mockEstudioRepo.findById.mockResolvedValue(estudio);
+
+      await controller.getPlan(principal);
+
+      expect(mockClienteCountView.execute).toHaveBeenCalledWith({ estudioId: 'est-1' });
+      expect(mockUsuarioCountView.execute).toHaveBeenCalledWith({ estudioId: 'est-1' });
+    });
+
+    it('should return SIN_SUBSCRIPCION when no active subscription', async () => {
+      const estudio = makeEstudio('est-1');
+      mockEstudioRepo.findById.mockResolvedValue(estudio);
+      mockSubscripcionRepo.findActiva.mockRejectedValue(new Error('not found'));
+
+      const result = await controller.getPlan(principal);
+
+      expect(result.estado).toBe('SIN_SUBSCRIPCION');
+    });
+
+    it('should throw when estudio not found', async () => {
+      mockEstudioRepo.findById.mockResolvedValue(null);
+
+      await expect(controller.getPlan(principal)).rejects.toThrow('Estudio no encontrado');
     });
   });
 

@@ -2,8 +2,10 @@ import { Controller, Get, Put, Post, Param, Body, Inject } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ESTUDIO_REPOSITORY } from '../../domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../domain/repositories/estudio.repository';
-import { ESTUDIO_EQUIPO_VIEW } from '../../../iam/application/public-views';
-import type { EstudioEquipoViewInput, EquipoMiembroDto } from '../../../iam/application/public-views';
+import { ESTUDIO_EQUIPO_VIEW, USUARIO_COUNT_POR_ESTUDIO_VIEW } from '../../../iam/application/public-views';
+import type { EstudioEquipoViewInput, EquipoMiembroDto, UsuarioCountPorEstudioViewInput, UsuarioCountPorEstudioDto } from '../../../iam/application/public-views';
+import { CLIENTE_COUNT_POR_ESTUDIO_VIEW } from '../../../clientes/application/public-views';
+import type { ClienteCountPorEstudioViewInput, ClienteCountPorEstudioDto } from '../../../clientes/application/public-views';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import {
   ActualizarEstudioDto,
@@ -32,6 +34,8 @@ export class EstudioController {
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     @Inject(SUBSCRIPCION_REPOSITORY) private readonly subscripcionRepo: SubscripcionRepository,
     @Inject(ESTUDIO_EQUIPO_VIEW) private readonly equipoView: { execute(input: EstudioEquipoViewInput): Promise<EquipoMiembroDto[]> },
+    @Inject(USUARIO_COUNT_POR_ESTUDIO_VIEW) private readonly usuarioCountView: { execute(input: UsuarioCountPorEstudioViewInput): Promise<UsuarioCountPorEstudioDto> },
+    @Inject(CLIENTE_COUNT_POR_ESTUDIO_VIEW) private readonly clienteCountView: { execute(input: ClienteCountPorEstudioViewInput): Promise<ClienteCountPorEstudioDto> },
     private readonly renovarHandler: RenovarSubscripcionHandler,
     private readonly cancelarHandler: CancelarSubscripcionHandler,
     private readonly marcarVencidaHandler: MarcarSubscripcionVencidaHandler,
@@ -61,13 +65,20 @@ export class EstudioController {
   async getPlan(@Principal() principal: EstudioPrincipal) {
     const estudio = await this.estudioRepo.findById(principal.estudioId);
     if (!estudio) throw new RecursoNoEncontradoError('Estudio');
-    const subscripcion = await this.subscripcionRepo.findActiva(principal).catch(() => null);
+
+    const [subscripcion, { count: clientesActuales }, { count: usuariosActuales }] =
+      await Promise.all([
+        this.subscripcionRepo.findActiva(principal).catch(() => null),
+        this.clienteCountView.execute({ estudioId: principal.estudioId }),
+        this.usuarioCountView.execute({ estudioId: principal.estudioId }),
+      ]);
+
     return {
       nombre: estudio.plan.value,
       estado: subscripcion ? 'ACTIVA' : 'SIN_SUBSCRIPCION',
-      clientesActuales: 0,
+      clientesActuales,
       clientesMax: estudio.plan.maxClientes,
-      usuariosActuales: 0,
+      usuariosActuales,
       usuariosMax: estudio.plan.maxUsuarios,
     };
   }
