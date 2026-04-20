@@ -47,6 +47,10 @@ export function ClienteDetallePage() {
 
   const vencimientos = vencimientosRaw ?? [];
 
+  const [diasAnticipacion, setDiasAnticipacion] = useState<string>('');
+  const [editingDias, setEditingDias] = useState(false);
+  const [savingDias, setSavingDias] = useState(false);
+
   const [proyectando, setProyectando] = useState(false);
   const [proyeccionResult, setProyeccionResult] = useState<{
     proyectados: number;
@@ -54,6 +58,27 @@ export function ClienteDetallePage() {
     errores: string[];
   } | null>(null);
   const [proyeccionError, setProyeccionError] = useState<string | null>(null);
+
+  const handleSaveDias = useCallback(async () => {
+    setSavingDias(true);
+    try {
+      const value = diasAnticipacion.trim() === '' ? null : Number(diasAnticipacion);
+      const res = await apiFetch(`/v1/clientes/${id}/dias-anticipacion`, {
+        method: 'PATCH',
+        body: JSON.stringify({ diasAnticipacion: value }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `Error ${res.status}`);
+      }
+      setEditingDias(false);
+      refetchCliente();
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setSavingDias(false);
+    }
+  }, [id, diasAnticipacion, refetchCliente]);
 
   const handleProyectar = useCallback(async () => {
     setProyectando(true);
@@ -134,6 +159,54 @@ export function ClienteDetallePage() {
               <dd className="text-[var(--text)]">{cliente.tipo}</dd>
               <dt className="text-[var(--text-3)]">Responsable</dt>
               <dd className="text-[var(--text)]">{cliente.responsable ?? '—'}</dd>
+              <dt className="text-[var(--text-3)]">D&iacute;as anticipaci&oacute;n</dt>
+              <dd className="text-[var(--text)]">
+                {editingDias ? (
+                  <span className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-16 px-1.5 py-0.5 rounded border border-[var(--border)] text-sm"
+                      value={diasAnticipacion}
+                      onChange={(e) => setDiasAnticipacion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveDias();
+                        if (e.key === 'Escape') setEditingDias(false);
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      className="text-xs text-[var(--brand)] hover:underline"
+                      disabled={savingDias}
+                      onClick={handleSaveDias}
+                    >
+                      {savingDias ? '...' : 'OK'}
+                    </button>
+                    <button
+                      className="text-xs text-[var(--text-3)] hover:underline"
+                      onClick={() => setEditingDias(false)}
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ) : (
+                  <span
+                    className="cursor-pointer hover:underline"
+                    onClick={() => {
+                      setDiasAnticipacion(
+                        (cliente as any).diasAnticipacion != null
+                          ? String((cliente as any).diasAnticipacion)
+                          : '',
+                      );
+                      setEditingDias(true);
+                    }}
+                  >
+                    {(cliente as any).diasAnticipacion != null
+                      ? `${(cliente as any).diasAnticipacion} días`
+                      : 'Usar default del estudio'}
+                  </span>
+                )}
+              </dd>
             </dl>
           </Card>
           <Card title="Perfil fiscal">

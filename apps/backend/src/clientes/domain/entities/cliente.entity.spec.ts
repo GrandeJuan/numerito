@@ -283,6 +283,37 @@ describe('Cliente Entity (Aggregate Root)', () => {
     });
   });
 
+  describe('diasAnticipacion', () => {
+    it('should default to null', () => {
+      const cliente = createCliente();
+      expect(cliente.diasAnticipacion).toBeNull();
+    });
+
+    it('should configure dias de anticipacion', () => {
+      const cliente = createCliente();
+      cliente.configurarDiasAnticipacion(5);
+      expect(cliente.diasAnticipacion).toBe(5);
+    });
+
+    it('should allow resetting to null (use estudio default)', () => {
+      const cliente = createCliente();
+      cliente.configurarDiasAnticipacion(5);
+      cliente.configurarDiasAnticipacion(null);
+      expect(cliente.diasAnticipacion).toBeNull();
+    });
+
+    it('should reject non-positive dias', () => {
+      const cliente = createCliente();
+      expect(() => cliente.configurarDiasAnticipacion(0)).toThrow();
+      expect(() => cliente.configurarDiasAnticipacion(-1)).toThrow();
+    });
+
+    it('should reject non-integer dias', () => {
+      const cliente = createCliente();
+      expect(() => cliente.configurarDiasAnticipacion(2.5)).toThrow();
+    });
+  });
+
   describe('reconstitute', () => {
     it('should preserve all fields including persisted state', () => {
       const cliente = Cliente.reconstitute({

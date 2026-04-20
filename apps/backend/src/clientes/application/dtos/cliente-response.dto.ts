@@ -22,6 +22,7 @@ export interface ClienteResponseDto {
   provincias?: string[];
   inscripciones: InscripcionJurisdiccionResponseDto[];
   overridesResponsable: Record<string, string>;
+  diasAnticipacion: number | null;
 }
 
 export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
@@ -45,5 +46,6 @@ export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
       desde: i.desde,
     })),
     overridesResponsable: c.overridesResponsable,
+    diasAnticipacion: c.diasAnticipacion,
   };
 }

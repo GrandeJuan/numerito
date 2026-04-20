@@ -23,6 +23,7 @@ describe('ClienteMapper', () => {
     isActive: true,
     inscripciones: [],
     overridesResponsable: {},
+    diasAnticipacion: null,
   };
 
   describe('toDomain', () => {

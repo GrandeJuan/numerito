@@ -50,6 +50,7 @@ import { ReglaVencimientoSchema } from './obligaciones/infrastructure/persistenc
 import { AlertaConfigSchema } from './obligaciones/infrastructure/persistence/alerta-config.schema';
 import { CatalogoObligacionSchema } from './obligaciones/infrastructure/persistence/catalogo-obligacion.schema';
 import { DiaFeriadoSchema } from './obligaciones/infrastructure/persistence/dia-feriado.schema';
+import { RecordatorioEnviadoSchema } from './obligaciones/infrastructure/persistence/recordatorio-enviado.schema';
 
 // Contabilidad
 import { LibroContableSchema } from './contabilidad/infrastructure/persistence/libro-contable.schema';
@@ -127,6 +128,7 @@ export default defineConfig({
     AlertaConfigSchema,
     CatalogoObligacionSchema,
     DiaFeriadoSchema,
+    RecordatorioEnviadoSchema,
     // Contabilidad
     LibroContableSchema,
     AsientoContableSchema,

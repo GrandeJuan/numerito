@@ -27,6 +27,8 @@ describe('NotificacionVencimientoService', () => {
 
     alertaConfigRepo = {
       findConfig: jest.fn(),
+      findByEstudioId: jest.fn(),
+      findAllActivas: jest.fn(),
       save: jest.fn(),
     };
 

@@ -9,6 +9,7 @@ import { ActivarClienteHandler } from '../../application/commands/activar-client
 import { AsignarResponsableHandler } from '../../application/commands/asignar-responsable.command';
 import { ActualizarPerfilFiscalHandler } from '../../application/commands/actualizar-perfil-fiscal.command';
 import { AsignarResponsablePorObligacionHandler } from '../../application/commands/asignar-responsable-por-obligacion.command';
+import { ConfigurarDiasAnticipacionHandler } from '../../application/commands/configurar-dias-anticipacion.command';
 import { JURISDICCION } from '@numerito/shared';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import type { EventBus } from '../../../shared/domain/event-bus';
@@ -40,6 +41,7 @@ describe('ClientesController', () => {
   let asignarResponsableHandler: AsignarResponsableHandler;
   let actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler;
   let asignarResponsablePorObligacionHandler: AsignarResponsablePorObligacionHandler;
+  let configurarDiasAnticipacionHandler: ConfigurarDiasAnticipacionHandler;
   let mockEventBus: EventBus;
 
   beforeEach(() => {
@@ -59,6 +61,7 @@ describe('ClientesController', () => {
     mockEventBus = { publish: jest.fn(), publishAll: jest.fn() };
     actualizarPerfilFiscalHandler = new ActualizarPerfilFiscalHandler(mockClienteRepo, mockEventBus);
     asignarResponsablePorObligacionHandler = new AsignarResponsablePorObligacionHandler(mockClienteRepo);
+    configurarDiasAnticipacionHandler = new ConfigurarDiasAnticipacionHandler(mockClienteRepo);
     controller = new ClientesController(
       mockClienteRepo,
       crearClienteHandler,
@@ -68,6 +71,7 @@ describe('ClientesController', () => {
       asignarResponsableHandler,
       actualizarPerfilFiscalHandler,
       asignarResponsablePorObligacionHandler,
+      configurarDiasAnticipacionHandler,
     );
   });
 
@@ -253,6 +257,41 @@ describe('ClientesController', () => {
           tipoObligacion: 'IVA',
           responsableId: 'user-200',
         }),
+      ).rejects.toThrow('Cliente no encontrado');
+    });
+  });
+
+  describe('configurarDiasAnticipacion', () => {
+    it('should set custom diasAnticipacion on client', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      const result = await controller.configurarDiasAnticipacion(principal, cliente.id, {
+        diasAnticipacion: 5,
+      });
+
+      expect(result.data.ok).toBe(true);
+      expect(result.data.diasAnticipacion).toBe(5);
+      expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reset to null (use estudio default)', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      const result = await controller.configurarDiasAnticipacion(principal, cliente.id, {
+        diasAnticipacion: null,
+      });
+
+      expect(result.data.ok).toBe(true);
+      expect(result.data.diasAnticipacion).toBeNull();
+    });
+
+    it('should throw when cliente not found', async () => {
+      mockClienteRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        controller.configurarDiasAnticipacion(principal, 'bad-id', { diasAnticipacion: 3 }),
       ).rejects.toThrow('Cliente no encontrado');
     });
   });

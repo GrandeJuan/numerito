@@ -111,6 +111,8 @@ export class MikroOrmClienteRepository
       existing.responsable = responsable;
       existing.isActive = data.isActive;
       existing.inscripciones = (data.inscripciones ?? []) as Record<string, unknown>[];
+      existing.overridesResponsable = data.overridesResponsable ?? {};
+      existing.diasAnticipacion = data.diasAnticipacion ?? null;
     } else {
       this.em.create(ClienteEntity, {
         id: data.id,
@@ -123,6 +125,8 @@ export class MikroOrmClienteRepository
         responsable,
         isActive: data.isActive,
         inscripciones: (data.inscripciones ?? []) as Record<string, unknown>[],
+        overridesResponsable: data.overridesResponsable ?? {},
+        diasAnticipacion: data.diasAnticipacion ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

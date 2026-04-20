@@ -8,6 +8,7 @@ import { ActivarClienteHandler } from './application/commands/activar-cliente.co
 import { AsignarResponsableHandler } from './application/commands/asignar-responsable.command';
 import { ActualizarPerfilFiscalHandler } from './application/commands/actualizar-perfil-fiscal.command';
 import { AsignarResponsablePorObligacionHandler } from './application/commands/asignar-responsable-por-obligacion.command';
+import { ConfigurarDiasAnticipacionHandler } from './application/commands/configurar-dias-anticipacion.command';
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
 import { EVENT_BUS } from '../shared/domain/event-bus';
@@ -57,6 +58,12 @@ import { ClienteCountPorEstudioView } from './application/views/cliente-count-po
       provide: AsignarResponsablePorObligacionHandler,
       useFactory: (repo: ClienteRepository) =>
         new AsignarResponsablePorObligacionHandler(repo),
+      inject: [CLIENTE_REPOSITORY],
+    },
+    {
+      provide: ConfigurarDiasAnticipacionHandler,
+      useFactory: (repo: ClienteRepository) =>
+        new ConfigurarDiasAnticipacionHandler(repo),
       inject: [CLIENTE_REPOSITORY],
     },
     {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
 import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
+import { RecordatoriosController } from './infrastructure/controllers/recordatorios.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
@@ -19,6 +20,20 @@ import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikr
 import { MikroOrmCatalogoObligacionRepository } from './infrastructure/persistence/mikro-orm-catalogo-obligacion.repository';
 import { MikroOrmReglaVencimientoRepository } from './infrastructure/persistence/mikro-orm-regla-vencimiento.repository';
 import { MikroOrmFeriadoRepository } from './infrastructure/persistence/mikro-orm-feriado.repository';
+import { MikroOrmRecordatorioEnviadoRepository } from './infrastructure/persistence/mikro-orm-recordatorio-enviado.repository';
+import { MikroOrmAlertaConfigRepository } from './infrastructure/persistence/mikro-orm-alerta-config.repository';
+import { RECORDATORIO_ENVIADO_REPOSITORY } from './domain/repositories/recordatorio-enviado.repository';
+import type { RecordatorioEnviadoRepository } from './domain/repositories/recordatorio-enviado.repository';
+import { ALERTA_CONFIG_REPOSITORY } from './domain/repositories/alerta-config.repository';
+import type { AlertaConfigRepository } from './domain/repositories/alerta-config.repository';
+import { ProcesarRecordatoriosDiariosHandler } from './application/commands/procesar-recordatorios-diarios.command';
+import { ProcesarAlertasEnRiesgoHandler } from './application/commands/procesar-alertas-en-riesgo.command';
+import { NOTIFICACION_REPOSITORY } from '../notificaciones/domain/repositories/notificacion.repository';
+import type { NotificacionRepository } from '../notificaciones/domain/repositories/notificacion.repository';
+import { MAIL_SENDER } from '../shared/domain/ports/mail-sender.port';
+import type { MailSenderPort } from '../shared/domain/ports/mail-sender.port';
+import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mail-sender';
+import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
 import { AjusteDiaHabilService } from './domain/services/ajuste-dia-habil.service';
 import { FERIADO_REPOSITORY } from './domain/repositories/feriado.repository';
@@ -58,14 +73,17 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [ClientesModule],
-  controllers: [ObligacionesController, CatalogoAdminController],
+  imports: [ClientesModule, NotificacionesModule],
+  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
     { provide: CATALOGO_OBLIGACION_REPOSITORY, useClass: MikroOrmCatalogoObligacionRepository },
     { provide: REGLA_VENCIMIENTO_ENTITY_REPOSITORY, useClass: MikroOrmReglaVencimientoRepository },
     { provide: FERIADO_REPOSITORY, useClass: MikroOrmFeriadoRepository },
+    { provide: RECORDATORIO_ENVIADO_REPOSITORY, useClass: MikroOrmRecordatorioEnviadoRepository },
+    { provide: ALERTA_CONFIG_REPOSITORY, useClass: MikroOrmAlertaConfigRepository },
+    { provide: MAIL_SENDER, useClass: ConsoleMailSender },
 
     // ── Domain services ──
     {
@@ -147,6 +165,56 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         ReglaVencimientoService,
         AjusteDiaHabilService,
         EVENT_BUS,
+      ],
+    },
+
+    // ── Recordatorios ──
+    {
+      provide: ProcesarRecordatoriosDiariosHandler,
+      useFactory: (
+        alertaConfigRepo: AlertaConfigRepository,
+        vencimientoRepo: VencimientoRepository,
+        clienteRepo: ClienteRepository,
+        recordatorioRepo: RecordatorioEnviadoRepository,
+        notificacionRepo: NotificacionRepository,
+        mailSender: MailSenderPort,
+      ) =>
+        new ProcesarRecordatoriosDiariosHandler(
+          alertaConfigRepo,
+          vencimientoRepo,
+          clienteRepo,
+          recordatorioRepo,
+          notificacionRepo,
+          mailSender,
+        ),
+      inject: [
+        ALERTA_CONFIG_REPOSITORY,
+        VENCIMIENTO_REPOSITORY,
+        CLIENTE_REPOSITORY,
+        RECORDATORIO_ENVIADO_REPOSITORY,
+        NOTIFICACION_REPOSITORY,
+        MAIL_SENDER,
+      ],
+    },
+    {
+      provide: ProcesarAlertasEnRiesgoHandler,
+      useFactory: (
+        alertaConfigRepo: AlertaConfigRepository,
+        vencimientoRepo: VencimientoRepository,
+        recordatorioRepo: RecordatorioEnviadoRepository,
+        notificacionRepo: NotificacionRepository,
+      ) =>
+        new ProcesarAlertasEnRiesgoHandler(
+          alertaConfigRepo,
+          vencimientoRepo,
+          recordatorioRepo,
+          notificacionRepo,
+        ),
+      inject: [
+        ALERTA_CONFIG_REPOSITORY,
+        VENCIMIENTO_REPOSITORY,
+        RECORDATORIO_ENVIADO_REPOSITORY,
+        NOTIFICACION_REPOSITORY,
       ],
     },
 

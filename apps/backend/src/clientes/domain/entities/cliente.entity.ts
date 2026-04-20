@@ -47,6 +47,7 @@ const clienteReconstitutePropsSchema = z.object({
   provincias: z.array(z.enum(provinciaValues)).optional(),
   inscripciones: z.array(inscripcionJurisdiccionPropsSchema).optional(),
   overridesResponsable: overrideResponsableSchema.optional(),
+  diasAnticipacion: z.number().int().min(1).nullable().optional(),
 });
 
 export type ReconstituteClienteProps = z.input<typeof clienteReconstitutePropsSchema>;
@@ -63,6 +64,7 @@ export class Cliente extends BaseEntity {
   private _provincias!: Provincia[];
   private _inscripciones!: InscripcionJurisdiccion[];
   private _overridesResponsable!: Map<string, string>;
+  private _diasAnticipacion!: number | null;
 
   private constructor(props: CreateClienteProps, id?: string) {
     super(id);
@@ -76,6 +78,7 @@ export class Cliente extends BaseEntity {
     this._provincias = props.provincias ?? [];
     this._inscripciones = [];
     this._overridesResponsable = new Map();
+    this._diasAnticipacion = null;
   }
 
   static create(props: CreateClienteProps, id?: string): Cliente {
@@ -103,6 +106,7 @@ export class Cliente extends BaseEntity {
     instance._overridesResponsable = new Map(
       Object.entries(data.overridesResponsable ?? {}),
     );
+    instance._diasAnticipacion = data.diasAnticipacion ?? null;
     return instance;
   }
 
@@ -117,6 +121,7 @@ export class Cliente extends BaseEntity {
   get provincias(): Provincia[] { return [...this._provincias]; }
   get inscripciones(): InscripcionJurisdiccion[] { return [...this._inscripciones]; }
   get overridesResponsable(): Record<string, string> { return Object.fromEntries(this._overridesResponsable); }
+  get diasAnticipacion(): number | null { return this._diasAnticipacion; }
 
   changeCondicionIva(condicion: CondicionIVA): void {
     this._condicionIva = condicion;
@@ -179,6 +184,14 @@ export class Cliente extends BaseEntity {
 
   resolverResponsable(tipoObligacion: string): string | undefined {
     return this._overridesResponsable.get(tipoObligacion) ?? this._responsableId;
+  }
+
+  configurarDiasAnticipacion(dias: number | null): void {
+    if (dias !== null && (dias < 1 || !Number.isInteger(dias))) {
+      throw new OperacionInvalidaError('Los días de anticipación deben ser un entero >= 1');
+    }
+    this._diasAnticipacion = dias;
+    this.updatedAt = new Date();
   }
 
   deactivate(): void {

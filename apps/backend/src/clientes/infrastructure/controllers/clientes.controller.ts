@@ -41,6 +41,14 @@ import {
   type AsignarResponsablePorObligacionDto,
   asignarResponsablePorObligacionDtoSchema,
 } from '../../application/dtos/asignar-responsable-por-obligacion.dto';
+import {
+  ConfigurarDiasAnticipacionHandler,
+  type ConfigurarDiasAnticipacionCommand,
+} from '../../application/commands/configurar-dias-anticipacion.command';
+import {
+  type ConfigurarDiasAnticipacionDto,
+  configurarDiasAnticipacionDtoSchema,
+} from '../../application/dtos/configurar-dias-anticipacion.dto';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Inject } from '@nestjs/common';
@@ -61,6 +69,7 @@ export class ClientesController {
     private readonly asignarResponsableHandler: AsignarResponsableHandler,
     private readonly actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler,
     private readonly asignarResponsablePorObligacionHandler: AsignarResponsablePorObligacionHandler,
+    private readonly configurarDiasAnticipacionHandler: ConfigurarDiasAnticipacionHandler,
   ) {}
 
   @Get()
@@ -173,5 +182,20 @@ export class ClientesController {
       responsableId: dto.responsableId,
     } as AsignarResponsablePorObligacionCommand);
     return successResponse({ ok: true });
+  }
+
+  @Patch(':id/dias-anticipacion')
+  @ApiOperation({ summary: 'Configurar días de anticipación de recordatorios para el cliente' })
+  async configurarDiasAnticipacion(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(configurarDiasAnticipacionDtoSchema))
+    dto: ConfigurarDiasAnticipacionDto,
+  ) {
+    const result = await this.configurarDiasAnticipacionHandler.execute(principal, {
+      clienteId: id,
+      diasAnticipacion: dto.diasAnticipacion,
+    } as ConfigurarDiasAnticipacionCommand);
+    return successResponse(result);
   }
 }
