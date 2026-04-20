@@ -44,6 +44,7 @@ import type { NotificacionRepository } from '../notificaciones/domain/repositori
 import { MAIL_SENDER } from '../shared/domain/ports/mail-sender.port';
 import type { MailSenderPort } from '../shared/domain/ports/mail-sender.port';
 import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mail-sender';
+import { SesMailSender } from '../shared/infrastructure/adapters/ses-mail-sender';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
 import { AjusteDiaHabilService } from './domain/services/ajuste-dia-habil.service';
@@ -109,7 +110,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     { provide: RECORDATORIO_ENVIADO_REPOSITORY, useClass: MikroOrmRecordatorioEnviadoRepository },
     { provide: ALERTA_CONFIG_REPOSITORY, useClass: MikroOrmAlertaConfigRepository },
     { provide: SUGERENCIA_PRORROGA_REPOSITORY, useClass: MikroOrmSugerenciaProrrogaRepository },
-    { provide: MAIL_SENDER, useClass: ConsoleMailSender },
+    { provide: MAIL_SENDER, useClass: process.env.AWS_SES_FROM_EMAIL ? SesMailSender : ConsoleMailSender },
 
     // ── Domain services ──
     {
