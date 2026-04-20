@@ -1,9 +1,11 @@
 import { ProcesarResultadoScrapingHandler } from './procesar-resultado-scraping.command';
 import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../../obligaciones/domain/entities/regla-vencimiento.entity';
+import { DiaFeriado } from '../../../obligaciones/domain/entities/dia-feriado.entity';
 import { EjecucionIngesta, DISPARADOR_INGESTA } from '../../domain/entities/ejecucion-ingesta.entity';
 import type { ReglaVencimientoEntityRepository } from '../../../obligaciones/domain/repositories/regla-vencimiento.repository';
 import type { EjecucionIngestaRepository } from '../../domain/repositories/ejecucion-ingesta.repository';
 import type { ConfiguracionIngestaRepository } from '../../domain/repositories/configuracion-ingesta.repository';
+import type { FeriadoRepository } from '../../../obligaciones/domain/repositories/feriado.repository';
 import type { ResultadoScrapingDto } from '../dtos/resultado-scraping.dto';
 
 function createMockReglaRepo(activas: ReglaVencimiento[] = []): jest.Mocked<ReglaVencimientoEntityRepository> {
@@ -33,6 +35,22 @@ function createMockConfigRepo(): jest.Mocked<ConfiguracionIngestaRepository> {
     findById: jest.fn(),
     findByFuente: jest.fn().mockResolvedValue(null),
     findAll: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+  };
+}
+
+function createMockFeriadoRepo(existingFeriados: DiaFeriado[] = []): jest.Mocked<FeriadoRepository> {
+  return {
+    findById: jest.fn(),
+    findAll: jest.fn(),
+    findByFecha: jest.fn().mockImplementation((fecha: Date) => {
+      const dateKey = fecha.toISOString().slice(0, 10);
+      return Promise.resolve(
+        existingFeriados.filter((f) => f.fecha.toISOString().slice(0, 10) === dateKey),
+      );
+    }),
+    findByRango: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
@@ -404,5 +422,112 @@ describe('ProcesarResultadoScrapingHandler', () => {
     expect(result.duplicado).toBeUndefined();
     expect(ejecucionRepo.findByIngestaId).not.toHaveBeenCalled();
     expect(ejecucionRepo.save).toHaveBeenCalledTimes(1);
+  });
+
+  describe('feriado processing (BCRA_FERIADOS)', () => {
+    it('should save new feriados from BCRA scraping result', async () => {
+      const feriadoRepo = createMockFeriadoRepo([]);
+      const handler = new ProcesarResultadoScrapingHandler(
+        createMockReglaRepo([]),
+        createMockEjecucionRepo(),
+        createMockConfigRepo(),
+        feriadoRepo,
+      );
+
+      const result = await handler.execute({
+        resultado: {
+          fuente: 'BCRA_FERIADOS',
+          ejecutadoEn: '2026-04-20T10:00:00Z',
+          reglas: [],
+          feriados: [
+            {
+              fecha: '2026-01-01',
+              tipo: 'NACIONAL',
+              descripcion: 'Año Nuevo',
+            },
+            {
+              fecha: '2026-04-02',
+              tipo: 'BANCARIO',
+              descripcion: 'Jueves Santo',
+            },
+          ],
+          errores: [],
+        },
+      });
+
+      expect(result.feriadosNuevos).toBe(2);
+      expect(result.feriadosExistentes).toBe(0);
+      expect(result.diffFeriados).toHaveLength(2);
+      expect(result.diffFeriados[0].tipo).toBe('NUEVO');
+      expect(feriadoRepo.save).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip existing feriados (same fecha + tipo)', async () => {
+      const existingFeriado = DiaFeriado.create({
+        fecha: new Date('2026-01-01'),
+        tipo: 'NACIONAL' as any,
+        descripcion: 'Año Nuevo',
+      });
+      const feriadoRepo = createMockFeriadoRepo([existingFeriado]);
+      const handler = new ProcesarResultadoScrapingHandler(
+        createMockReglaRepo([]),
+        createMockEjecucionRepo(),
+        createMockConfigRepo(),
+        feriadoRepo,
+      );
+
+      const result = await handler.execute({
+        resultado: {
+          fuente: 'BCRA_FERIADOS',
+          ejecutadoEn: '2026-04-20T10:00:00Z',
+          reglas: [],
+          feriados: [
+            {
+              fecha: '2026-01-01',
+              tipo: 'NACIONAL',
+              descripcion: 'Año Nuevo',
+            },
+            {
+              fecha: '2026-04-02',
+              tipo: 'BANCARIO',
+              descripcion: 'Jueves Santo',
+            },
+          ],
+          errores: [],
+        },
+      });
+
+      expect(result.feriadosNuevos).toBe(1); // Only Jueves Santo
+      expect(result.feriadosExistentes).toBe(1); // Año Nuevo already exists
+      expect(feriadoRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should skip feriado processing when feriadoRepo is null', async () => {
+      const handler = new ProcesarResultadoScrapingHandler(
+        createMockReglaRepo([]),
+        createMockEjecucionRepo(),
+        createMockConfigRepo(),
+        null,
+      );
+
+      const result = await handler.execute({
+        resultado: {
+          fuente: 'BCRA_FERIADOS',
+          ejecutadoEn: '2026-04-20T10:00:00Z',
+          reglas: [],
+          feriados: [
+            {
+              fecha: '2026-01-01',
+              tipo: 'NACIONAL',
+              descripcion: 'Año Nuevo',
+            },
+          ],
+          errores: [],
+        },
+      });
+
+      expect(result.feriadosNuevos).toBe(0);
+      expect(result.feriadosExistentes).toBe(0);
+    });
   });
 });

@@ -24,6 +24,8 @@ import {
 import type {
   ReglaVencimientoEntityRepository,
 } from '../obligaciones/domain/repositories/regla-vencimiento.repository';
+import { FERIADO_REPOSITORY } from '../obligaciones/domain/repositories/feriado.repository';
+import type { FeriadoRepository } from '../obligaciones/domain/repositories/feriado.repository';
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { CALENDARIO_SCRAPER } from './domain/ports/calendario-scraper.port';
 import type { CalendarioScraperPort } from './domain/ports/calendario-scraper.port';
@@ -69,11 +71,13 @@ import { AdminOrIngestaGuard } from './infrastructure/guards/admin-or-ingesta.gu
         reglaRepo: ReglaVencimientoEntityRepository,
         ejecucionRepo: EjecucionIngestaRepository,
         configRepo: ConfiguracionIngestaRepository,
-      ) => new ProcesarResultadoScrapingHandler(reglaRepo, ejecucionRepo, configRepo),
+        feriadoRepo: FeriadoRepository,
+      ) => new ProcesarResultadoScrapingHandler(reglaRepo, ejecucionRepo, configRepo, feriadoRepo),
       inject: [
         REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
         EJECUCION_INGESTA_REPOSITORY,
         CONFIGURACION_INGESTA_REPOSITORY,
+        FERIADO_REPOSITORY,
       ],
     },
     {

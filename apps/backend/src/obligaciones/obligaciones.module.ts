@@ -4,6 +4,7 @@ import { ObligacionesController } from './infrastructure/controllers/obligacione
 import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
 import { RecordatoriosController } from './infrastructure/controllers/recordatorios.controller';
 import { ReglasPropuestasController } from './infrastructure/controllers/reglas-propuestas.controller';
+import { FeriadosAdminController } from './infrastructure/controllers/feriados-admin.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
@@ -37,6 +38,10 @@ import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mai
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
 import { AjusteDiaHabilService } from './domain/services/ajuste-dia-habil.service';
+import { CrearFeriadoHandler } from './application/commands/crear-feriado.command';
+import { ActualizarFeriadoHandler } from './application/commands/actualizar-feriado.command';
+import { EliminarFeriadoHandler } from './application/commands/eliminar-feriado.command';
+import { FeriadoListHandler } from './application/queries/feriado-list.query';
 import { FERIADO_REPOSITORY } from './domain/repositories/feriado.repository';
 import type { FeriadoRepository } from './domain/repositories/feriado.repository';
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
@@ -80,7 +85,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
   imports: [forwardRef(() => ClientesModule), NotificacionesModule],
-  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController],
+  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
@@ -280,6 +285,28 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (aprobarHandler: AprobarReglaPropuestaHandler) =>
         new AprobarReglasBloqueHandler(aprobarHandler),
       inject: [AprobarReglaPropuestaHandler],
+    },
+
+    // ── Feriado CRUD ──
+    {
+      provide: CrearFeriadoHandler,
+      useFactory: (repo: FeriadoRepository) => new CrearFeriadoHandler(repo),
+      inject: [FERIADO_REPOSITORY],
+    },
+    {
+      provide: ActualizarFeriadoHandler,
+      useFactory: (repo: FeriadoRepository) => new ActualizarFeriadoHandler(repo),
+      inject: [FERIADO_REPOSITORY],
+    },
+    {
+      provide: EliminarFeriadoHandler,
+      useFactory: (repo: FeriadoRepository) => new EliminarFeriadoHandler(repo),
+      inject: [FERIADO_REPOSITORY],
+    },
+    {
+      provide: FeriadoListHandler,
+      useFactory: (em: EntityManager) => new FeriadoListHandler(em),
+      inject: [EntityManager],
     },
 
     // ── Vencimiento queries ──

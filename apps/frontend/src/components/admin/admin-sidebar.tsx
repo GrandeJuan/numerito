@@ -53,6 +53,7 @@ function buildGroups(counts: AdminSidebarProps['counts'] = {}): NavGroup[] {
         { href: '/admin/integraciones/ejecuciones', label: 'Ejecuciones', icon: <HistoryIcon /> },
         { href: '/admin/import-excel', label: 'Import Excel', icon: <ImportIcon /> },
         { href: '/admin/reglas-propuestas', label: 'Reglas Propuestas', icon: <ProposalIcon /> },
+        { href: '/admin/feriados', label: 'Feriados', icon: <CalendarIcon /> },
         { href: '/admin/logs', label: 'Logs', icon: <LogIcon /> },
       ],
     },
@@ -242,6 +243,14 @@ function HistoryIcon() {
     <svg {...common}>
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+function CalendarIcon() {
+  return (
+    <svg {...common}>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
     </svg>
   );
 }
