@@ -27,6 +27,7 @@ export interface ProcesarResultadoScrapingResult {
   sinCambios: number;
   errores: string[];
   diff: DiffRegla[];
+  duplicado?: boolean;
 }
 
 export class ProcesarResultadoScrapingHandler {
@@ -39,10 +40,27 @@ export class ProcesarResultadoScrapingHandler {
   async execute(command: ProcesarResultadoScrapingCommand): Promise<ProcesarResultadoScrapingResult> {
     const { resultado, disparador, disparadoPor } = command;
 
+    // Idempotency: if ingestaId was provided and already processed, return existing result
+    if (resultado.ingestaId) {
+      const existing = await this.ejecucionRepo.findByIngestaId(resultado.ingestaId);
+      if (existing) {
+        return {
+          ejecucionId: existing.id,
+          reglasNuevas: existing.reglasNuevas,
+          reglasModificadas: existing.reglasModificadas,
+          sinCambios: 0,
+          errores: existing.errores,
+          diff: [],
+          duplicado: true,
+        };
+      }
+    }
+
     const ejecucion = EjecucionIngesta.create({
       fuente: resultado.fuente,
       disparador: disparador ?? DISPARADOR_INGESTA.SCHEDULE,
       disparadoPor: disparadoPor ?? null,
+      ingestaId: resultado.ingestaId ?? null,
     });
 
     const reglasActivas = await this.reglaRepo.findActivas();

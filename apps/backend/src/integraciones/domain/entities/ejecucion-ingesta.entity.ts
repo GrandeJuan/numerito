@@ -22,6 +22,7 @@ interface CreateEjecucionIngestaProps {
   fuente: FuenteIngesta;
   disparador: DisparadorIngesta;
   disparadoPor?: string | null;
+  ingestaId?: string | null;
 }
 
 const reconstituteSchema = z.object({
@@ -29,6 +30,7 @@ const reconstituteSchema = z.object({
   estado: z.enum(['EN_CURSO', 'EXITOSA', 'FALLIDA']),
   disparador: z.enum(['MANUAL', 'SCHEDULE']),
   disparadoPor: z.string().nullable(),
+  ingestaId: z.string().nullable(),
   inicio: z.date(),
   fin: z.date().nullable(),
   reglasNuevas: z.number().int().min(0),
@@ -43,6 +45,7 @@ export class EjecucionIngesta extends BaseEntity {
   private _estado!: EstadoEjecucion;
   private _disparador!: DisparadorIngesta;
   private _disparadoPor!: string | null;
+  private _ingestaId!: string | null;
   private _inicio!: Date;
   private _fin!: Date | null;
   private _reglasNuevas!: number;
@@ -55,6 +58,7 @@ export class EjecucionIngesta extends BaseEntity {
     this._estado = ESTADO_EJECUCION.EN_CURSO;
     this._disparador = props.disparador;
     this._disparadoPor = props.disparadoPor ?? null;
+    this._ingestaId = props.ingestaId ?? null;
     this._inicio = new Date();
     this._fin = null;
     this._reglasNuevas = 0;
@@ -76,6 +80,7 @@ export class EjecucionIngesta extends BaseEntity {
     instance._estado = data.estado as EstadoEjecucion;
     instance._disparador = data.disparador as DisparadorIngesta;
     instance._disparadoPor = data.disparadoPor;
+    instance._ingestaId = data.ingestaId;
     instance._inicio = data.inicio;
     instance._fin = data.fin;
     instance._reglasNuevas = data.reglasNuevas;
@@ -88,6 +93,7 @@ export class EjecucionIngesta extends BaseEntity {
   get estado(): EstadoEjecucion { return this._estado; }
   get disparador(): DisparadorIngesta { return this._disparador; }
   get disparadoPor(): string | null { return this._disparadoPor; }
+  get ingestaId(): string | null { return this._ingestaId; }
   get inicio(): Date { return this._inicio; }
   get fin(): Date | null { return this._fin; }
   get reglasNuevas(): number { return this._reglasNuevas; }

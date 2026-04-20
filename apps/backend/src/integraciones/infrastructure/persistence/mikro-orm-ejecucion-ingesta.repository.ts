@@ -24,6 +24,12 @@ export class MikroOrmEjecucionIngestaRepository
     return this.mapper.toDomain(this.mapper.fromSchema(entity));
   }
 
+  async findByIngestaId(ingestaId: string): Promise<EjecucionIngesta | null> {
+    const entity = await this.em.findOne(EjecucionIngestaEntity, { ingestaId });
+    if (!entity) return null;
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
+  }
+
   async findByFuente(fuente: FuenteIngesta): Promise<EjecucionIngesta[]> {
     const entities = await this.em.find(
       EjecucionIngestaEntity,
@@ -51,6 +57,7 @@ export class MikroOrmEjecucionIngestaRepository
       existing.estado = data.estado;
       existing.disparador = data.disparador;
       existing.disparadoPor = data.disparadoPor;
+      existing.ingestaId = data.ingestaId;
       existing.inicio = data.inicio;
       existing.fin = data.fin;
       existing.reglasNuevas = data.reglasNuevas;
@@ -64,6 +71,7 @@ export class MikroOrmEjecucionIngestaRepository
         estado: data.estado,
         disparador: data.disparador,
         disparadoPor: data.disparadoPor,
+        ingestaId: data.ingestaId,
         inicio: data.inicio,
         fin: data.fin,
         reglasNuevas: data.reglasNuevas,

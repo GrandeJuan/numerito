@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { PageHeader, Pill, type Column, DataTable } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetch } from '@/lib/use-fetch';
@@ -28,6 +29,17 @@ export function IntegracionesAdminPage() {
     '/v1/admin/ingesta/configuraciones',
   );
   const [saving, setSaving] = useState<string | null>(null);
+  const [launching, setLaunching] = useState<string | null>(null);
+
+  async function ejecutarAhora(fuente: string) {
+    setLaunching(fuente);
+    try {
+      await apiFetch(`/v1/admin/ingesta/${fuente}/ejecutar-ahora`, { method: 'POST' });
+      refetch();
+    } finally {
+      setLaunching(null);
+    }
+  }
 
   async function toggleHabilitado(config: ConfiguracionIngesta) {
     setSaving(config.id);
@@ -115,14 +127,24 @@ export function IntegracionesAdminPage() {
       header: '',
       align: 'right',
       render: (r) => (
-        <button
-          type="button"
-          disabled={saving === r.id}
-          onClick={() => toggleHabilitado(r)}
-          className="text-[12px] px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {saving === r.id ? '...' : r.habilitado ? 'Deshabilitar' : 'Habilitar'}
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            disabled={launching === r.fuente}
+            onClick={() => ejecutarAhora(r.fuente)}
+            className="text-[11.5px] px-2 py-0.5 rounded border border-[var(--brand)]/30 bg-[var(--brand)]/10 text-[var(--brand)] hover:bg-[var(--brand)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {launching === r.fuente ? '...' : 'Ejecutar'}
+          </button>
+          <button
+            type="button"
+            disabled={saving === r.id}
+            onClick={() => toggleHabilitado(r)}
+            className="text-[11.5px] px-2 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving === r.id ? '...' : r.habilitado ? 'Deshabilitar' : 'Habilitar'}
+          </button>
+        </div>
       ),
     },
   ];
@@ -132,6 +154,14 @@ export function IntegracionesAdminPage() {
       <PageHeader
         title="Configuración de Ingesta"
         subtitle="Fuentes de scraping del calendario oficial — habilitar, cadencia, estado"
+        actions={
+          <Link
+            href="/admin/integraciones/ejecuciones"
+            className="text-[12px] px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--brand)] no-underline"
+          >
+            Ver historial de ejecuciones
+          </Link>
+        }
       />
       <PageStateGuard loading={loading} error={error}>
         <DataTable columns={columns} rows={data ?? []} rowKey={(r) => r.id} />

@@ -6,6 +6,7 @@ export class EjecucionIngestaEntity {
   estado!: string;
   disparador!: string;
   disparadoPor!: string | null;
+  ingestaId!: string | null;
   inicio!: Date;
   fin!: Date | null;
   reglasNuevas!: number;
@@ -24,6 +25,7 @@ export const EjecucionIngestaSchema = new EntitySchema<EjecucionIngestaEntity>({
     estado: { type: 'string', default: 'EN_CURSO' },
     disparador: { type: 'string' },
     disparadoPor: { type: 'string', fieldName: 'disparado_por', nullable: true },
+    ingestaId: { type: 'string', fieldName: 'ingesta_id', nullable: true },
     inicio: { type: 'Date' },
     fin: { type: 'Date', nullable: true },
     reglasNuevas: { type: 'number', fieldName: 'reglas_nuevas', default: 0 },
@@ -41,5 +43,8 @@ export const EjecucionIngestaSchema = new EntitySchema<EjecucionIngestaEntity>({
     { properties: ['fuente'] },
     { properties: ['estado'] },
     { properties: ['inicio'] },
+  ],
+  uniques: [
+    { properties: ['ingestaId'], options: { where: 'ingesta_id IS NOT NULL' } },
   ],
 });

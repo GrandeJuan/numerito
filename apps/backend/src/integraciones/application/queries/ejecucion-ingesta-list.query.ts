@@ -6,6 +6,7 @@ export interface EjecucionIngestaItem {
   estado: string;
   disparador: string;
   disparadoPor: string | null;
+  ingestaId: string | null;
   inicio: string;
   fin: string | null;
   reglasNuevas: number;
@@ -20,6 +21,7 @@ export class EjecucionIngestaListHandler {
     let sql = `
       SELECT id, fuente, estado, disparador,
              disparado_por AS "disparadoPor",
+             ingesta_id AS "ingestaId",
              inicio, fin,
              reglas_nuevas AS "reglasNuevas",
              reglas_modificadas AS "reglasModificadas",

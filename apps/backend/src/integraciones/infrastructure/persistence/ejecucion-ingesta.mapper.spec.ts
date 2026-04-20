@@ -15,6 +15,7 @@ describe('EjecucionIngestaMapper', () => {
     estado: ESTADO_EJECUCION.EXITOSA,
     disparador: DISPARADOR_INGESTA.MANUAL,
     disparadoPor: 'admin-1',
+    ingestaId: 'evt-123',
     inicio: new Date('2026-04-01T10:00:00Z'),
     fin: new Date('2026-04-01T10:05:00Z'),
     reglasNuevas: 3,
@@ -29,6 +30,7 @@ describe('EjecucionIngestaMapper', () => {
     expect(domain.estado).toBe('EXITOSA');
     expect(domain.disparador).toBe('MANUAL');
     expect(domain.disparadoPor).toBe('admin-1');
+    expect(domain.ingestaId).toBe('evt-123');
     expect(domain.reglasNuevas).toBe(3);
     expect(domain.reglasModificadas).toBe(1);
   });
@@ -70,6 +72,7 @@ describe('EjecucionIngestaMapper', () => {
       estado: 'EN_CURSO',
       disparador: 'SCHEDULE',
       disparadoPor: null,
+      ingestaId: null,
       inicio: now,
       fin: null,
       reglasNuevas: 0,

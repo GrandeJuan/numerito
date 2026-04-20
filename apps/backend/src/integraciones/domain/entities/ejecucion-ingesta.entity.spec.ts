@@ -21,6 +21,17 @@ describe('EjecucionIngesta', () => {
     expect(ej.reglasNuevas).toBe(0);
     expect(ej.reglasModificadas).toBe(0);
     expect(ej.errores).toEqual([]);
+    expect(ej.ingestaId).toBeNull();
+  });
+
+  it('should create with ingestaId when provided', () => {
+    const ej = EjecucionIngesta.create({
+      fuente: FUENTE_INGESTA.ARCA,
+      disparador: DISPARADOR_INGESTA.MANUAL,
+      disparadoPor: 'user-1',
+      ingestaId: 'unique-id-123',
+    });
+    expect(ej.ingestaId).toBe('unique-id-123');
   });
 
   it('should create with SCHEDULE disparador and null disparadoPor', () => {
@@ -74,6 +85,7 @@ describe('EjecucionIngesta', () => {
         estado: 'EXITOSA',
         disparador: 'SCHEDULE',
         disparadoPor: null,
+        ingestaId: 'evt-abc-123',
         inicio,
         fin,
         reglasNuevas: 10,
@@ -85,6 +97,7 @@ describe('EjecucionIngesta', () => {
     expect(ej.id).toBe('test-id');
     expect(ej.fuente).toBe('BCRA_FERIADOS');
     expect(ej.estado).toBe('EXITOSA');
+    expect(ej.ingestaId).toBe('evt-abc-123');
     expect(ej.inicio).toEqual(inicio);
     expect(ej.fin).toEqual(fin);
     expect(ej.reglasNuevas).toBe(10);

@@ -14,6 +14,7 @@ export const reglaPropuestaScrapeadaDtoSchema = z.object({
 export const resultadoScrapingDtoSchema = z.object({
   fuente: z.enum(['ARCA', 'ARBA', 'AGIP', 'BCRA_FERIADOS']),
   ejecutadoEn: z.string().min(1),
+  ingestaId: z.string().min(1).optional(),
   reglas: z.array(reglaPropuestaScrapeadaDtoSchema),
   errores: z.array(z.string()).default([]),
 });
