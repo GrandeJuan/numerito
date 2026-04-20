@@ -3,6 +3,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
 import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
 import { RecordatoriosController } from './infrastructure/controllers/recordatorios.controller';
+import { ReglasPropuestasController } from './infrastructure/controllers/reglas-propuestas.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
@@ -48,6 +49,9 @@ import { CrearCatalogoObligacionHandler } from './application/commands/crear-cat
 import { ActualizarCatalogoObligacionHandler } from './application/commands/actualizar-catalogo-obligacion.command';
 import { CrearReglaVencimientoHandler } from './application/commands/crear-regla-vencimiento.command';
 import { ActualizarReglaVencimientoHandler } from './application/commands/actualizar-regla-vencimiento.command';
+import { AprobarReglaPropuestaHandler } from './application/commands/aprobar-regla-propuesta.command';
+import { RechazarReglaPropuestaHandler } from './application/commands/rechazar-regla-propuesta.command';
+import { AprobarReglasBloqueHandler } from './application/commands/aprobar-reglas-bloque.command';
 import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
@@ -55,6 +59,7 @@ import { VencimientoCalendarioHandler } from './application/queries/vencimiento-
 import { VencimientoByIdHandler } from './application/queries/vencimiento-by-id.query';
 import { CatalogoObligacionListHandler } from './application/queries/catalogo-obligacion-list.query';
 import { ReglaVencimientoListHandler } from './application/queries/regla-vencimiento-list.query';
+import { ReglasPropuestasListHandler } from './application/queries/reglas-propuestas-list.query';
 import { VencimientosProximosView } from './application/views/vencimientos-proximos.view';
 import { VencimientosPendientesClienteView } from './application/views/vencimientos-pendientes-cliente.view';
 import { VencimientosPorEstadoView } from './application/views/vencimientos-por-estado.view';
@@ -74,7 +79,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
   imports: [forwardRef(() => ClientesModule), NotificacionesModule],
-  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController],
+  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
@@ -244,6 +249,26 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
     },
 
+    // ── Propuestas (approval/rejection) ──
+    {
+      provide: AprobarReglaPropuestaHandler,
+      useFactory: (repo: ReglaVencimientoEntityRepository) =>
+        new AprobarReglaPropuestaHandler(repo),
+      inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
+    },
+    {
+      provide: RechazarReglaPropuestaHandler,
+      useFactory: (repo: ReglaVencimientoEntityRepository) =>
+        new RechazarReglaPropuestaHandler(repo),
+      inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
+    },
+    {
+      provide: AprobarReglasBloqueHandler,
+      useFactory: (aprobarHandler: AprobarReglaPropuestaHandler) =>
+        new AprobarReglasBloqueHandler(aprobarHandler),
+      inject: [AprobarReglaPropuestaHandler],
+    },
+
     // ── Vencimiento queries ──
     {
       provide: VencimientoKpisHandler,
@@ -275,6 +300,11 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     {
       provide: ReglaVencimientoListHandler,
       useFactory: (em: EntityManager) => new ReglaVencimientoListHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ReglasPropuestasListHandler,
+      useFactory: (em: EntityManager) => new ReglasPropuestasListHandler(em),
       inject: [EntityManager],
     },
 

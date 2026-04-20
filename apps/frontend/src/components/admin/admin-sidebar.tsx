@@ -51,6 +51,7 @@ function buildGroups(counts: AdminSidebarProps['counts'] = {}): NavGroup[] {
         { href: '/admin/metricas', label: 'Métricas', icon: <ChartIcon /> },
         { href: '/admin/integraciones', label: 'Integraciones', icon: <PlugIcon /> },
         { href: '/admin/import-excel', label: 'Import Excel', icon: <ImportIcon /> },
+        { href: '/admin/reglas-propuestas', label: 'Reglas Propuestas', icon: <ProposalIcon /> },
         { href: '/admin/logs', label: 'Logs', icon: <LogIcon /> },
       ],
     },
@@ -224,6 +225,14 @@ function ImportIcon() {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+function ProposalIcon() {
+  return (
+    <svg {...common}>
+      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z" />
+      <path d="M16 3v5h5M9 14l2 2 4-4" />
     </svg>
   );
 }

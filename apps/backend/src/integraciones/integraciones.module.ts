@@ -5,16 +5,30 @@ import { CREDENCIAL_FISCAL_REPOSITORY } from './domain/repositories/credencial-f
 import { ORGANISMO_FISCAL_REPOSITORY } from './domain/repositories/organismo-fiscal.repository';
 import { CONFIGURACION_INGESTA_REPOSITORY } from './domain/repositories/configuracion-ingesta.repository';
 import type { ConfiguracionIngestaRepository } from './domain/repositories/configuracion-ingesta.repository';
+import { EJECUCION_INGESTA_REPOSITORY } from './domain/repositories/ejecucion-ingesta.repository';
+import type { EjecucionIngestaRepository } from './domain/repositories/ejecucion-ingesta.repository';
 import { MikroOrmNotificacionFiscalRepository } from './infrastructure/persistence/mikro-orm-notificacion-fiscal.repository';
 import { MikroOrmCredencialFiscalRepository } from './infrastructure/persistence/mikro-orm-credencial-fiscal.repository';
 import { MikroOrmOrganismoFiscalRepository } from './infrastructure/persistence/mikro-orm-organismo-fiscal.repository';
 import { MikroOrmConfiguracionIngestaRepository } from './infrastructure/persistence/mikro-orm-configuracion-ingesta.repository';
+import { MikroOrmEjecucionIngestaRepository } from './infrastructure/persistence/mikro-orm-ejecucion-ingesta.repository';
 import { IngestaAdminController } from './infrastructure/controllers/ingesta-admin.controller';
+import { IngestaEjecucionController } from './infrastructure/controllers/ingesta-ejecucion.controller';
 import { ActualizarConfiguracionIngestaHandler } from './application/commands/actualizar-configuracion-ingesta.command';
+import { ProcesarResultadoScrapingHandler } from './application/commands/procesar-resultado-scraping.command';
 import { ConfiguracionIngestaListHandler } from './application/queries/configuracion-ingesta-list.query';
+import { EjecucionIngestaListHandler } from './application/queries/ejecucion-ingesta-list.query';
+import {
+  REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
+} from '../obligaciones/domain/repositories/regla-vencimiento.repository';
+import type {
+  ReglaVencimientoEntityRepository,
+} from '../obligaciones/domain/repositories/regla-vencimiento.repository';
+import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 
 @Module({
-  controllers: [IngestaAdminController],
+  imports: [ObligacionesModule],
+  controllers: [IngestaAdminController, IngestaEjecucionController],
   providers: [
     // ── Existing repositories ──
     { provide: NOTIFICACION_FISCAL_REPOSITORY, useClass: MikroOrmNotificacionFiscalRepository },
@@ -34,12 +48,34 @@ import { ConfiguracionIngestaListHandler } from './application/queries/configura
       useFactory: (em: EntityManager) => new ConfiguracionIngestaListHandler(em),
       inject: [EntityManager],
     },
+
+    // ── Ejecución Ingesta ──
+    { provide: EJECUCION_INGESTA_REPOSITORY, useClass: MikroOrmEjecucionIngestaRepository },
+    {
+      provide: ProcesarResultadoScrapingHandler,
+      useFactory: (
+        reglaRepo: ReglaVencimientoEntityRepository,
+        ejecucionRepo: EjecucionIngestaRepository,
+        configRepo: ConfiguracionIngestaRepository,
+      ) => new ProcesarResultadoScrapingHandler(reglaRepo, ejecucionRepo, configRepo),
+      inject: [
+        REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
+        EJECUCION_INGESTA_REPOSITORY,
+        CONFIGURACION_INGESTA_REPOSITORY,
+      ],
+    },
+    {
+      provide: EjecucionIngestaListHandler,
+      useFactory: (em: EntityManager) => new EjecucionIngestaListHandler(em),
+      inject: [EntityManager],
+    },
   ],
   exports: [
     NOTIFICACION_FISCAL_REPOSITORY,
     CREDENCIAL_FISCAL_REPOSITORY,
     ORGANISMO_FISCAL_REPOSITORY,
     CONFIGURACION_INGESTA_REPOSITORY,
+    EJECUCION_INGESTA_REPOSITORY,
   ],
 })
 export class IntegracionesModule {}
