@@ -16,6 +16,7 @@ import { SolicitarResetPasswordHandler } from './application/commands/solicitar-
 import { ResetearPasswordHandler } from './application/commands/resetear-password.command';
 import { Activar2FAHandler } from './application/commands/activar-2fa.command';
 import { Verificar2FAHandler } from './application/commands/verificar-2fa.command';
+import { Reenviar2FAHandler } from './application/commands/reenviar-2fa.command';
 import { CerrarSesionHandler } from './application/commands/cerrar-sesion.command';
 import { AutenticarSsoHandler } from './application/commands/autenticar-sso.command';
 import { GoogleStrategy } from './infrastructure/strategies/google.strategy';
@@ -118,6 +119,12 @@ import { UsuarioCountPorEstudioView } from './application/views/usuario-count-po
       provide: Verificar2FAHandler,
       useFactory: (repo: TotpSecretRepository) => new Verificar2FAHandler(repo),
       inject: [TOTP_SECRET_REPOSITORY],
+    },
+    {
+      provide: Reenviar2FAHandler,
+      useFactory: (totpRepo: TotpSecretRepository, usuarioRepo: UsuarioRepository) =>
+        new Reenviar2FAHandler(totpRepo, usuarioRepo),
+      inject: [TOTP_SECRET_REPOSITORY, USUARIO_REPOSITORY],
     },
     {
       provide: ObtenerEstudiosUsuarioHandler,

@@ -40,7 +40,6 @@ export function ResetPasswordPage() {
     setSubmitting(true);
     setError(null);
     try {
-      // TODO: verificar endpoint — typically reads token from URL
       const token = new URLSearchParams(window.location.search).get('token');
       await apiFetch('/v1/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password: pw }) });
       setDone(true);

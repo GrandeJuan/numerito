@@ -18,7 +18,6 @@ export function ForgotPage() {
     setSending(true);
     setError(null);
     try {
-      // TODO: verificar endpoint
       await apiFetch('/v1/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
       setSent(true);
     } catch (err) {

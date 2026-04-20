@@ -1,24 +1,6 @@
 [
   {
     "type": "proximamente-label",
-    "file": "src/app/(auth)/privacy/page.tsx",
-    "line": 5,
-    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
-  },
-  {
-    "type": "proximamente-label",
-    "file": "src/app/(auth)/support/page.tsx",
-    "line": 5,
-    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
-  },
-  {
-    "type": "proximamente-label",
-    "file": "src/app/(auth)/terms/page.tsx",
-    "line": 5,
-    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
-  },
-  {
-    "type": "proximamente-label",
     "file": "src/components/admin/configuracion-page.tsx",
     "line": 11,
     "snippet": "description=\"Parámetros globales de la plataforma próximamente.\""
@@ -52,12 +34,6 @@
     "file": "src/components/admin/suscripciones-page.tsx",
     "line": 11,
     "snippet": "description=\"Gestión de suscripciones y billing de estudios próximamente.\""
-  },
-  {
-    "type": "dead-href",
-    "file": "src/components/auth/login-page.tsx",
-    "line": 71,
-    "snippet": "href=\"/signup\""
   },
   {
     "type": "console-log-handler",

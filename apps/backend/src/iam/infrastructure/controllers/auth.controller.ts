@@ -10,6 +10,7 @@ import { SolicitarResetPasswordHandler } from '../../application/commands/solici
 import { ResetearPasswordHandler } from '../../application/commands/resetear-password.command';
 import { Activar2FAHandler } from '../../application/commands/activar-2fa.command';
 import { Verificar2FAHandler } from '../../application/commands/verificar-2fa.command';
+import { Reenviar2FAHandler } from '../../application/commands/reenviar-2fa.command';
 import { TOKEN_SERVICE } from '../../application/services/token.service';
 import type { TokenService } from '../../application/services/token.service';
 import { TOTP_SECRET_REPOSITORY } from '../../domain/repositories/totp-secret.repository';
@@ -37,6 +38,7 @@ export class AuthController {
     private readonly resetearPasswordHandler: ResetearPasswordHandler,
     private readonly activar2FAHandler: Activar2FAHandler,
     private readonly verificar2FAHandler: Verificar2FAHandler,
+    private readonly reenviar2FAHandler: Reenviar2FAHandler,
     @Inject(TOKEN_SERVICE) private readonly tokenService: TokenService,
     @Inject(TOTP_SECRET_REPOSITORY) private readonly totpSecretRepo: TotpSecretRepository,
   ) {}
@@ -160,5 +162,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Verificar código 2FA' })
   async verify2FA(@Param('usuarioId') usuarioId: string, @Body(new ZodValidationPipe(verificar2FADtoSchema)) dto: Verificar2FADto) {
     return this.verificar2FAHandler.execute({ usuarioId, code: dto.code });
+  }
+
+  @Post('2fa/resend')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Reenviar código 2FA' })
+  async resend2FA(@CurrentUser('sub') usuarioId: string) {
+    await this.reenviar2FAHandler.execute({ usuarioId });
   }
 }

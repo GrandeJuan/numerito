@@ -1,18 +1,28 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { AuthShell, Button } from '@/components';
 import { apiFetch } from '@/lib/api-client';
+
+const RESEND_COOLDOWN_S = 30;
 
 export function Verify2FAPage() {
   const [code, setCode] = useState<string[]>(['', '', '', '', '', '']);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     refs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   function onChange(i: number, v: string) {
     const digit = v.replace(/\D/g, '').slice(-1);
@@ -44,7 +54,6 @@ export function Verify2FAPage() {
     setVerifying(true);
     setError(null);
     try {
-      // TODO: verificar endpoint
       await apiFetch('/v1/auth/2fa/verify', { method: 'POST', body: JSON.stringify({ code: full }) });
       window.location.href = '/';
     } catch (err) {
@@ -56,10 +65,21 @@ export function Verify2FAPage() {
     }
   }
 
-  async function resend() {
-    // TODO: verificar endpoint
-    await apiFetch('/v1/auth/2fa/resend', { method: 'POST' });
-  }
+  const resend = useCallback(async () => {
+    if (resendCooldown > 0 || resendStatus === 'sending') return;
+    setResendStatus('sending');
+    setError(null);
+    try {
+      await apiFetch('/v1/auth/2fa/resend', { method: 'POST' });
+      setResendStatus('sent');
+      setResendCooldown(RESEND_COOLDOWN_S);
+    } catch (err) {
+      setResendStatus('error');
+      setError(err instanceof Error ? err.message : 'No se pudo reenviar el código');
+    }
+  }, [resendCooldown, resendStatus]);
+
+  const resendDisabled = resendCooldown > 0 || resendStatus === 'sending';
 
   return (
     <AuthShell title="Verificación 2FA" subtitle="Ingresá el código de 6 dígitos de tu app autenticadora.">
@@ -84,8 +104,17 @@ export function Verify2FAPage() {
         </Button>
         <div className="text-center mt-5 text-[12.5px] text-[var(--text-3)]">
           ¿No te llegó?{' '}
-          <button type="button" onClick={resend} className="text-[var(--brand)] hover:underline">
-            Reenviar código
+          <button
+            type="button"
+            onClick={resend}
+            disabled={resendDisabled}
+            className={`${resendDisabled ? 'text-[var(--text-4)] cursor-not-allowed' : 'text-[var(--brand)] hover:underline'}`}
+          >
+            {resendStatus === 'sending'
+              ? 'Reenviando…'
+              : resendCooldown > 0
+                ? `Reenviar código (${resendCooldown}s)`
+                : 'Reenviar código'}
           </button>
         </div>
       </form>

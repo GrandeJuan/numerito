@@ -10,6 +10,7 @@ describe('AuthController', () => {
   let mockResetearPasswordHandler: any;
   let mockActivar2FAHandler: any;
   let mockVerificar2FAHandler: any;
+  let mockReenviar2FAHandler: any;
   let mockAutenticarSsoHandler: any;
   let mockTokenService: any;
   let mockTotpSecretRepo: any;
@@ -40,6 +41,9 @@ describe('AuthController', () => {
     mockVerificar2FAHandler = {
       execute: jest.fn().mockResolvedValue({ valid: true }),
     };
+    mockReenviar2FAHandler = {
+      execute: jest.fn().mockResolvedValue(undefined),
+    };
     mockAutenticarSsoHandler = {
       execute: jest.fn().mockResolvedValue({
         accessToken: 'sso-access-token',
@@ -66,6 +70,7 @@ describe('AuthController', () => {
       mockResetearPasswordHandler,
       mockActivar2FAHandler,
       mockVerificar2FAHandler,
+      mockReenviar2FAHandler,
       mockTokenService,
       mockTotpSecretRepo,
     );
@@ -272,6 +277,19 @@ describe('AuthController', () => {
       expect(res.redirect).toHaveBeenCalledWith(
         expect.stringContaining('http://localhost:3000/auth/callback?'),
       );
+    });
+  });
+
+  describe('resend2FA', () => {
+    it('should delegate to reenviar 2FA handler', async () => {
+      await controller.resend2FA('user-1');
+      expect(mockReenviar2FAHandler.execute).toHaveBeenCalledWith({ usuarioId: 'user-1' });
+    });
+
+    it('should propagate handler errors', async () => {
+      mockReenviar2FAHandler.execute.mockRejectedValue(new Error('Límite de reenvíos alcanzado'));
+
+      await expect(controller.resend2FA('user-1')).rejects.toThrow('Límite de reenvíos alcanzado');
     });
   });
 });
