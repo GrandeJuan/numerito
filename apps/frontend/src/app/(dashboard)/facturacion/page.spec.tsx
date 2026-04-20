@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -51,6 +56,24 @@ describe('FacturacionPage', () => {
     render(<FacturacionPage />);
     await waitFor(() => {
       expect(mockApiFetch).toHaveBeenCalledWith('/v1/facturacion/stats', expect.any(Object));
+    });
+  });
+
+  it('renders Nueva factura button that opens modal', async () => {
+    render(<FacturacionPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Nueva factura')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Nueva factura'));
+    await waitFor(() => {
+      expect(screen.getByText('Emitir una nueva factura al cliente.')).toBeInTheDocument();
+    });
+  });
+
+  it('renders Exportar button', async () => {
+    render(<FacturacionPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Exportar')).toBeInTheDocument();
     });
   });
 });

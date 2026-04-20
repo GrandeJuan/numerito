@@ -29,7 +29,6 @@ const TIPO_OPTIONS = [
 export function LibroIVAPage() {
   const [tipo, setTipo] = useState<TipoFiltro>('todos');
 
-  // TODO: verificar endpoint
   const { data, loading, error } = useFetchWithEstudio<ComprobanteIVA[]>(`/v1/contabilidad/libro-iva?tipo=${tipo}`);
 
   const columns: Column<ComprobanteIVA>[] = [

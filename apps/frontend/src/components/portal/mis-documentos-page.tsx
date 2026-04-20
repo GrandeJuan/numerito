@@ -8,7 +8,7 @@ export function MisDocumentosPage() {
     <EmptyState
       icon={Icons.file}
       title="Mis documentos"
-      description="Repositorio documental próximamente. Por ahora los documentos recientes aparecen en el portal."
+      description="Los documentos compartidos por el estudio aparecen en el resumen del portal."
     />
   );
 }

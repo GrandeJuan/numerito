@@ -15,11 +15,12 @@ const ESTADO: Record<string, { tone: 'brand' | 'amber' | 'rose' | 'indigo'; labe
   PARCIAL: { tone: 'indigo', label: 'Parcial' },
 };
 
-export function FacturasTable({ rows }: { rows: Factura[] }) {
+export function FacturasTable({ rows, onRowClick }: { rows: Factura[]; onRowClick?(f: Factura): void }) {
   return (
     <Card title="Facturas" padding={0}>
       <DataTable<Factura>
         rows={rows}
+        onRowClick={onRowClick}
         columns={[
           {
             header: 'Número',

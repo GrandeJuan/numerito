@@ -39,7 +39,6 @@ function CuentaRow({ node, depth = 0, filter }: { node: CuentaNode; depth?: numb
 
 export function PlanCuentasPage() {
   const [q, setQ] = useState('');
-  // TODO: verificar endpoint
   const { data, loading, error } = useFetchWithEstudio<CuentaNode[]>('/v1/contabilidad/plan-cuentas');
   const filter = useMemo(() => q.toLowerCase().trim(), [q]);
 

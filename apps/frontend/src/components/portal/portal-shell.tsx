@@ -5,14 +5,11 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Icons } from '../icons';
-import { IconButton } from '../icon-button';
 import { ThemeToggle } from '../theme-toggle';
 import { UserMenu } from '../user-menu';
 
 const NAV = [
   { href: '/portal', label: 'Mi portal', icon: Icons.home },
-  { href: '/portal/documentos', label: 'Mis documentos', icon: Icons.file },
-  { href: '/portal/vencimientos', label: 'Mis vencimientos', icon: Icons.calendar },
 ];
 
 export function PortalShell({ children }: { children: ReactNode }) {
@@ -62,7 +59,6 @@ export function PortalShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            <IconButton label="Notificaciones">{Icons.bell}</IconButton>
             <ThemeToggle />
             <UserMenu
               user={{

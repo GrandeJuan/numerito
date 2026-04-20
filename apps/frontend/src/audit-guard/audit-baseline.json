@@ -40,17 +40,5 @@
     "file": "src/components/configuracion/roles-permisos-page.tsx",
     "line": 11,
     "snippet": "description=\"La matriz de permisos por rol está en desarrollo. Próximamente vas a poder configurar qué puede hacer cada rol del estudio.\""
-  },
-  {
-    "type": "proximamente-label",
-    "file": "src/components/portal/mis-documentos-page.tsx",
-    "line": 11,
-    "snippet": "description=\"Repositorio documental próximamente. Por ahora los documentos recientes aparecen en el portal.\""
-  },
-  {
-    "type": "proximamente-label",
-    "file": "src/components/portal/mis-vencimientos-page.tsx",
-    "line": 11,
-    "snippet": "description=\"Calendario de vencimientos fiscales próximamente. Por ahora los próximos vencimientos aparecen en el portal.\""
   }
 ]

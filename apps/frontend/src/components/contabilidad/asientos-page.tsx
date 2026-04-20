@@ -18,7 +18,6 @@ interface AsientoContable {
 export function AsientosPage() {
   const [q, setQ] = useState('');
 
-  // TODO: verificar endpoint
   const { data, loading, error } = useFetchWithEstudio<AsientoContable[]>(
     `/v1/contabilidad/asientos${q ? `?q=${encodeURIComponent(q)}` : ''}`,
   );

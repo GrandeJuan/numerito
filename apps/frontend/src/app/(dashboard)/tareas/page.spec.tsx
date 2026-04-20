@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -39,6 +39,26 @@ describe('TareasPage', () => {
     render(<TareasPage />);
     await waitFor(() => {
       expect(mockApiFetch).toHaveBeenCalledWith('/v1/tareas', expect.any(Object));
+    });
+  });
+
+  it('renders Nueva tarea button that opens modal', async () => {
+    render(<TareasPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Nueva tarea')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Nueva tarea'));
+    await waitFor(() => {
+      expect(screen.getByText('Crear una nueva tarea para el equipo.')).toBeInTheDocument();
+    });
+  });
+
+  it('renders filter buttons', async () => {
+    render(<TareasPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Prioridad')).toBeInTheDocument();
+      expect(screen.getByText('Responsable')).toBeInTheDocument();
+      expect(screen.getByText('Cliente')).toBeInTheDocument();
     });
   });
 });

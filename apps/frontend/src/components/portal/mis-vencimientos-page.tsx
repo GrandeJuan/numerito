@@ -8,7 +8,7 @@ export function MisVencimientosPage() {
     <EmptyState
       icon={Icons.calendar}
       title="Mis vencimientos"
-      description="Calendario de vencimientos fiscales próximamente. Por ahora los próximos vencimientos aparecen en el portal."
+      description="Los vencimientos fiscales aparecen en el resumen del portal."
     />
   );
 }
