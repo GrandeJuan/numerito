@@ -13,6 +13,13 @@ import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import type { ClienteEntity } from './cliente.schema';
 
+const inscripcionPersistenceSchema = z.object({
+  jurisdiccion: z.string().min(1),
+  regimen: z.string().min(1),
+  activa: z.boolean(),
+  desde: z.string().min(1),
+});
+
 const condicionIvaValues = Object.values(CONDICION_IVA) as [CondicionIVA, ...CondicionIVA[]];
 const tipoClienteValues = Object.values(TIPO_CLIENTE) as [TipoCliente, ...TipoCliente[]];
 const regimenValues = Object.values(REGIMEN) as [Regimen, ...Regimen[]];
@@ -27,6 +34,7 @@ export const clientePersistenceSchema = z.object({
   estudioId: z.string().min(1),
   responsableId: z.string().min(1).optional(),
   isActive: z.boolean(),
+  inscripciones: z.array(inscripcionPersistenceSchema).optional(),
 });
 
 export type ClientePersistence = z.infer<typeof clientePersistenceSchema>;
@@ -44,6 +52,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
         estudioId: data.estudioId,
         isActive: data.isActive,
         responsableId: data.responsableId,
+        inscripciones: data.inscripciones,
       },
       data.id,
     );
@@ -60,6 +69,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
       estudioId: domain.estudioId,
       responsableId: domain.responsableId,
       isActive: domain.isActive,
+      inscripciones: domain.inscripciones.map((i) => i.toPlain()),
     };
   }
 
@@ -74,6 +84,7 @@ export class ClienteMapper implements Mapper<Cliente, ClientePersistence> {
       estudioId: entity.estudio.id,
       responsableId: entity.responsable?.id,
       isActive: entity.isActive,
+      inscripciones: (entity.inscripciones ?? []) as ClientePersistence['inscripciones'],
     };
   }
 }

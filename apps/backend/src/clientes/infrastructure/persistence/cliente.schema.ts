@@ -15,6 +15,7 @@ export class ClienteEntity {
   estudio!: EstudioEntity;
   responsable?: UsuarioEntity;
   isActive!: boolean;
+  inscripciones!: Record<string, unknown>[];
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -32,6 +33,7 @@ export const ClienteSchema = new EntitySchema<ClienteEntity>({
     estudio: { kind: 'm:1', entity: () => EstudioEntity, fieldName: 'estudio_id' },
     responsable: { kind: 'm:1', entity: () => UsuarioEntity, fieldName: 'responsable_id', nullable: true },
     isActive: { type: 'boolean', fieldName: 'is_active', default: true },
+    inscripciones: { type: 'json', default: '[]' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

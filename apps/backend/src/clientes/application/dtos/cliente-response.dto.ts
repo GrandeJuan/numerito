@@ -1,5 +1,12 @@
 import type { Cliente } from '../../domain/entities/cliente.entity';
 
+export interface InscripcionJurisdiccionResponseDto {
+  jurisdiccion: string;
+  regimen: string;
+  activa: boolean;
+  desde: string;
+}
+
 export interface ClienteResponseDto {
   id: string;
   createdAt: Date;
@@ -13,6 +20,7 @@ export interface ClienteResponseDto {
   isActive: boolean;
   responsableId?: string;
   provincias?: string[];
+  inscripciones: InscripcionJurisdiccionResponseDto[];
 }
 
 export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
@@ -29,5 +37,11 @@ export function toClienteResponseDto(c: Cliente): ClienteResponseDto {
     isActive: c.isActive,
     responsableId: c.responsableId,
     provincias: c.provincias,
+    inscripciones: c.inscripciones.map((i) => ({
+      jurisdiccion: i.jurisdiccion,
+      regimen: i.regimen,
+      activa: i.activa,
+      desde: i.desde,
+    })),
   };
 }

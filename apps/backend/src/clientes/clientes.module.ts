@@ -6,8 +6,11 @@ import { ActualizarClienteHandler } from './application/commands/actualizar-clie
 import { DesactivarClienteHandler } from './application/commands/desactivar-cliente.command';
 import { ActivarClienteHandler } from './application/commands/activar-cliente.command';
 import { AsignarResponsableHandler } from './application/commands/asignar-responsable.command';
+import { ActualizarPerfilFiscalHandler } from './application/commands/actualizar-perfil-fiscal.command';
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
+import { EVENT_BUS } from '../shared/domain/event-bus';
+import type { EventBus } from '../shared/domain/event-bus';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
 import { CLIENTE_SUMMARY_VIEW, CLIENTE_POR_USUARIO_PORTAL_VIEW, CLIENTE_COUNT_POR_ESTUDIO_VIEW } from './application/public-views';
 import { ClienteSummaryView } from './application/views/cliente-summary.view';
@@ -48,6 +51,12 @@ import { ClienteCountPorEstudioView } from './application/views/cliente-count-po
       useFactory: (repo: ClienteRepository) =>
         new AsignarResponsableHandler(repo),
       inject: [CLIENTE_REPOSITORY],
+    },
+    {
+      provide: ActualizarPerfilFiscalHandler,
+      useFactory: (repo: ClienteRepository, eventBus: EventBus) =>
+        new ActualizarPerfilFiscalHandler(repo, eventBus),
+      inject: [CLIENTE_REPOSITORY, EVENT_BUS],
     },
     {
       provide: CLIENTE_SUMMARY_VIEW,

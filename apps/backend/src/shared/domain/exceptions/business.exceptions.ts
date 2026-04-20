@@ -79,3 +79,11 @@ export class TwoFANoConfiguradoError extends DomainException {
     super('2FA no configurado');
   }
 }
+
+export class InscripcionDuplicadaError extends DomainException {
+  readonly code = 'INSCRIPCION_DUPLICADA';
+  readonly httpStatus = 422;
+  constructor(jurisdiccion: string, regimen: string) {
+    super(`Ya existe una inscripción activa en ${jurisdiccion} / ${regimen}`);
+  }
+}

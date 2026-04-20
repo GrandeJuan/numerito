@@ -1,9 +1,10 @@
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
+import { InscripcionJurisdiccion } from '../../domain/value-objects/inscripcion-jurisdiccion.vo';
 import { ClienteMapper, clientePersistenceSchema, type ClientePersistence } from './cliente.mapper';
 import type { ClienteEntity } from './cliente.schema';
-import { CONDICION_IVA, REGIMEN, TIPO_CLIENTE } from '@numerito/shared';
+import { CONDICION_IVA, REGIMEN, TIPO_CLIENTE, JURISDICCION } from '@numerito/shared';
 
 describe('ClienteMapper', () => {
   const mapper = new ClienteMapper();
@@ -20,6 +21,7 @@ describe('ClienteMapper', () => {
     estudioId,
     responsableId: 'user-42',
     isActive: true,
+    inscripciones: [],
   };
 
   describe('toDomain', () => {
@@ -161,6 +163,19 @@ describe('ClienteMapper', () => {
       const cliente = mapper.toDomain(validPersistence);
       expect(mapper.toPersistence(cliente)).toEqual(validPersistence);
     });
+
+    it('round-trips inscripciones through toDomain -> toPersistence', () => {
+      const withInscripciones: ClientePersistence = {
+        ...validPersistence,
+        inscripciones: [
+          { jurisdiccion: JURISDICCION.ARCA, regimen: 'IVA', activa: true, desde: '2024-01-01' },
+          { jurisdiccion: JURISDICCION.ARBA, regimen: 'IIBB', activa: false, desde: '2023-06-01' },
+        ],
+      };
+      const cliente = mapper.toDomain(withInscripciones);
+      expect(cliente.inscripciones).toHaveLength(2);
+      expect(mapper.toPersistence(cliente)).toEqual(withInscripciones);
+    });
   });
 
   describe('fromSchema', () => {
@@ -174,6 +189,7 @@ describe('ClienteMapper', () => {
       estudio: { id: estudioId },
       responsable: { id: 'user-42' },
       isActive: true,
+      inscripciones: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     } as unknown as ClienteEntity;

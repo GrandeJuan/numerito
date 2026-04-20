@@ -29,3 +29,18 @@ export const asignarResponsableSchema = z.object({
 });
 
 export type AsignarResponsableInput = z.infer<typeof asignarResponsableSchema>;
+
+export const inscripcionJurisdiccionSchema = z.object({
+  jurisdiccion: z.string().min(1),
+  regimen: z.string().min(1),
+  activa: z.boolean(),
+  desde: z.string().min(1),
+});
+
+export type InscripcionJurisdiccionInput = z.infer<typeof inscripcionJurisdiccionSchema>;
+
+export const actualizarPerfilFiscalSchema = z.object({
+  inscripciones: z.array(inscripcionJurisdiccionSchema).min(0),
+});
+
+export type ActualizarPerfilFiscalInput = z.infer<typeof actualizarPerfilFiscalSchema>;

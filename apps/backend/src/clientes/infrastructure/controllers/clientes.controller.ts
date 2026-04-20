@@ -25,6 +25,14 @@ import {
   AsignarResponsableHandler,
   type AsignarResponsableCommand,
 } from '../../application/commands/asignar-responsable.command';
+import {
+  ActualizarPerfilFiscalHandler,
+  type ActualizarPerfilFiscalCommand,
+} from '../../application/commands/actualizar-perfil-fiscal.command';
+import {
+  ActualizarPerfilFiscalDto,
+  actualizarPerfilFiscalDtoSchema,
+} from '../../application/dtos/actualizar-perfil-fiscal.dto';
 import { CLIENTE_REPOSITORY } from '../../domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../../domain/repositories/cliente.repository';
 import { Inject } from '@nestjs/common';
@@ -43,6 +51,7 @@ export class ClientesController {
     private readonly desactivarClienteHandler: DesactivarClienteHandler,
     private readonly activarClienteHandler: ActivarClienteHandler,
     private readonly asignarResponsableHandler: AsignarResponsableHandler,
+    private readonly actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler,
   ) {}
 
   @Get()
@@ -125,5 +134,19 @@ export class ClientesController {
       id,
       responsableId: dto.responsableId,
     } as AsignarResponsableCommand);
+  }
+
+  @Patch(':id/perfil-fiscal')
+  @ApiOperation({ summary: 'Actualizar perfil fiscal del cliente' })
+  async updatePerfilFiscal(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(actualizarPerfilFiscalDtoSchema)) dto: ActualizarPerfilFiscalDto,
+  ) {
+    await this.actualizarPerfilFiscalHandler.execute(principal, {
+      id,
+      inscripciones: dto.inscripciones,
+    } as ActualizarPerfilFiscalCommand);
+    return successResponse({ ok: true });
   }
 }

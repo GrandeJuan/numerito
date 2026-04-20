@@ -7,7 +7,10 @@ import { ActualizarClienteHandler } from '../../application/commands/actualizar-
 import { DesactivarClienteHandler } from '../../application/commands/desactivar-cliente.command';
 import { ActivarClienteHandler } from '../../application/commands/activar-cliente.command';
 import { AsignarResponsableHandler } from '../../application/commands/asignar-responsable.command';
+import { ActualizarPerfilFiscalHandler } from '../../application/commands/actualizar-perfil-fiscal.command';
+import { JURISDICCION } from '@numerito/shared';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
+import type { EventBus } from '../../../shared/domain/event-bus';
 
 const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
@@ -34,6 +37,8 @@ describe('ClientesController', () => {
   let desactivarClienteHandler: DesactivarClienteHandler;
   let activarClienteHandler: ActivarClienteHandler;
   let asignarResponsableHandler: AsignarResponsableHandler;
+  let actualizarPerfilFiscalHandler: ActualizarPerfilFiscalHandler;
+  let mockEventBus: EventBus;
 
   beforeEach(() => {
     mockClienteRepo = {
@@ -49,6 +54,8 @@ describe('ClientesController', () => {
     desactivarClienteHandler = new DesactivarClienteHandler(mockClienteRepo);
     activarClienteHandler = new ActivarClienteHandler(mockClienteRepo);
     asignarResponsableHandler = new AsignarResponsableHandler(mockClienteRepo);
+    mockEventBus = { publish: jest.fn(), publishAll: jest.fn() };
+    actualizarPerfilFiscalHandler = new ActualizarPerfilFiscalHandler(mockClienteRepo, mockEventBus);
     controller = new ClientesController(
       mockClienteRepo,
       crearClienteHandler,
@@ -56,6 +63,7 @@ describe('ClientesController', () => {
       desactivarClienteHandler,
       activarClienteHandler,
       asignarResponsableHandler,
+      actualizarPerfilFiscalHandler,
     );
   });
 
@@ -215,6 +223,45 @@ describe('ClientesController', () => {
       await expect(
         controller.assignResponsable(principal, 'bad-id', { responsableId: 'user-1' }),
       ).rejects.toThrow('Cliente no encontrado');
+    });
+  });
+
+  describe('updatePerfilFiscal', () => {
+    it('should update perfil fiscal and return success', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      const result = await controller.updatePerfilFiscal(principal, cliente.id, {
+        inscripciones: [
+          { jurisdiccion: JURISDICCION.ARCA, regimen: 'IVA', activa: true, desde: '2024-01-01' },
+        ],
+      });
+
+      expect(result.data.ok).toBe(true);
+      expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
+      expect(cliente.inscripciones).toHaveLength(1);
+    });
+
+    it('should throw when cliente not found', async () => {
+      mockClienteRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        controller.updatePerfilFiscal(principal, 'bad-id', { inscripciones: [] }),
+      ).rejects.toThrow('Cliente no encontrado');
+    });
+
+    it('should reject duplicate active inscripciones', async () => {
+      const cliente = makeCliente();
+      mockClienteRepo.findById.mockResolvedValue(cliente);
+
+      await expect(
+        controller.updatePerfilFiscal(principal, cliente.id, {
+          inscripciones: [
+            { jurisdiccion: JURISDICCION.ARCA, regimen: 'IVA', activa: true, desde: '2024-01-01' },
+            { jurisdiccion: JURISDICCION.ARCA, regimen: 'IVA', activa: true, desde: '2024-06-01' },
+          ],
+        }),
+      ).rejects.toThrow('Ya existe una inscripción activa en ARCA / IVA');
     });
   });
 });

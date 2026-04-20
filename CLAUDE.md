@@ -117,8 +117,9 @@ Each publishing context exports public event names and payload interfaces from `
 | `estudio.subscripcion-vencida` | Estudio | `Subscripcion.marcarVencida()` | `MarcarSubscripcionVencidaHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-cumplido` | Obligaciones | `Vencimiento.presentar()` | `PresentarVencimientoHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-vencido` | Obligaciones | `Vencimiento.marcarVencido()` | `MarcarVencidoHandler` | `DashboardStatsListener` |
+| `clientes.perfil-fiscal-actualizado` | Clientes | `Cliente.actualizarPerfilFiscal()` | `ActualizarPerfilFiscalHandler` | _(none yet — consumed by proyector in S3)_ |
 
-**Contexts without events:** Clientes, Contabilidad, Nomina, Documentos, Tareas, Facturacion, Integraciones.
+**Contexts without events:** Contabilidad, Nomina, Documentos, Tareas, Facturacion, Integraciones.
 
 ### Key Files
 

@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { Cuit } from '../value-objects/cuit.vo';
 import { RazonSocial } from '../value-objects/razon-social.vo';
+import { InscripcionJurisdiccion } from '../value-objects/inscripcion-jurisdiccion.vo';
+import type { InscripcionJurisdiccionProps } from '../value-objects/inscripcion-jurisdiccion.vo';
+import { PerfilFiscalActualizado } from '../events/perfil-fiscal-actualizado.event';
+import { InscripcionDuplicadaError } from '../../../shared/domain/exceptions';
 import { CONDICION_IVA, PROVINCIA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 import type { CondicionIVA, Provincia, TipoCliente, Regimen } from '@numerito/shared';
 
@@ -22,6 +26,13 @@ const tipoClienteValues = Object.values(TIPO_CLIENTE) as [TipoCliente, ...TipoCl
 const regimenValues = Object.values(REGIMEN) as [Regimen, ...Regimen[]];
 const provinciaValues = Object.values(PROVINCIA) as [Provincia, ...Provincia[]];
 
+const inscripcionJurisdiccionPropsSchema = z.object({
+  jurisdiccion: z.string().min(1),
+  regimen: z.string().min(1),
+  activa: z.boolean(),
+  desde: z.string().min(1),
+});
+
 const clienteReconstitutePropsSchema = z.object({
   cuit: z.instanceof(Cuit),
   razonSocial: z.instanceof(RazonSocial),
@@ -32,6 +43,7 @@ const clienteReconstitutePropsSchema = z.object({
   isActive: z.boolean(),
   responsableId: z.string().min(1).optional(),
   provincias: z.array(z.enum(provinciaValues)).optional(),
+  inscripciones: z.array(inscripcionJurisdiccionPropsSchema).optional(),
 });
 
 export type ReconstituteClienteProps = z.input<typeof clienteReconstitutePropsSchema>;
@@ -46,6 +58,7 @@ export class Cliente extends BaseEntity {
   private _isActive!: boolean;
   private _responsableId?: string;
   private _provincias!: Provincia[];
+  private _inscripciones!: InscripcionJurisdiccion[];
 
   private constructor(props: CreateClienteProps, id?: string) {
     super(id);
@@ -57,6 +70,7 @@ export class Cliente extends BaseEntity {
     this._estudioId = props.estudioId;
     this._isActive = true;
     this._provincias = props.provincias ?? [];
+    this._inscripciones = [];
   }
 
   static create(props: CreateClienteProps, id?: string): Cliente {
@@ -78,6 +92,9 @@ export class Cliente extends BaseEntity {
     instance._isActive = data.isActive;
     instance._responsableId = data.responsableId;
     instance._provincias = data.provincias ?? [];
+    instance._inscripciones = (data.inscripciones ?? []).map((i) =>
+      InscripcionJurisdiccion.reconstitute(i as InscripcionJurisdiccionProps),
+    );
     return instance;
   }
 
@@ -90,6 +107,7 @@ export class Cliente extends BaseEntity {
   get isActive(): boolean { return this._isActive; }
   get responsableId(): string | undefined { return this._responsableId; }
   get provincias(): Provincia[] { return [...this._provincias]; }
+  get inscripciones(): InscripcionJurisdiccion[] { return [...this._inscripciones]; }
 
   changeCondicionIva(condicion: CondicionIVA): void {
     this._condicionIva = condicion;
@@ -121,6 +139,20 @@ export class Cliente extends BaseEntity {
   removeProvincia(provincia: Provincia): void {
     this._provincias = this._provincias.filter(p => p !== provincia);
     this.updatedAt = new Date();
+  }
+
+  actualizarPerfilFiscal(inscripciones: InscripcionJurisdiccion[]): void {
+    const activas = inscripciones.filter((i) => i.activa);
+    for (let i = 0; i < activas.length; i++) {
+      for (let j = i + 1; j < activas.length; j++) {
+        if (activas[i].conMismaJurisdiccion(activas[j])) {
+          throw new InscripcionDuplicadaError(activas[i].jurisdiccion, activas[i].regimen);
+        }
+      }
+    }
+    this._inscripciones = inscripciones;
+    this.updatedAt = new Date();
+    this.addDomainEvent(new PerfilFiscalActualizado(this.id, this._estudioId));
   }
 
   deactivate(): void {

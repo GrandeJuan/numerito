@@ -10,3 +10,4 @@ export * from './estado-vencimiento';
 export * from './estado-tarea';
 export * from './prioridad';
 export * from './plan';
+export * from './jurisdiccion';
