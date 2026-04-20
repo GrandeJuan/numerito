@@ -16,6 +16,7 @@ import { SimplePdfGenerator } from '../shared/infrastructure/adapters/simple-pdf
 import { MAIL_SENDER } from '../shared/domain/ports/mail-sender.port';
 import type { MailSenderPort } from '../shared/domain/ports/mail-sender.port';
 import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mail-sender';
+import { SesMailSender } from '../shared/infrastructure/adapters/ses-mail-sender';
 
 @Module({
   imports: [IamModule, JwtModule.register({})],
@@ -24,7 +25,7 @@ import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mai
     { provide: NOTIFICACION_REPOSITORY, useClass: MikroOrmNotificacionRepository },
     { provide: RESUMEN_MENSUAL_REPOSITORY, useClass: MikroOrmResumenMensualRepository },
     { provide: PDF_GENERATOR, useClass: SimplePdfGenerator },
-    { provide: MAIL_SENDER, useClass: ConsoleMailSender },
+    { provide: MAIL_SENDER, useClass: process.env.AWS_SES_FROM_EMAIL ? SesMailSender : ConsoleMailSender },
 
     // ── Listener ──
     {

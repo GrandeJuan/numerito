@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1030.0",
+    "@aws-sdk/client-ses": "^3.1030.0",
     "@mikro-orm/cli": "^7.0.7",
     "@mikro-orm/core": "^7.0.7",
     "@mikro-orm/migrations": "^7.0.7",
