@@ -78,6 +78,27 @@ variable "scraper_configs" {
       cpu             = 512
       memory          = 1024
     }
+    ARBA = {
+      enabled         = true
+      cadencia_dias   = 7
+      meses_adelante  = 0
+      cpu             = 512
+      memory          = 1024
+    }
+    AGIP = {
+      enabled         = true
+      cadencia_dias   = 7
+      meses_adelante  = 0
+      cpu             = 512
+      memory          = 1024
+    }
+    BCRA_FERIADOS = {
+      enabled         = true
+      cadencia_dias   = 30
+      meses_adelante  = 0
+      cpu             = 256
+      memory          = 512
+    }
   }
 }
 

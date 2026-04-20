@@ -1,11 +1,9 @@
 /**
  * Tests for the Fargate scraper entry point.
- * Tests the config loading and POST logic without launching Playwright.
+ * Tests the config loading, scraper factory, and POST logic without launching Playwright.
  */
 
-// We test the entrypoint module indirectly by extracting and testing
-// the config validation and POST logic. The actual entrypoint runs
-// main() on import, so we test the pieces.
+import { loadConfig, createScraper, type EntrypointConfig } from './scraper-entrypoint';
 
 describe('scraper-entrypoint config', () => {
   const originalEnv = process.env;
@@ -22,19 +20,22 @@ describe('scraper-entrypoint config', () => {
     delete process.env.BACKEND_URL;
     process.env.INGESTA_SECRET = 'secret';
 
-    // loadConfig is inline in the entrypoint — we test the contract here
-    expect(() => {
-      if (!process.env.BACKEND_URL) throw new Error('BACKEND_URL environment variable is required');
-    }).toThrow('BACKEND_URL');
+    expect(() => loadConfig()).toThrow('BACKEND_URL');
   });
 
   it('should require INGESTA_SECRET', () => {
     process.env.BACKEND_URL = 'https://api.test.com';
     delete process.env.INGESTA_SECRET;
 
-    expect(() => {
-      if (!process.env.INGESTA_SECRET) throw new Error('INGESTA_SECRET environment variable is required');
-    }).toThrow('INGESTA_SECRET');
+    expect(() => loadConfig()).toThrow('INGESTA_SECRET');
+  });
+
+  it('should reject unsupported FUENTE', () => {
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    process.env.FUENTE = 'INVALID_SOURCE';
+
+    expect(() => loadConfig()).toThrow('Unsupported FUENTE');
   });
 
   it('should default FUENTE to ARCA', () => {
@@ -42,30 +43,95 @@ describe('scraper-entrypoint config', () => {
     process.env.INGESTA_SECRET = 'secret';
     delete process.env.FUENTE;
 
-    const fuente = process.env.FUENTE || 'ARCA';
-    expect(fuente).toBe('ARCA');
+    const config = loadConfig();
+    expect(config.fuente).toBe('ARCA');
+  });
+
+  it('should accept ARBA as FUENTE', () => {
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    process.env.FUENTE = 'ARBA';
+
+    const config = loadConfig();
+    expect(config.fuente).toBe('ARBA');
+  });
+
+  it('should accept AGIP as FUENTE', () => {
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    process.env.FUENTE = 'AGIP';
+
+    const config = loadConfig();
+    expect(config.fuente).toBe('AGIP');
+  });
+
+  it('should accept BCRA_FERIADOS as FUENTE', () => {
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    process.env.FUENTE = 'BCRA_FERIADOS';
+
+    const config = loadConfig();
+    expect(config.fuente).toBe('BCRA_FERIADOS');
   });
 
   it('should default MESES_ADELANTE to 0', () => {
-    const meses = parseInt(process.env.MESES_ADELANTE || '0', 10);
-    expect(meses).toBe(0);
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    delete process.env.MESES_ADELANTE;
+
+    const config = loadConfig();
+    expect(config.mesesAdelante).toBe(0);
   });
 
   it('should default DISPARADOR to SCHEDULE', () => {
-    const disparador = process.env.DISPARADOR || 'SCHEDULE';
-    expect(disparador).toBe('SCHEDULE');
+    process.env.BACKEND_URL = 'https://api.test.com';
+    process.env.INGESTA_SECRET = 'secret';
+    delete process.env.DISPARADOR;
+
+    const config = loadConfig();
+    expect(config.disparador).toBe('SCHEDULE');
   });
 
   it('should strip trailing slash from BACKEND_URL', () => {
-    const raw = 'https://api.test.com/';
-    const clean = raw.replace(/\/$/, '');
-    expect(clean).toBe('https://api.test.com');
+    process.env.BACKEND_URL = 'https://api.test.com/';
+    process.env.INGESTA_SECRET = 'secret';
+
+    const config = loadConfig();
+    expect(config.backendUrl).toBe('https://api.test.com');
+  });
+});
+
+describe('createScraper', () => {
+  const baseConfig: EntrypointConfig = {
+    backendUrl: 'https://api.test.com',
+    ingestaSecret: 'secret',
+    fuente: 'ARCA',
+    mesesAdelante: 2,
+    disparador: 'SCHEDULE',
+    disparadoPor: null,
+  };
+
+  it('creates ScraperCalendarioARCA for ARCA', () => {
+    const scraper = createScraper({ ...baseConfig, fuente: 'ARCA' });
+    expect(scraper).toBeDefined();
+    expect(scraper.constructor.name).toBe('ScraperCalendarioARCA');
   });
 
-  it('should construct correct webhook URL', () => {
-    const backendUrl = 'https://api.test.com';
-    const fuente = 'ARCA';
-    const url = `${backendUrl}/api/v1/admin/ingesta/${fuente}/resultado`;
-    expect(url).toBe('https://api.test.com/api/v1/admin/ingesta/ARCA/resultado');
+  it('creates ScraperCalendarioARBA for ARBA', () => {
+    const scraper = createScraper({ ...baseConfig, fuente: 'ARBA' });
+    expect(scraper).toBeDefined();
+    expect(scraper.constructor.name).toBe('ScraperCalendarioARBA');
+  });
+
+  it('creates ScraperCalendarioAGIP for AGIP', () => {
+    const scraper = createScraper({ ...baseConfig, fuente: 'AGIP' });
+    expect(scraper).toBeDefined();
+    expect(scraper.constructor.name).toBe('ScraperCalendarioAGIP');
+  });
+
+  it('creates ScraperFeriadosBCRA for BCRA_FERIADOS', () => {
+    const scraper = createScraper({ ...baseConfig, fuente: 'BCRA_FERIADOS' });
+    expect(scraper).toBeDefined();
+    expect(scraper.constructor.name).toBe('ScraperFeriadosBCRA');
   });
 });
