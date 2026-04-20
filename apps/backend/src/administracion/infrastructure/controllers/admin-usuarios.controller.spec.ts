@@ -35,12 +35,22 @@ describe('AdminUsuariosController', () => {
     sinVerificar: 15,
   };
 
+  let mockInvitarHandler: any;
+
   beforeEach(() => {
     mockHandler = {
       execute: jest.fn().mockResolvedValue({ items: mockItems, total: 1, page: 1, limit: 20 }),
       getStats: jest.fn().mockResolvedValue(mockStats),
     } as any;
-    controller = new AdminUsuariosController(mockHandler);
+    mockInvitarHandler = {
+      execute: jest.fn().mockResolvedValue({
+        id: 'inv-1',
+        email: 'new@admin.com',
+        nombre: 'New Admin',
+        rol: 'SUPERADMIN',
+      }),
+    };
+    controller = new AdminUsuariosController(mockHandler, mockInvitarHandler);
   });
 
   describe('list', () => {
@@ -83,6 +93,25 @@ describe('AdminUsuariosController', () => {
       expect(mockHandler.getStats).toHaveBeenCalledTimes(1);
       expect(result.data).toEqual(mockStats);
       expect(result.meta).toHaveProperty('timestamp');
+    });
+  });
+
+  describe('invite', () => {
+    it('should invite user via handler and return result', async () => {
+      const body = { email: 'new@admin.com', nombre: 'New Admin', rol: 'SUPERADMIN' as const };
+      const result = await controller.invite(body);
+
+      expect(mockInvitarHandler.execute).toHaveBeenCalledWith(body);
+      expect(result.data).toHaveProperty('id', 'inv-1');
+      expect(result.data).toHaveProperty('email', 'new@admin.com');
+      expect(result.data).toHaveProperty('rol', 'SUPERADMIN');
+    });
+
+    it('should pass optional nombre to handler', async () => {
+      const body = { email: 'noname@admin.com', rol: 'SOCIO' as const };
+      await controller.invite(body);
+
+      expect(mockInvitarHandler.execute).toHaveBeenCalledWith(body);
     });
   });
 

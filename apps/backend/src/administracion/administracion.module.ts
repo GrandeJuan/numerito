@@ -22,6 +22,8 @@ import { DashboardStatsComputer } from './application/services/dashboard-stats-c
 import { MaterializeDashboardSnapshotService } from './application/services/materialize-dashboard-snapshot.service';
 import { AdminEstudiosService } from './application/services/admin-estudios.service';
 import { AdminPlanesService } from './application/services/admin-planes.service';
+import { CrearEstudioAdminHandler } from './application/commands/crear-estudio-admin.command';
+import { InvitarUsuarioAdminHandler } from './application/commands/invitar-usuario-admin.command';
 import { EstudioModule } from '../estudio/estudio.module';
 import { IamModule } from '../iam/iam.module';
 import {
@@ -41,6 +43,15 @@ import type { EstudioTopTenantsView } from '../estudio/application/views/estudio
 import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from '../iam/application/public-views';
 import type { UsuarioSearchView } from '../iam/application/views/usuario-search.view';
 import type { UsuariosAdminListView } from '../iam/application/views/usuarios-admin-list.view';
+import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
+import type { EstudioRepository } from '../estudio/domain/repositories/estudio.repository';
+import { SUBSCRIPCION_REPOSITORY } from '../estudio/domain/repositories/subscripcion.repository';
+import type { SubscripcionRepository } from '../estudio/domain/repositories/subscripcion.repository';
+import { USUARIO_REPOSITORY } from '../iam/domain/repositories/usuario.repository';
+import type { UsuarioRepository } from '../iam/domain/repositories/usuario.repository';
+import type { EventBus } from '../shared/domain/event-bus';
+import { EVENT_BUS } from '../shared/domain/event-bus';
+import type { Subscripcion } from '../estudio/domain/entities/subscripcion.entity';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
@@ -102,6 +113,26 @@ import type { UsuariosAdminListView } from '../iam/application/views/usuarios-ad
       useFactory: (estudioSearch: EstudioSearchView, usuarioSearch: UsuarioSearchView) =>
         new AdminSearchHandler(estudioSearch, usuarioSearch),
       inject: [ESTUDIO_SEARCH_VIEW, USUARIO_SEARCH_VIEW],
+    },
+    {
+      provide: CrearEstudioAdminHandler,
+      useFactory: (
+        estudioRepo: EstudioRepository,
+        planRepo: AdminPlanRepository,
+        eventBus: EventBus,
+        subRepo: SubscripcionRepository,
+      ) =>
+        new CrearEstudioAdminHandler(estudioRepo, planRepo, eventBus, (sub: Subscripcion) => {
+          const systemPrincipal = { estudioId: sub.estudioId, userId: 'system', roles: ['SUPERADMIN'] };
+          return subRepo.save(systemPrincipal, sub);
+        }),
+      inject: [ESTUDIO_REPOSITORY, ADMIN_PLAN_REPOSITORY, EVENT_BUS, SUBSCRIPCION_REPOSITORY],
+    },
+    {
+      provide: InvitarUsuarioAdminHandler,
+      useFactory: (usuarioRepo: UsuarioRepository, eventBus: EventBus) =>
+        new InvitarUsuarioAdminHandler(usuarioRepo, eventBus),
+      inject: [USUARIO_REPOSITORY, EVENT_BUS],
     },
   ],
 })

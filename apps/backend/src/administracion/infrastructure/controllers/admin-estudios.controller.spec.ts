@@ -5,6 +5,7 @@ describe('AdminEstudiosController', () => {
   let controller: AdminEstudiosController;
   let mockEstudioRepo: any;
   let mockEstudiosService: any;
+  let mockCrearEstudioHandler: any;
 
   const paginatedResult: AdminEstudiosPaginados = {
     items: [
@@ -43,7 +44,16 @@ describe('AdminEstudiosController', () => {
       findById: jest.fn().mockResolvedValue(null),
       save: jest.fn().mockResolvedValue(undefined),
     };
-    controller = new AdminEstudiosController(mockEstudioRepo, mockEstudiosService);
+    mockCrearEstudioHandler = {
+      execute: jest.fn().mockResolvedValue({
+        id: 'new-est-1',
+        nombre: 'Nuevo Estudio',
+        cuit: '20-99999999-0',
+        plan: 'Profesional',
+        subscripcionId: 'sub-1',
+      }),
+    };
+    controller = new AdminEstudiosController(mockEstudioRepo, mockEstudiosService, mockCrearEstudioHandler);
   });
 
   describe('list', () => {
@@ -112,12 +122,18 @@ describe('AdminEstudiosController', () => {
   });
 
   describe('getById', () => {
-    it('should return estudio by id', async () => {
-      const estudio = makeEstudio();
+    it('should return estudio by id wrapped in successResponse', async () => {
+      const estudio = makeEstudio({
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      });
       mockEstudioRepo.findById.mockResolvedValue(estudio);
 
       const result = await controller.getById('est-1');
-      expect(result.id).toBe('est-1');
+      expect(result.data).toHaveProperty('id', 'est-1');
+      expect(result.data).toHaveProperty('nombre', 'Estudio Demo');
+      expect(result.data).toHaveProperty('cuit', '20-12345678-6');
+      expect(result.data).toHaveProperty('plan', 'PROFESIONAL');
+      expect(result.data).toHaveProperty('isActive', true);
     });
 
     it('should throw when not found', async () => {
@@ -152,6 +168,27 @@ describe('AdminEstudiosController', () => {
 
     it('should throw when not found', async () => {
       await expect(controller.reactivate('bad')).rejects.toThrow('Estudio no encontrado');
+    });
+  });
+
+  describe('create', () => {
+    it('should create estudio via handler', async () => {
+      const body = { nombre: 'Nuevo Estudio', cuit: '20-99999999-0', planCodigo: 'PROFESIONAL' };
+      const result = await controller.create(body);
+
+      expect(mockCrearEstudioHandler.execute).toHaveBeenCalledWith(body);
+      expect(result.data).toHaveProperty('id', 'new-est-1');
+      expect(result.data).toHaveProperty('nombre', 'Nuevo Estudio');
+      expect(result.data).toHaveProperty('subscripcionId', 'sub-1');
+    });
+
+    it('should pass trialDias to handler', async () => {
+      const body = { nombre: 'Trial Estudio', cuit: '20-88888888-0', planCodigo: 'FREE', trialDias: 60 };
+      await controller.create(body);
+
+      expect(mockCrearEstudioHandler.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ trialDias: 60 }),
+      );
     });
   });
 });

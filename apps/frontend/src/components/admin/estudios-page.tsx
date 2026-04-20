@@ -94,7 +94,11 @@ export function EstudiosAdminPage() {
       <PageHeader
         title="Estudios"
         subtitle="Todos los tenants de la plataforma"
-        actions={<Button variant="primary">Nuevo estudio</Button>}
+        actions={
+          <Button variant="primary" onClick={() => router.push('/admin/estudios/new')}>
+            Nuevo estudio
+          </Button>
+        }
       />
       <div className="flex items-center gap-3 mb-3">
         <input

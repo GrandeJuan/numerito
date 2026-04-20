@@ -1,14 +1,19 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import type { Rol } from '@numerito/shared';
 import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 import { ObtenerAdminUsuariosHandler } from '../../application/queries/obtener-admin-usuarios.query';
+import { InvitarUsuarioAdminHandler } from '../../application/commands/invitar-usuario-admin.command';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Usuarios')
 @Controller({ path: 'admin/usuarios', version: '1' })
 @UseGuards(AdminGuard)
 export class AdminUsuariosController {
-  constructor(private readonly handler: ObtenerAdminUsuariosHandler) {}
+  constructor(
+    private readonly handler: ObtenerAdminUsuariosHandler,
+    private readonly invitarHandler: InvitarUsuarioAdminHandler,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar usuarios con filtros y paginación' })
@@ -36,5 +41,12 @@ export class AdminUsuariosController {
   async stats() {
     const data = await this.handler.getStats();
     return successResponse(data);
+  }
+
+  @Post('invitaciones')
+  @ApiOperation({ summary: 'Invitar usuario de plataforma (superadmin/soporte)' })
+  async invite(@Body() body: { email: string; nombre?: string; rol: Rol }) {
+    const result = await this.invitarHandler.execute(body);
+    return successResponse(result);
   }
 }

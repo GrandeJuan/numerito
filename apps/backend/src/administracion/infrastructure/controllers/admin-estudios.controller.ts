@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Inject, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Inject, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ESTUDIO_REPOSITORY } from '../../../estudio/domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../../estudio/domain/repositories/estudio.repository';
@@ -6,6 +6,7 @@ import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { AdminEstudiosService } from '../../application/services/admin-estudios.service';
+import { CrearEstudioAdminHandler } from '../../application/commands/crear-estudio-admin.command';
 
 @ApiTags('Admin — Estudios')
 @Controller({ path: 'admin/estudios', version: '1' })
@@ -14,6 +15,7 @@ export class AdminEstudiosController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     private readonly estudiosService: AdminEstudiosService,
+    private readonly crearEstudioHandler: CrearEstudioAdminHandler,
   ) {}
 
   @Get()
@@ -38,12 +40,28 @@ export class AdminEstudiosController {
     });
   }
 
+  @Post()
+  @ApiOperation({ summary: 'Crear estudio manualmente (onboarding asistido)' })
+  async create(@Body() body: { nombre: string; cuit: string; planCodigo: string; trialDias?: number }) {
+    const result = await this.crearEstudioHandler.execute(body);
+    return successResponse(result);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener estudio por ID' })
   async getById(@Param('id') id: string) {
     const estudio = await this.estudioRepo.findById(id);
     if (!estudio) throw new RecursoNoEncontradoError('Estudio');
-    return estudio;
+    return successResponse({
+      id: estudio.id,
+      nombre: estudio.nombre.value,
+      cuit: estudio.cuit,
+      plan: estudio.plan.value,
+      maxClientes: estudio.plan.maxClientes,
+      maxUsuarios: estudio.plan.maxUsuarios,
+      isActive: estudio.isActive,
+      createdAt: estudio.createdAt.toISOString(),
+    });
   }
 
   @Patch(':id/suspend')

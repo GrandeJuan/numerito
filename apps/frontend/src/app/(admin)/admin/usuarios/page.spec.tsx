@@ -93,4 +93,88 @@ describe('UsuariosAdminPage', () => {
       expect(lastCall).toContain('search=admin');
     });
   });
+
+  describe('invite modal', () => {
+    it('opens modal when Invitar button is clicked', async () => {
+      render(<UsuariosAdminPage />);
+      await waitFor(() => {
+        expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Invitar'));
+
+      expect(screen.getByText('Invitar usuario')).toBeInTheDocument();
+      expect(screen.getByLabelText('Email')).toBeInTheDocument();
+      expect(screen.getByLabelText('Rol')).toBeInTheDocument();
+    });
+
+    it('submits invitation via API', async () => {
+      render(<UsuariosAdminPage />);
+      await waitFor(() => {
+        expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Invitar'));
+
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'new@admin.com' } });
+      fireEvent.change(screen.getByLabelText('Nombre (opcional)'), { target: { value: 'Nuevo' } });
+
+      fireEvent.click(screen.getByText('Enviar invitación'));
+
+      await waitFor(() => {
+        const inviteCall = mockApiFetch.mock.calls.find(
+          (c: any) => typeof c[0] === 'string' && c[0].includes('/invitaciones'),
+        );
+        expect(inviteCall).toBeDefined();
+        expect(inviteCall![1]).toEqual(
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+    });
+
+    it('closes modal on cancel', async () => {
+      render(<UsuariosAdminPage />);
+      await waitFor(() => {
+        expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Invitar'));
+      expect(screen.getByText('Invitar usuario')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Cancelar'));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Invitar usuario')).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows error on failed invitation', async () => {
+      render(<UsuariosAdminPage />);
+      await waitFor(() => {
+        expect(screen.getByText('admin@demo.com')).toBeInTheDocument();
+      });
+
+      // Override mock for the invite call
+      const originalMock = mockApiFetch;
+      mockApiFetch = vi.fn().mockImplementation((...args: unknown[]) => {
+        const url = args[0] as string;
+        if (url.includes('/invitaciones')) {
+          return Promise.resolve({
+            ok: false,
+            status: 409,
+            json: () => Promise.resolve({ error: { message: 'Email ya registrado' } }),
+          });
+        }
+        return originalMock(...args);
+      });
+
+      fireEvent.click(screen.getByText('Invitar'));
+      fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'existing@admin.com' } });
+      fireEvent.click(screen.getByText('Enviar invitación'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Email ya registrado')).toBeInTheDocument();
+      });
+    });
+  });
 });
