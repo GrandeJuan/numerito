@@ -4,6 +4,7 @@ import type { DiffRegla } from '../../../integraciones/application/commands/proc
 import { SugerenciaProrrogaEntity } from '../../infrastructure/persistence/sugerencia-prorroga.schema';
 import { VencimientoEntity } from '../../infrastructure/persistence/vencimiento.schema';
 import { EstudioEntity } from '../../../estudio/infrastructure/persistence/estudio.schema';
+import type { AjusteDiaHabilService } from '../../domain/services/ajuste-dia-habil.service';
 
 export interface DetectarSugerenciasProrrogaCommand {
   /** Modified rules from scraping with their diffs */
@@ -31,7 +32,10 @@ interface VencimientoRow {
  * and affect vencimientos across all tenants. Creates per-tenant sugerencias.
  */
 export class DetectarSugerenciasProrrogaHandler {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly ajusteDiaHabil: AjusteDiaHabilService,
+  ) {}
 
   async execute(
     command: DetectarSugerenciasProrrogaCommand,
@@ -90,7 +94,13 @@ export class DetectarSugerenciasProrrogaHandler {
         const targetMonth = propuesta.mesSiguiente ? month + 1 : month;
         const targetYear = targetMonth > 11 ? year + 1 : year;
         const normalizedMonth = targetMonth % 12;
-        const fechaSugerida = new Date(targetYear, normalizedMonth, propuesta.diaVencimiento);
+        const fechaNominal = new Date(targetYear, normalizedMonth, propuesta.diaVencimiento);
+
+        // Adjust for business days (weekends + feriados for this jurisdiccion)
+        const fechaSugerida = await this.ajusteDiaHabil.ajustar(
+          fechaNominal,
+          propuesta.jurisdiccion,
+        );
 
         // Skip if the suggested date is the same as current
         const currentDateStr = new Date(venc.fecha_vencimiento).toISOString().slice(0, 10);

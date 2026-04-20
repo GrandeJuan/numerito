@@ -321,9 +321,9 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     // ── Sugerencias de prórroga ──
     {
       provide: DetectarSugerenciasProrrogaHandler,
-      useFactory: (em: EntityManager) =>
-        new DetectarSugerenciasProrrogaHandler(em),
-      inject: [EntityManager],
+      useFactory: (em: EntityManager, ajusteDiaHabil: AjusteDiaHabilService) =>
+        new DetectarSugerenciasProrrogaHandler(em, ajusteDiaHabil),
+      inject: [EntityManager, AjusteDiaHabilService],
     },
     {
       provide: AprobarSugerenciaProrrogaHandler,

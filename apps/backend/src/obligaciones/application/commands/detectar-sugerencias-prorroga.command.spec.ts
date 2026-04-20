@@ -1,5 +1,19 @@
 import { DetectarSugerenciasProrrogaHandler } from './detectar-sugerencias-prorroga.command';
 import type { DiffRegla } from '../../../integraciones/application/commands/procesar-resultado-scraping.command';
+import type { AjusteDiaHabilService } from '../../domain/services/ajuste-dia-habil.service';
+
+function makeAjusteDiaHabil(adjustments: Record<string, string> = {}): AjusteDiaHabilService {
+  return {
+    ajustar: jest.fn(async (fecha: Date, _jurisdiccion: string) => {
+      const key = fecha.toISOString().slice(0, 10);
+      if (adjustments[key]) {
+        return new Date(adjustments[key]);
+      }
+      // Default: return same date (no adjustment needed)
+      return new Date(fecha);
+    }),
+  } as any;
+}
 
 function makeEntityManager(pendientes: any[] = [], existingOpen: any[] = []) {
   const created: any[] = [];
@@ -48,7 +62,7 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -82,7 +96,7 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
     ];
     const existingOpen = [{ vencimiento_id: 'venc-1' }];
     const em = makeEntityManager(pendientes, existingOpen);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -105,7 +119,7 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -118,7 +132,7 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
 
   it('returns zero when no modified rules', async () => {
     const em = makeEntityManager([], []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
 
     const result = await handler.execute({
       reglasModificadas: [{ tipo: 'NUEVA', propuesta: {} as any }],
@@ -127,6 +141,62 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
 
     expect(result.sugerenciasCreadas).toBe(0);
     expect(result.sugerenciasOmitidas).toBe(0);
+  });
+
+  it('adjusts suggested date for business days via AjusteDiaHabilService', async () => {
+    const pendientes = [
+      {
+        id: 'venc-1',
+        estudio_id: 'est-1',
+        cliente_id: 'cli-1',
+        tipo_obligacion: 'IVA',
+        periodo: '2026-05',
+        fecha_vencimiento: new Date('2026-06-20'), // original
+      },
+    ];
+    // June 22 2026 is a Monday, but pretend it's a feriado — adjust to June 23
+    const ajuste = makeAjusteDiaHabil({ '2026-06-22': '2026-06-23' });
+    const em = makeEntityManager(pendientes, []);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste);
+
+    const result = await handler.execute({
+      reglasModificadas: [modifiedDiff],
+      ejecucionIngestaId: 'ejec-1',
+    });
+
+    expect(result.sugerenciasCreadas).toBe(1);
+    expect(ajuste.ajustar).toHaveBeenCalledWith(
+      expect.any(Date),
+      'ARCA',
+    );
+    // The persisted fechaSugerida should be the adjusted date, not the nominal
+    const created = em._created[0];
+    expect(created.fechaSugerida.toISOString().slice(0, 10)).toBe('2026-06-23');
+  });
+
+  it('skips when business-day-adjusted date equals current date', async () => {
+    const pendientes = [
+      {
+        id: 'venc-1',
+        estudio_id: 'est-1',
+        cliente_id: 'cli-1',
+        tipo_obligacion: 'IVA',
+        periodo: '2026-05',
+        fecha_vencimiento: new Date('2026-06-23'), // current is already at adjusted date
+      },
+    ];
+    // Nominal is June 22 but adjusts to June 23 (same as current)
+    const ajuste = makeAjusteDiaHabil({ '2026-06-22': '2026-06-23' });
+    const em = makeEntityManager(pendientes, []);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste);
+
+    const result = await handler.execute({
+      reglasModificadas: [modifiedDiff],
+      ejecucionIngestaId: null,
+    });
+
+    expect(result.sugerenciasCreadas).toBe(0);
+    expect(result.sugerenciasOmitidas).toBe(1);
   });
 
   it('handles multiple vencimientos across different estudios', async () => {
@@ -149,7 +219,7 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any);
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
