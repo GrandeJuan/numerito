@@ -1,0 +1,25 @@
+<!--
+  Fixture: ARCA page with changed HTML structure (e.g., ARCA redesigned the page).
+  Used to test error handling when the page structure doesn't match expectations.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ARCA - Agenda de Vencimientos</title>
+</head>
+<body>
+<div id="contenido">
+  <h2>Agenda de Vencimientos</h2>
+
+  <!-- New structure: divs instead of tables -->
+  <div class="vencimiento-card">
+    <div class="card-header">IVA - DJ Mensual</div>
+    <div class="card-body">
+      <span class="cuit-0">18/06/2026</span>
+      <span class="cuit-1">18/06/2026</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

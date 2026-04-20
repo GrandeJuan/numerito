@@ -25,6 +25,9 @@ import type {
   ReglaVencimientoEntityRepository,
 } from '../obligaciones/domain/repositories/regla-vencimiento.repository';
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
+import { CALENDARIO_SCRAPER } from './domain/ports/calendario-scraper.port';
+import type { CalendarioScraperPort } from './domain/ports/calendario-scraper.port';
+import { EjecutarIngestaManualHandler } from './application/commands/ejecutar-ingesta-manual.command';
 
 @Module({
   imports: [ObligacionesModule],
@@ -68,6 +71,22 @@ import { ObligacionesModule } from '../obligaciones/obligaciones.module';
       provide: EjecucionIngestaListHandler,
       useFactory: (em: EntityManager) => new EjecucionIngestaListHandler(em),
       inject: [EntityManager],
+    },
+
+    // ── CalendarioScraperPort (null in backend runtime — Fargate tasks push results via POST) ──
+    { provide: CALENDARIO_SCRAPER, useValue: null },
+    {
+      provide: EjecutarIngestaManualHandler,
+      useFactory: (
+        configRepo: ConfiguracionIngestaRepository,
+        procesarHandler: ProcesarResultadoScrapingHandler,
+        scraperPort: CalendarioScraperPort | null,
+      ) => new EjecutarIngestaManualHandler(configRepo, procesarHandler, scraperPort),
+      inject: [
+        CONFIGURACION_INGESTA_REPOSITORY,
+        ProcesarResultadoScrapingHandler,
+        CALENDARIO_SCRAPER,
+      ],
     },
   ],
   exports: [
