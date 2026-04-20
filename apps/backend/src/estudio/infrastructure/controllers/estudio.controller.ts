@@ -2,6 +2,8 @@ import { Controller, Get, Put, Post, Param, Body, Inject } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ESTUDIO_REPOSITORY } from '../../domain/repositories/estudio.repository';
 import type { EstudioRepository } from '../../domain/repositories/estudio.repository';
+import { ESTUDIO_EQUIPO_VIEW } from '../../../iam/application/public-views';
+import type { EstudioEquipoViewInput, EquipoMiembroDto } from '../../../iam/application/public-views';
 import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
 import {
   ActualizarEstudioDto,
@@ -29,6 +31,7 @@ export class EstudioController {
   constructor(
     @Inject(ESTUDIO_REPOSITORY) private readonly estudioRepo: EstudioRepository,
     @Inject(SUBSCRIPCION_REPOSITORY) private readonly subscripcionRepo: SubscripcionRepository,
+    @Inject(ESTUDIO_EQUIPO_VIEW) private readonly equipoView: { execute(input: EstudioEquipoViewInput): Promise<EquipoMiembroDto[]> },
     private readonly renovarHandler: RenovarSubscripcionHandler,
     private readonly cancelarHandler: CancelarSubscripcionHandler,
     private readonly marcarVencidaHandler: MarcarSubscripcionVencidaHandler,
@@ -49,8 +52,8 @@ export class EstudioController {
 
   @Get('equipo')
   @ApiOperation({ summary: 'Obtener equipo del estudio actual' })
-  async getEquipo(@Principal() _principal: EstudioPrincipal) {
-    return [];
+  async getEquipo(@Principal() principal: EstudioPrincipal) {
+    return this.equipoView.execute({ estudioId: principal.estudioId });
   }
 
   @Get('plan')

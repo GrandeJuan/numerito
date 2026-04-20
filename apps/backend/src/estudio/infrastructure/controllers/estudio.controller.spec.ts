@@ -40,6 +40,7 @@ describe('EstudioController', () => {
   let controller: EstudioController;
   let mockEstudioRepo: any;
   let mockSubscripcionRepo: any;
+  let mockEquipoView: any;
   let mockRenovarHandler: any;
   let mockCancelarHandler: any;
   let mockMarcarVencidaHandler: any;
@@ -59,6 +60,7 @@ describe('EstudioController', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
+    mockEquipoView = { execute: jest.fn().mockResolvedValue([]) };
     mockRenovarHandler = { execute: jest.fn() };
     mockCancelarHandler = { execute: jest.fn() };
     mockMarcarVencidaHandler = { execute: jest.fn() };
@@ -67,6 +69,7 @@ describe('EstudioController', () => {
     controller = new EstudioController(
       mockEstudioRepo,
       mockSubscripcionRepo,
+      mockEquipoView,
       mockRenovarHandler,
       mockCancelarHandler,
       mockMarcarVencidaHandler,
@@ -82,6 +85,36 @@ describe('EstudioController', () => {
       const result = await controller.getMine(principal);
       expect(result).toBeDefined();
       expect(mockEstudioRepo.findById).toHaveBeenCalledWith(principal.estudioId);
+    });
+  });
+
+  describe('getEquipo', () => {
+    it('should delegate to equipoView with estudioId from principal', async () => {
+      const mockTeam = [
+        {
+          usuarioId: 'usr-1',
+          email: 'juan@estudio.com',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          rol: 'SOCIO',
+          verificado: true,
+          creadoEl: '2026-01-15T10:00:00.000Z',
+        },
+      ];
+      mockEquipoView.execute.mockResolvedValue(mockTeam);
+
+      const result = await controller.getEquipo(principal);
+
+      expect(mockEquipoView.execute).toHaveBeenCalledWith({ estudioId: 'est-1' });
+      expect(result).toEqual(mockTeam);
+    });
+
+    it('should return empty array when no team members', async () => {
+      mockEquipoView.execute.mockResolvedValue([]);
+
+      const result = await controller.getEquipo(principal);
+
+      expect(result).toEqual([]);
     });
   });
 
