@@ -36,12 +36,6 @@
     "snippet": "description=\"Gestión de suscripciones y billing de estudios próximamente.\""
   },
   {
-    "type": "console-log-handler",
-    "file": "src/components/clientes/clientes-table.tsx",
-    "line": 121,
-    "snippet": "<IconButton size={26} label=\"Acciones\" onClick={() => console.log('more', c.id)}>"
-  },
-  {
     "type": "proximamente-label",
     "file": "src/components/configuracion/roles-permisos-page.tsx",
     "line": 11,
@@ -58,11 +52,5 @@
     "file": "src/components/portal/mis-vencimientos-page.tsx",
     "line": 11,
     "snippet": "description=\"Calendario de vencimientos fiscales próximamente. Por ahora los próximos vencimientos aparecen en el portal.\""
-  },
-  {
-    "type": "console-log-handler",
-    "file": "src/components/vencimientos/vencimientos-page.tsx",
-    "line": 123,
-    "snippet": "onMore={(o) => console.log('more', o.id)}"
   }
 ]

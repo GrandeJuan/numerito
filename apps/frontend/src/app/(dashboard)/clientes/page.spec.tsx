@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/clientes',
+}));
+
+const mockPush = vi.fn();
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -61,6 +68,52 @@ describe('ClientesPage', () => {
     render(<ClientesPage />);
     await waitFor(() => {
       expect(screen.getByText('Empresa Alpha SRL')).toBeInTheDocument();
+    });
+  });
+
+  it('row menu opens on click and shows actions', async () => {
+    render(<ClientesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Empresa Alpha SRL')).toBeInTheDocument();
+    });
+
+    const menuBtn = screen.getByLabelText('Acciones');
+    fireEvent.click(menuBtn);
+
+    expect(screen.getByText('Ver detalle')).toBeInTheDocument();
+    expect(screen.getByText('Archivar')).toBeInTheDocument();
+  });
+
+  it('archivar calls PATCH desactivar endpoint', async () => {
+    render(<ClientesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Empresa Alpha SRL')).toBeInTheDocument();
+    });
+
+    const menuBtn = screen.getByLabelText('Acciones');
+    fireEvent.click(menuBtn);
+    fireEvent.click(screen.getByText('Archivar'));
+
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith('/v1/clientes/c1/desactivar', { method: 'PATCH' });
+    });
+  });
+
+  it('export button is wired', async () => {
+    render(<ClientesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Exportar')).toBeInTheDocument();
+    });
+
+    const exportBtn = screen.getByText('Exportar');
+    expect(exportBtn.closest('button')).not.toBeNull();
+  });
+
+  it('shows pagination controls', async () => {
+    render(<ClientesPage />);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Página anterior')).toBeInTheDocument();
+      expect(screen.getByLabelText('Página siguiente')).toBeInTheDocument();
     });
   });
 });

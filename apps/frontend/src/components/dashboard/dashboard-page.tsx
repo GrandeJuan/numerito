@@ -33,6 +33,23 @@ const Download = (
   </svg>
 );
 
+function exportDashboardCsv(stats: DashboardStats) {
+  const rows: string[] = ['Métrica,Valor'];
+  rows.push(`Clientes,"${stats.kpis.clientes}"`);
+  rows.push(`Vencimientos próximos,"${stats.kpis.vencimientosProximos}"`);
+  if (stats.kpis.facturacionMes !== undefined) {
+    rows.push(`Facturación mes,"${stats.kpis.facturacionMes}"`);
+  }
+  rows.push(`Tareas activas,"${stats.kpis.tareasActivas}"`);
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dashboard-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function DashboardPage() {
   const { estudioActual } = useAuth();
   const {
@@ -58,7 +75,7 @@ export function DashboardPage() {
                 { value: 'year', label: 'Año' },
               ]}
             />
-            <Button variant="ghost" icon={Download}>
+            <Button variant="ghost" icon={Download} onClick={() => stats && exportDashboardCsv(stats)}>
               Exportar
             </Button>
           </>

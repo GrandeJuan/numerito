@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { DataTable } from '../data-table';
 import { Pill } from '../pill';
 import { IconButton } from '../icon-button';
@@ -25,10 +26,103 @@ function initials(name: string) {
 export interface ClientesTableProps {
   rows: Cliente[];
   total: number;
+  page: number;
+  totalPages: number;
   onRowClick?(c: Cliente): void;
+  onPageChange(p: number): void;
+  onArchivar(c: Cliente): void;
+  onReactivar(c: Cliente): void;
 }
 
-export function ClientesTable({ rows, total, onRowClick }: ClientesTableProps) {
+function RowMenu({
+  cliente,
+  onEdit,
+  onArchivar,
+  onReactivar,
+}: {
+  cliente: Cliente;
+  onEdit: () => void;
+  onArchivar: () => void;
+  onReactivar: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <IconButton
+        size={26}
+        label="Acciones"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+      >
+        {Icons.more}
+      </IconButton>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg py-1">
+          <button
+            type="button"
+            className="w-full text-left px-3 py-1.5 text-[12.5px] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              onEdit();
+            }}
+          >
+            Ver detalle
+          </button>
+          {cliente.isActive !== false ? (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-1.5 text-[12.5px] text-[var(--rose-ink)] hover:bg-[var(--surface-2)] transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onArchivar();
+              }}
+            >
+              Archivar
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-1.5 text-[12.5px] text-[var(--brand-ink)] hover:bg-[var(--surface-2)] transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onReactivar();
+              }}
+            >
+              Reactivar
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ClientesTable({
+  rows,
+  total,
+  page,
+  totalPages,
+  onRowClick,
+  onPageChange,
+  onArchivar,
+  onReactivar,
+}: ClientesTableProps) {
   return (
     <DataTable<Cliente>
       rows={rows}
@@ -118,9 +212,12 @@ export function ClientesTable({ rows, total, onRowClick }: ClientesTableProps) {
           header: '',
           align: 'right',
           render: (c) => (
-            <IconButton size={26} label="Acciones" onClick={() => console.log('more', c.id)}>
-              {Icons.more}
-            </IconButton>
+            <RowMenu
+              cliente={c}
+              onEdit={() => onRowClick?.(c)}
+              onArchivar={() => onArchivar(c)}
+              onReactivar={() => onReactivar(c)}
+            />
           ),
         },
       ]}
@@ -129,9 +226,26 @@ export function ClientesTable({ rows, total, onRowClick }: ClientesTableProps) {
           <span>
             {rows.length} de {total} clientes
           </span>
-          <div className="flex gap-1">
-            <IconButton size={26}>{Icons.chevL}</IconButton>
-            <IconButton size={26}>{Icons.chevR}</IconButton>
+          <div className="flex items-center gap-2">
+            <IconButton
+              size={26}
+              label="Página anterior"
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+            >
+              {Icons.chevL}
+            </IconButton>
+            <span className="text-[11.5px] text-[var(--text-3)]">
+              {page} / {totalPages}
+            </span>
+            <IconButton
+              size={26}
+              label="Página siguiente"
+              disabled={page >= totalPages}
+              onClick={() => onPageChange(page + 1)}
+            >
+              {Icons.chevR}
+            </IconButton>
           </div>
         </>
       }

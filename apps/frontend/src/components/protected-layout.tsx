@@ -57,7 +57,7 @@ export function RedesignProtectedLayout({ children }: RedesignProtectedLayoutPro
         role={role}
       />
       <main className="flex-1 flex flex-col min-w-0">
-        <Topbar estudioNombre={estudioNombre} userIniciales={userIniciales} notifications={1} />
+        <Topbar estudioNombre={estudioNombre} userIniciales={userIniciales} />
         <div className="flex-1 px-8 py-[26px] max-w-[1400px] w-full">{children}</div>
       </main>
     </div>

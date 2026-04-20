@@ -23,7 +23,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-[var(--bg)]">
       <AdminSidebar userName={userName} userEmail={userEmail} userIniciales={userIniciales} />
       <main className="flex-1 flex flex-col min-w-0">
-        <Topbar estudioNombre="Admin" userIniciales={userIniciales} notifications={0} />
+        <Topbar estudioNombre="Admin" userIniciales={userIniciales} />
         <div className="flex-1 px-8 py-7 max-w-[1400px] w-full">{children}</div>
       </main>
     </div>
