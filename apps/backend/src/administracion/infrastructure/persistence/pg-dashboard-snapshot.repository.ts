@@ -4,14 +4,20 @@ import type {
   DashboardSnapshot,
   DashboardSnapshotRepository,
 } from '../../domain/repositories/dashboard-snapshot.repository';
-import type { AdminDashboardStats } from '../../application/queries/obtener-admin-dashboard-stats.query';
+import type {
+  AdminDashboardSnapshotStats,
+  AdminTopStudio,
+  GrowthPoint,
+  PlanDistributionEntry,
+} from '../../application/queries/obtener-admin-dashboard-stats.query';
 
 /**
  * PostgreSQL implementation of DashboardSnapshotRepository.
  *
- * Uses raw SQL to read/write the admin_dashboard_snapshot table,
- * which is owned by the administracion bounded context.
- * No ORM entities needed — this is a denormalized read model.
+ * Uses raw SQL to read/write the admin_dashboard_snapshot table.
+ * Stores the snapshot-cacheable subset — KPIs, sparklines, growth series,
+ * plan distribution, top studios. Fresh data (services, uptime, activity)
+ * is composed by the handler and not persisted here.
  */
 @Injectable()
 export class PgDashboardSnapshotRepository implements DashboardSnapshotRepository {
@@ -24,14 +30,15 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
     if (rows.length === 0) return null;
     const row = rows[0];
 
-    // If all KPI values are zero and sparklines are empty, treat as unseeded
-    const estudiosSparklineParsed = this.parseJson<number[]>(row.estudios_sparkline, []);
+    const mrrSparkline = this.parseJson<number[]>(row.mrr_sparkline, []);
+    const estudiosSparkline = this.parseJson<number[]>(row.estudios_sparkline, []);
+
     if (
+      Number(row.mrr) === 0 &&
       Number(row.estudios_activos) === 0 &&
-      Number(row.total_usuarios) === 0 &&
-      Number(row.subscripciones_activas) === 0 &&
       row.stale === true &&
-      estudiosSparklineParsed.length === 0
+      mrrSparkline.length === 0 &&
+      estudiosSparkline.length === 0
     ) {
       return null;
     }
@@ -43,52 +50,28 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
     };
   }
 
-  async save(stats: AdminDashboardStats): Promise<void> {
+  async save(stats: AdminDashboardSnapshotStats): Promise<void> {
     const conn = this.em.getConnection();
     await conn.execute(
       `UPDATE "admin_dashboard_snapshot" SET
-        "estudios_activos" = $1,
-        "total_usuarios" = $2,
-        "subscripciones_activas" = $3,
-        "mrr" = $4,
-        "churn_mensual" = $5,
-        "uptime" = $6,
-        "estudios_sparkline" = $7,
-        "usuarios_sparkline" = $8,
-        "subscripciones_sparkline" = $9,
-        "mrr_sparkline" = $10,
-        "churn_sparkline" = $11,
-        "growth_data" = $12,
-        "revenue_data" = $13,
-        "registros_mensuales" = $14,
-        "distribucion_planes" = $15,
-        "alertas" = $16,
-        "estudios_recientes" = $17,
-        "top_tenants" = $18,
-        "registros_recientes" = $19,
+        "mrr" = $1,
+        "estudios_activos" = $2,
+        "mrr_sparkline" = $3,
+        "estudios_sparkline" = $4,
+        "growth" = $5,
+        "plan_distribution" = $6,
+        "top_studios" = $7,
         "computed_at" = NOW(),
         "stale" = false
       WHERE id = 1`,
       [
-        stats.kpis.estudiosActivos.value,
-        stats.kpis.totalUsuarios.value,
-        stats.kpis.subscripcionesActivas.value,
         stats.kpis.mrr.value,
-        stats.kpis.churnMensual.value,
-        stats.kpis.uptime.value,
-        JSON.stringify(stats.kpis.estudiosActivos.sparkline),
-        JSON.stringify(stats.kpis.totalUsuarios.sparkline),
-        JSON.stringify(stats.kpis.subscripcionesActivas.sparkline),
+        stats.kpis.estudiosActivos.value,
         JSON.stringify(stats.kpis.mrr.sparkline),
-        JSON.stringify(stats.kpis.churnMensual.sparkline),
-        JSON.stringify(stats.growthData),
-        JSON.stringify(stats.revenueData),
-        JSON.stringify(stats.registrosMensuales),
-        JSON.stringify(stats.distribucionPlanes),
-        JSON.stringify(stats.alertas),
-        JSON.stringify(stats.estudiosRecientes),
-        JSON.stringify(stats.topTenants),
-        JSON.stringify(stats.registrosRecientes),
+        JSON.stringify(stats.kpis.estudiosActivos.sparkline),
+        JSON.stringify(stats.growth),
+        JSON.stringify(stats.planDistribution),
+        JSON.stringify(stats.topStudios),
       ],
     );
   }
@@ -98,53 +81,32 @@ export class PgDashboardSnapshotRepository implements DashboardSnapshotRepositor
     await conn.execute(`UPDATE "admin_dashboard_snapshot" SET "stale" = true WHERE id = 1`);
   }
 
-  private rowToStats(row: any): AdminDashboardStats {
-    const estudiosSparkline = this.parseJson(row.estudios_sparkline, []);
-    const usuariosSparkline = this.parseJson(row.usuarios_sparkline, []);
-    const subscripcionesSparkline = this.parseJson(row.subscripciones_sparkline, []);
-    const mrrSparkline = this.parseJson(row.mrr_sparkline, []);
-    const churnSparkline = this.parseJson(row.churn_sparkline, []);
+  private rowToStats(row: any): AdminDashboardSnapshotStats {
+    const mrrSparkline = this.parseJson<number[]>(row.mrr_sparkline, []);
+    const estudiosSparkline = this.parseJson<number[]>(row.estudios_sparkline, []);
 
     return {
       kpis: {
-        estudiosActivos: this.buildKpi(Number(row.estudios_activos), estudiosSparkline),
-        totalUsuarios: this.buildKpi(Number(row.total_usuarios), usuariosSparkline),
-        subscripcionesActivas: this.buildKpi(
-          Number(row.subscripciones_activas),
-          subscripcionesSparkline,
-        ),
         mrr: this.buildKpi(Number(row.mrr), mrrSparkline),
-        churnMensual: this.buildKpi(Number(row.churn_mensual), churnSparkline, true),
-        uptime: {
-          value: Number(row.uptime),
-          delta: 'SLA OK',
-          deltaUp: true,
-          sparkline: Array(12).fill(Number(row.uptime)),
-        },
+        estudiosActivos: this.buildKpi(Number(row.estudios_activos), estudiosSparkline),
       },
-      growthData: this.parseJson(row.growth_data, []),
-      revenueData: this.parseJson(row.revenue_data, []),
-      registrosMensuales: this.parseJson(row.registros_mensuales, []),
-      distribucionPlanes: this.parseJson(row.distribucion_planes, []),
-      alertas: this.parseJson(row.alertas, []),
-      estudiosRecientes: this.parseJson(row.estudios_recientes, []),
-      topTenants: this.parseJson(row.top_tenants, []),
-      registrosRecientes: this.parseJson(row.registros_recientes, []),
+      growth: this.parseJson<GrowthPoint[]>(row.growth, []),
+      planDistribution: this.parseJson<PlanDistributionEntry[]>(row.plan_distribution, []),
+      topStudios: this.parseJson<AdminTopStudio[]>(row.top_studios, []),
     };
   }
 
-  private buildKpi(current: number, sparkline: number[], invertDelta = false) {
+  private buildKpi(current: number, sparkline: number[]) {
     const prev = sparkline.length >= 2 ? sparkline[sparkline.length - 2] : 0;
     let deltaPercent = 0;
     if (prev > 0) {
       deltaPercent = Math.round(((current - prev) / prev) * 1000) / 10;
     }
-    const deltaUp = invertDelta ? deltaPercent <= 0 : deltaPercent >= 0;
     const sign = deltaPercent >= 0 ? '+' : '';
     return {
       value: current,
       delta: `${sign}${deltaPercent}%`,
-      deltaUp,
+      deltaUp: deltaPercent >= 0,
       sparkline,
     };
   }

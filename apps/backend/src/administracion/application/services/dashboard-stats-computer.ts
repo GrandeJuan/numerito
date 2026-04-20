@@ -1,120 +1,110 @@
 import type { EstudioAdminKpisView } from '../../../estudio/application/views/estudio-admin-kpis.view';
 import type { EstudioAdminSparklineView } from '../../../estudio/application/views/estudio-admin-sparkline.view';
-import type { EstudioRegistrosMensualesView } from '../../../estudio/application/views/estudio-registros-mensuales.view';
 import type { EstudioDistribucionPlanesView } from '../../../estudio/application/views/estudio-distribucion-planes.view';
-import type { EstudioRecientesAdminView } from '../../../estudio/application/views/estudio-recientes-admin.view';
-import type { EstudioTopTenantsView } from '../../../estudio/application/views/estudio-top-tenants.view';
-import type { EstudioRegistrosRecientesView } from '../../../estudio/application/views/estudio-registros-recientes.view';
-import type { UsuarioAdminKpisView } from '../../../iam/application/views/usuario-admin-kpis.view';
 import type {
-  AdminDashboardStats,
-  GrowthDataPoint,
+  EstudioTopTenantDto,
+  EstudioTopTenantsView,
+} from '../../../estudio/application/views/estudio-top-tenants.view';
+import type {
+  AdminDashboardSnapshotStats,
+  AdminInitialsColor,
+  AdminPlanTone,
+  AdminStudioPlan,
+  AdminStudioStatus,
+  AdminTopStudio,
+  GrowthPoint,
   KpiWithSparkline,
-  RevenueDataPoint,
+  PlanDistributionEntry,
 } from '../queries/obtener-admin-dashboard-stats.query';
 
+const MONTH_SHORT_ES = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+];
+
+const PLAN_TONE: Record<string, AdminPlanTone> = {
+  PROFESIONAL: 'brand',
+  ENTERPRISE: 'indigo',
+  FREE: 'amber',
+};
+
+const PLAN_SLUG: Record<string, AdminStudioPlan> = {
+  PROFESIONAL: 'pro',
+  ENTERPRISE: 'enterprise',
+  FREE: 'starter',
+};
+
+const INITIALS_COLOR_BY_PLAN: Record<string, AdminInitialsColor> = {
+  PROFESIONAL: 'brand',
+  ENTERPRISE: 'indigo',
+  FREE: 'amber',
+};
+
+const RISK_ACTIVIDAD_THRESHOLD = 20;
+
 /**
- * Computes dashboard stats by composing source-context public views.
- *
- * All 14 queries are delegated to 8 views in estudio and iam contexts.
- * No raw SQL remains — all cross-context joins are encapsulated in views.
+ * Computes the snapshot-cacheable subset of dashboard stats.
+ * Fresh-on-read data (services, uptime details, dauMau, moduleUsage, activity)
+ * is composed by the handler on top of this output.
  */
 export class DashboardStatsComputer {
   constructor(
     private readonly estudioKpis: EstudioAdminKpisView,
     private readonly estudioSparkline: EstudioAdminSparklineView,
-    private readonly registrosMensuales: EstudioRegistrosMensualesView,
     private readonly distribucionPlanes: EstudioDistribucionPlanesView,
-    private readonly estudiosRecientes: EstudioRecientesAdminView,
-    private readonly usuarioKpis: UsuarioAdminKpisView,
     private readonly topTenantsView: EstudioTopTenantsView,
-    private readonly registrosRecientesView: EstudioRegistrosRecientesView,
   ) {}
 
-  async compute(): Promise<AdminDashboardStats> {
-    const [
-      kpis,
-      sparkline,
-      usuarios,
-      registros,
-      distribucion,
-      recientes,
-      topTenants,
-      registrosRecientes,
-    ] = await Promise.all([
+  async compute(): Promise<AdminDashboardSnapshotStats> {
+    const [kpis, sparkline, distribucion, topTenants] = await Promise.all([
       this.estudioKpis.execute(),
       this.estudioSparkline.execute(),
-      this.usuarioKpis.execute(),
-      this.registrosMensuales.execute(),
       this.distribucionPlanes.execute(),
-      this.estudiosRecientes.execute(),
       this.topTenantsView.execute(),
-      this.registrosRecientesView.execute(),
     ]);
 
-    const { estudiosActivos, subscripcionesActivas, subscripcionesPorVencer } = kpis;
-    const {
-      estudios: estudiosSparkline,
-      subscripciones: subscripcionesSparkline,
-      mrr: mrrSparkline,
-      churn: churnSparkline,
-    } = sparkline;
-    const { totalUsuarios, sparkline: usuariosSparkline } = usuarios;
+    const currentMrr = sparkline.mrr[sparkline.mrr.length - 1] ?? 0;
 
-    const currentMrr = mrrSparkline[mrrSparkline.length - 1] ?? 0;
-    const currentChurn = churnSparkline[churnSparkline.length - 1] ?? 0;
-
-    const months = this.buildMonthLabels();
-    const growthData: GrowthDataPoint[] = months.map((mes, i) => ({
-      mes,
-      usuarios: usuariosSparkline[i] ?? 0,
-      estudios: estudiosSparkline[i] ?? 0,
-    }));
-
-    const revenueData: RevenueDataPoint[] = months.map((mes, i) => {
-      const mrr = mrrSparkline[i] ?? 0;
-      return { mes, mrr, arr: mrr * 12 };
+    const months = this.buildShortMonthLabels();
+    const growth: GrowthPoint[] = months.map((month, i) => {
+      const prevEstudios = i === 0 ? 0 : (sparkline.estudios[i - 1] ?? 0);
+      const currEstudios = sparkline.estudios[i] ?? 0;
+      return {
+        month,
+        mrr: sparkline.mrr[i] ?? 0,
+        newStudios: Math.max(0, currEstudios - prevEstudios),
+        churn: sparkline.churn[i] ?? 0,
+      };
     });
 
-    const alertas: AdminDashboardStats['alertas'] = [];
-    if (subscripcionesPorVencer > 0) {
-      alertas.push({
-        tipo: 'warning',
-        mensaje: `${subscripcionesPorVencer} subscripciones por vencer en los próximos 30 días`,
-        fecha: new Date().toISOString().split('T')[0],
-      });
-    }
-
-    const estudiosRecientesFormatted = recientes.map((e) => ({
-      id: e.id,
-      nombre: e.nombre,
-      plan: e.plan,
-      estado: e.isActive ? 'Activo' : 'Inactivo',
-      creadoEn: e.createdAt,
+    const totalStudios = distribucion.reduce((a, d) => a + d.cantidad, 0) || 1;
+    const planDistribution: PlanDistributionEntry[] = distribucion.map((d) => ({
+      plan: d.plan,
+      count: d.cantidad,
+      percent: Math.round((d.cantidad / totalStudios) * 100),
+      tone: toPlanTone(d.plan),
     }));
+
+    const topStudios: AdminTopStudio[] = topTenants.map(toAdminTopStudio);
 
     return {
       kpis: {
-        estudiosActivos: this.buildKpi(estudiosActivos, estudiosSparkline),
-        totalUsuarios: this.buildKpi(totalUsuarios, usuariosSparkline),
-        subscripcionesActivas: this.buildKpi(subscripcionesActivas, subscripcionesSparkline),
-        mrr: this.buildKpi(currentMrr, mrrSparkline),
-        churnMensual: this.buildKpi(currentChurn, churnSparkline, true),
-        uptime: {
-          value: 99.98,
-          delta: 'SLA OK',
-          deltaUp: true,
-          sparkline: Array(12).fill(99.98),
-        },
+        mrr: this.buildKpi(currentMrr, sparkline.mrr),
+        estudiosActivos: this.buildKpi(kpis.estudiosActivos, sparkline.estudios),
       },
-      growthData,
-      revenueData,
-      registrosMensuales: registros,
-      distribucionPlanes: distribucion,
-      alertas,
-      estudiosRecientes: estudiosRecientesFormatted,
-      topTenants,
-      registrosRecientes,
+      growth,
+      planDistribution,
+      topStudios,
     };
   }
 
@@ -126,21 +116,66 @@ export class DashboardStatsComputer {
     }
     const deltaUp = invertDelta ? deltaPercent <= 0 : deltaPercent >= 0;
     const sign = deltaPercent >= 0 ? '+' : '';
-    return {
-      value: current,
-      delta: `${sign}${deltaPercent}%`,
-      deltaUp,
-      sparkline,
-    };
+    return { value: current, delta: `${sign}${deltaPercent}%`, deltaUp, sparkline };
   }
 
-  private buildMonthLabels(): string[] {
+  private buildShortMonthLabels(): string[] {
     const labels: string[] = [];
     const now = new Date();
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      labels.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      labels.push(MONTH_SHORT_ES[d.getMonth()]);
     }
     return labels;
   }
+}
+
+function toPlanTone(planNombre: string): AdminPlanTone {
+  const key = planNombre.toUpperCase();
+  return PLAN_TONE[key] ?? 'neutral';
+}
+
+function toPlanSlug(codigo: string): AdminStudioPlan {
+  return PLAN_SLUG[codigo.toUpperCase()] ?? 'starter';
+}
+
+function toInitialsColor(planCodigo: string, status: AdminStudioStatus): AdminInitialsColor {
+  if (status === 'payment_failed' || status === 'suspended') return 'neutral';
+  return INITIALS_COLOR_BY_PLAN[planCodigo.toUpperCase()] ?? 'neutral';
+}
+
+function toStudioStatus(estadoSubscripcion: string | null, actividad: number): AdminStudioStatus {
+  if (!estadoSubscripcion) return 'suspended';
+  switch (estadoSubscripcion.toUpperCase()) {
+    case 'TRIAL':
+      return 'trial';
+    case 'SUSPENDIDA':
+    case 'CANCELADA':
+      return 'suspended';
+    case 'VENCIDA':
+      return 'payment_failed';
+    case 'ACTIVA':
+      return actividad < RISK_ACTIVIDAD_THRESHOLD ? 'risk' : 'active';
+    default:
+      return 'suspended';
+  }
+}
+
+function toAdminTopStudio(t: EstudioTopTenantDto): AdminTopStudio {
+  const status = toStudioStatus(t.estadoSubscripcion, t.actividad);
+  const plan: AdminStudioPlan = status === 'trial' ? 'trial' : toPlanSlug(t.planCodigo);
+  const hasMrr = t.estadoSubscripcion === 'ACTIVA';
+  return {
+    id: t.id,
+    nombre: t.nombre,
+    cuit: t.cuit,
+    initialsColor: toInitialsColor(t.planCodigo, status),
+    plan,
+    usuarios: t.usuarios,
+    clientes: t.clientes,
+    clientesMax: t.maxClientes > 0 && t.maxClientes < 999999 ? t.maxClientes : undefined,
+    mrr: hasMrr ? t.mrr : null,
+    actividad: t.actividad,
+    status,
+  };
 }

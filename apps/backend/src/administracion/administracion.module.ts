@@ -29,33 +29,29 @@ import {
   ESTUDIOS_ADMIN_LIST_VIEW,
   ESTUDIO_ADMIN_KPIS_VIEW,
   ESTUDIO_ADMIN_SPARKLINE_VIEW,
-  ESTUDIO_REGISTROS_MENSUALES_VIEW,
   ESTUDIO_DISTRIBUCION_PLANES_VIEW,
-  ESTUDIO_RECIENTES_ADMIN_VIEW,
   ESTUDIO_TOP_TENANTS_VIEW,
-  ESTUDIO_REGISTROS_RECIENTES_VIEW,
 } from '../estudio/application/public-views';
 import type { EstudioSearchView } from '../estudio/application/views/estudio-search.view';
 import type { EstudiosAdminListView } from '../estudio/application/views/estudios-admin-list.view';
 import type { EstudioAdminKpisView } from '../estudio/application/views/estudio-admin-kpis.view';
 import type { EstudioAdminSparklineView } from '../estudio/application/views/estudio-admin-sparkline.view';
-import type { EstudioRegistrosMensualesView } from '../estudio/application/views/estudio-registros-mensuales.view';
 import type { EstudioDistribucionPlanesView } from '../estudio/application/views/estudio-distribucion-planes.view';
-import type { EstudioRecientesAdminView } from '../estudio/application/views/estudio-recientes-admin.view';
 import type { EstudioTopTenantsView } from '../estudio/application/views/estudio-top-tenants.view';
-import type { EstudioRegistrosRecientesView } from '../estudio/application/views/estudio-registros-recientes.view';
-import {
-  USUARIO_SEARCH_VIEW,
-  USUARIOS_ADMIN_LIST_VIEW,
-  USUARIO_ADMIN_KPIS_VIEW,
-} from '../iam/application/public-views';
+import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW } from '../iam/application/public-views';
 import type { UsuarioSearchView } from '../iam/application/views/usuario-search.view';
 import type { UsuariosAdminListView } from '../iam/application/views/usuarios-admin-list.view';
-import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admin-kpis.view';
 
 @Module({
   imports: [EstudioModule, IamModule, JwtModule.register({})],
-  controllers: [AdminPlanesController, AdminEstudiosController, AdminDashboardController, AdminUsuariosController, AdminHealthController, AdminSearchController],
+  controllers: [
+    AdminPlanesController,
+    AdminEstudiosController,
+    AdminDashboardController,
+    AdminUsuariosController,
+    AdminHealthController,
+    AdminSearchController,
+  ],
   providers: [
     { provide: ADMIN_PLAN_REPOSITORY, useClass: MikroOrmAdminPlanRepository },
     { provide: DASHBOARD_SNAPSHOT_REPOSITORY, useClass: PgDashboardSnapshotRepository },
@@ -67,37 +63,21 @@ import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admi
       useFactory: (
         estudioKpis: EstudioAdminKpisView,
         estudioSparkline: EstudioAdminSparklineView,
-        registrosMensuales: EstudioRegistrosMensualesView,
         distribucionPlanes: EstudioDistribucionPlanesView,
-        estudiosRecientes: EstudioRecientesAdminView,
-        usuarioKpis: UsuarioAdminKpisView,
         topTenants: EstudioTopTenantsView,
-        registrosRecientes: EstudioRegistrosRecientesView,
       ) =>
-        new DashboardStatsComputer(
-          estudioKpis,
-          estudioSparkline,
-          registrosMensuales,
-          distribucionPlanes,
-          estudiosRecientes,
-          usuarioKpis,
-          topTenants,
-          registrosRecientes,
-        ),
+        new DashboardStatsComputer(estudioKpis, estudioSparkline, distribucionPlanes, topTenants),
       inject: [
         ESTUDIO_ADMIN_KPIS_VIEW,
         ESTUDIO_ADMIN_SPARKLINE_VIEW,
-        ESTUDIO_REGISTROS_MENSUALES_VIEW,
         ESTUDIO_DISTRIBUCION_PLANES_VIEW,
-        ESTUDIO_RECIENTES_ADMIN_VIEW,
-        USUARIO_ADMIN_KPIS_VIEW,
         ESTUDIO_TOP_TENANTS_VIEW,
-        ESTUDIO_REGISTROS_RECIENTES_VIEW,
       ],
     },
     {
       provide: AdminEstudiosService,
-      useFactory: (estudiosAdminList: EstudiosAdminListView) => new AdminEstudiosService(estudiosAdminList),
+      useFactory: (estudiosAdminList: EstudiosAdminListView) =>
+        new AdminEstudiosService(estudiosAdminList),
       inject: [ESTUDIOS_ADMIN_LIST_VIEW],
     },
     {
@@ -108,7 +88,8 @@ import type { UsuarioAdminKpisView } from '../iam/application/views/usuario-admi
     ObtenerAdminDashboardStatsHandler,
     {
       provide: ObtenerAdminUsuariosHandler,
-      useFactory: (usuariosAdminList: UsuariosAdminListView) => new ObtenerAdminUsuariosHandler(usuariosAdminList),
+      useFactory: (usuariosAdminList: UsuariosAdminListView) =>
+        new ObtenerAdminUsuariosHandler(usuariosAdminList),
       inject: [USUARIOS_ADMIN_LIST_VIEW],
     },
     {

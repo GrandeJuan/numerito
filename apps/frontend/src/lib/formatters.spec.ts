@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { formatCurrency, formatFecha, relativeTime } from './formatters';
+import { formatCurrency, formatCurrencyCompact, formatFecha, relativeTime } from './formatters';
 
 describe('formatCurrency', () => {
   it('formats a positive number with peso sign', () => {
@@ -16,6 +16,26 @@ describe('formatCurrency', () => {
     const result = formatCurrency(1000000);
     expect(result).toContain('$');
     expect(result).toContain('1');
+  });
+});
+
+describe('formatCurrencyCompact', () => {
+  it('returns plain currency under 1k', () => {
+    expect(formatCurrencyCompact(850)).toBe('$850');
+    expect(formatCurrencyCompact(0)).toBe('$0');
+  });
+
+  it('formats thousands with one decimal and K suffix', () => {
+    expect(formatCurrencyCompact(1200)).toBe('$1.2K');
+    expect(formatCurrencyCompact(7500)).toBe('$7.5K');
+  });
+
+  it('formats millions with two decimals and M suffix', () => {
+    expect(formatCurrencyCompact(4_820_000)).toBe('$4.82M');
+  });
+
+  it('formats billions with two decimals and B suffix', () => {
+    expect(formatCurrencyCompact(1_300_000_000)).toBe('$1.30B');
   });
 });
 

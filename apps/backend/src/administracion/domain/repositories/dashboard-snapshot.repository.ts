@@ -1,14 +1,14 @@
-import type { AdminDashboardStats } from '../../application/queries/obtener-admin-dashboard-stats.query';
+import type { AdminDashboardSnapshotStats } from '../../application/queries/obtener-admin-dashboard-stats.query';
 
 export interface DashboardSnapshot {
-  stats: AdminDashboardStats;
+  stats: AdminDashboardSnapshotStats;
   computedAt: Date;
   stale: boolean;
 }
 
 export interface DashboardSnapshotRepository {
   getLatest(): Promise<DashboardSnapshot | null>;
-  save(stats: AdminDashboardStats): Promise<void>;
+  save(stats: AdminDashboardSnapshotStats): Promise<void>;
   markStale(): Promise<void>;
 }
 

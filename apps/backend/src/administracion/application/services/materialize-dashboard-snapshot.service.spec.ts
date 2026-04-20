@@ -1,26 +1,17 @@
 import { MaterializeDashboardSnapshotService } from './materialize-dashboard-snapshot.service';
 import type { DashboardSnapshotRepository } from '../../domain/repositories/dashboard-snapshot.repository';
 import type { DashboardStatsComputer } from './dashboard-stats-computer';
-import type { AdminDashboardStats } from '../queries/obtener-admin-dashboard-stats.query';
+import type { AdminDashboardSnapshotStats } from '../queries/obtener-admin-dashboard-stats.query';
 
-function makeFakeStats(): AdminDashboardStats {
+function makeFakeStats(): AdminDashboardSnapshotStats {
   return {
     kpis: {
-      estudiosActivos: { value: 10, delta: '+0%', deltaUp: true, sparkline: [] },
-      totalUsuarios: { value: 50, delta: '+0%', deltaUp: true, sparkline: [] },
-      subscripcionesActivas: { value: 8, delta: '+0%', deltaUp: true, sparkline: [] },
       mrr: { value: 5000, delta: '+0%', deltaUp: true, sparkline: [] },
-      churnMensual: { value: 0, delta: '+0%', deltaUp: true, sparkline: [] },
-      uptime: { value: 99.98, delta: 'SLA OK', deltaUp: true, sparkline: [] },
+      estudiosActivos: { value: 10, delta: '+0%', deltaUp: true, sparkline: [] },
     },
-    growthData: [],
-    revenueData: [],
-    registrosMensuales: [],
-    distribucionPlanes: [],
-    alertas: [],
-    estudiosRecientes: [],
-    topTenants: [],
-    registrosRecientes: [],
+    growth: [],
+    planDistribution: [],
+    topStudios: [],
   };
 }
 
@@ -74,9 +65,11 @@ describe('MaterializeDashboardSnapshotService', () => {
 
   it('should not run concurrent refreshes', async () => {
     const stats = makeFakeStats();
-    let resolveCompute: (v: AdminDashboardStats) => void;
+    let resolveCompute: (v: AdminDashboardSnapshotStats) => void;
     mockComputer.compute.mockReturnValue(
-      new Promise((r) => { resolveCompute = r; }),
+      new Promise((r) => {
+        resolveCompute = r;
+      }),
     );
 
     const firstPromise = service.refresh();

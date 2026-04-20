@@ -6,6 +6,17 @@ export function formatCurrency(value: number): string {
   return `$${value.toLocaleString('es-AR')}`;
 }
 
+/**
+ * Compact currency formatter — $1.2K, $4.82M, $1.3B. Useful for KPI cards.
+ */
+export function formatCurrencyCompact(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
+  return `$${Math.round(value).toLocaleString('es-AR')}`;
+}
+
 export function formatFecha(fecha: string): string {
   try {
     // Append T00:00:00 to date-only strings to avoid timezone shifts

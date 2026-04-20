@@ -1,15 +1,29 @@
 import { DashboardStatsComputer } from './dashboard-stats-computer';
+import type { EstudioTopTenantDto } from '../../../estudio/application/views/estudio-top-tenants.view';
 
 describe('DashboardStatsComputer', () => {
   let computer: DashboardStatsComputer;
   let mockEstudioKpis: any;
   let mockEstudioSparkline: any;
-  let mockRegistrosMensuales: any;
   let mockDistribucionPlanes: any;
-  let mockEstudiosRecientes: any;
-  let mockUsuarioKpis: any;
   let mockTopTenants: any;
-  let mockRegistrosRecientes: any;
+
+  function tenant(overrides: Partial<EstudioTopTenantDto> = {}): EstudioTopTenantDto {
+    return {
+      id: 'e1',
+      nombre: 'Estudio Base',
+      cuit: '30-11111111-1',
+      planCodigo: 'PROFESIONAL',
+      planNombre: 'Profesional',
+      maxClientes: 50,
+      estadoSubscripcion: 'ACTIVA',
+      mrr: 9999,
+      usuarios: 5,
+      clientes: 10,
+      actividad: 80,
+      ...overrides,
+    };
+  }
 
   function setupDefaultViews() {
     mockEstudioKpis.execute.mockResolvedValue({
@@ -25,237 +39,180 @@ describe('DashboardStatsComputer', () => {
       churn: [10, 0, 7.14, 0, 6.25, 0, 0, 5, 0, 0, 4, 0],
     });
 
-    mockUsuarioKpis.execute.mockResolvedValue({
-      totalUsuarios: 50,
-      sparkline: [20, 25, 28, 30, 33, 36, 38, 40, 42, 45, 48, 50],
-    });
-
-    mockRegistrosMensuales.execute.mockResolvedValue([]);
-    mockDistribucionPlanes.execute.mockResolvedValue([]);
-    mockEstudiosRecientes.execute.mockResolvedValue([]);
-
-    mockTopTenants.execute.mockResolvedValue([
-      { id: 'e2', nombre: 'Estudio B', plan: 'Enterprise', usuarios: 10, clientes: 30, actividad: 100 },
-      { id: 'e1', nombre: 'Estudio A', plan: 'Profesional', usuarios: 5, clientes: 20, actividad: 61 },
+    mockDistribucionPlanes.execute.mockResolvedValue([
+      { plan: 'Profesional', cantidad: 6 },
+      { plan: 'Enterprise', cantidad: 3 },
+      { plan: 'Free', cantidad: 1 },
     ]);
 
-    mockRegistrosRecientes.execute.mockResolvedValue([
-      { id: 'r1', nombre: 'Nuevo Estudio', plan: 'Trial', email: 'admin@nuevo.com', creadoEn: '2026-04-10' },
+    mockTopTenants.execute.mockResolvedValue([
+      tenant({ id: 'e2', nombre: 'Big', planCodigo: 'ENTERPRISE', mrr: 49999, actividad: 100 }),
+      tenant({ id: 'e3', nombre: 'Risky', planCodigo: 'PROFESIONAL', mrr: 9999, actividad: 10 }),
+      tenant({
+        id: 'e4',
+        nombre: 'Trial Co',
+        planCodigo: 'FREE',
+        estadoSubscripcion: 'TRIAL',
+        mrr: 0,
+        actividad: 40,
+      }),
+      tenant({ id: 'e5', nombre: 'Late Payer', estadoSubscripcion: 'VENCIDA', actividad: 5 }),
     ]);
   }
 
   beforeEach(() => {
-    mockEstudioKpis = { execute: jest.fn().mockResolvedValue({ estudiosActivos: 0, subscripcionesActivas: 0, subscripcionesPorVencer: 0 }) };
-    mockEstudioSparkline = { execute: jest.fn().mockResolvedValue({ estudios: [], subscripciones: [], mrr: [], churn: [] }) };
-    mockRegistrosMensuales = { execute: jest.fn().mockResolvedValue([]) };
+    mockEstudioKpis = {
+      execute: jest.fn().mockResolvedValue({
+        estudiosActivos: 0,
+        subscripcionesActivas: 0,
+        subscripcionesPorVencer: 0,
+      }),
+    };
+    mockEstudioSparkline = {
+      execute: jest
+        .fn()
+        .mockResolvedValue({ estudios: [], subscripciones: [], mrr: [], churn: [] }),
+    };
     mockDistribucionPlanes = { execute: jest.fn().mockResolvedValue([]) };
-    mockEstudiosRecientes = { execute: jest.fn().mockResolvedValue([]) };
-    mockUsuarioKpis = { execute: jest.fn().mockResolvedValue({ totalUsuarios: 0, sparkline: [] }) };
     mockTopTenants = { execute: jest.fn().mockResolvedValue([]) };
-    mockRegistrosRecientes = { execute: jest.fn().mockResolvedValue([]) };
 
     computer = new DashboardStatsComputer(
       mockEstudioKpis,
       mockEstudioSparkline,
-      mockRegistrosMensuales,
       mockDistribucionPlanes,
-      mockEstudiosRecientes,
-      mockUsuarioKpis,
       mockTopTenants,
-      mockRegistrosRecientes,
     );
   });
 
-  it('should return stats with correct shape', async () => {
+  it('returns the snapshot-shaped subset', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
-    expect(result).toHaveProperty('kpis');
-    expect(result).toHaveProperty('growthData');
-    expect(result).toHaveProperty('revenueData');
-    expect(result).toHaveProperty('registrosMensuales');
-    expect(result).toHaveProperty('distribucionPlanes');
-    expect(result).toHaveProperty('alertas');
-    expect(result).toHaveProperty('estudiosRecientes');
-    expect(result).toHaveProperty('topTenants');
-    expect(result).toHaveProperty('registrosRecientes');
+    expect(result).toEqual(
+      expect.objectContaining({
+        kpis: expect.objectContaining({
+          mrr: expect.anything(),
+          estudiosActivos: expect.anything(),
+        }),
+        growth: expect.any(Array),
+        planDistribution: expect.any(Array),
+        topStudios: expect.any(Array),
+      }),
+    );
   });
 
-  it('should return 6 KPIs with sparkline data', async () => {
-    setupDefaultViews();
-
-    const result = await computer.compute();
-
-    const kpiKeys = ['estudiosActivos', 'totalUsuarios', 'subscripcionesActivas', 'mrr', 'churnMensual', 'uptime'];
-    for (const key of kpiKeys) {
-      const kpi = (result.kpis as any)[key];
-      expect(kpi).toHaveProperty('value');
-      expect(kpi).toHaveProperty('delta');
-      expect(kpi).toHaveProperty('deltaUp');
-      expect(kpi).toHaveProperty('sparkline');
-      expect(typeof kpi.value).toBe('number');
-      expect(typeof kpi.delta).toBe('string');
-      expect(typeof kpi.deltaUp).toBe('boolean');
-      expect(Array.isArray(kpi.sparkline)).toBe(true);
-    }
-  });
-
-  it('should calculate KPI values from view results', async () => {
-    setupDefaultViews();
-
-    const result = await computer.compute();
-
-    expect(result.kpis.estudiosActivos.value).toBe(10);
-    expect(result.kpis.totalUsuarios.value).toBe(50);
-    expect(result.kpis.subscripcionesActivas.value).toBe(8);
-  });
-
-  it('should calculate MRR from sparkline (last month value)', async () => {
+  it('builds mrr KPI from last sparkline value + delta', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
     expect(result.kpis.mrr.value).toBe(5000);
-    expect(result.kpis.mrr.sparkline).toEqual([1000, 1500, 1800, 2000, 2500, 3000, 3200, 3500, 4000, 4200, 4500, 5000]);
+    expect(result.kpis.mrr.sparkline).toHaveLength(12);
+    expect(result.kpis.mrr.delta).toBe('+11.1%');
+    expect(result.kpis.mrr.deltaUp).toBe(true);
   });
 
-  it('should calculate churn from sparkline (last month value)', async () => {
+  it('builds estudiosActivos KPI from view count', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
-    expect(result.kpis.churnMensual.value).toBe(0);
-    expect(result.kpis.churnMensual.sparkline[0]).toBe(10);
+    expect(result.kpis.estudiosActivos.value).toBe(10);
+    expect(result.kpis.estudiosActivos.sparkline).toHaveLength(12);
   });
 
-  it('should calculate delta as percentage change from previous month', async () => {
+  it('builds 12 growth points with month + mrr + newStudios + churn', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
-    expect(result.kpis.estudiosActivos.delta).toBe('+11.1%');
-    expect(result.kpis.estudiosActivos.deltaUp).toBe(true);
+    expect(result.growth).toHaveLength(12);
+    expect(result.growth[0]).toEqual(
+      expect.objectContaining({
+        month: expect.any(String),
+        mrr: 1000,
+        newStudios: 3,
+        churn: 10,
+      }),
+    );
+    expect(result.growth[11]).toEqual(
+      expect.objectContaining({ mrr: 5000, newStudios: 1, churn: 0 }),
+    );
   });
 
-  it('should delegate estudio KPIs to EstudioAdminKpisView', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockEstudioKpis.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate sparklines to EstudioAdminSparklineView', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockEstudioSparkline.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate usuario KPIs to UsuarioAdminKpisView', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockUsuarioKpis.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate registros mensuales to view', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockRegistrosMensuales.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate distribucion planes to view', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockDistribucionPlanes.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate estudios recientes to view', async () => {
-    setupDefaultViews();
-
-    await computer.compute();
-
-    expect(mockEstudiosRecientes.execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('should delegate topTenants to EstudioTopTenantsView', async () => {
+  it('computes percent + tone for planDistribution', async () => {
     setupDefaultViews();
 
     const result = await computer.compute();
 
-    expect(mockTopTenants.execute).toHaveBeenCalledTimes(1);
-    expect(result.topTenants).toHaveLength(2);
-    expect(result.topTenants[0]).toEqual({
+    expect(result.planDistribution).toEqual([
+      { plan: 'Profesional', count: 6, percent: 60, tone: 'brand' },
+      { plan: 'Enterprise', count: 3, percent: 30, tone: 'indigo' },
+      { plan: 'Free', count: 1, percent: 10, tone: 'amber' },
+    ]);
+  });
+
+  it('maps top tenants to AdminTopStudio with plan slug + status + initialsColor', async () => {
+    setupDefaultViews();
+
+    const result = await computer.compute();
+
+    expect(result.topStudios).toHaveLength(4);
+
+    const big = result.topStudios[0];
+    expect(big).toMatchObject({
       id: 'e2',
-      nombre: 'Estudio B',
-      plan: 'Enterprise',
-      usuarios: 10,
-      clientes: 30,
-      actividad: 100,
+      plan: 'enterprise',
+      status: 'active',
+      initialsColor: 'indigo',
+      mrr: 49999,
+      clientesMax: 50,
     });
-    expect(result.topTenants[1].actividad).toBe(61);
-  });
 
-  it('should delegate registrosRecientes to EstudioRegistrosRecientesView', async () => {
-    setupDefaultViews();
+    const risky = result.topStudios[1];
+    expect(risky.status).toBe('risk');
 
-    const result = await computer.compute();
+    const trial = result.topStudios[2];
+    expect(trial).toMatchObject({ plan: 'trial', status: 'trial', mrr: null });
 
-    expect(mockRegistrosRecientes.execute).toHaveBeenCalledTimes(1);
-    expect(result.registrosRecientes).toHaveLength(1);
-    expect(result.registrosRecientes[0]).toEqual({
-      id: 'r1',
-      nombre: 'Nuevo Estudio',
-      plan: 'Trial',
-      email: 'admin@nuevo.com',
-      creadoEn: '2026-04-10',
+    const latePayer = result.topStudios[3];
+    expect(latePayer).toMatchObject({
+      status: 'payment_failed',
+      mrr: null,
+      initialsColor: 'neutral',
     });
   });
 
-  it('should generate alerta when subscripciones por vencer > 0', async () => {
+  it('omits clientesMax when plan has unlimited cupo (>=999999)', async () => {
     setupDefaultViews();
+    mockTopTenants.execute.mockResolvedValueOnce([
+      tenant({ planCodigo: 'ENTERPRISE', maxClientes: 999999 }),
+    ]);
 
     const result = await computer.compute();
 
-    expect(result.alertas).toHaveLength(1);
-    expect(result.alertas[0].tipo).toBe('warning');
-    expect(result.alertas[0].mensaje).toContain('2 subscripciones');
+    expect(result.topStudios[0].clientesMax).toBeUndefined();
   });
 
-  it('should not generate alertas when no subscripciones por vencer', async () => {
-    setupDefaultViews();
-    mockEstudioKpis.execute.mockResolvedValue({
-      estudiosActivos: 10,
-      subscripcionesActivas: 8,
-      subscripcionesPorVencer: 0,
-    });
-
-    const result = await computer.compute();
-
-    expect(result.alertas).toHaveLength(0);
-  });
-
-  it('should use zero raw SQL calls — all delegated to views', async () => {
+  it('delegates to the four views in parallel', async () => {
     setupDefaultViews();
 
     await computer.compute();
 
-    // All 8 views should be called, no raw SQL
     expect(mockEstudioKpis.execute).toHaveBeenCalledTimes(1);
     expect(mockEstudioSparkline.execute).toHaveBeenCalledTimes(1);
-    expect(mockUsuarioKpis.execute).toHaveBeenCalledTimes(1);
-    expect(mockRegistrosMensuales.execute).toHaveBeenCalledTimes(1);
     expect(mockDistribucionPlanes.execute).toHaveBeenCalledTimes(1);
-    expect(mockEstudiosRecientes.execute).toHaveBeenCalledTimes(1);
     expect(mockTopTenants.execute).toHaveBeenCalledTimes(1);
-    expect(mockRegistrosRecientes.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles empty results without crashing', async () => {
+    const result = await computer.compute();
+
+    expect(result.kpis.mrr.value).toBe(0);
+    expect(result.kpis.estudiosActivos.value).toBe(0);
+    expect(result.growth).toHaveLength(12);
+    expect(result.planDistribution).toEqual([]);
+    expect(result.topStudios).toEqual([]);
   });
 });
