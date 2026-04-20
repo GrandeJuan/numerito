@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { DashboardController } from './infrastructure/controllers/dashboard.controller';
 import { ObtenerDashboardStatsHandler } from './application/queries/obtener-dashboard-stats.query';
 import { ObtenerActividadHandler } from './application/queries/obtener-actividad.query';
+import { ObtenerCumplimientoSocioHandler } from './application/queries/obtener-cumplimiento-socio.query';
 import { ClientesModule } from '../clientes/clientes.module';
 import { CLIENTE_SUMMARY_VIEW } from '../clientes/application/public-views';
 import type { ClienteSummaryView } from '../clientes/application/views/cliente-summary.view';
@@ -12,11 +13,13 @@ import {
   VENCIMIENTOS_POR_ESTADO_VIEW,
   PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
   ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
+  CUMPLIMIENTO_SOCIO_VIEW,
 } from '../obligaciones/application/public-views';
 import type { VencimientosProximosView } from '../obligaciones/application/views/vencimientos-proximos.view';
 import type { VencimientosPorEstadoView } from '../obligaciones/application/views/vencimientos-por-estado.view';
 import type { ProximosVencimientosDetalleView } from '../obligaciones/application/views/proximos-vencimientos-detalle.view';
 import type { ActividadRecienteVencimientosView } from '../obligaciones/application/views/actividad-reciente-vencimientos.view';
+import type { CumplimientoSocioView } from '../obligaciones/application/views/cumplimiento-socio.view';
 import { TareasModule } from '../tareas/tareas.module';
 import {
   TAREAS_PENDIENTES_VIEW,
@@ -102,6 +105,14 @@ import type { UsuarioMembershipView } from '../iam/application/views/usuario-mem
         ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
         USUARIO_MEMBERSHIP_VIEW,
       ],
+    },
+    {
+      provide: ObtenerCumplimientoSocioHandler,
+      useFactory: (
+        cumplimientoView: CumplimientoSocioView,
+        membershipView: UsuarioMembershipView,
+      ) => new ObtenerCumplimientoSocioHandler(cumplimientoView, membershipView),
+      inject: [CUMPLIMIENTO_SOCIO_VIEW, USUARIO_MEMBERSHIP_VIEW],
     },
   ],
 })
