@@ -18,6 +18,16 @@ import {
 import { ProyectarCalendarioMensualHandler } from '../../application/commands/proyectar-calendario-mensual.command';
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
+import { ProrrogarVencimientoHandler } from '../../application/commands/prorrogar-vencimiento.command';
+import { MarcarNoAplicaHandler } from '../../application/commands/marcar-no-aplica.command';
+import {
+  type ProrrogarVencimientoDto,
+  prorrogarVencimientoDtoSchema,
+} from '../../application/dtos/prorrogar-vencimiento.dto';
+import {
+  type MarcarNoAplicaDto,
+  marcarNoAplicaDtoSchema,
+} from '../../application/dtos/marcar-no-aplica.dto';
 import { VencimientoKpisHandler } from '../../application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from '../../application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from '../../application/queries/vencimiento-calendario.query';
@@ -33,6 +43,8 @@ export class ObligacionesController {
     private readonly proyectarCalendarioHandler: ProyectarCalendarioMensualHandler,
     private readonly presentarVencimientoHandler: PresentarVencimientoHandler,
     private readonly marcarVencidoHandler: MarcarVencidoHandler,
+    private readonly prorrogarVencimientoHandler: ProrrogarVencimientoHandler,
+    private readonly marcarNoAplicaHandler: MarcarNoAplicaHandler,
     private readonly vencimientoKpisHandler: VencimientoKpisHandler,
     private readonly vencimientoListHandler: VencimientoListHandler,
     private readonly vencimientoCalendarioHandler: VencimientoCalendarioHandler,
@@ -127,6 +139,33 @@ export class ObligacionesController {
   @ApiOperation({ summary: 'Marcar vencimiento como vencido' })
   async marcarVencido(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
     return this.marcarVencidoHandler.execute(principal, { vencimientoId: id });
+  }
+
+  @Patch(':id/prorrogar')
+  @ApiOperation({ summary: 'Prorrogar vencimiento con motivo y nueva fecha' })
+  async prorrogar(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(prorrogarVencimientoDtoSchema)) dto: ProrrogarVencimientoDto,
+  ) {
+    return this.prorrogarVencimientoHandler.execute(principal, {
+      vencimientoId: id,
+      motivo: dto.motivo,
+      nuevaFecha: dto.nuevaFecha,
+    });
+  }
+
+  @Patch(':id/no-aplica')
+  @ApiOperation({ summary: 'Marcar vencimiento como no aplica' })
+  async marcarNoAplica(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(marcarNoAplicaDtoSchema)) dto: MarcarNoAplicaDto,
+  ) {
+    return this.marcarNoAplicaHandler.execute(principal, {
+      vencimientoId: id,
+      motivo: dto.motivo,
+    });
   }
 }
 

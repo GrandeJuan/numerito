@@ -155,7 +155,9 @@ ON CONFLICT (tipo_obligacion, jurisdiccion) DO NOTHING;
 INSERT INTO estado_vencimiento (codigo, nombre) VALUES
   ('PENDIENTE', 'Pendiente'),
   ('PRESENTADO', 'Presentado'),
-  ('VENCIDO', 'Vencido')
+  ('VENCIDO', 'Vencido'),
+  ('PRORROGADO', 'Prorrogado'),
+  ('NO_APLICA', 'No Aplica')
 ON CONFLICT (codigo) DO NOTHING;
 
 -- ============================================

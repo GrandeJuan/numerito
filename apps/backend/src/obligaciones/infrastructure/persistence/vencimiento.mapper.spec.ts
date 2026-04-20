@@ -24,6 +24,8 @@ describe('VencimientoMapper', () => {
     fechaNominal: null,
     descripcion: 'IVA mensual',
     estado: ESTADO_VENCIMIENTO.PENDIENTE,
+    motivo: null,
+    fechaProrrogada: null,
   };
 
   describe('toDomain', () => {
@@ -39,6 +41,8 @@ describe('VencimientoMapper', () => {
       expect(vencimiento.fechaVencimiento).toBe(fechaVencimiento);
       expect(vencimiento.descripcion).toBe('IVA mensual');
       expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+      expect(vencimiento.motivo).toBeNull();
+      expect(vencimiento.fechaProrrogada).toBeNull();
     });
 
     it('preserves PRESENTADO state', () => {
@@ -55,6 +59,29 @@ describe('VencimientoMapper', () => {
         estado: ESTADO_VENCIMIENTO.VENCIDO,
       });
       expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+    });
+
+    it('preserves PRORROGADO state with motivo and fechaProrrogada', () => {
+      const fechaProrrogada = new Date('2030-07-01T00:00:00.000Z');
+      const vencimiento = mapper.toDomain({
+        ...validPersistence,
+        estado: ESTADO_VENCIMIENTO.PRORROGADO,
+        motivo: 'Prórroga RG 1234',
+        fechaProrrogada,
+      });
+      expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(vencimiento.motivo).toBe('Prórroga RG 1234');
+      expect(vencimiento.fechaProrrogada).toEqual(fechaProrrogada);
+    });
+
+    it('preserves NO_APLICA state with motivo', () => {
+      const vencimiento = mapper.toDomain({
+        ...validPersistence,
+        estado: ESTADO_VENCIMIENTO.NO_APLICA,
+        motivo: 'Cliente dado de baja',
+      });
+      expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.NO_APLICA);
+      expect(vencimiento.motivo).toBe('Cliente dado de baja');
     });
 
     it('does not emit domain events on reconstitution', () => {
@@ -114,6 +141,8 @@ describe('VencimientoMapper', () => {
           fechaNominal: null,
           descripcion: 'IVA mensual',
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
+          motivo: null,
+          fechaProrrogada: null,
         },
         validId,
       );
@@ -135,6 +164,26 @@ describe('VencimientoMapper', () => {
 
       const persistence = mapper.toPersistence(vencimiento);
       expect(persistence.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+    });
+
+    it('reflects mutations made via domain methods (prorrogar)', () => {
+      const vencimiento = mapper.toDomain(validPersistence);
+      const nuevaFecha = new Date('2030-07-01');
+      vencimiento.prorrogar('Prórroga oficial', nuevaFecha);
+
+      const persistence = mapper.toPersistence(vencimiento);
+      expect(persistence.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(persistence.motivo).toBe('Prórroga oficial');
+      expect(persistence.fechaProrrogada).toEqual(nuevaFecha);
+    });
+
+    it('reflects mutations made via domain methods (marcarNoAplica)', () => {
+      const vencimiento = mapper.toDomain(validPersistence);
+      vencimiento.marcarNoAplica('No aplica');
+
+      const persistence = mapper.toPersistence(vencimiento);
+      expect(persistence.estado).toBe(ESTADO_VENCIMIENTO.NO_APLICA);
+      expect(persistence.motivo).toBe('No aplica');
     });
 
     it('produces output that satisfies the persistence schema', () => {
@@ -162,6 +211,8 @@ describe('VencimientoMapper', () => {
       fechaNominal: null,
       descripcion: 'IVA mensual',
       estado: { codigo: ESTADO_VENCIMIENTO.PENDIENTE },
+      motivo: null,
+      fechaProrrogada: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     } as unknown as VencimientoEntity;
@@ -177,6 +228,25 @@ describe('VencimientoMapper', () => {
       expect(vencimiento.estudioId).toBe(estudioId);
       expect(vencimiento.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
       expect(vencimiento.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+    });
+
+    it('handles PRORROGADO schema entity with motivo and fechaProrrogada', () => {
+      const fechaProrrogada = new Date('2030-07-01T00:00:00.000Z');
+      const prorrogadoSchema = {
+        ...schemaEntity,
+        estado: { codigo: ESTADO_VENCIMIENTO.PRORROGADO },
+        motivo: 'Prórroga RG 1234',
+        fechaProrrogada,
+      } as unknown as VencimientoEntity;
+
+      const persistence = mapper.fromSchema(prorrogadoSchema);
+      expect(persistence.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(persistence.motivo).toBe('Prórroga RG 1234');
+      expect(persistence.fechaProrrogada).toEqual(fechaProrrogada);
+
+      const domain = mapper.toDomain(persistence);
+      expect(domain.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(domain.motivo).toBe('Prórroga RG 1234');
     });
   });
 });

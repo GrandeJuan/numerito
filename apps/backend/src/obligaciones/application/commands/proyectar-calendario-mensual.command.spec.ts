@@ -232,6 +232,8 @@ describe('ProyectarCalendarioMensual Command', () => {
         fechaNominal: null,
         descripcion: 'DDJJ IVA',
         estado: 'PENDIENTE',
+        motivo: null,
+        fechaProrrogada: null,
       },
       'existing-v-1',
     );

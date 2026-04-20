@@ -56,10 +56,12 @@ export interface Obligacion {
   periodo: string;
   fecha: string;
   fechaVencimiento?: string;
-  estado: 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO';
+  estado: 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO' | 'PRORROGADO' | 'NO_APLICA';
   cliente: string;
   monto?: number;
   responsable?: string | null;
+  motivo?: string | null;
+  fechaProrrogada?: string | null;
 }
 
 export interface Factura {

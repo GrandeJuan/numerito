@@ -28,6 +28,8 @@ export const vencimientoPersistenceSchema = z.object({
   fechaNominal: z.date().nullable(),
   descripcion: z.string(),
   estado: z.enum(estadoVencimientoValues),
+  motivo: z.string().nullable(),
+  fechaProrrogada: z.date().nullable(),
 });
 
 export type VencimientoPersistence = z.infer<typeof vencimientoPersistenceSchema>;
@@ -45,6 +47,8 @@ export class VencimientoMapper implements Mapper<Vencimiento, VencimientoPersist
         fechaNominal: data.fechaNominal,
         descripcion: data.descripcion,
         estado: data.estado,
+        motivo: data.motivo,
+        fechaProrrogada: data.fechaProrrogada,
       },
       data.id,
     );
@@ -61,6 +65,8 @@ export class VencimientoMapper implements Mapper<Vencimiento, VencimientoPersist
       fechaNominal: domain.fechaNominal,
       descripcion: domain.descripcion,
       estado: domain.estado,
+      motivo: domain.motivo,
+      fechaProrrogada: domain.fechaProrrogada,
     };
   }
 
@@ -75,6 +81,8 @@ export class VencimientoMapper implements Mapper<Vencimiento, VencimientoPersist
       fechaNominal: entity.fechaNominal,
       descripcion: entity.descripcion,
       estado: entity.estado.codigo as EstadoVencimiento,
+      motivo: entity.motivo,
+      fechaProrrogada: entity.fechaProrrogada,
     };
   }
 }

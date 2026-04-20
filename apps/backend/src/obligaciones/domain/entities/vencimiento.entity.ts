@@ -5,6 +5,7 @@ import { ESTADO_VENCIMIENTO, TIPO_OBLIGACION } from '@numerito/shared';
 import type { TipoObligacion, EstadoVencimiento } from '@numerito/shared';
 import { VencimientoCumplido } from '../events/vencimiento-cumplido.event';
 import { VencimientoVencido } from '../events/vencimiento-vencido.event';
+import { VencimientoProrrogado } from '../events/vencimiento-prorrogado.event';
 
 export { ESTADO_VENCIMIENTO };
 export type { EstadoVencimiento };
@@ -37,6 +38,8 @@ const vencimientoReconstitutePropsSchema = z.object({
   fechaNominal: z.date().nullable(),
   descripcion: z.string(),
   estado: z.enum(estadoVencimientoValues),
+  motivo: z.string().nullable(),
+  fechaProrrogada: z.date().nullable(),
 });
 
 export type ReconstituteVencimientoProps = z.input<typeof vencimientoReconstitutePropsSchema>;
@@ -50,6 +53,8 @@ export class Vencimiento extends BaseEntity {
   private _fechaNominal!: Date | null;
   private _descripcion!: string;
   private _estado!: EstadoVencimiento;
+  private _motivo!: string | null;
+  private _fechaProrrogada!: Date | null;
 
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
@@ -75,6 +80,8 @@ export class Vencimiento extends BaseEntity {
     this._fechaNominal = props.fechaNominal ?? null;
     this._descripcion = props.descripcion;
     this._estado = ESTADO_VENCIMIENTO.PENDIENTE;
+    this._motivo = null;
+    this._fechaProrrogada = null;
   }
 
   static create(props: CreateVencimientoProps, id?: string): Vencimiento {
@@ -95,6 +102,8 @@ export class Vencimiento extends BaseEntity {
     instance._fechaNominal = data.fechaNominal;
     instance._descripcion = data.descripcion;
     instance._estado = data.estado;
+    instance._motivo = data.motivo;
+    instance._fechaProrrogada = data.fechaProrrogada;
     return instance;
   }
 
@@ -122,10 +131,27 @@ export class Vencimiento extends BaseEntity {
   get estado(): EstadoVencimiento {
     return this._estado;
   }
+  get motivo(): string | null {
+    return this._motivo;
+  }
+  get fechaProrrogada(): Date | null {
+    return this._fechaProrrogada;
+  }
+
+  private static readonly ESTADOS_TERMINALES: ReadonlySet<EstadoVencimiento> = new Set([
+    ESTADO_VENCIMIENTO.PRESENTADO,
+    ESTADO_VENCIMIENTO.VENCIDO,
+    ESTADO_VENCIMIENTO.NO_APLICA,
+  ]);
 
   presentar(): void {
-    if (this._estado === ESTADO_VENCIMIENTO.VENCIDO) {
-      throw new OperacionInvalidaError('No se puede presentar un vencimiento ya vencido');
+    if (
+      this._estado !== ESTADO_VENCIMIENTO.PENDIENTE &&
+      this._estado !== ESTADO_VENCIMIENTO.PRORROGADO
+    ) {
+      throw new OperacionInvalidaError(
+        'Solo se puede presentar un vencimiento en estado PENDIENTE o PRORROGADO',
+      );
     }
     this._estado = ESTADO_VENCIMIENTO.PRESENTADO;
     this.updatedAt = new Date();
@@ -135,11 +161,55 @@ export class Vencimiento extends BaseEntity {
   }
 
   marcarVencido(): void {
+    if (Vencimiento.ESTADOS_TERMINALES.has(this._estado)) {
+      throw new OperacionInvalidaError(
+        `No se puede marcar como vencido un vencimiento en estado ${this._estado}`,
+      );
+    }
     this._estado = ESTADO_VENCIMIENTO.VENCIDO;
     this.updatedAt = new Date();
     this.addDomainEvent(
       new VencimientoVencido(this.id, this._clienteId, this._tipoObligacion, this._periodo),
     );
+  }
+
+  prorrogar(motivo: string, nuevaFecha: Date): void {
+    if (this._estado !== ESTADO_VENCIMIENTO.PENDIENTE) {
+      throw new OperacionInvalidaError(
+        'Solo se puede prorrogar un vencimiento en estado PENDIENTE',
+      );
+    }
+    if (!motivo || motivo.trim().length === 0) {
+      throw new OperacionInvalidaError('El motivo de la prórroga es obligatorio');
+    }
+    this._estado = ESTADO_VENCIMIENTO.PRORROGADO;
+    this._motivo = motivo.trim();
+    this._fechaProrrogada = nuevaFecha;
+    this.updatedAt = new Date();
+    this.addDomainEvent(
+      new VencimientoProrrogado(
+        this.id,
+        this._clienteId,
+        this._tipoObligacion,
+        this._periodo,
+        this._motivo,
+        nuevaFecha,
+      ),
+    );
+  }
+
+  marcarNoAplica(motivo: string): void {
+    if (this._estado !== ESTADO_VENCIMIENTO.PENDIENTE) {
+      throw new OperacionInvalidaError(
+        'Solo se puede marcar como no aplica un vencimiento en estado PENDIENTE',
+      );
+    }
+    if (!motivo || motivo.trim().length === 0) {
+      throw new OperacionInvalidaError('El motivo es obligatorio para marcar como no aplica');
+    }
+    this._estado = ESTADO_VENCIMIENTO.NO_APLICA;
+    this._motivo = motivo.trim();
+    this.updatedAt = new Date();
   }
 
   isProximoAVencer(diasAnticipacion: number): boolean {

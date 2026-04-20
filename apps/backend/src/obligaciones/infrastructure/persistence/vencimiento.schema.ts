@@ -14,6 +14,8 @@ export class VencimientoEntity {
   fechaNominal!: Date | null;
   descripcion!: string;
   estado!: EstadoVencimientoEntity;
+  motivo!: string | null;
+  fechaProrrogada!: Date | null;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -31,6 +33,8 @@ export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
     fechaNominal: { type: 'Date', fieldName: 'fecha_nominal', nullable: true },
     descripcion: { type: 'string' },
     estado: { kind: 'm:1', entity: () => EstadoVencimientoEntity, fieldName: 'estado_id' },
+    motivo: { type: 'string', nullable: true },
+    fechaProrrogada: { type: 'Date', fieldName: 'fecha_prorrogada', nullable: true },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },
     updatedAt: { type: 'Date', fieldName: 'updated_at', onCreate: () => new Date(), onUpdate: () => new Date() },
   },

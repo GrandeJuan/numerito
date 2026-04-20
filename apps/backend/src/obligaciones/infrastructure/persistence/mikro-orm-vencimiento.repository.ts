@@ -152,6 +152,8 @@ export class MikroOrmVencimientoRepository
       existing.fechaNominal = data.fechaNominal;
       existing.descripcion = data.descripcion;
       existing.estado = estado;
+      existing.motivo = data.motivo;
+      existing.fechaProrrogada = data.fechaProrrogada;
     } else {
       this.em.create(VencimientoEntity, {
         id: data.id,
@@ -163,6 +165,8 @@ export class MikroOrmVencimientoRepository
         fechaNominal: data.fechaNominal,
         descripcion: data.descripcion,
         estado,
+        motivo: data.motivo,
+        fechaProrrogada: data.fechaProrrogada,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

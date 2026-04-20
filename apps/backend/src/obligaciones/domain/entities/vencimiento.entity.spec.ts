@@ -2,6 +2,7 @@ import { Vencimiento } from './vencimiento.entity';
 import { TIPO_OBLIGACION, ESTADO_VENCIMIENTO } from '@numerito/shared';
 import { VencimientoCumplido } from '../events/vencimiento-cumplido.event';
 import { VencimientoVencido } from '../events/vencimiento-vencido.event';
+import { VencimientoProrrogado } from '../events/vencimiento-prorrogado.event';
 
 describe('Vencimiento Entity', () => {
   const createVencimiento = () => {
@@ -95,6 +96,8 @@ describe('Vencimiento Entity', () => {
     expect(v.fechaNominal).toBeNull();
     expect(v.descripcion).toBe('DDJJ IVA Marzo 2030');
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+    expect(v.motivo).toBeNull();
+    expect(v.fechaProrrogada).toBeNull();
   });
 
   it('should store fechaNominal when provided', () => {
@@ -125,6 +128,138 @@ describe('Vencimiento Entity', () => {
     ).toThrow('La fecha nominal no puede ser posterior a la fecha ajustada');
   });
 
+  describe('prorrogar', () => {
+    it('should transition PENDIENTE to PRORROGADO with motivo and nueva fecha', () => {
+      const v = createVencimiento();
+      const nuevaFecha = new Date('2030-05-01');
+      v.prorrogar('Prórroga oficial ARCA RG 1234', nuevaFecha);
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(v.motivo).toBe('Prórroga oficial ARCA RG 1234');
+      expect(v.fechaProrrogada).toEqual(nuevaFecha);
+    });
+
+    it('should reject prorrogar from PRESENTADO', () => {
+      const v = createVencimiento();
+      v.presentar();
+      expect(() => v.prorrogar('motivo', new Date('2030-05-01'))).toThrow(
+        'Solo se puede prorrogar un vencimiento en estado PENDIENTE',
+      );
+    });
+
+    it('should reject prorrogar from VENCIDO', () => {
+      const v = createVencimiento();
+      v.marcarVencido();
+      expect(() => v.prorrogar('motivo', new Date('2030-05-01'))).toThrow(
+        'Solo se puede prorrogar un vencimiento en estado PENDIENTE',
+      );
+    });
+
+    it('should reject prorrogar with empty motivo', () => {
+      const v = createVencimiento();
+      expect(() => v.prorrogar('', new Date('2030-05-01'))).toThrow(
+        'El motivo de la prórroga es obligatorio',
+      );
+    });
+
+    it('should reject prorrogar with whitespace-only motivo', () => {
+      const v = createVencimiento();
+      expect(() => v.prorrogar('   ', new Date('2030-05-01'))).toThrow(
+        'El motivo de la prórroga es obligatorio',
+      );
+    });
+
+    it('should trim the motivo', () => {
+      const v = createVencimiento();
+      v.prorrogar('  Prórroga oficial  ', new Date('2030-05-01'));
+      expect(v.motivo).toBe('Prórroga oficial');
+    });
+
+    it('should emit VencimientoProrrogado event', () => {
+      const v = createVencimiento();
+      const nuevaFecha = new Date('2030-05-01');
+      v.prorrogar('Prórroga oficial', nuevaFecha);
+      const events = v.getDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]).toBeInstanceOf(VencimientoProrrogado);
+      const event = events[0] as VencimientoProrrogado;
+      expect(event.vencimientoId).toBe(v.id);
+      expect(event.clienteId).toBe('cliente-1');
+      expect(event.motivo).toBe('Prórroga oficial');
+      expect(event.nuevaFecha).toEqual(nuevaFecha);
+      expect(event.eventName).toBe('obligaciones.vencimiento-prorrogado');
+    });
+  });
+
+  describe('marcarNoAplica', () => {
+    it('should transition PENDIENTE to NO_APLICA with motivo', () => {
+      const v = createVencimiento();
+      v.marcarNoAplica('Cliente dado de baja en ARCA');
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.NO_APLICA);
+      expect(v.motivo).toBe('Cliente dado de baja en ARCA');
+    });
+
+    it('should reject marcarNoAplica from PRESENTADO', () => {
+      const v = createVencimiento();
+      v.presentar();
+      expect(() => v.marcarNoAplica('motivo')).toThrow(
+        'Solo se puede marcar como no aplica un vencimiento en estado PENDIENTE',
+      );
+    });
+
+    it('should reject marcarNoAplica from VENCIDO', () => {
+      const v = createVencimiento();
+      v.marcarVencido();
+      expect(() => v.marcarNoAplica('motivo')).toThrow(
+        'Solo se puede marcar como no aplica un vencimiento en estado PENDIENTE',
+      );
+    });
+
+    it('should reject marcarNoAplica with empty motivo', () => {
+      const v = createVencimiento();
+      expect(() => v.marcarNoAplica('')).toThrow(
+        'El motivo es obligatorio para marcar como no aplica',
+      );
+    });
+
+    it('should not emit domain events on marcarNoAplica', () => {
+      const v = createVencimiento();
+      v.marcarNoAplica('No aplica');
+      expect(v.getDomainEvents()).toHaveLength(0);
+    });
+  });
+
+  describe('presentar from PRORROGADO', () => {
+    it('should allow presenting a prorrogado vencimiento', () => {
+      const v = createVencimiento();
+      v.prorrogar('Prórroga', new Date('2030-05-01'));
+      v.clearDomainEvents();
+      v.presentar();
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
+    });
+  });
+
+  describe('marcarVencido restrictions', () => {
+    it('should reject marcarVencido from PRESENTADO', () => {
+      const v = createVencimiento();
+      v.presentar();
+      expect(() => v.marcarVencido()).toThrow();
+    });
+
+    it('should reject marcarVencido from NO_APLICA', () => {
+      const v = createVencimiento();
+      v.marcarNoAplica('No aplica');
+      expect(() => v.marcarVencido()).toThrow();
+    });
+
+    it('should allow marcarVencido from PRORROGADO', () => {
+      const v = createVencimiento();
+      v.prorrogar('Prórroga', new Date('2030-05-01'));
+      v.clearDomainEvents();
+      v.marcarVencido();
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+    });
+  });
+
   describe('reconstitute', () => {
     it('should reconstitute with a past fechaVencimiento without throwing', () => {
       const pastDate = new Date('2020-01-01');
@@ -138,6 +273,8 @@ describe('Vencimiento Entity', () => {
           fechaNominal: null,
           descripcion: 'IVA viejo',
           estado: ESTADO_VENCIMIENTO.VENCIDO,
+          motivo: null,
+          fechaProrrogada: null,
         },
         'existing-id',
       );
@@ -158,6 +295,8 @@ describe('Vencimiento Entity', () => {
           fechaNominal: null,
           descripcion: 'Monotributo Junio',
           estado: ESTADO_VENCIMIENTO.PRESENTADO,
+          motivo: null,
+          fechaProrrogada: null,
         },
         'reconstituted-id',
       );
@@ -171,6 +310,29 @@ describe('Vencimiento Entity', () => {
       expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
     });
 
+    it('should preserve motivo and fechaProrrogada on reconstitute', () => {
+      const fechaProrrogada = new Date('2025-07-01');
+      const v = Vencimiento.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          tipoObligacion: TIPO_OBLIGACION.IVA,
+          periodo: '2025-06',
+          fechaVencimiento: new Date('2025-06-20'),
+          fechaNominal: null,
+          descripcion: 'IVA',
+          estado: ESTADO_VENCIMIENTO.PRORROGADO,
+          motivo: 'Prórroga RG 1234',
+          fechaProrrogada,
+        },
+        'prorrogado-id',
+      );
+
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRORROGADO);
+      expect(v.motivo).toBe('Prórroga RG 1234');
+      expect(v.fechaProrrogada).toEqual(fechaProrrogada);
+    });
+
     it('should allow domain operations on reconstituted entities', () => {
       const v = Vencimiento.reconstitute(
         {
@@ -182,6 +344,8 @@ describe('Vencimiento Entity', () => {
           fechaNominal: null,
           descripcion: 'IVA',
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
+          motivo: null,
+          fechaProrrogada: null,
         },
         'some-id',
       );

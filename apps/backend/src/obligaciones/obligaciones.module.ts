@@ -26,6 +26,8 @@ import type { FeriadoRepository } from './domain/repositories/feriado.repository
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
+import { ProrrogarVencimientoHandler } from './application/commands/prorrogar-vencimiento.command';
+import { MarcarNoAplicaHandler } from './application/commands/marcar-no-aplica.command';
 import { CrearCatalogoObligacionHandler } from './application/commands/crear-catalogo-obligacion.command';
 import { ActualizarCatalogoObligacionHandler } from './application/commands/actualizar-catalogo-obligacion.command';
 import { CrearReglaVencimientoHandler } from './application/commands/crear-regla-vencimiento.command';
@@ -97,6 +99,18 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (repo: VencimientoRepository, eventBus: EventBus) =>
         new MarcarVencidoHandler(repo, eventBus),
       inject: [VENCIMIENTO_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: ProrrogarVencimientoHandler,
+      useFactory: (repo: VencimientoRepository, eventBus: EventBus) =>
+        new ProrrogarVencimientoHandler(repo, eventBus),
+      inject: [VENCIMIENTO_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: MarcarNoAplicaHandler,
+      useFactory: (repo: VencimientoRepository) =>
+        new MarcarNoAplicaHandler(repo),
+      inject: [VENCIMIENTO_REPOSITORY],
     },
 
     // ── Proyector ──

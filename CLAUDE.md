@@ -118,6 +118,7 @@ Each publishing context exports public event names and payload interfaces from `
 | `obligaciones.vencimiento-cumplido` | Obligaciones | `Vencimiento.presentar()` | `PresentarVencimientoHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-vencido` | Obligaciones | `Vencimiento.marcarVencido()` | `MarcarVencidoHandler` | `DashboardStatsListener` |
 | `obligaciones.vencimiento-proyectado` | Obligaciones | _(created in handler)_ | `ProyectarCalendarioMensualHandler` | _(none yet)_ |
+| `obligaciones.vencimiento-prorrogado` | Obligaciones | `Vencimiento.prorrogar()` | `ProrrogarVencimientoHandler` | _(none yet)_ |
 | `clientes.perfil-fiscal-actualizado` | Clientes | `Cliente.actualizarPerfilFiscal()` | `ActualizarPerfilFiscalHandler` | _(none yet)_ |
 
 **Contexts without events:** Contabilidad, Nomina, Documentos, Tareas, Facturacion, Integraciones.

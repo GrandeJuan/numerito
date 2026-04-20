@@ -10,6 +10,8 @@ describe('ObligacionesController', () => {
   let mockProyectarCalendarioHandler: any;
   let mockPresentarVencimientoHandler: any;
   let mockMarcarVencidoHandler: any;
+  let mockProrrogarVencimientoHandler: any;
+  let mockMarcarNoAplicaHandler: any;
   let mockVencimientoKpisHandler: any;
   let mockVencimientoListHandler: any;
   let mockVencimientoCalendarioHandler: any;
@@ -39,6 +41,12 @@ describe('ObligacionesController', () => {
     mockMarcarVencidoHandler = {
       execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
     };
+    mockProrrogarVencimientoHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
+    };
+    mockMarcarNoAplicaHandler = {
+      execute: jest.fn().mockResolvedValue({ id: 'v-1' }),
+    };
     mockVencimientoKpisHandler = {
       execute: jest.fn().mockResolvedValue({
         pendientes: 0,
@@ -61,6 +69,8 @@ describe('ObligacionesController', () => {
       mockProyectarCalendarioHandler,
       mockPresentarVencimientoHandler,
       mockMarcarVencidoHandler,
+      mockProrrogarVencimientoHandler,
+      mockMarcarNoAplicaHandler,
       mockVencimientoKpisHandler,
       mockVencimientoListHandler,
       mockVencimientoCalendarioHandler,
@@ -254,6 +264,53 @@ describe('ObligacionesController', () => {
       expect(mockMarcarVencidoHandler.execute).toHaveBeenCalledWith(principal, {
         vencimientoId: 'vencimiento-1',
       });
+    });
+  });
+
+  describe('prorrogar', () => {
+    it('should delegate to ProrrogarVencimientoHandler with principal', async () => {
+      const dto = { motivo: 'Prórroga oficial', nuevaFecha: '2026-05-15' };
+
+      await controller.prorrogar(principal, 'v-1', dto);
+
+      expect(mockProrrogarVencimientoHandler.execute).toHaveBeenCalledWith(principal, {
+        vencimientoId: 'v-1',
+        motivo: 'Prórroga oficial',
+        nuevaFecha: '2026-05-15',
+      });
+    });
+
+    it('should propagate errors from handler', async () => {
+      mockProrrogarVencimientoHandler.execute.mockRejectedValue(
+        new RecursoNoEncontradoError('Vencimiento'),
+      );
+
+      await expect(
+        controller.prorrogar(principal, 'bad-id', { motivo: 'test', nuevaFecha: '2026-05-15' }),
+      ).rejects.toThrow('Vencimiento no encontrado');
+    });
+  });
+
+  describe('marcarNoAplica', () => {
+    it('should delegate to MarcarNoAplicaHandler with principal', async () => {
+      const dto = { motivo: 'Cliente dado de baja' };
+
+      await controller.marcarNoAplica(principal, 'v-1', dto);
+
+      expect(mockMarcarNoAplicaHandler.execute).toHaveBeenCalledWith(principal, {
+        vencimientoId: 'v-1',
+        motivo: 'Cliente dado de baja',
+      });
+    });
+
+    it('should propagate errors from handler', async () => {
+      mockMarcarNoAplicaHandler.execute.mockRejectedValue(
+        new RecursoNoEncontradoError('Vencimiento'),
+      );
+
+      await expect(
+        controller.marcarNoAplica(principal, 'bad-id', { motivo: 'test' }),
+      ).rejects.toThrow('Vencimiento no encontrado');
     });
   });
 

@@ -9,10 +9,12 @@ import { Icons } from '../icons';
 import type { Obligacion } from '@numerito/shared';
 import { formatFecha } from '@/lib/formatters';
 
-const ESTADO: Record<Obligacion['estado'], { tone: 'amber' | 'rose' | 'brand'; label: string }> = {
+const ESTADO: Record<string, { tone: 'amber' | 'rose' | 'brand' | 'neutral' | 'indigo'; label: string }> = {
   PENDIENTE: { tone: 'amber', label: 'Pendiente' },
   VENCIDO: { tone: 'rose', label: 'Vencido' },
   PRESENTADO: { tone: 'brand', label: 'Presentado' },
+  PRORROGADO: { tone: 'indigo', label: 'Prorrogado' },
+  NO_APLICA: { tone: 'neutral', label: 'No Aplica' },
 };
 
 export interface VencimientosTableProps {
@@ -53,7 +55,7 @@ export function VencimientosTable({ rows, presentandoId, onPresentar, onMore }: 
           {
             header: 'Estado',
             render: (o) => {
-              const e = ESTADO[o.estado];
+              const e = ESTADO[o.estado] ?? { tone: 'neutral' as const, label: o.estado };
               return (
                 <Pill tone={e.tone} dot>
                   {e.label}

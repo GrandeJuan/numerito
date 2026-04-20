@@ -23,7 +23,7 @@ interface VencimientoApi {
   periodo: string;
   fechaVencimiento: string;
   descripcion?: string;
-  estado: 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO';
+  estado: 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO' | 'PRORROGADO' | 'NO_APLICA';
   monto?: number;
   responsable?: string | null;
 }
