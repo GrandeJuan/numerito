@@ -1,5 +1,6 @@
 import { IngestaEjecucionController } from './ingesta-ejecucion.controller';
 import type { ProcesarResultadoScrapingHandler } from '../../application/commands/procesar-resultado-scraping.command';
+import type { EjecutarIngestaManualHandler } from '../../application/commands/ejecutar-ingesta-manual.command';
 import type { EjecucionIngestaListHandler } from '../../application/queries/ejecucion-ingesta-list.query';
 
 function createController() {
@@ -14,16 +15,24 @@ function createController() {
     }),
   } as unknown as jest.Mocked<ProcesarResultadoScrapingHandler>;
 
+  const ejecutarManual = {
+    execute: jest.fn().mockResolvedValue({
+      mode: 'async',
+      fuente: 'ARCA',
+      taskArn: 'arn:aws:ecs:us-east-1:123:task/abc',
+    }),
+  } as unknown as jest.Mocked<EjecutarIngestaManualHandler>;
+
   const list = {
     execute: jest.fn().mockResolvedValue([]),
   } as unknown as jest.Mocked<EjecucionIngestaListHandler>;
 
-  const controller = new IngestaEjecucionController(procesar, list);
-  return { controller, procesar, list };
+  const controller = new IngestaEjecucionController(procesar, ejecutarManual, list);
+  return { controller, procesar, ejecutarManual, list };
 }
 
 describe('IngestaEjecucionController', () => {
-  it('should receive and process scraping resultado', async () => {
+  it('should receive resultado via webhook (Fargate) with SCHEDULE disparador', async () => {
     const { controller, procesar } = createController();
 
     const dto = {
@@ -43,8 +52,29 @@ describe('IngestaEjecucionController', () => {
       errores: [],
     };
 
-    const result = await controller.recibirResultado('ARCA', dto);
-    expect(procesar.execute).toHaveBeenCalledTimes(1);
+    const req = { headers: { 'x-ingesta-secret': 'test-secret' } };
+    const result = await controller.recibirResultado('ARCA', dto, req as any);
+    expect(procesar.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ disparador: 'SCHEDULE', disparadoPor: null }),
+    );
+    expect(result).toHaveProperty('data');
+  });
+
+  it('should receive resultado via admin JWT with MANUAL disparador', async () => {
+    const { controller, procesar } = createController();
+
+    const dto = {
+      fuente: 'ARCA' as const,
+      ejecutadoEn: '2026-04-20T10:00:00Z',
+      reglas: [],
+      errores: [],
+    };
+
+    const req = { headers: {}, user: { sub: 'user-123' } };
+    const result = await controller.recibirResultado('ARCA', dto, req as any);
+    expect(procesar.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ disparador: 'MANUAL', disparadoPor: 'user-123' }),
+    );
     expect(result).toHaveProperty('data');
   });
 
@@ -55,24 +85,37 @@ describe('IngestaEjecucionController', () => {
     expect(result).toHaveProperty('data');
   });
 
-  it('should return ejecutar-ahora placeholder', async () => {
-    const { controller } = createController();
+  it('should delegate ejecutar-ahora to handler', async () => {
+    const { controller, ejecutarManual } = createController();
     const result = await controller.ejecutarAhora('ARCA');
+    expect(ejecutarManual.execute).toHaveBeenCalledWith({
+      fuente: 'ARCA',
+      disparadoPor: 'admin',
+    });
     expect(result).toHaveProperty('data');
-    expect(result.data).toHaveProperty('fuente', 'ARCA');
+    expect(result.data).toHaveProperty('mode', 'async');
+    expect(result.data).toHaveProperty('taskArn');
   });
 
   it('should propagate errors from procesarHandler', async () => {
     const { controller, procesar } = createController();
     (procesar as any).execute.mockRejectedValue(new Error('processing failed'));
 
+    const req = { headers: {}, user: { sub: 'admin' } };
     await expect(
       controller.recibirResultado('ARCA', {
         fuente: 'ARCA',
         ejecutadoEn: '2026-04-20T10:00:00Z',
         reglas: [],
         errores: [],
-      }),
+      }, req as any),
     ).rejects.toThrow('processing failed');
+  });
+
+  it('should propagate errors from ejecutarManualHandler', async () => {
+    const { controller, ejecutarManual } = createController();
+    (ejecutarManual as any).execute.mockRejectedValue(new Error('launch failed'));
+
+    await expect(controller.ejecutarAhora('ARCA')).rejects.toThrow('launch failed');
   });
 });

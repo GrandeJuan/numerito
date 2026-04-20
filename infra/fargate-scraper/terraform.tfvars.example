@@ -1,0 +1,37 @@
+# Copy to terraform.tfvars and fill in values for your environment.
+
+environment = "prod"
+aws_region  = "us-east-1"
+
+# Networking
+vpc_id             = "vpc-xxxxxxxxx"
+private_subnet_ids = ["subnet-aaa", "subnet-bbb"]
+security_group_id  = "sg-xxxxxxxxx"
+
+# ECS
+ecs_cluster_arn    = "arn:aws:ecs:us-east-1:123456789012:cluster/numerito-prod"
+ecr_repository_url = "123456789012.dkr.ecr.us-east-1.amazonaws.com/numerito-scraper"
+image_tag          = "latest"
+
+# Backend
+backend_url        = "https://api.numerito.app"
+ingesta_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:numerito/ingesta-secret-AbCdEf"
+
+# Scraper config (per fuente)
+scraper_configs = {
+  ARCA = {
+    enabled         = true
+    cadencia_dias   = 7
+    meses_adelante  = 1
+    cpu             = 512
+    memory          = 1024
+  }
+  # Future scrapers:
+  # ARBA = { enabled = false, cadencia_dias = 7, meses_adelante = 0, cpu = 512, memory = 1024 }
+  # AGIP = { enabled = false, cadencia_dias = 7, meses_adelante = 0, cpu = 512, memory = 1024 }
+  # BCRA_FERIADOS = { enabled = false, cadencia_dias = 30, meses_adelante = 0, cpu = 256, memory = 512 }
+}
+
+# Alarms
+alarm_consecutive_failures = 3
+alarm_email                = "admin@numerito.app"

@@ -27,12 +27,21 @@ import type {
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { CALENDARIO_SCRAPER } from './domain/ports/calendario-scraper.port';
 import type { CalendarioScraperPort } from './domain/ports/calendario-scraper.port';
+import { FARGATE_TASK_LAUNCHER } from './domain/ports/fargate-task-launcher.port';
+import type { FargateTaskLauncherPort } from './domain/ports/fargate-task-launcher.port';
+import { AwsFargateTaskLauncher } from './infrastructure/adapters/aws-fargate-task-launcher';
 import { EjecutarIngestaManualHandler } from './application/commands/ejecutar-ingesta-manual.command';
+import { IngestaWebhookGuard } from './infrastructure/guards/ingesta-webhook.guard';
+import { AdminOrIngestaGuard } from './infrastructure/guards/admin-or-ingesta.guard';
 
 @Module({
   imports: [ObligacionesModule],
   controllers: [IngestaAdminController, IngestaEjecucionController],
   providers: [
+    // ── Guards ──
+    IngestaWebhookGuard,
+    AdminOrIngestaGuard,
+
     // ── Existing repositories ──
     { provide: NOTIFICACION_FISCAL_REPOSITORY, useClass: MikroOrmNotificacionFiscalRepository },
     { provide: CREDENCIAL_FISCAL_REPOSITORY, useClass: MikroOrmCredencialFiscalRepository },
@@ -73,19 +82,43 @@ import { EjecutarIngestaManualHandler } from './application/commands/ejecutar-in
       inject: [EntityManager],
     },
 
-    // ── CalendarioScraperPort (null in backend runtime — Fargate tasks push results via POST) ──
+    // ���─ CalendarioScraperPort (null in backend runtime — Fargate tasks push results via POST) ──
     { provide: CALENDARIO_SCRAPER, useValue: null },
+
+    // ── FargateTaskLauncher (launches ECS RunTask for on-demand scraping) ──
+    {
+      provide: FARGATE_TASK_LAUNCHER,
+      useFactory: () => {
+        const clusterArn = process.env.ECS_CLUSTER_ARN;
+        const taskDefArns = process.env.SCRAPER_TASK_DEFINITION_ARNS; // JSON: {"ARCA":"arn:..."}
+        const subnets = process.env.SCRAPER_SUBNETS; // comma-separated
+        const securityGroups = process.env.SCRAPER_SECURITY_GROUPS; // comma-separated
+
+        if (!clusterArn || !taskDefArns || !subnets || !securityGroups) {
+          return null; // Fargate triggering not configured in this environment
+        }
+
+        return new AwsFargateTaskLauncher({
+          clusterArn,
+          taskDefinitionArns: JSON.parse(taskDefArns),
+          subnets: subnets.split(',').map((s) => s.trim()),
+          securityGroups: securityGroups.split(',').map((s) => s.trim()),
+        });
+      },
+    },
     {
       provide: EjecutarIngestaManualHandler,
       useFactory: (
         configRepo: ConfiguracionIngestaRepository,
         procesarHandler: ProcesarResultadoScrapingHandler,
         scraperPort: CalendarioScraperPort | null,
-      ) => new EjecutarIngestaManualHandler(configRepo, procesarHandler, scraperPort),
+        taskLauncher: FargateTaskLauncherPort | null,
+      ) => new EjecutarIngestaManualHandler(configRepo, procesarHandler, scraperPort, taskLauncher),
       inject: [
         CONFIGURACION_INGESTA_REPOSITORY,
         ProcesarResultadoScrapingHandler,
         CALENDARIO_SCRAPER,
+        FARGATE_TASK_LAUNCHER,
       ],
     },
   ],
