@@ -1,0 +1,193 @@
+<!--
+  Fixture: AGIP (Administración Gubernamental de Ingresos Públicos) vencimientos page.
+  Simulates the response from agip.gob.ar calendario de vencimientos CABA.
+  AGIP publishes IIBB CABA vencimiento dates.
+  Structure: one table per tax group, 11 columns (concepto + 10 terminaciones 0-9).
+  Dates in DD/MM/YYYY format. Period: Mayo 2026.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AGIP - Calendario de Vencimientos</title>
+</head>
+<body>
+<div class="contenido-vencimientos">
+  <h2>Calendario de Vencimientos - Mayo 2026</h2>
+
+  <!-- IIBB - Categoría Locales -->
+  <div class="seccion-impuesto">
+    <h3>Ingresos Brutos - Categoría Locales</h3>
+    <table class="grilla-vtos">
+      <thead>
+        <tr>
+          <th>Obligación</th>
+          <th>Terminación 0</th>
+          <th>Terminación 1</th>
+          <th>Terminación 2</th>
+          <th>Terminación 3</th>
+          <th>Terminación 4</th>
+          <th>Terminación 5</th>
+          <th>Terminación 6</th>
+          <th>Terminación 7</th>
+          <th>Terminación 8</th>
+          <th>Terminación 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DDJJ Mensual IIBB - Categoría Locales</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+          <td>16/06/2026</td>
+          <td>16/06/2026</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+        </tr>
+        <tr>
+          <td>Anticipo Mensual IIBB - Categoría Locales</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+          <td>16/06/2026</td>
+          <td>16/06/2026</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IIBB - Convenio Multilateral -->
+  <div class="seccion-impuesto">
+    <h3>Ingresos Brutos - Convenio Multilateral</h3>
+    <table class="grilla-vtos">
+      <thead>
+        <tr>
+          <th>Obligación</th>
+          <th>Terminación 0</th>
+          <th>Terminación 1</th>
+          <th>Terminación 2</th>
+          <th>Terminación 3</th>
+          <th>Terminación 4</th>
+          <th>Terminación 5</th>
+          <th>Terminación 6</th>
+          <th>Terminación 7</th>
+          <th>Terminación 8</th>
+          <th>Terminación 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DDJJ Mensual IIBB - Convenio Multilateral (CM05)</td>
+          <td>16/06/2026</td>
+          <td>16/06/2026</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+          <td>19/06/2026</td>
+          <td>19/06/2026</td>
+          <td>20/06/2026</td>
+          <td>20/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Retenciones y Percepciones -->
+  <div class="seccion-impuesto">
+    <h3>Agentes de Retención y Percepción</h3>
+    <table class="grilla-vtos">
+      <thead>
+        <tr>
+          <th>Obligación</th>
+          <th>Terminación 0</th>
+          <th>Terminación 1</th>
+          <th>Terminación 2</th>
+          <th>Terminación 3</th>
+          <th>Terminación 4</th>
+          <th>Terminación 5</th>
+          <th>Terminación 6</th>
+          <th>Terminación 7</th>
+          <th>Terminación 8</th>
+          <th>Terminación 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Retenciones IIBB CABA - Régimen General</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>11/06/2026</td>
+          <td>11/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>13/06/2026</td>
+          <td>13/06/2026</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+        </tr>
+        <tr>
+          <td>Percepciones IIBB CABA - Régimen General</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>11/06/2026</td>
+          <td>11/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>13/06/2026</td>
+          <td>13/06/2026</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ABL (not relevant for contable — property tax) -->
+  <div class="seccion-impuesto">
+    <h3>Alumbrado, Barrido y Limpieza (ABL)</h3>
+    <table class="grilla-vtos">
+      <thead>
+        <tr>
+          <th>Obligación</th>
+          <th>Terminación 0</th>
+          <th>Terminación 1</th>
+          <th>Terminación 2</th>
+          <th>Terminación 3</th>
+          <th>Terminación 4</th>
+          <th>Terminación 5</th>
+          <th>Terminación 6</th>
+          <th>Terminación 7</th>
+          <th>Terminación 8</th>
+          <th>Terminación 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ABL - Cuota 5/6</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

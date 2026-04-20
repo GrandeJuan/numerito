@@ -1,0 +1,196 @@
+<!--
+  Fixture: ARBA (Agencia de Recaudación de Buenos Aires) vencimientos page
+  Simulates the response from web.arba.gov.ar calendario de vencimientos.
+  ARBA publishes IIBB (Ingresos Brutos) vencimiento dates for PBA taxpayers.
+  Structure: one table per tax type, rows are concepts, columns are CUIT terminaciones (0-9).
+  Dates are in DD/MM/YYYY format. Period: Mayo 2026.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ARBA - Calendario de Vencimientos</title>
+</head>
+<body>
+<div id="contenido-principal">
+  <h1>Calendario de Vencimientos</h1>
+  <div class="periodo-seleccionado">
+    <span>Período: Mayo 2026</span>
+  </div>
+
+  <!-- Ingresos Brutos - Contribuyentes Directos -->
+  <div class="grilla-vencimientos">
+    <h3>Ingresos Brutos - Contribuyentes Directos</h3>
+    <table class="tabla-calendario">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Term. 0</th>
+          <th>Term. 1</th>
+          <th>Term. 2</th>
+          <th>Term. 3</th>
+          <th>Term. 4</th>
+          <th>Term. 5</th>
+          <th>Term. 6</th>
+          <th>Term. 7</th>
+          <th>Term. 8</th>
+          <th>Term. 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="concepto">DDJJ Mensual IIBB - Contribuyente Directo</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+          <td>16/06/2026</td>
+          <td>16/06/2026</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+          <td>19/06/2026</td>
+          <td>19/06/2026</td>
+        </tr>
+        <tr>
+          <td class="concepto">Anticipo Mensual IIBB - Contribuyente Directo</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+          <td>16/06/2026</td>
+          <td>16/06/2026</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+          <td>19/06/2026</td>
+          <td>19/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Ingresos Brutos - Convenio Multilateral -->
+  <div class="grilla-vencimientos">
+    <h3>Ingresos Brutos - Convenio Multilateral</h3>
+    <table class="tabla-calendario">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Term. 0</th>
+          <th>Term. 1</th>
+          <th>Term. 2</th>
+          <th>Term. 3</th>
+          <th>Term. 4</th>
+          <th>Term. 5</th>
+          <th>Term. 6</th>
+          <th>Term. 7</th>
+          <th>Term. 8</th>
+          <th>Term. 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="concepto">DDJJ Mensual IIBB - Convenio Multilateral</td>
+          <td>17/06/2026</td>
+          <td>17/06/2026</td>
+          <td>18/06/2026</td>
+          <td>18/06/2026</td>
+          <td>19/06/2026</td>
+          <td>19/06/2026</td>
+          <td>20/06/2026</td>
+          <td>20/06/2026</td>
+          <td>22/06/2026</td>
+          <td>22/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Retenciones y Percepciones -->
+  <div class="grilla-vencimientos">
+    <h3>Retenciones y Percepciones</h3>
+    <table class="tabla-calendario">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Term. 0</th>
+          <th>Term. 1</th>
+          <th>Term. 2</th>
+          <th>Term. 3</th>
+          <th>Term. 4</th>
+          <th>Term. 5</th>
+          <th>Term. 6</th>
+          <th>Term. 7</th>
+          <th>Term. 8</th>
+          <th>Term. 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="concepto">Retenciones IIBB - Régimen General</td>
+          <td>11/06/2026</td>
+          <td>11/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>13/06/2026</td>
+          <td>13/06/2026</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+        </tr>
+        <tr>
+          <td class="concepto">Percepciones IIBB - Régimen General</td>
+          <td>11/06/2026</td>
+          <td>11/06/2026</td>
+          <td>12/06/2026</td>
+          <td>12/06/2026</td>
+          <td>13/06/2026</td>
+          <td>13/06/2026</td>
+          <td>14/06/2026</td>
+          <td>14/06/2026</td>
+          <td>15/06/2026</td>
+          <td>15/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Inmobiliario -->
+  <div class="grilla-vencimientos">
+    <h3>Impuesto Inmobiliario</h3>
+    <table class="tabla-calendario">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Term. 0</th>
+          <th>Term. 1</th>
+          <th>Term. 2</th>
+          <th>Term. 3</th>
+          <th>Term. 4</th>
+          <th>Term. 5</th>
+          <th>Term. 6</th>
+          <th>Term. 7</th>
+          <th>Term. 8</th>
+          <th>Term. 9</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="concepto">Inmobiliario Urbano - Cuota 3/5</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+          <td>10/06/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
