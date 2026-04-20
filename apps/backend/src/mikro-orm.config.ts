@@ -51,6 +51,7 @@ import { AlertaConfigSchema } from './obligaciones/infrastructure/persistence/al
 import { CatalogoObligacionSchema } from './obligaciones/infrastructure/persistence/catalogo-obligacion.schema';
 import { DiaFeriadoSchema } from './obligaciones/infrastructure/persistence/dia-feriado.schema';
 import { RecordatorioEnviadoSchema } from './obligaciones/infrastructure/persistence/recordatorio-enviado.schema';
+import { SugerenciaProrrogaSchema } from './obligaciones/infrastructure/persistence/sugerencia-prorroga.schema';
 
 // Contabilidad
 import { LibroContableSchema } from './contabilidad/infrastructure/persistence/libro-contable.schema';
@@ -131,6 +132,7 @@ export default defineConfig({
     CatalogoObligacionSchema,
     DiaFeriadoSchema,
     RecordatorioEnviadoSchema,
+    SugerenciaProrrogaSchema,
     // Contabilidad
     LibroContableSchema,
     AsientoContableSchema,

@@ -5,6 +5,7 @@ import { CatalogoAdminController } from './infrastructure/controllers/catalogo-a
 import { RecordatoriosController } from './infrastructure/controllers/recordatorios.controller';
 import { ReglasPropuestasController } from './infrastructure/controllers/reglas-propuestas.controller';
 import { FeriadosAdminController } from './infrastructure/controllers/feriados-admin.controller';
+import { SugerenciasProrrogaController } from './infrastructure/controllers/sugerencias-prorroga.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
@@ -24,6 +25,9 @@ import { MikroOrmReglaVencimientoRepository } from './infrastructure/persistence
 import { MikroOrmFeriadoRepository } from './infrastructure/persistence/mikro-orm-feriado.repository';
 import { MikroOrmRecordatorioEnviadoRepository } from './infrastructure/persistence/mikro-orm-recordatorio-enviado.repository';
 import { MikroOrmAlertaConfigRepository } from './infrastructure/persistence/mikro-orm-alerta-config.repository';
+import { MikroOrmSugerenciaProrrogaRepository } from './infrastructure/persistence/mikro-orm-sugerencia-prorroga.repository';
+import { SUGERENCIA_PRORROGA_REPOSITORY } from './domain/repositories/sugerencia-prorroga.repository';
+import type { SugerenciaProrrogaRepository } from './domain/repositories/sugerencia-prorroga.repository';
 import { RECORDATORIO_ENVIADO_REPOSITORY } from './domain/repositories/recordatorio-enviado.repository';
 import type { RecordatorioEnviadoRepository } from './domain/repositories/recordatorio-enviado.repository';
 import { ALERTA_CONFIG_REPOSITORY } from './domain/repositories/alerta-config.repository';
@@ -57,6 +61,10 @@ import { ActualizarReglaVencimientoHandler } from './application/commands/actual
 import { AprobarReglaPropuestaHandler } from './application/commands/aprobar-regla-propuesta.command';
 import { RechazarReglaPropuestaHandler } from './application/commands/rechazar-regla-propuesta.command';
 import { AprobarReglasBloqueHandler } from './application/commands/aprobar-reglas-bloque.command';
+import { DetectarSugerenciasProrrogaHandler } from './application/commands/detectar-sugerencias-prorroga.command';
+import { AprobarSugerenciaProrrogaHandler } from './application/commands/aprobar-sugerencia-prorroga.command';
+import { DescartarSugerenciaProrrogaHandler } from './application/commands/descartar-sugerencia-prorroga.command';
+import { SugerenciasProrrogaListHandler } from './application/queries/sugerencias-prorroga-list.query';
 import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
 import { ProyectarCalendarioMasivoHandler } from './application/commands/proyectar-calendario-masivo.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
@@ -85,7 +93,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
   imports: [forwardRef(() => ClientesModule), NotificacionesModule],
-  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController],
+  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController, SugerenciasProrrogaController],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
@@ -94,6 +102,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     { provide: FERIADO_REPOSITORY, useClass: MikroOrmFeriadoRepository },
     { provide: RECORDATORIO_ENVIADO_REPOSITORY, useClass: MikroOrmRecordatorioEnviadoRepository },
     { provide: ALERTA_CONFIG_REPOSITORY, useClass: MikroOrmAlertaConfigRepository },
+    { provide: SUGERENCIA_PRORROGA_REPOSITORY, useClass: MikroOrmSugerenciaProrrogaRepository },
     { provide: MAIL_SENDER, useClass: ConsoleMailSender },
 
     // ── Domain services ──
@@ -309,6 +318,31 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       inject: [EntityManager],
     },
 
+    // ── Sugerencias de prórroga ──
+    {
+      provide: DetectarSugerenciasProrrogaHandler,
+      useFactory: (em: EntityManager) =>
+        new DetectarSugerenciasProrrogaHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: AprobarSugerenciaProrrogaHandler,
+      useFactory: (sugerenciaRepo: SugerenciaProrrogaRepository, prorrogarHandler: ProrrogarVencimientoHandler) =>
+        new AprobarSugerenciaProrrogaHandler(sugerenciaRepo, prorrogarHandler),
+      inject: [SUGERENCIA_PRORROGA_REPOSITORY, ProrrogarVencimientoHandler],
+    },
+    {
+      provide: DescartarSugerenciaProrrogaHandler,
+      useFactory: (sugerenciaRepo: SugerenciaProrrogaRepository) =>
+        new DescartarSugerenciaProrrogaHandler(sugerenciaRepo),
+      inject: [SUGERENCIA_PRORROGA_REPOSITORY],
+    },
+    {
+      provide: SugerenciasProrrogaListHandler,
+      useFactory: (em: EntityManager) => new SugerenciasProrrogaListHandler(em),
+      inject: [EntityManager],
+    },
+
     // ── Vencimiento queries ──
     {
       provide: VencimientoKpisHandler,
@@ -394,6 +428,8 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
     ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
     ProyectarCalendarioMasivoHandler,
+    SUGERENCIA_PRORROGA_REPOSITORY,
+    DetectarSugerenciasProrrogaHandler,
   ],
 })
 export class ObligacionesModule {}

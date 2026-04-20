@@ -1,5 +1,6 @@
 import { IngestaEjecucionController } from './ingesta-ejecucion.controller';
 import type { ProcesarResultadoScrapingHandler } from '../../application/commands/procesar-resultado-scraping.command';
+import type { DetectarSugerenciasProrrogaHandler } from '../../../obligaciones/application/commands/detectar-sugerencias-prorroga.command';
 import type { EjecutarIngestaManualHandler } from '../../application/commands/ejecutar-ingesta-manual.command';
 import type { EjecucionIngestaListHandler } from '../../application/queries/ejecucion-ingesta-list.query';
 
@@ -15,6 +16,13 @@ function createController() {
     }),
   } as unknown as jest.Mocked<ProcesarResultadoScrapingHandler>;
 
+  const detectarSugerencias = {
+    execute: jest.fn().mockResolvedValue({
+      sugerenciasCreadas: 0,
+      sugerenciasOmitidas: 0,
+    }),
+  } as unknown as jest.Mocked<DetectarSugerenciasProrrogaHandler>;
+
   const ejecutarManual = {
     execute: jest.fn().mockResolvedValue({
       mode: 'async',
@@ -27,8 +35,8 @@ function createController() {
     execute: jest.fn().mockResolvedValue([]),
   } as unknown as jest.Mocked<EjecucionIngestaListHandler>;
 
-  const controller = new IngestaEjecucionController(procesar, ejecutarManual, list);
-  return { controller, procesar, ejecutarManual, list };
+  const controller = new IngestaEjecucionController(procesar, detectarSugerencias, ejecutarManual, list);
+  return { controller, procesar, detectarSugerencias, ejecutarManual, list };
 }
 
 describe('IngestaEjecucionController', () => {

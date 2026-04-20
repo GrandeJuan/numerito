@@ -14,6 +14,20 @@ import { DataTable } from '../data-table';
 import { Pill, type PillTone } from '../pill';
 import { formatFecha } from '@/lib/formatters';
 
+interface SugerenciaProrrogaApi {
+  id: string;
+  vencimientoId: string;
+  clienteId: string;
+  cliente: string;
+  tipoObligacion: string;
+  periodo: string;
+  fechaOriginal: string;
+  fechaSugerida: string;
+  motivo: string;
+  estado: string;
+  createdAt: string;
+}
+
 interface VencimientoApi {
   id: string;
   clienteId: string;
@@ -26,6 +40,20 @@ interface VencimientoApi {
   motivo?: string | null;
   fechaProrrogada?: string | null;
   responsable?: string | null;
+}
+
+interface SugerenciaApi {
+  id: string;
+  vencimientoId: string;
+  clienteId: string;
+  cliente: string;
+  tipoObligacion: string;
+  periodo: string;
+  fechaOriginal: string;
+  fechaSugerida: string;
+  motivo: string;
+  estado: string;
+  createdAt: string;
 }
 
 type EstadoFilter = 'TODOS' | 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO' | 'PRORROGADO' | 'NO_APLICA';
@@ -82,6 +110,30 @@ export function PlanillaPage() {
     `/v1/vencimientos?periodo=${periodo}`,
   );
   const rows = data ?? [];
+
+  const { data: sugerenciasData, refetch: refetchSugerencias } = useFetchWithEstudio<SugerenciaApi[]>(
+    '/v1/vencimientos/sugerencias-prorroga?estado=ABIERTA',
+  );
+  const sugerencias = sugerenciasData ?? [];
+
+  const sugerenciasByVencimiento = useMemo(() => {
+    const map = new Map<string, SugerenciaApi>();
+    for (const s of sugerencias) {
+      map.set(s.vencimientoId, s);
+    }
+    return map;
+  }, [sugerencias]);
+
+  // Fetch open sugerencias de prórroga
+  const { data: sugerenciasData, refetch: refetchSugerencias } = useFetchWithEstudio<SugerenciaProrrogaApi[]>(
+    '/v1/vencimientos/sugerencias-prorroga?estado=ABIERTA',
+  );
+  const sugerencias = sugerenciasData ?? [];
+  const sugerenciasByVencimiento = useMemo(() => {
+    const map = new Map<string, SugerenciaProrrogaApi>();
+    for (const s of sugerencias) map.set(s.vencimientoId, s);
+    return map;
+  }, [sugerencias]);
 
   const filtered = useMemo(() => {
     let result = rows;
@@ -151,6 +203,53 @@ export function PlanillaPage() {
     [refetch],
   );
 
+  const handleAprobarSugerencia = useCallback(
+    async (sugerenciaId: string) => {
+      setActionLoading(sugerenciaId);
+      setFeedback(null);
+      try {
+        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/aprobar`, {
+          method: 'PATCH',
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error?.message ?? body?.message ?? 'Error al aprobar sugerencia');
+        }
+        setFeedback({ type: 'success', msg: 'Sugerencia aprobada y prórroga aplicada.' });
+        refetch();
+        refetchSugerencias();
+      } catch (err) {
+        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [refetch, refetchSugerencias],
+  );
+
+  const handleDescartarSugerencia = useCallback(
+    async (sugerenciaId: string) => {
+      setActionLoading(sugerenciaId);
+      setFeedback(null);
+      try {
+        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/descartar`, {
+          method: 'PATCH',
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error?.message ?? body?.message ?? 'Error al descartar sugerencia');
+        }
+        setFeedback({ type: 'success', msg: 'Sugerencia descartada.' });
+        refetchSugerencias();
+      } catch (err) {
+        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [refetchSugerencias],
+  );
+
   const handleNoAplica = useCallback(
     async (vId: string, motivo: string) => {
       setActionLoading(vId);
@@ -176,14 +275,57 @@ export function PlanillaPage() {
     [refetch],
   );
 
+  const handleAprobarSugerencia = useCallback(
+    async (sugerenciaId: string) => {
+      setActionLoading(sugerenciaId);
+      setFeedback(null);
+      try {
+        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/aprobar`, { method: 'PATCH' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error?.message ?? body?.message ?? 'Error al aprobar sugerencia');
+        }
+        setFeedback({ type: 'success', msg: 'Sugerencia aprobada y prórroga aplicada.' });
+        refetch();
+        refetchSugerencias();
+      } catch (err) {
+        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [refetch, refetchSugerencias],
+  );
+
+  const handleDescartarSugerencia = useCallback(
+    async (sugerenciaId: string) => {
+      setActionLoading(sugerenciaId);
+      setFeedback(null);
+      try {
+        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/descartar`, { method: 'PATCH' });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error?.message ?? body?.message ?? 'Error al descartar sugerencia');
+        }
+        setFeedback({ type: 'success', msg: 'Sugerencia descartada.' });
+        refetchSugerencias();
+      } catch (err) {
+        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [refetchSugerencias],
+  );
+
   // --- KPIs ---
   const kpis = useMemo(() => {
     const pendientes = rows.filter((v) => v.estado === 'PENDIENTE').length;
     const presentados = rows.filter((v) => v.estado === 'PRESENTADO').length;
     const vencidos = rows.filter((v) => v.estado === 'VENCIDO').length;
     const prorrogados = rows.filter((v) => v.estado === 'PRORROGADO').length;
-    return { pendientes, presentados, vencidos, prorrogados, total: rows.length };
-  }, [rows]);
+    return { pendientes, presentados, vencidos, prorrogados, total: rows.length, sugerencias: sugerencias.length };
+  }, [rows, sugerencias]);
 
   const inputClass =
     'h-9 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 text-[13px] text-[var(--text)] outline-none focus:border-[var(--brand)] transition-colors';
@@ -194,9 +336,16 @@ export function PlanillaPage() {
         title="Planilla del Responsable"
         subtitle="Gestión de vencimientos por período"
         actions={
-          <Button variant="ghost" icon={Icons.download} onClick={() => exportPlanillaXlsx(filtered)}>
-            Exportar CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            {sugerencias.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--indigo-soft)] text-[var(--indigo-ink)] text-[11.5px] font-medium border border-[var(--indigo)]">
+                {sugerencias.length} sugerencia{sugerencias.length !== 1 ? 's' : ''} de prórroga
+              </span>
+            )}
+            <Button variant="ghost" icon={Icons.download} onClick={() => exportPlanillaXlsx(filtered)}>
+              Exportar CSV
+            </Button>
+          </div>
         }
       />
 
@@ -214,12 +363,15 @@ export function PlanillaPage() {
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-6 gap-3 mb-5">
         <KpiCard label="Total" value={kpis.total} />
         <KpiCard label="Pendientes" value={kpis.pendientes} tone="amber" />
         <KpiCard label="Presentados" value={kpis.presentados} tone="brand" />
         <KpiCard label="Vencidos" value={kpis.vencidos} tone="rose" />
         <KpiCard label="Prorrogados" value={kpis.prorrogados} tone="indigo" />
+        {kpis.sugerencias > 0 && (
+          <KpiCard label="Sugerencias" value={kpis.sugerencias} tone="blue" />
+        )}
       </div>
 
       {/* Filters */}
@@ -281,25 +433,44 @@ export function PlanillaPage() {
             },
             {
               header: 'Vencimiento',
-              render: (v) => (
-                <span className="font-mono text-[11.5px] text-[var(--text-2)]">
-                  {formatFecha(v.fechaVencimiento)}
-                  {v.fechaProrrogada && (
-                    <span className="ml-1 text-[var(--indigo-ink)]">
-                      → {formatFecha(v.fechaProrrogada)}
+              render: (v) => {
+                const sug = sugerenciasByVencimiento.get(v.id);
+                return (
+                  <div>
+                    <span className="font-mono text-[11.5px] text-[var(--text-2)]">
+                      {formatFecha(v.fechaVencimiento)}
+                      {v.fechaProrrogada && (
+                        <span className="ml-1 text-[var(--indigo-ink)]">
+                          → {formatFecha(v.fechaProrrogada)}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-              ),
+                    {sug && (
+                      <div className="text-[10.5px] text-[var(--blue-ink)] mt-0.5">
+                        Sugerencia: → {formatFecha(sug.fechaSugerida)}
+                        <span className="ml-1 text-[var(--text-3)]">({sug.motivo})</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              },
             },
             {
               header: 'Estado',
               render: (v) => {
                 const e = ESTADO_CONFIG[v.estado] ?? { tone: 'neutral' as PillTone, label: v.estado };
+                const sug = sugerenciasByVencimiento.get(v.id);
                 return (
-                  <Pill tone={e.tone} dot>
-                    {e.label}
-                  </Pill>
+                  <div className="flex items-center gap-1.5">
+                    <Pill tone={e.tone} dot>
+                      {e.label}
+                    </Pill>
+                    {sug && (
+                      <Pill tone="blue" dot>
+                        Sugerencia
+                      </Pill>
+                    )}
+                  </div>
                 );
               },
             },
@@ -325,10 +496,32 @@ export function PlanillaPage() {
               header: '',
               align: 'right',
               render: (v) => {
-                if (v.estado !== 'PENDIENTE' && v.estado !== 'PRORROGADO') return null;
-                const isLoading = actionLoading === v.id;
+                const sug = sugerenciasByVencimiento.get(v.id);
+                if (v.estado !== 'PENDIENTE' && v.estado !== 'PRORROGADO' && !sug) return null;
+                const isLoading = actionLoading === v.id || actionLoading === sug?.id;
                 return (
-                  <div className="flex gap-1.5 justify-end">
+                  <div className="flex gap-1.5 justify-end flex-wrap">
+                    {sug && v.estado === 'PENDIENTE' && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="brand"
+                          disabled={isLoading}
+                          onClick={() => handleAprobarSugerencia(sug.id)}
+                          title={`Aprobar prórroga: ${formatFecha(sug.fechaOriginal)} → ${formatFecha(sug.fechaSugerida)} (${sug.motivo})`}
+                        >
+                          {isLoading && actionLoading === sug.id ? '…' : 'Aprobar'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={isLoading}
+                          onClick={() => handleDescartarSugerencia(sug.id)}
+                        >
+                          Descartar
+                        </Button>
+                      </>
+                    )}
                     {(v.estado === 'PENDIENTE' || v.estado === 'PRORROGADO') && (
                       <Button
                         size="sm"
@@ -336,7 +529,7 @@ export function PlanillaPage() {
                         disabled={isLoading}
                         onClick={() => handlePresentar(v)}
                       >
-                        {isLoading ? '…' : 'Presentar'}
+                        {isLoading && actionLoading === v.id ? '…' : 'Presentar'}
                       </Button>
                     )}
                     {v.estado === 'PENDIENTE' && (

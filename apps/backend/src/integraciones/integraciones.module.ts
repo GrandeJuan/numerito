@@ -27,6 +27,7 @@ import type {
 import { FERIADO_REPOSITORY } from '../obligaciones/domain/repositories/feriado.repository';
 import type { FeriadoRepository } from '../obligaciones/domain/repositories/feriado.repository';
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
+import { DetectarSugerenciasProrrogaHandler } from '../obligaciones/application/commands/detectar-sugerencias-prorroga.command';
 import { CALENDARIO_SCRAPER } from './domain/ports/calendario-scraper.port';
 import type { CalendarioScraperPort } from './domain/ports/calendario-scraper.port';
 import { FARGATE_TASK_LAUNCHER } from './domain/ports/fargate-task-launcher.port';

@@ -14,6 +14,7 @@ import { AdminOrIngestaGuard } from '../guards/admin-or-ingesta.guard';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { ProcesarResultadoScrapingHandler } from '../../application/commands/procesar-resultado-scraping.command';
+import { DetectarSugerenciasProrrogaHandler } from '../../../obligaciones/application/commands/detectar-sugerencias-prorroga.command';
 import { EjecutarIngestaManualHandler } from '../../application/commands/ejecutar-ingesta-manual.command';
 import { EjecucionIngestaListHandler } from '../../application/queries/ejecucion-ingesta-list.query';
 import {
@@ -27,6 +28,7 @@ import { DISPARADOR_INGESTA } from '../../domain/entities/ejecucion-ingesta.enti
 export class IngestaEjecucionController {
   constructor(
     private readonly procesarHandler: ProcesarResultadoScrapingHandler,
+    private readonly detectarSugerenciasHandler: DetectarSugerenciasProrrogaHandler,
     private readonly ejecutarManualHandler: EjecutarIngestaManualHandler,
     private readonly ejecucionListHandler: EjecucionIngestaListHandler,
   ) {}
@@ -48,6 +50,21 @@ export class IngestaEjecucionController {
       disparador: isWebhook ? DISPARADOR_INGESTA.SCHEDULE : DISPARADOR_INGESTA.MANUAL,
       disparadoPor: isWebhook ? null : (req.user?.sub ?? null),
     });
+
+    // Detect prorroga suggestions for modified rules
+    if (result.reglasModificadas > 0 && result.diff.length > 0) {
+      try {
+        const sugerenciasResult = await this.detectarSugerenciasHandler.execute({
+          reglasModificadas: result.diff,
+          ejecucionIngestaId: result.ejecucionId,
+        });
+        (result as Record<string, unknown>).sugerenciasCreadas = sugerenciasResult.sugerenciasCreadas;
+        (result as Record<string, unknown>).sugerenciasOmitidas = sugerenciasResult.sugerenciasOmitidas;
+      } catch {
+        // Detection is best-effort — don't fail the scraping pipeline
+      }
+    }
+
     return successResponse(result);
   }
 
