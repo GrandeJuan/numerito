@@ -22,6 +22,7 @@ export const DEFAULT_NAV: NavItem[] = [
   { key: 'inicio', label: 'Inicio', href: '/', icon: Icons.home },
   { key: 'clientes', label: 'Clientes', href: '/clientes', icon: Icons.people },
   { key: 'vencimientos', label: 'Vencimientos', href: '/vencimientos', icon: Icons.event },
+  { key: 'cumplimiento', label: 'Cumplimiento', href: '/cumplimiento', icon: Icons.chart },
   { key: 'planilla', label: 'Planilla', href: '/planilla', icon: Icons.task },
   { key: 'facturacion', label: 'Facturación', href: '/facturacion', icon: Icons.receipt },
   { key: 'contabilidad', label: 'Contabilidad', href: '/contabilidad', icon: Icons.bank },
