@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { BaseEntity, reconstituteEntity } from '../../../shared/domain';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
@@ -90,6 +91,31 @@ export class Vencimiento extends BaseEntity {
 
   static create(props: CreateVencimientoProps, id?: string): Vencimiento {
     return new Vencimiento(props, id);
+  }
+
+  /**
+   * Factory for importing historical vencimientos from external sources (Excel).
+   * Uses reconstitute internally to bypass the "no past dates" validation.
+   */
+  static importar(
+    props: CreateVencimientoProps & { estado: EstadoVencimiento },
+  ): Vencimiento {
+    return Vencimiento.reconstitute(
+      {
+        clienteId: props.clienteId,
+        estudioId: props.estudioId,
+        tipoObligacion: props.tipoObligacion,
+        periodo: props.periodo,
+        fechaVencimiento: props.fechaVencimiento,
+        fechaNominal: props.fechaNominal ?? null,
+        descripcion: props.descripcion,
+        estado: props.estado,
+        motivo: null,
+        fechaProrrogada: null,
+        responsableId: props.responsableId ?? null,
+      },
+      randomUUID(),
+    );
   }
 
   static reconstitute(props: ReconstituteVencimientoProps, id: string): Vencimiento {

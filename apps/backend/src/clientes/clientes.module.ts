@@ -1,6 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
+import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { ClientesController } from './infrastructure/controllers/clientes.controller';
+import { ImportAdminController } from './infrastructure/controllers/import-admin.controller';
 import { CrearClienteHandler } from './application/commands/crear-cliente.command';
 import { ActualizarClienteHandler } from './application/commands/actualizar-cliente.command';
 import { DesactivarClienteHandler } from './application/commands/desactivar-cliente.command';
@@ -9,8 +11,11 @@ import { AsignarResponsableHandler } from './application/commands/asignar-respon
 import { ActualizarPerfilFiscalHandler } from './application/commands/actualizar-perfil-fiscal.command';
 import { AsignarResponsablePorObligacionHandler } from './application/commands/asignar-responsable-por-obligacion.command';
 import { ConfigurarDiasAnticipacionHandler } from './application/commands/configurar-dias-anticipacion.command';
+import { ImportarExcelHandler } from './application/commands/importar-excel.command';
 import { CLIENTE_REPOSITORY } from './domain/repositories/cliente.repository';
 import type { ClienteRepository } from './domain/repositories/cliente.repository';
+import { VENCIMIENTO_REPOSITORY } from '../obligaciones/domain/repositories/vencimiento.repository';
+import type { VencimientoRepository } from '../obligaciones/domain/repositories/vencimiento.repository';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 import type { EventBus } from '../shared/domain/event-bus';
 import { MikroOrmClienteRepository } from './infrastructure/persistence/mikro-orm-cliente.repository';
@@ -20,8 +25,8 @@ import { ClientePorUsuarioPortalView } from './application/views/cliente-por-usu
 import { ClienteCountPorEstudioView } from './application/views/cliente-count-por-estudio.view';
 
 @Module({
-  imports: [],
-  controllers: [ClientesController],
+  imports: [forwardRef(() => ObligacionesModule)],
+  controllers: [ClientesController, ImportAdminController],
   providers: [
     { provide: CLIENTE_REPOSITORY, useClass: MikroOrmClienteRepository },
     {
@@ -71,6 +76,12 @@ import { ClienteCountPorEstudioView } from './application/views/cliente-count-po
       useFactory: (repo: ClienteRepository, eventBus: EventBus) =>
         new ActualizarPerfilFiscalHandler(repo, eventBus),
       inject: [CLIENTE_REPOSITORY, EVENT_BUS],
+    },
+    {
+      provide: ImportarExcelHandler,
+      useFactory: (clienteRepo: ClienteRepository, vencimientoRepo: VencimientoRepository) =>
+        new ImportarExcelHandler(clienteRepo, vencimientoRepo),
+      inject: [CLIENTE_REPOSITORY, VENCIMIENTO_REPOSITORY],
     },
     {
       provide: CLIENTE_SUMMARY_VIEW,

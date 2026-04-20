@@ -402,6 +402,59 @@ describe('Vencimiento Entity', () => {
     });
   });
 
+  describe('importar (historical import factory)', () => {
+    it('should create a vencimiento with a past date and explicit estado', () => {
+      const pastDate = new Date('2020-03-15');
+      const v = Vencimiento.importar({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2020-03',
+        fechaVencimiento: pastDate,
+        descripcion: 'IVA importado',
+        estado: ESTADO_VENCIMIENTO.PRESENTADO,
+      });
+
+      expect(v.id).toBeDefined();
+      expect(v.clienteId).toBe('c1');
+      expect(v.estudioId).toBe('e1');
+      expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
+      expect(v.periodo).toBe('2020-03');
+      expect(v.fechaVencimiento).toEqual(pastDate);
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
+      expect(v.descripcion).toBe('IVA importado');
+    });
+
+    it('should allow importing with PENDIENTE estado', () => {
+      const v = Vencimiento.importar({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.SICOSS,
+        periodo: '2020-05',
+        fechaVencimiento: new Date('2020-05-10'),
+        descripcion: 'SICOSS importado',
+        estado: ESTADO_VENCIMIENTO.PENDIENTE,
+      });
+
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+    });
+
+    it('should support domain operations after import', () => {
+      const v = Vencimiento.importar({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2020-03',
+        fechaVencimiento: new Date('2020-03-15'),
+        descripcion: 'IVA importado',
+        estado: ESTADO_VENCIMIENTO.PENDIENTE,
+      });
+
+      v.marcarVencido();
+      expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
+    });
+  });
+
   describe('domain events', () => {
     it('should emit VencimientoCumplido on presentar', () => {
       const v = createVencimiento();

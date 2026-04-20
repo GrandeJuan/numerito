@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
 import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
@@ -73,7 +73,7 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [ClientesModule, NotificacionesModule],
+  imports: [forwardRef(() => ClientesModule), NotificacionesModule],
   controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController],
   providers: [
     // ── Repositories ──
