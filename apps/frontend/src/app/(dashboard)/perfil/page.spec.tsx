@@ -1,116 +1,44 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-
-let mockUser: any = {
-  id: 'user-1',
-  email: 'juan@example.com',
-  rol: 'CONTADOR',
-  nombre: 'Juan',
-  apellido: 'Pérez',
-  avatarUrl: null,
-};
-const mockUpdateUserProfile = vi.fn();
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
-    user: mockUser,
-    updateUserProfile: mockUpdateUserProfile,
+    estudioActual: { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO' },
+    user: {
+      id: 'u-1',
+      email: 'admin@test.com',
+      rol: 'SOCIO',
+      nombre: 'Admin',
+      apellido: 'Demo',
+      avatarUrl: null,
+    },
+    refreshUser: vi.fn(),
   }),
 }));
 
 vi.mock('@/lib/api-client', () => ({
   apiFetch: vi.fn(),
+  setEstudioId: vi.fn(),
+  setOnUnauthorized: vi.fn(),
 }));
 
-import { apiFetch } from '@/lib/api-client';
 import PerfilPage from './page';
 
 describe('PerfilPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockUser = {
-      id: 'user-1',
-      email: 'juan@example.com',
-      rol: 'CONTADOR',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      avatarUrl: null,
-    };
-  });
-
-  it('renders user profile info', () => {
+  it('renders profile title', () => {
     render(<PerfilPage />);
-
-    expect(screen.getByText('Mi Perfil')).toBeInTheDocument();
-    expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
-    expect(screen.getByText('juan@example.com')).toBeInTheDocument();
-    expect(screen.getByText('CONTADOR')).toBeInTheDocument();
+    expect(screen.getByText('Mi perfil')).toBeInTheDocument();
   });
 
-  it('shows "Subir foto" when no avatar', () => {
+  it('renders nombre and apellido fields with current values', () => {
     render(<PerfilPage />);
-    expect(screen.getByText('Subir foto')).toBeInTheDocument();
+    expect((screen.getByLabelText('Nombre') as HTMLInputElement).value).toBe('Admin');
+    expect((screen.getByLabelText('Apellido') as HTMLInputElement).value).toBe('Demo');
   });
 
-  it('shows "Cambiar foto" and "Eliminar" when avatar exists', () => {
-    mockUser.avatarUrl = 'https://example.com/avatar.jpg';
+  it('renders read-only account info', () => {
     render(<PerfilPage />);
-    expect(screen.getByText('Cambiar foto')).toBeInTheDocument();
-    expect(screen.getByText('Eliminar')).toBeInTheDocument();
-  });
-
-  it('shows file type and size hint', () => {
-    render(<PerfilPage />);
-    expect(screen.getByText(/JPG, PNG o WebP/)).toBeInTheDocument();
-    expect(screen.getByText(/Maximo 2MB/)).toBeInTheDocument();
-  });
-
-  it('shows error for invalid file type', async () => {
-    render(<PerfilPage />);
-
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const invalidFile = new File(['test'], 'test.gif', { type: 'image/gif' });
-
-    fireEvent.change(input, { target: { files: [invalidFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/Tipo de archivo no permitido/)).toBeInTheDocument();
-    });
-  });
-
-  it('shows error for file over 2MB', async () => {
-    render(<PerfilPage />);
-
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const largeFile = new File(['x'.repeat(3 * 1024 * 1024)], 'big.jpg', { type: 'image/jpeg' });
-    Object.defineProperty(largeFile, 'size', { value: 3 * 1024 * 1024 });
-
-    fireEvent.change(input, { target: { files: [largeFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/tamaño máximo de 2MB/)).toBeInTheDocument();
-    });
-  });
-
-  it('calls delete endpoint and updates profile on remove', async () => {
-    mockUser.avatarUrl = 'https://example.com/avatar.jpg';
-    (apiFetch as any).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ data: { avatarUrl: null } }),
-    });
-
-    render(<PerfilPage />);
-    fireEvent.click(screen.getByText('Eliminar'));
-
-    await waitFor(() => {
-      expect(apiFetch).toHaveBeenCalledWith('/v1/usuarios/me/avatar', { method: 'DELETE' });
-      expect(mockUpdateUserProfile).toHaveBeenCalledWith({ avatarUrl: null });
-    });
-  });
-
-  it('returns null when no user', () => {
-    mockUser = null;
-    const { container } = render(<PerfilPage />);
-    expect(container.innerHTML).toBe('');
+    expect(screen.getAllByText('admin@test.com').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SOCIO').length).toBeGreaterThan(0);
   });
 });

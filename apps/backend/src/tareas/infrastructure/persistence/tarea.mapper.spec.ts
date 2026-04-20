@@ -1,10 +1,6 @@
 import { ESTADO_TAREA, PRIORIDAD } from '@numerito/shared';
 import { Tarea } from '../../domain/entities/tarea.entity';
-import {
-  TareaMapper,
-  tareaPersistenceSchema,
-  type TareaPersistence,
-} from './tarea.mapper';
+import { TareaMapper, tareaPersistenceSchema, type TareaPersistence } from './tarea.mapper';
 import type { TareaEntity } from './tarea.schema';
 
 describe('TareaMapper', () => {
@@ -95,7 +91,7 @@ describe('TareaMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

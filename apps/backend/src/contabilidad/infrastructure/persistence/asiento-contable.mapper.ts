@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import type { Mapper } from '../../../shared/domain';
-import {
-  AsientoContable,
-  type LineaAsiento,
-} from '../../domain/entities/asiento-contable.entity';
+import { AsientoContable, type LineaAsiento } from '../../domain/entities/asiento-contable.entity';
 import type { AsientoContableEntity } from './asiento-contable.schema';
 
 const lineaAsientoPersistenceSchema = z.object({
@@ -14,7 +11,7 @@ const lineaAsientoPersistenceSchema = z.object({
 });
 
 export const asientoContablePersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   libroId: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
@@ -23,13 +20,9 @@ export const asientoContablePersistenceSchema = z.object({
   lineas: z.array(lineaAsientoPersistenceSchema),
 });
 
-export type AsientoContablePersistence = z.infer<
-  typeof asientoContablePersistenceSchema
->;
+export type AsientoContablePersistence = z.infer<typeof asientoContablePersistenceSchema>;
 
-export class AsientoContableMapper
-  implements Mapper<AsientoContable, AsientoContablePersistence>
-{
+export class AsientoContableMapper implements Mapper<AsientoContable, AsientoContablePersistence> {
   toDomain(persistence: AsientoContablePersistence): AsientoContable {
     const data = asientoContablePersistenceSchema.parse(persistence);
     return AsientoContable.reconstitute(

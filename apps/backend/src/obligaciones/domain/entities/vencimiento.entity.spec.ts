@@ -9,9 +9,9 @@ describe('Vencimiento Entity', () => {
       clienteId: 'cliente-1',
       estudioId: 'estudio-1',
       tipoObligacion: TIPO_OBLIGACION.IVA,
-      periodo: '2026-03',
-      fechaVencimiento: new Date('2026-04-15'),
-      descripcion: 'DDJJ IVA Marzo 2026',
+      periodo: '2030-03',
+      fechaVencimiento: new Date('2030-04-15'),
+      descripcion: 'DDJJ IVA Marzo 2030',
     });
   };
 
@@ -20,7 +20,7 @@ describe('Vencimiento Entity', () => {
     expect(v.id).toBeDefined();
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
     expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
-    expect(v.periodo).toBe('2026-03');
+    expect(v.periodo).toBe('2030-03');
   });
 
   it('should transition to PRESENTADO', () => {
@@ -73,14 +73,16 @@ describe('Vencimiento Entity', () => {
 
   it('should reject past fechaVencimiento on create', () => {
     const pastDate = new Date('2020-01-01');
-    expect(() => Vencimiento.create({
-      clienteId: 'c1',
-      estudioId: 'e1',
-      tipoObligacion: TIPO_OBLIGACION.IVA,
-      periodo: '2020-01',
-      fechaVencimiento: pastDate,
-      descripcion: 'IVA viejo',
-    })).toThrow('La fecha de vencimiento no puede ser pasada');
+    expect(() =>
+      Vencimiento.create({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2020-01',
+        fechaVencimiento: pastDate,
+        descripcion: 'IVA viejo',
+      }),
+    ).toThrow('La fecha de vencimiento no puede ser pasada');
   });
 
   it('should expose all getters', () => {
@@ -88,24 +90,27 @@ describe('Vencimiento Entity', () => {
     expect(v.clienteId).toBe('cliente-1');
     expect(v.estudioId).toBe('estudio-1');
     expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
-    expect(v.periodo).toBe('2026-03');
-    expect(v.fechaVencimiento).toEqual(new Date('2026-04-15'));
-    expect(v.descripcion).toBe('DDJJ IVA Marzo 2026');
+    expect(v.periodo).toBe('2030-03');
+    expect(v.fechaVencimiento).toEqual(new Date('2030-04-15'));
+    expect(v.descripcion).toBe('DDJJ IVA Marzo 2030');
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
   });
 
   describe('reconstitute', () => {
     it('should reconstitute with a past fechaVencimiento without throwing', () => {
       const pastDate = new Date('2020-01-01');
-      const v = Vencimiento.reconstitute({
-        clienteId: 'c1',
-        estudioId: 'e1',
-        tipoObligacion: TIPO_OBLIGACION.IVA,
-        periodo: '2020-01',
-        fechaVencimiento: pastDate,
-        descripcion: 'IVA viejo',
-        estado: ESTADO_VENCIMIENTO.VENCIDO,
-      }, 'existing-id');
+      const v = Vencimiento.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          tipoObligacion: TIPO_OBLIGACION.IVA,
+          periodo: '2020-01',
+          fechaVencimiento: pastDate,
+          descripcion: 'IVA viejo',
+          estado: ESTADO_VENCIMIENTO.VENCIDO,
+        },
+        'existing-id',
+      );
 
       expect(v.id).toBe('existing-id');
       expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
@@ -113,15 +118,18 @@ describe('Vencimiento Entity', () => {
     });
 
     it('should preserve all fields on reconstitute', () => {
-      const v = Vencimiento.reconstitute({
-        clienteId: 'cliente-1',
-        estudioId: 'estudio-1',
-        tipoObligacion: TIPO_OBLIGACION.MONOTRIBUTO,
-        periodo: '2025-06',
-        fechaVencimiento: new Date('2025-06-20'),
-        descripcion: 'Monotributo Junio',
-        estado: ESTADO_VENCIMIENTO.PRESENTADO,
-      }, 'reconstituted-id');
+      const v = Vencimiento.reconstitute(
+        {
+          clienteId: 'cliente-1',
+          estudioId: 'estudio-1',
+          tipoObligacion: TIPO_OBLIGACION.MONOTRIBUTO,
+          periodo: '2025-06',
+          fechaVencimiento: new Date('2025-06-20'),
+          descripcion: 'Monotributo Junio',
+          estado: ESTADO_VENCIMIENTO.PRESENTADO,
+        },
+        'reconstituted-id',
+      );
 
       expect(v.id).toBe('reconstituted-id');
       expect(v.clienteId).toBe('cliente-1');
@@ -133,15 +141,18 @@ describe('Vencimiento Entity', () => {
     });
 
     it('should allow domain operations on reconstituted entities', () => {
-      const v = Vencimiento.reconstitute({
-        clienteId: 'c1',
-        estudioId: 'e1',
-        tipoObligacion: TIPO_OBLIGACION.IVA,
-        periodo: '2020-01',
-        fechaVencimiento: new Date('2020-01-15'),
-        descripcion: 'IVA',
-        estado: ESTADO_VENCIMIENTO.PENDIENTE,
-      }, 'some-id');
+      const v = Vencimiento.reconstitute(
+        {
+          clienteId: 'c1',
+          estudioId: 'e1',
+          tipoObligacion: TIPO_OBLIGACION.IVA,
+          periodo: '2020-01',
+          fechaVencimiento: new Date('2020-01-15'),
+          descripcion: 'IVA',
+          estado: ESTADO_VENCIMIENTO.PENDIENTE,
+        },
+        'some-id',
+      );
 
       v.marcarVencido();
       expect(v.estado).toBe(ESTADO_VENCIMIENTO.VENCIDO);
@@ -161,7 +172,7 @@ describe('Vencimiento Entity', () => {
       expect(event.vencimientoId).toBe(v.id);
       expect(event.clienteId).toBe('cliente-1');
       expect(event.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
-      expect(event.periodo).toBe('2026-03');
+      expect(event.periodo).toBe('2030-03');
       expect(event.eventName).toBe('obligaciones.vencimiento-cumplido');
     });
 

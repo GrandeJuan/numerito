@@ -116,7 +116,9 @@ describe('api-client', () => {
         .mockResolvedValueOnce(new Response('{}', { status: 401 }))
         // Refresh call succeeds
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ accessToken: 'new-token', refreshToken: 'new-rt' }), { status: 200 }),
+          new Response(JSON.stringify({ accessToken: 'new-token', refreshToken: 'new-rt' }), {
+            status: 200,
+          }),
         )
         // Retry succeeds
         .mockResolvedValueOnce(new Response(JSON.stringify({ data: 'ok' }), { status: 200 }));
@@ -161,23 +163,22 @@ describe('api-client', () => {
         .mockResolvedValueOnce(new Response('{}', { status: 401 })) // call 2
         // Single refresh
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ accessToken: 'new-token', refreshToken: 'new-rt' }), { status: 200 }),
+          new Response(JSON.stringify({ accessToken: 'new-token', refreshToken: 'new-rt' }), {
+            status: 200,
+          }),
         )
         // Retries
         .mockResolvedValueOnce(new Response('{}', { status: 200 }))
         .mockResolvedValueOnce(new Response('{}', { status: 200 }));
 
-      const [r1, r2] = await Promise.all([
-        apiFetch('/v1/clientes'),
-        apiFetch('/v1/obligaciones'),
-      ]);
+      const [r1, r2] = await Promise.all([apiFetch('/v1/clientes'), apiFetch('/v1/vencimientos')]);
 
       expect(r1.status).toBe(200);
       expect(r2.status).toBe(200);
       // Should only have 1 refresh call, not 2
-      const refreshCalls = vi.mocked(fetch).mock.calls.filter(
-        (call) => String(call[0]).includes('/v1/auth/refresh-token'),
-      );
+      const refreshCalls = vi
+        .mocked(fetch)
+        .mock.calls.filter((call) => String(call[0]).includes('/v1/auth/refresh-token'));
       expect(refreshCalls.length).toBe(1);
     });
   });

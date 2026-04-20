@@ -21,8 +21,7 @@ const ESTADO_TONE: Record<UsuarioEstudio['estado'], 'brand' | 'amber' | 'neutral
 };
 
 export function UsuariosConfigPage() {
-  // TODO: verificar endpoint
-  const { data, loading, error } = useFetchWithEstudio<UsuarioEstudio[]>('/v1/estudio/usuarios');
+  const { data, loading, error } = useFetchWithEstudio<UsuarioEstudio[]>('/v1/estudios/equipo');
 
   const columns: Column<UsuarioEstudio>[] = [
     {
@@ -38,13 +37,25 @@ export function UsuariosConfigPage() {
       ),
     },
     { header: 'Rol', key: 'rol' },
-    { header: 'Estado', render: (r) => <Pill tone={ESTADO_TONE[r.estado]} small>{r.estado}</Pill> },
-    { header: 'Último acceso', render: (r) => <span className="mono text-[var(--text-3)]">{r.ultimoAcceso ?? '—'}</span> },
+    {
+      header: 'Estado',
+      render: (r) => (
+        <Pill tone={ESTADO_TONE[r.estado]} small>
+          {r.estado}
+        </Pill>
+      ),
+    },
+    {
+      header: 'Último acceso',
+      render: (r) => <span className="mono text-[var(--text-3)]">{r.ultimoAcceso ?? '—'}</span>,
+    },
     {
       header: '',
       align: 'right',
       render: () => (
-        <button className="text-[12px] text-[var(--text-3)] hover:text-[var(--text)]">Editar</button>
+        <button className="text-[12px] text-[var(--text-3)] hover:text-[var(--text)]">
+          Editar
+        </button>
       ),
     },
   ];
@@ -61,7 +72,14 @@ export function UsuariosConfigPage() {
         }
       />
       <PageStateGuard loading={loading} error={error}>
-        {data && <DataTable columns={columns} rows={data} rowKey={(r) => r.id} emptyMessage="No hay usuarios cargados." />}
+        {data && (
+          <DataTable
+            columns={columns}
+            rows={data}
+            rowKey={(r) => r.id}
+            emptyMessage="No hay usuarios cargados."
+          />
+        )}
       </PageStateGuard>
     </>
   );

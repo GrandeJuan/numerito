@@ -20,9 +20,8 @@ const STORAGE = 'tareas:view';
 
 export function TareasPage() {
   const { estudioActual } = useAuth();
-  const { data, loading, error } =
-    useFetchWithEstudio<{ items: Tarea[] }>('/v1/tareas');
-  const items = data?.items ?? [];
+  const { data, loading, error } = useFetchWithEstudio<Tarea[]>('/v1/tareas');
+  const items = data ?? [];
 
   const [view, setView] = useState<View>('kanban');
   useEffect(() => {

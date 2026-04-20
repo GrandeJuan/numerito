@@ -54,7 +54,7 @@ describe('SubscripcionMapper', () => {
     });
 
     it('rejects malformed persistence (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 
@@ -88,10 +88,7 @@ describe('SubscripcionMapper', () => {
     });
 
     it('reflects mutations made via domain methods', () => {
-      const sub = Subscripcion.reconstitute(
-        { ...validPersistence },
-        validId,
-      );
+      const sub = Subscripcion.reconstitute({ ...validPersistence }, validId);
       sub.cancelar();
 
       expect(mapper.toPersistence(sub).estado).toBe(EstadoSubscripcion.CANCELADA);

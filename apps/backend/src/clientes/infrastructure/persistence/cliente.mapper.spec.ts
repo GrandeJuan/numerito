@@ -1,17 +1,9 @@
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
-import {
-  ClienteMapper,
-  clientePersistenceSchema,
-  type ClientePersistence,
-} from './cliente.mapper';
+import { ClienteMapper, clientePersistenceSchema, type ClientePersistence } from './cliente.mapper';
 import type { ClienteEntity } from './cliente.schema';
-import {
-  CONDICION_IVA,
-  REGIMEN,
-  TIPO_CLIENTE,
-} from '@numerito/shared';
+import { CONDICION_IVA, REGIMEN, TIPO_CLIENTE } from '@numerito/shared';
 
 describe('ClienteMapper', () => {
   const mapper = new ClienteMapper();
@@ -63,7 +55,7 @@ describe('ClienteMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

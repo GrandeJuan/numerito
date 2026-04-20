@@ -15,23 +15,21 @@ const ESTADO: Record<Obligacion['estado'], { tone: 'amber' | 'rose' | 'brand'; l
   PRESENTADO: { tone: 'brand', label: 'Presentado' },
 };
 
-export interface ObligacionesTableProps {
+export interface VencimientosTableProps {
   rows: Obligacion[];
   onPresentar(o: Obligacion): void;
   onMore(o: Obligacion): void;
 }
 
-export function ObligacionesTable({ rows, onPresentar, onMore }: ObligacionesTableProps) {
+export function VencimientosTable({ rows, onPresentar, onMore }: VencimientosTableProps) {
   return (
-    <Card title="Próximas Obligaciones" subtitle="Orden por fecha de vencimiento" padding={0}>
+    <Card title="Próximos Vencimientos" subtitle="Orden por fecha de vencimiento" padding={0}>
       <DataTable<Obligacion>
         rows={rows}
         columns={[
           {
             header: 'Cliente',
-            render: (o) => (
-              <span className="text-[var(--text)] font-medium">{o.cliente}</span>
-            ),
+            render: (o) => <span className="text-[var(--text)] font-medium">{o.cliente}</span>,
           },
           {
             header: 'Obligación',

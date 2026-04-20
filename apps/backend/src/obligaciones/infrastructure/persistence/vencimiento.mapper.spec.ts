@@ -1,7 +1,4 @@
-import {
-  ESTADO_VENCIMIENTO,
-  TIPO_OBLIGACION,
-} from '@numerito/shared';
+import { ESTADO_VENCIMIENTO, TIPO_OBLIGACION } from '@numerito/shared';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 import {
   VencimientoMapper,
@@ -65,7 +62,7 @@ describe('VencimientoMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

@@ -1,9 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
 import { Icons } from './icons';
 import { IconButton } from './icon-button';
+import { ThemeToggle } from './theme-toggle';
+import { UserMenu } from './user-menu';
 import { DEFAULT_NAV } from './sidebar';
 
 export interface TopbarProps {
@@ -20,23 +22,19 @@ function deriveCrumbs(pathname: string, estudioNombre: string): string[] {
   return [estudioNombre, section?.label ?? 'Inicio'];
 }
 
-export function Topbar({ estudioNombre, userIniciales, notifications = 0 }: TopbarProps) {
+export function Topbar({ estudioNombre, notifications = 0 }: TopbarProps) {
   const pathname = usePathname() ?? '/';
   const crumbs = deriveCrumbs(pathname, estudioNombre);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const { user, estudioActual, estudios, logout } = useAuth();
 
-  useEffect(() => {
-    const saved = (localStorage.getItem('numerito-theme') as 'light' | 'dark') || 'dark';
-    setTheme(saved);
-    document.documentElement.dataset.theme = saved;
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('numerito-theme', next);
-  };
+  const displayName =
+    [user?.nombre, user?.apellido].filter(Boolean).join(' ') || user?.email || 'Usuario';
+  const profileHref =
+    user?.rol === 'SUPERADMIN'
+      ? '/admin/perfil'
+      : user?.rol === 'CLIENTE'
+        ? '/portal/perfil'
+        : '/perfil';
 
   return (
     <div className="h-[58px] bg-[var(--surface)] border-b border-[var(--border)] flex items-center justify-between px-7 flex-shrink-0">
@@ -76,13 +74,21 @@ export function Topbar({ estudioNombre, userIniciales, notifications = 0 }: Topb
           </span>
         </IconButton>
 
-        <IconButton onClick={toggleTheme} title="Cambiar tema">
-          {theme === 'dark' ? Icons.sun : Icons.moon}
-        </IconButton>
+        <ThemeToggle />
 
-        <div className="w-[30px] h-[30px] rounded-full bg-[var(--brand)] text-[var(--brand-on)] flex items-center justify-center text-[11px] font-semibold cursor-pointer">
-          {userIniciales}
-        </div>
+        <UserMenu
+          user={{
+            nombre: displayName,
+            email: user?.email ?? '',
+            role: user?.rol,
+            avatarUrl: user?.avatarUrl,
+          }}
+          studio={
+            estudioActual ? { nombre: estudioActual.nombre, count: estudios.length } : undefined
+          }
+          onLogout={logout}
+          profileHref={profileHref}
+        />
       </div>
     </div>
   );

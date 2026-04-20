@@ -96,7 +96,7 @@ export function CalendarGrid({
           </div>
         ))}
         {cells.map((day, i) => {
-          const dayItems = day ? byDay[day] ?? [] : [];
+          const dayItems = day ? (byDay[day] ?? []) : [];
           const isToday = isTodayMonth && day === todayDate;
           return (
             <div
@@ -109,11 +109,7 @@ export function CalendarGrid({
                   className="font-mono text-[11.5px]"
                   style={{
                     fontWeight: isToday ? 600 : 500,
-                    color: !day
-                      ? 'var(--text-4)'
-                      : isToday
-                        ? 'var(--brand-on)'
-                        : 'var(--text-2)',
+                    color: !day ? 'var(--text-4)' : isToday ? 'var(--brand-on)' : 'var(--text-2)',
                     background: isToday ? 'var(--brand)' : 'transparent',
                     padding: isToday ? '1px 6px' : 0,
                     borderRadius: 4,

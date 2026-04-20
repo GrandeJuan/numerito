@@ -18,9 +18,8 @@ import { ClientesTable } from './clientes-table';
 export function ClientesPage() {
   const router = useRouter();
   const { estudioActual } = useAuth();
-  const { data, loading, error } =
-    useFetchWithEstudio<{ items: Cliente[] }>('/v1/clientes');
-  const rows = data?.items ?? [];
+  const { data, loading, error } = useFetchWithEstudio<Cliente[]>('/v1/clientes');
+  const rows = data ?? [];
 
   const [search, setSearch] = useState('');
   const filtered = useMemo(() => {
@@ -28,7 +27,8 @@ export function ClientesPage() {
     if (!q) return rows;
     return rows.filter(
       (c) =>
-        c.razonSocial.toLowerCase().includes(q) || c.cuit.replace(/\D/g, '').includes(q.replace(/\D/g, '')),
+        c.razonSocial.toLowerCase().includes(q) ||
+        c.cuit.replace(/\D/g, '').includes(q.replace(/\D/g, '')),
     );
   }, [rows, search]);
 

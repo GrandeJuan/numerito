@@ -3,8 +3,9 @@
 export interface AvatarProps {
   name: string;
   src?: string | null;
-  size?: 18 | 22 | 28 | 36 | 48;
+  size?: 18 | 22 | 28 | 34 | 36 | 48 | 72;
   className?: string;
+  gradient?: boolean;
 }
 
 function initials(name: string) {
@@ -17,9 +18,17 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-const FONT: Record<number, number> = { 18: 9, 22: 10, 28: 11, 36: 13, 48: 16 };
+const FONT: Record<number, number> = {
+  18: 9,
+  22: 10,
+  28: 11,
+  34: 12,
+  36: 13,
+  48: 16,
+  72: 22,
+};
 
-export function Avatar({ name, src, size = 28, className = '' }: AvatarProps) {
+export function Avatar({ name, src, size = 28, className = '', gradient = false }: AvatarProps) {
   if (src) {
     return (
       <img
@@ -32,11 +41,14 @@ export function Avatar({ name, src, size = 28, className = '' }: AvatarProps) {
       />
     );
   }
+  const colorCls = gradient
+    ? 'bg-gradient-to-br from-[#3b82f6] to-[#8b5cf6] text-white'
+    : 'bg-[var(--brand-soft)] text-[var(--brand-ink)]';
   return (
     <div
       aria-label={name}
       title={name}
-      className={`rounded-full bg-[var(--brand-soft)] text-[var(--brand-ink)] flex items-center justify-center font-semibold select-none ${className}`}
+      className={`rounded-full ${colorCls} flex items-center justify-center font-semibold select-none ${className}`}
       style={{ width: size, height: size, fontSize: FONT[size] }}
     >
       {initials(name)}

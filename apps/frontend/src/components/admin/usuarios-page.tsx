@@ -2,46 +2,83 @@
 
 import { PageHeader, DataTable, Avatar, Pill, Button, type Column } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
-import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
+import { useFetch } from '@/lib/use-fetch';
 
 interface UsuarioPlatform {
   id: string;
-  nombre: string;
   email: string;
-  rol: 'SUPERADMIN' | 'SOPORTE' | 'BILLING';
-  estudio?: string;
-  ultimoAcceso?: string;
-  estado: 'ACTIVO' | 'SUSPENDIDO';
+  nombre: string;
+  apellido: string;
+  rol: string;
+  provider: string | null;
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function UsuariosAdminPage() {
-  // TODO: verificar endpoint
-  const { data, loading, error } = useFetchWithEstudio<UsuarioPlatform[]>('/v1/admin/usuarios');
+  const { data, loading, error } = useFetch<UsuarioPlatform[]>('/v1/admin/usuarios');
 
   const columns: Column<UsuarioPlatform>[] = [
     {
       header: 'Usuario',
-      render: (r) => (
-        <div className="flex items-center gap-3">
-          <Avatar name={r.nombre} size={28} />
-          <div>
-            <div className="text-[13px] font-medium text-[var(--text)]">{r.nombre}</div>
-            <div className="text-[11.5px] text-[var(--text-3)]">{r.email}</div>
+      render: (r) => {
+        const full = `${r.nombre} ${r.apellido}`.trim();
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar name={full || r.email} size={28} />
+            <div>
+              <div className="text-[13px] font-medium text-[var(--text)]">{full || '—'}</div>
+              <div className="text-[11.5px] text-[var(--text-3)] font-mono">{r.email}</div>
+            </div>
           </div>
-        </div>
+        );
+      },
+    },
+    {
+      header: 'Rol',
+      render: (r) => (
+        <Pill tone={r.rol === 'SUPERADMIN' ? 'brand' : r.rol === 'SOCIO' ? 'indigo' : 'neutral'}>
+          {r.rol}
+        </Pill>
       ),
     },
-    { header: 'Rol', render: (r) => <Pill tone={r.rol === 'SUPERADMIN' ? 'brand' : 'neutral'} small>{r.rol}</Pill> },
-    { header: 'Estudio', render: (r) => <span className="text-[var(--text-2)]">{r.estudio ?? '—'}</span> },
-    { header: 'Último acceso', render: (r) => <span className="mono text-[var(--text-3)]">{r.ultimoAcceso ?? '—'}</span> },
-    { header: 'Estado', render: (r) => <Pill tone={r.estado === 'ACTIVO' ? 'brand' : 'neutral'} small>{r.estado}</Pill> },
+    {
+      header: 'Verificado',
+      render: (r) => (
+        <Pill tone={r.emailVerified ? 'brand' : 'amber'} dot>
+          {r.emailVerified ? 'Sí' : 'Pendiente'}
+        </Pill>
+      ),
+    },
+    {
+      header: 'Estado',
+      render: (r) => (
+        <Pill tone={r.isActive ? 'brand' : 'neutral'} dot>
+          {r.isActive ? 'Activo' : 'Suspendido'}
+        </Pill>
+      ),
+    },
+    {
+      header: 'Creado',
+      render: (r) => (
+        <span className="font-mono text-[11.5px] text-[var(--text-3)]">
+          {r.createdAt.slice(0, 10)}
+        </span>
+      ),
+    },
   ];
 
   return (
     <>
-      <PageHeader title="Usuarios" subtitle="Equipo de plataforma y accesos" actions={<Button variant="primary">Invitar</Button>} />
+      <PageHeader
+        title="Usuarios"
+        subtitle="Equipo de plataforma y accesos"
+        actions={<Button variant="primary">Invitar</Button>}
+      />
       <PageStateGuard loading={loading} error={error}>
-        {data && <DataTable columns={columns} rows={data} rowKey={(r) => r.id} />}
+        <DataTable columns={columns} rows={data ?? []} rowKey={(r) => r.id} />
       </PageStateGuard>
     </>
   );

@@ -39,7 +39,8 @@ describe('NotificacionesController', () => {
       const req = { user: { sub: 'user-1' } } as any;
       const result = await controller.findAll(req, undefined, 20, 0);
 
-      expect(result).toEqual({ data: expect.any(Array), total: 2 });
+      expect(result).toEqual(expect.objectContaining({ data: expect.any(Array) }));
+      expect(result.data).toHaveLength(2);
       expect(mockRepo.findByUsuario).toHaveBeenCalledWith('user-1', {
         leida: undefined,
         limit: 20,

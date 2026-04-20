@@ -1,9 +1,5 @@
 import { Pago } from '../../domain/entities/pago.entity';
-import {
-  PagoMapper,
-  pagoPersistenceSchema,
-  type PagoPersistence,
-} from './pago.mapper';
+import { PagoMapper, pagoPersistenceSchema, type PagoPersistence } from './pago.mapper';
 import type { PagoEntity } from './pago.schema';
 
 describe('PagoMapper', () => {
@@ -49,7 +45,7 @@ describe('PagoMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

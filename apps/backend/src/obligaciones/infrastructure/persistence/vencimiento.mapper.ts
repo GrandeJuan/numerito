@@ -19,7 +19,7 @@ const estadoVencimientoValues = Object.values(ESTADO_VENCIMIENTO) as [
 ];
 
 export const vencimientoPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   tipoObligacion: z.enum(tipoObligacionValues),

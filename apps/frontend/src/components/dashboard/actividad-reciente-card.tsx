@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Card } from '../card';
 import { formatFecha } from '@/lib/formatters';
 
@@ -11,7 +12,18 @@ export interface ActividadItem {
 }
 
 const Check = (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 12l5 5L20 7" />
+  </svg>
 );
 
 export interface ActividadRecienteCardProps {
@@ -19,12 +31,23 @@ export interface ActividadRecienteCardProps {
 }
 
 export function ActividadRecienteCard({ items }: ActividadRecienteCardProps) {
+  const recent = items.slice(0, 5);
   return (
-    <Card title="Actividad Reciente">
-      {items.length === 0 ? (
+    <Card
+      title="Actividad Reciente"
+      right={
+        <Link
+          href="/actividad"
+          className="text-[12px] text-[var(--brand-ink)] font-medium no-underline hover:underline"
+        >
+          Ver todos →
+        </Link>
+      }
+    >
+      {recent.length === 0 ? (
         <p className="text-[var(--text-3)] text-[12.5px]">Sin actividad reciente.</p>
       ) : (
-        items.map((a, i, arr) => (
+        recent.map((a, i, arr) => (
           <div
             key={i}
             className={`flex gap-2.5 items-start py-2.5 ${

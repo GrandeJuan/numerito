@@ -43,7 +43,7 @@ describe('UsuarioEstudioMapper', () => {
     });
 
     it('rejects malformed persistence (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

@@ -1,7 +1,4 @@
-import {
-  LibroContable,
-  TIPO_LIBRO,
-} from '../../domain/entities/libro-contable.entity';
+import { LibroContable, TIPO_LIBRO } from '../../domain/entities/libro-contable.entity';
 import {
   LibroContableMapper,
   libroContablePersistenceSchema,
@@ -54,23 +51,17 @@ describe('LibroContableMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      expect(() =>
-        mapper.toDomain({ ...validPersistence, id: 'not-a-uuid' }),
-      ).toThrow();
+      expect(() => mapper.toDomain({ ...validPersistence, id: '' })).toThrow();
     });
 
     it('rejects missing required fields (Zod validation)', () => {
       const bad = { ...validPersistence } as Partial<LibroContablePersistence>;
       delete bad.periodo;
-      expect(() =>
-        mapper.toDomain(bad as LibroContablePersistence),
-      ).toThrow();
+      expect(() => mapper.toDomain(bad as LibroContablePersistence)).toThrow();
     });
 
     it('rejects empty periodo (Zod validation)', () => {
-      expect(() =>
-        mapper.toDomain({ ...validPersistence, periodo: '' }),
-      ).toThrow();
+      expect(() => mapper.toDomain({ ...validPersistence, periodo: '' })).toThrow();
     });
 
     it('rejects unknown tipo codes (Zod validation)', () => {

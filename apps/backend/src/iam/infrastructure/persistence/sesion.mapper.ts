@@ -4,8 +4,8 @@ import { Sesion } from '../../domain/entities/sesion.entity';
 import type { SesionEntity } from './sesion.schema';
 
 export const sesionPersistenceSchema = z.object({
-  id: z.string().uuid(),
-  usuarioId: z.string().uuid(),
+  id: z.string().min(1),
+  usuarioId: z.string().min(1),
   refreshToken: z.string().min(1),
   ipAddress: z.string(),
   userAgent: z.string(),

@@ -4,7 +4,7 @@ import { KpiCard } from '../kpi-card';
 import type { Obligacion } from '@numerito/shared';
 import { formatFecha } from '@/lib/formatters';
 
-export function ObligacionesKpis({ items }: { items: Obligacion[] }) {
+export function VencimientosKpis({ items }: { items: Obligacion[] }) {
   const pend = items.filter((o) => o.estado === 'PENDIENTE').length;
   const venc = items.filter((o) => o.estado === 'VENCIDO').length;
   const pres = items.filter((o) => o.estado === 'PRESENTADO').length;

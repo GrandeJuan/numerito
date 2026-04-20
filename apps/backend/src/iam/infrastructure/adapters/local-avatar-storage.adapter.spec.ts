@@ -20,27 +20,20 @@ describe('LocalAvatarStorageAdapter', () => {
   describe('upload', () => {
     it('should create the upload directory recursively', async () => {
       await adapter.upload('user-1', buffer, 'image/png');
-      expect(mkdir).toHaveBeenCalledWith(
-        expect.stringContaining('uploads/avatars'),
-        { recursive: true },
-      );
+      expect(mkdir).toHaveBeenCalledWith(expect.stringMatching(/uploads[\\/]avatars/), {
+        recursive: true,
+      });
     });
 
     it('should write file with correct extension for image/jpeg', async () => {
       const url = await adapter.upload('user-1', buffer, 'image/jpeg');
-      expect(writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('user-1.jpg'),
-        buffer,
-      );
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('user-1.jpg'), buffer);
       expect(url).toBe('/uploads/avatars/user-1.jpg');
     });
 
     it('should write file with correct extension for image/png', async () => {
       const url = await adapter.upload('user-1', buffer, 'image/png');
-      expect(writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('user-1.png'),
-        buffer,
-      );
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('user-1.png'), buffer);
       expect(url).toBe('/uploads/avatars/user-1.png');
     });
 
@@ -63,9 +56,7 @@ describe('LocalAvatarStorageAdapter', () => {
   describe('delete', () => {
     it('should delete the file from the upload directory', async () => {
       await adapter.delete('/uploads/avatars/user-1.png');
-      expect(unlink).toHaveBeenCalledWith(
-        expect.stringContaining('user-1.png'),
-      );
+      expect(unlink).toHaveBeenCalledWith(expect.stringContaining('user-1.png'));
     });
 
     it('should handle empty filename gracefully', async () => {

@@ -13,6 +13,9 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@numerito/shared(.*)$': '<rootDir>/../../../packages/shared/dist$1',
+    '^@mikro-orm/core$': '<rootDir>/__mocks__/mikro-orm-core.ts',
+    '^@mikro-orm/postgresql$': '<rootDir>/__mocks__/mikro-orm-core.ts',
+    '^@mikro-orm/nestjs$': '<rootDir>/__mocks__/mikro-orm-core.ts',
   },
 };
 

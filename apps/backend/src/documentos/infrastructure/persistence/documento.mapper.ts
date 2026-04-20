@@ -7,7 +7,7 @@ import type { DocumentoEntity } from './documento.schema';
 const tipoDocumentoValues = Object.values(TIPO_DOCUMENTO) as [TipoDocumento, ...TipoDocumento[]];
 
 export const documentoPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   tipo: z.enum(tipoDocumentoValues),

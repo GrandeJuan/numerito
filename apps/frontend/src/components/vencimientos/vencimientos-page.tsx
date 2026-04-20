@@ -10,22 +10,44 @@ import { PageHeader } from '../page-header';
 import { Button } from '../button';
 import { Icons } from '../icons';
 
-import { ObligacionesKpis } from './obligaciones-kpis';
+import { VencimientosKpis } from './vencimientos-kpis';
 import { CalendarGrid } from './calendar-grid';
-import { ObligacionesTable } from './obligaciones-table';
+import { VencimientosTable } from './vencimientos-table';
 
-export function ObligacionesPage() {
+export function VencimientosPage() {
   const { estudioActual } = useAuth();
-  const { data, loading, error } =
-    useFetchWithEstudio<{ items: Obligacion[] }>('/v1/obligaciones');
-  const items = data?.items ?? [];
+  interface VencimientoApi {
+    id: string;
+    clienteId: string;
+    cliente: string;
+    tipoObligacion: string;
+    periodo: string;
+    fechaVencimiento: string;
+    descripcion?: string;
+    estado: 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO';
+    monto?: number;
+    responsable?: string | null;
+  }
+  const { data, loading, error } = useFetchWithEstudio<VencimientoApi[]>('/v1/vencimientos');
+  const items: Obligacion[] = (data ?? []).map((v) => ({
+    id: v.id,
+    tipo: v.tipoObligacion,
+    periodo: v.periodo,
+    fecha: v.fechaVencimiento,
+    fechaVencimiento: v.fechaVencimiento,
+    descripcion: v.descripcion,
+    estado: v.estado,
+    cliente: v.cliente,
+    monto: v.monto,
+    responsable: v.responsable ?? null,
+  }));
 
   const [month, setMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
   return (
     <PageStateGuard estudioActual={estudioActual} loading={loading} error={error} icon="calendar">
       <PageHeader
-        title="Obligaciones"
+        title="Vencimientos"
         subtitle="Calendario y gestión de vencimientos fiscales"
         actions={
           <>
@@ -33,13 +55,13 @@ export function ObligacionesPage() {
               Exportar
             </Button>
             <Button variant="brand" icon={Icons.plus}>
-              Nueva obligación
+              Nuevo vencimiento
             </Button>
           </>
         }
       />
 
-      <ObligacionesKpis items={items} />
+      <VencimientosKpis items={items} />
 
       <CalendarGrid
         month={month}
@@ -49,7 +71,7 @@ export function ObligacionesPage() {
         onToday={() => setMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
       />
 
-      <ObligacionesTable
+      <VencimientosTable
         rows={items}
         onPresentar={(o) => console.log('presentar', o.id)}
         onMore={(o) => console.log('more', o.id)}

@@ -60,7 +60,10 @@ describe('UsuarioMapper', () => {
     });
 
     it('preserves avatar URL', () => {
-      const usuario = mapper.toDomain({ ...validPersistence, avatarUrl: 'https://example.com/avatar.png' });
+      const usuario = mapper.toDomain({
+        ...validPersistence,
+        avatarUrl: 'https://example.com/avatar.png',
+      });
       expect(usuario.avatarUrl).toBe('https://example.com/avatar.png');
     });
 
@@ -70,7 +73,7 @@ describe('UsuarioMapper', () => {
     });
 
     it('rejects malformed persistence (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

@@ -18,7 +18,7 @@ const tipoClienteValues = Object.values(TIPO_CLIENTE) as [TipoCliente, ...TipoCl
 const regimenValues = Object.values(REGIMEN) as [Regimen, ...Regimen[]];
 
 export const clientePersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   cuit: z.string().min(1),
   razonSocial: z.string().min(1),
   condicionIva: z.enum(condicionIvaValues),

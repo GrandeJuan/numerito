@@ -4,23 +4,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { Avatar } from '../avatar';
 import { Icons } from '../icons';
 import { IconButton } from '../icon-button';
+import { ThemeToggle } from '../theme-toggle';
+import { UserMenu } from '../user-menu';
 
 const NAV = [
   { href: '/portal', label: 'Mi portal', icon: Icons.home },
   { href: '/portal/documentos', label: 'Mis documentos', icon: Icons.file },
-  { href: '/portal/obligaciones', label: 'Mis obligaciones', icon: Icons.calendar },
+  { href: '/portal/vencimientos', label: 'Mis vencimientos', icon: Icons.calendar },
 ];
 
 export function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, estudioActual } = useAuth();
+  const { user, estudioActual, logout } = useAuth();
+
+  const displayName =
+    [user?.nombre, user?.apellido].filter(Boolean).join(' ') || user?.email || 'Cliente';
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      {/* Topbar */}
       <header className="sticky top-0 z-20 bg-[var(--surface)] border-b border-[var(--border)]">
         <div className="max-w-[1280px] mx-auto h-[56px] px-5 flex items-center gap-4">
           <Link href="/portal" className="flex items-center gap-2.5 no-underline">
@@ -60,17 +63,18 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2">
             <IconButton label="Notificaciones">{Icons.bell}</IconButton>
-            <div className="flex items-center gap-2 pl-2 border-l border-[var(--border)]">
-              <Avatar name={user?.nombre ?? 'Cliente'} size={28} />
-              <div className="hidden sm:block">
-                <div className="text-[12px] font-semibold text-[var(--text)] leading-none">
-                  {user?.nombre ?? '—'}
-                </div>
-                <div className="text-[10.5px] text-[var(--text-3)] mt-0.5 font-mono">
-                  {user?.email ?? ''}
-                </div>
-              </div>
-            </div>
+            <ThemeToggle />
+            <UserMenu
+              user={{
+                nombre: displayName,
+                email: user?.email ?? '',
+                role: user?.rol,
+                avatarUrl: user?.avatarUrl,
+              }}
+              studio={estudioActual ? { nombre: estudioActual.nombre } : undefined}
+              onLogout={logout}
+              profileHref="/portal/perfil"
+            />
           </div>
         </div>
       </header>

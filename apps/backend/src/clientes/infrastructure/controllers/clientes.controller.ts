@@ -3,8 +3,14 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 import { CrearClienteDto, crearClienteDtoSchema } from '../../application/dtos/crear-cliente.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { ActualizarClienteDto, actualizarClienteDtoSchema } from '../../application/dtos/actualizar-cliente.dto';
-import { AsignarResponsableDto, asignarResponsableDtoSchema } from '../../application/dtos/asignar-responsable.dto';
+import {
+  ActualizarClienteDto,
+  actualizarClienteDtoSchema,
+} from '../../application/dtos/actualizar-cliente.dto';
+import {
+  AsignarResponsableDto,
+  asignarResponsableDtoSchema,
+} from '../../application/dtos/asignar-responsable.dto';
 import {
   CrearClienteHandler,
   type CrearClienteCommand,
@@ -25,6 +31,7 @@ import { Inject } from '@nestjs/common';
 import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
+import { toClienteResponseDto } from '../../application/dtos/cliente-response.dto';
 
 @ApiTags('Clientes')
 @Controller({ path: 'clientes', version: '1' })
@@ -40,9 +47,17 @@ export class ClientesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar clientes del estudio' })
-  async list(@Principal() principal: EstudioPrincipal, @Query('page') page = 1, @Query('limit') limit = 20) {
+  async list(
+    @Principal() principal: EstudioPrincipal,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
     const clientes = await this.clienteRepo.findAll(principal);
-    return successResponse(clientes, { total: clientes.length, page: +page, limit: +limit });
+    return successResponse(clientes.map(toClienteResponseDto), {
+      total: clientes.length,
+      page: +page,
+      limit: +limit,
+    });
   }
 
   @Get('summary')
@@ -62,19 +77,29 @@ export class ClientesController {
   async getById(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
     const cliente = await this.clienteRepo.findById(principal, id);
     if (!cliente) throw new RecursoNoEncontradoError('Cliente');
-    return cliente;
+    return successResponse(toClienteResponseDto(cliente));
   }
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body(new ZodValidationPipe(crearClienteDtoSchema)) dto: CrearClienteDto, @Principal() principal: EstudioPrincipal) {
+  async create(
+    @Body(new ZodValidationPipe(crearClienteDtoSchema)) dto: CrearClienteDto,
+    @Principal() principal: EstudioPrincipal,
+  ) {
     return this.crearClienteHandler.execute(principal, dto as CrearClienteCommand);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar cliente' })
-  async update(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(actualizarClienteDtoSchema)) dto: ActualizarClienteDto) {
-    return this.actualizarClienteHandler.execute(principal, { id, ...dto } as ActualizarClienteCommand);
+  async update(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(actualizarClienteDtoSchema)) dto: ActualizarClienteDto,
+  ) {
+    return this.actualizarClienteHandler.execute(principal, {
+      id,
+      ...dto,
+    } as ActualizarClienteCommand);
   }
 
   @Patch(':id/desactivar')
@@ -91,7 +116,14 @@ export class ClientesController {
 
   @Patch(':id/responsable')
   @ApiOperation({ summary: 'Asignar responsable al cliente' })
-  async assignResponsable(@Principal() principal: EstudioPrincipal, @Param('id') id: string, @Body(new ZodValidationPipe(asignarResponsableDtoSchema)) dto: AsignarResponsableDto) {
-    return this.asignarResponsableHandler.execute(principal, { id, responsableId: dto.responsableId } as AsignarResponsableCommand);
+  async assignResponsable(
+    @Principal() principal: EstudioPrincipal,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(asignarResponsableDtoSchema)) dto: AsignarResponsableDto,
+  ) {
+    return this.asignarResponsableHandler.execute(principal, {
+      id,
+      responsableId: dto.responsableId,
+    } as AsignarResponsableCommand);
   }
 }

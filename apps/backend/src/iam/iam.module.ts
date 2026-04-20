@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { EntityManager } from '@mikro-orm/core';
@@ -22,7 +23,6 @@ import { MicrosoftStrategy } from './infrastructure/strategies/microsoft.strateg
 import { PassportModule } from '@nestjs/passport';
 import { ObtenerEstudiosUsuarioHandler } from './application/queries/obtener-estudios-usuario.query';
 import { ObtenerPermisosUsuarioHandler } from './application/queries/obtener-permisos-usuario.query';
-import { PermisoService } from './application/services/permiso.service';
 import type { SesionRepository } from './domain/repositories/sesion.repository';
 import { USUARIO_ESTUDIO_REPOSITORY } from './domain/repositories/usuario-estudio.repository';
 import type { UsuarioEstudioRepository } from './domain/repositories/usuario-estudio.repository';
@@ -51,7 +51,12 @@ import { AVATAR_STORAGE } from './domain/ports/avatar-storage.port';
 import { LocalAvatarStorageAdapter } from './infrastructure/adapters/local-avatar-storage.adapter';
 import { S3AvatarStorageAdapter } from './infrastructure/adapters/s3-avatar-storage.adapter';
 import { UsuarioSearchView } from './application/views/usuario-search.view';
-import { USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW, USUARIO_ADMIN_KPIS_VIEW, USUARIO_MEMBERSHIP_VIEW } from './application/public-views';
+import {
+  USUARIO_SEARCH_VIEW,
+  USUARIOS_ADMIN_LIST_VIEW,
+  USUARIO_ADMIN_KPIS_VIEW,
+  USUARIO_MEMBERSHIP_VIEW,
+} from './application/public-views';
 import { UsuariosAdminListView } from './application/views/usuarios-admin-list.view';
 import { UsuarioAdminKpisView } from './application/views/usuario-admin-kpis.view';
 import { UsuarioMembershipView } from './application/views/usuario-membership.view';
@@ -73,7 +78,8 @@ import { UsuarioMembershipView } from './application/views/usuario-membership.vi
     { provide: ROL_PERMISO_REPOSITORY, useClass: MikroOrmRolPermisoRepository },
     {
       provide: RegistrarUsuarioHandler,
-      useFactory: (repo: UsuarioRepository, eventBus: EventBus) => new RegistrarUsuarioHandler(repo, eventBus),
+      useFactory: (repo: UsuarioRepository, eventBus: EventBus) =>
+        new RegistrarUsuarioHandler(repo, eventBus),
       inject: [USUARIO_REPOSITORY, EVENT_BUS],
     },
     {
@@ -130,6 +136,10 @@ import { UsuarioMembershipView } from './application/views/usuario-membership.vi
     ...(process.env.GOOGLE_CLIENT_ID ? [GoogleStrategy] : []),
     ...(process.env.MICROSOFT_CLIENT_ID ? [MicrosoftStrategy] : []),
     JwtAuthGuard,
+    {
+      provide: APP_GUARD,
+      useExisting: JwtAuthGuard,
+    },
     RolesGuard,
     AdminGuard,
     EstudioMemberGuard,
@@ -154,6 +164,22 @@ import { UsuarioMembershipView } from './application/views/usuario-membership.vi
       inject: [EntityManager],
     },
   ],
-  exports: [TOKEN_SERVICE, USUARIO_REPOSITORY, RESET_TOKEN_REPOSITORY, TOTP_SECRET_REPOSITORY, SESION_REPOSITORY, USUARIO_ESTUDIO_REPOSITORY, ROL_PERMISO_REPOSITORY, JwtAuthGuard, RolesGuard, AdminGuard, EstudioMemberGuard, USUARIO_SEARCH_VIEW, USUARIOS_ADMIN_LIST_VIEW, USUARIO_ADMIN_KPIS_VIEW, USUARIO_MEMBERSHIP_VIEW],
+  exports: [
+    TOKEN_SERVICE,
+    USUARIO_REPOSITORY,
+    RESET_TOKEN_REPOSITORY,
+    TOTP_SECRET_REPOSITORY,
+    SESION_REPOSITORY,
+    USUARIO_ESTUDIO_REPOSITORY,
+    ROL_PERMISO_REPOSITORY,
+    JwtAuthGuard,
+    RolesGuard,
+    AdminGuard,
+    EstudioMemberGuard,
+    USUARIO_SEARCH_VIEW,
+    USUARIOS_ADMIN_LIST_VIEW,
+    USUARIO_ADMIN_KPIS_VIEW,
+    USUARIO_MEMBERSHIP_VIEW,
+  ],
 })
 export class IamModule {}

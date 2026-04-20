@@ -126,13 +126,13 @@ describe('ObligacionesController', () => {
         limit: 20,
       });
       expect(result.data).toHaveLength(2);
-      expect(result.meta).toEqual({ total: 7, page: 1, limit: 20 });
+      expect(result.meta).toEqual(expect.objectContaining({ total: 7, page: 1, limit: 20 }));
     });
 
     it('should use default page and limit when not provided', async () => {
       const result = await controller.list(principal);
-      expect(result.meta.page).toBe(1);
-      expect(result.meta.limit).toBe(20);
+      expect(result.meta!.page).toBe(1);
+      expect(result.meta!.limit).toBe(20);
     });
 
     it('should forward periodo filter', async () => {

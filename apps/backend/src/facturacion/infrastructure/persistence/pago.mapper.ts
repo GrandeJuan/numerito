@@ -4,7 +4,7 @@ import { Pago } from '../../domain/entities/pago.entity';
 import type { PagoEntity } from './pago.schema';
 
 export const pagoPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   facturaId: z.string().min(1),
   estudioId: z.string().min(1),
   fecha: z.date(),

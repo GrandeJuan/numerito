@@ -32,7 +32,9 @@ describe('CredencialFiscalMapper', () => {
       expect(data.estudioId).toBe(estudioId);
       expect(data.organismoId).toBe('1');
       expect(data.cuit).toBe('20-12345678-6');
-      expect(data.secretArn).toBe('arn:aws:secretsmanager:us-east-1:123456789012:secret:cred-abc123');
+      expect(data.secretArn).toBe(
+        'arn:aws:secretsmanager:us-east-1:123456789012:secret:cred-abc123',
+      );
       expect(data.estado).toBe('ACTIVA');
     });
 
@@ -48,7 +50,7 @@ describe('CredencialFiscalMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 

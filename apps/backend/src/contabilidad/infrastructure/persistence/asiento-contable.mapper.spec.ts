@@ -58,23 +58,17 @@ describe('AsientoContableMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      expect(() =>
-        mapper.toDomain({ ...validPersistence, id: 'not-a-uuid' }),
-      ).toThrow();
+      expect(() => mapper.toDomain({ ...validPersistence, id: '' })).toThrow();
     });
 
     it('rejects missing required fields (Zod validation)', () => {
       const bad = { ...validPersistence } as Partial<AsientoContablePersistence>;
       delete bad.libroId;
-      expect(() =>
-        mapper.toDomain(bad as AsientoContablePersistence),
-      ).toThrow();
+      expect(() => mapper.toDomain(bad as AsientoContablePersistence)).toThrow();
     });
 
     it('rejects empty libroId (Zod validation)', () => {
-      expect(() =>
-        mapper.toDomain({ ...validPersistence, libroId: '' }),
-      ).toThrow();
+      expect(() => mapper.toDomain({ ...validPersistence, libroId: '' })).toThrow();
     });
 
     it('rejects malformed linea (missing cuentaId)', () => {

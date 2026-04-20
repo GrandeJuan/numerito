@@ -18,8 +18,14 @@ interface CreateVencimientoProps {
   descripcion: string;
 }
 
-const tipoObligacionValues = Object.values(TIPO_OBLIGACION) as [TipoObligacion, ...TipoObligacion[]];
-const estadoVencimientoValues = Object.values(ESTADO_VENCIMIENTO) as [EstadoVencimiento, ...EstadoVencimiento[]];
+const tipoObligacionValues = Object.values(TIPO_OBLIGACION) as [
+  TipoObligacion,
+  ...TipoObligacion[],
+];
+const estadoVencimientoValues = Object.values(ESTADO_VENCIMIENTO) as [
+  EstadoVencimiento,
+  ...EstadoVencimiento[],
+];
 
 const vencimientoReconstitutePropsSchema = z.object({
   clienteId: z.string().min(1),
@@ -44,7 +50,11 @@ export class Vencimiento extends BaseEntity {
 
   private constructor(props: CreateVencimientoProps, id?: string) {
     super(id);
-    if (props.fechaVencimiento < new Date()) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDay = new Date(props.fechaVencimiento);
+    dueDay.setHours(0, 0, 0, 0);
+    if (dueDay < today) {
       throw new OperacionInvalidaError('La fecha de vencimiento no puede ser pasada');
     }
     this._clienteId = props.clienteId;
@@ -76,13 +86,27 @@ export class Vencimiento extends BaseEntity {
     return instance;
   }
 
-  get clienteId(): string { return this._clienteId; }
-  get estudioId(): string { return this._estudioId; }
-  get tipoObligacion(): TipoObligacion { return this._tipoObligacion; }
-  get periodo(): string { return this._periodo; }
-  get fechaVencimiento(): Date { return this._fechaVencimiento; }
-  get descripcion(): string { return this._descripcion; }
-  get estado(): EstadoVencimiento { return this._estado; }
+  get clienteId(): string {
+    return this._clienteId;
+  }
+  get estudioId(): string {
+    return this._estudioId;
+  }
+  get tipoObligacion(): TipoObligacion {
+    return this._tipoObligacion;
+  }
+  get periodo(): string {
+    return this._periodo;
+  }
+  get fechaVencimiento(): Date {
+    return this._fechaVencimiento;
+  }
+  get descripcion(): string {
+    return this._descripcion;
+  }
+  get estado(): EstadoVencimiento {
+    return this._estado;
+  }
 
   presentar(): void {
     if (this._estado === ESTADO_VENCIMIENTO.VENCIDO) {

@@ -1,69 +1,67 @@
 'use client';
 
-import { useState } from 'react';
-import { PageHeader, KpiCard, SegmentedControl, Card, DataTable, type Column } from '@/components';
+import { PageHeader, KpiCard, Card } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
-import { formatCurrency } from '@/lib/formatters';
 
-type Periodo = 'month' | 'quarter' | 'year';
-
-interface ContabilidadSummary {
-  ventas: number;
-  ventasDelta?: number;
-  compras: number;
-  comprasDelta?: number;
-  ivaDebito: number;
-  ivaCredito: number;
-  detalle: Array<{
-    concepto: string;
-    ventas: number;
-    compras: number;
-    ivaDebito: number;
-    ivaCredito: number;
-  }>;
+interface ContabilidadStats {
+  asientosDelPeriodo: number;
+  librosRubricados: number;
+  totalLibros: number;
+  balanceCuadrado: boolean;
+  libros: Array<{ id: string; nombre: string; rubricado: boolean }>;
+  mensualDebeHaber: Array<{ mes: string; debe: number; haber: number }>;
+  asientosRecientes: Array<{ id: string; fecha: string; concepto: string; monto: number }>;
 }
 
-const PERIODO_OPTIONS = [
-  { value: 'month', label: 'Mes' },
-  { value: 'quarter', label: 'Trimestre' },
-  { value: 'year', label: 'Año' },
-];
-
 export function ContabilidadPage() {
-  const [periodo, setPeriodo] = useState<Periodo>('month');
-
-  // TODO: verificar endpoint
-  const { data, loading, error } = useFetchWithEstudio<ContabilidadSummary>(
-    `/v1/contabilidad/summary?periodo=${periodo}`,
-  );
-
-  const columns: Column<ContabilidadSummary['detalle'][number]>[] = [
-    { header: 'Concepto', key: 'concepto' },
-    { header: 'Ventas', align: 'right', render: (r) => <span className="mono">{formatCurrency(r.ventas)}</span> },
-    { header: 'Compras', align: 'right', render: (r) => <span className="mono">{formatCurrency(r.compras)}</span> },
-    { header: 'IVA Débito', align: 'right', render: (r) => <span className="mono">{formatCurrency(r.ivaDebito)}</span> },
-    { header: 'IVA Crédito', align: 'right', render: (r) => <span className="mono">{formatCurrency(r.ivaCredito)}</span> },
-  ];
+  const { data, loading, error } = useFetchWithEstudio<ContabilidadStats>('/v1/contabilidad/stats');
 
   return (
     <>
-      <PageHeader
-        title="Contabilidad"
-        subtitle="Resumen de operaciones e IVA"
-        actions={<SegmentedControl options={PERIODO_OPTIONS} value={periodo} onChange={(v) => setPeriodo(v as Periodo)} />}
-      />
+      <PageHeader title="Contabilidad" subtitle="Libros, asientos y cierre contable" />
       <PageStateGuard loading={loading} error={error}>
         {data && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <KpiCard label="Ventas" value={formatCurrency(data.ventas)} delta={data.ventasDelta != null ? { text: `${data.ventasDelta >= 0 ? '+' : ''}${data.ventasDelta}%`, tone: data.ventasDelta >= 0 ? 'brand' : 'rose' } : undefined} />
-              <KpiCard label="Compras" value={formatCurrency(data.compras)} delta={data.comprasDelta != null ? { text: `${data.comprasDelta >= 0 ? '+' : ''}${data.comprasDelta}%`, tone: 'neutral' } : undefined} />
-              <KpiCard label="IVA Débito" value={formatCurrency(data.ivaDebito)} />
-              <KpiCard label="IVA Crédito" value={formatCurrency(data.ivaCredito)} />
+              <KpiCard label="Asientos del período" value={String(data.asientosDelPeriodo)} />
+              <KpiCard
+                label="Libros rubricados"
+                value={`${data.librosRubricados}/${data.totalLibros}`}
+              />
+              <KpiCard label="Total libros" value={String(data.totalLibros)} />
+              <KpiCard
+                label="Balance"
+                value={data.balanceCuadrado ? 'Cuadrado' : 'Sin cuadrar'}
+                delta={{
+                  text: data.balanceCuadrado ? 'OK' : 'revisar',
+                  tone: data.balanceCuadrado ? 'brand' : 'rose',
+                }}
+              />
             </div>
-            <Card title="Detalle por concepto">
-              <DataTable columns={columns} rows={data.detalle} rowKey={(r) => r.concepto} />
+            <Card title="Libros contables">
+              {data.libros.length === 0 ? (
+                <div className="p-6 text-[13px] text-[var(--text-3)] text-center">
+                  No hay libros cargados.
+                </div>
+              ) : (
+                <div className="divide-y divide-[var(--border)]">
+                  {data.libros.map((l) => (
+                    <div
+                      key={l.id}
+                      className="flex items-center justify-between px-4 py-3 text-[13px]"
+                    >
+                      <span className="text-[var(--text)]">{l.nombre}</span>
+                      <span
+                        className="text-[11.5px]"
+                        style={{ color: l.rubricado ? 'var(--brand)' : 'var(--text-3)' }}
+                      >
+                        {l.rubricado ? 'Rubricado' : 'Pendiente'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </>
         )}

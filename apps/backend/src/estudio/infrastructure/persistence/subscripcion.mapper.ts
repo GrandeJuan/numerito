@@ -17,7 +17,7 @@ const cicloFacturacionValues = Object.values(CicloFacturacion) as [
 ];
 
 export const subscripcionPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   estudioId: z.string().min(1),
   planId: z.string().min(1),
   fechaInicio: z.date(),

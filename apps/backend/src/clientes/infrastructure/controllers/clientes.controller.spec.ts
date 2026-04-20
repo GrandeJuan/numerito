@@ -110,7 +110,9 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.getById(principal, 'nonexistent')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.getById(principal, 'nonexistent')).rejects.toThrow(
+        'Cliente no encontrado',
+      );
     });
 
     it('should pass principal to repo.findById', async () => {
@@ -142,8 +144,10 @@ describe('ClientesController', () => {
       const cliente = makeCliente();
       mockClienteRepo.findById.mockResolvedValue(cliente);
 
-      const result = await controller.update(principal, cliente.id, { razonSocial: 'Nuevo Nombre SRL' });
-      expect(result.razonSocial).toBe('Nuevo Nombre SRL');
+      const result = await controller.update(principal, cliente.id, {
+        razonSocial: 'Nuevo Nombre SRL',
+      });
+      expect(result.razonSocial.value).toBe('Nuevo Nombre SRL');
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(1);
     });
 
@@ -169,7 +173,9 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.deactivate(principal, 'bad-id')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.deactivate(principal, 'bad-id')).rejects.toThrow(
+        'Cliente no encontrado',
+      );
     });
   });
 
@@ -187,7 +193,9 @@ describe('ClientesController', () => {
     it('should throw when cliente not found', async () => {
       mockClienteRepo.findById.mockResolvedValue(null);
 
-      await expect(controller.activate(principal, 'bad-id')).rejects.toThrow('Cliente no encontrado');
+      await expect(controller.activate(principal, 'bad-id')).rejects.toThrow(
+        'Cliente no encontrado',
+      );
     });
   });
 

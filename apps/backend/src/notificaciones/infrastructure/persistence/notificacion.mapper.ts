@@ -3,10 +3,13 @@ import type { Mapper } from '../../../shared/domain';
 import { Notificacion, TipoNotificacion } from '../../domain/entities/notificacion.entity';
 import type { NotificacionEntity } from './notificacion.schema';
 
-const tipoNotificacionValues = Object.values(TipoNotificacion) as [TipoNotificacion, ...TipoNotificacion[]];
+const tipoNotificacionValues = Object.values(TipoNotificacion) as [
+  TipoNotificacion,
+  ...TipoNotificacion[],
+];
 
 export const notificacionPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   usuarioId: z.string().min(1),
   estudioId: z.string().optional(),
   tipo: z.enum(tipoNotificacionValues),

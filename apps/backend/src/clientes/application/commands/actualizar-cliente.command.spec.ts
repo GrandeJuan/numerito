@@ -47,7 +47,7 @@ describe('ActualizarCliente Command', () => {
       razonSocial: 'Nuevo Nombre SRL',
     });
 
-    expect(result.razonSocial).toBe('Nuevo Nombre SRL');
+    expect(result.razonSocial.value).toBe('Nuevo Nombre SRL');
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
   });
 
@@ -88,7 +88,7 @@ describe('ActualizarCliente Command', () => {
       regimen: REGIMEN.MONOTRIBUTO,
     });
 
-    expect(result.razonSocial).toBe('Actualizada S.A.');
+    expect(result.razonSocial.value).toBe('Actualizada S.A.');
     expect(result.condicionIva).toBe(CONDICION_IVA.MONOTRIBUTO);
     expect(result.regimen).toBe(REGIMEN.MONOTRIBUTO);
   });
@@ -100,7 +100,7 @@ describe('ActualizarCliente Command', () => {
     await handler.execute(principal, { id: cliente.id });
 
     expect(mockRepo.save).toHaveBeenCalledTimes(1);
-    expect(cliente.razonSocial).toBe('Empresa Test');
+    expect(cliente.razonSocial.value).toBe('Empresa Test');
   });
 
   it('should throw when cliente not found', async () => {

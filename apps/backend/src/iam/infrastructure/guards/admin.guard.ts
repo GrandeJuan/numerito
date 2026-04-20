@@ -3,15 +3,26 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { ROL } from '@numerito/shared';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Injectable()
 export class AdminGuard extends JwtAuthGuard {
-  constructor(jwtService: JwtService, configService: ConfigService, reflector: Reflector) {
-    super(jwtService, configService, reflector);
+  constructor(
+    jwtService: JwtService,
+    configService: ConfigService,
+    private readonly adminReflector: Reflector,
+  ) {
+    super(jwtService, configService, adminReflector);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.adminReflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     await super.canActivate(context);
 
     const request = context.switchToHttp().getRequest();

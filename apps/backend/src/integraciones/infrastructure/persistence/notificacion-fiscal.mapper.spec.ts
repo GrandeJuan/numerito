@@ -61,7 +61,7 @@ describe('NotificacionFiscalMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 
@@ -89,7 +89,7 @@ describe('NotificacionFiscalMapper', () => {
     it('includes notaGestion when present', () => {
       const withNota = {
         ...validPersistence,
-        estado: ESTADO_NOTIFICACION.GESTIONADA as const,
+        estado: ESTADO_NOTIFICACION.GESTIONADA,
         notaGestion: 'Gestionado',
       };
       const nf = mapper.toDomain(withNota);

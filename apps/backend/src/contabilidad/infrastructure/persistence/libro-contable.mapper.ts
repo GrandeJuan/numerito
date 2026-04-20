@@ -10,7 +10,7 @@ import type { LibroContableEntity } from './libro-contable.schema';
 const tipoLibroValues = Object.values(TIPO_LIBRO) as [TipoLibro, ...TipoLibro[]];
 
 export const libroContablePersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   tipo: z.enum(tipoLibroValues),
@@ -19,13 +19,9 @@ export const libroContablePersistenceSchema = z.object({
   numeroRubrica: z.string().optional(),
 });
 
-export type LibroContablePersistence = z.infer<
-  typeof libroContablePersistenceSchema
->;
+export type LibroContablePersistence = z.infer<typeof libroContablePersistenceSchema>;
 
-export class LibroContableMapper
-  implements Mapper<LibroContable, LibroContablePersistence>
-{
+export class LibroContableMapper implements Mapper<LibroContable, LibroContablePersistence> {
   toDomain(persistence: LibroContablePersistence): LibroContable {
     const data = libroContablePersistenceSchema.parse(persistence);
     return LibroContable.reconstitute(

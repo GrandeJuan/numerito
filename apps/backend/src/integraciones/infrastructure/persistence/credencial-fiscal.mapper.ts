@@ -4,7 +4,7 @@ import type { CredencialFiscalData } from '../../domain/repositories/credencial-
 import type { CredencialFiscalEntity } from './credencial-fiscal.schema';
 
 export const credencialFiscalPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   organismoId: z.string(),
@@ -16,7 +16,10 @@ export const credencialFiscalPersistenceSchema = z.object({
 
 export type CredencialFiscalPersistence = z.infer<typeof credencialFiscalPersistenceSchema>;
 
-export class CredencialFiscalMapper implements Mapper<CredencialFiscalData, CredencialFiscalPersistence> {
+export class CredencialFiscalMapper implements Mapper<
+  CredencialFiscalData,
+  CredencialFiscalPersistence
+> {
   toDomain(persistence: CredencialFiscalPersistence): CredencialFiscalData {
     const data = credencialFiscalPersistenceSchema.parse(persistence);
     return {

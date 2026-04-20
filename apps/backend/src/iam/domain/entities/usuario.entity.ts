@@ -136,6 +136,12 @@ export class Usuario extends BaseEntity {
     return this._avatarUrl;
   }
 
+  updateProfile(nombre: string, apellido: string): void {
+    this._nombre = nombre;
+    this._apellido = apellido;
+    this.updatedAt = new Date();
+  }
+
   updateAvatarUrl(url: string): void {
     this._avatarUrl = url;
     this.updatedAt = new Date();

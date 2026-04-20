@@ -4,7 +4,7 @@ import { Empleado } from '../../domain/entities/empleado.entity';
 import type { EmpleadoEntity } from './empleado.schema';
 
 export const empleadoPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   nombre: z.string(),

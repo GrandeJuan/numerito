@@ -43,7 +43,7 @@ describe('SesionMapper', () => {
     });
 
     it('rejects malformed persistence (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 
@@ -81,10 +81,7 @@ describe('SesionMapper', () => {
     });
 
     it('reflects mutations made via domain methods', () => {
-      const sesion = Sesion.reconstitute(
-        { ...validPersistence },
-        validId,
-      );
+      const sesion = Sesion.reconstitute({ ...validPersistence }, validId);
       sesion.revoke();
 
       expect(mapper.toPersistence(sesion).isActive).toBe(false);

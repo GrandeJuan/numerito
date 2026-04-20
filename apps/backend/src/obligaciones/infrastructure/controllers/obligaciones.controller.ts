@@ -2,7 +2,10 @@ import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { EstadoVencimiento } from '@numerito/shared';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
-import { CrearVencimientoDto, crearVencimientoDtoSchema } from '../../application/dtos/crear-vencimiento.dto';
+import {
+  CrearVencimientoDto,
+  crearVencimientoDtoSchema,
+} from '../../application/dtos/crear-vencimiento.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import {
   CrearVencimientoHandler,
@@ -17,8 +20,8 @@ import { VencimientoByIdHandler } from '../../application/queries/vencimiento-by
 import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
-@ApiTags('Obligaciones')
-@Controller({ path: 'obligaciones', version: '1' })
+@ApiTags('Vencimientos')
+@Controller({ path: 'vencimientos', version: '1' })
 export class ObligacionesController {
   constructor(
     private readonly crearVencimientoHandler: CrearVencimientoHandler,
@@ -31,13 +34,24 @@ export class ObligacionesController {
   ) {}
 
   @Get('kpis')
-  @ApiOperation({ summary: 'KPIs de obligaciones del estudio' })
+  @ApiOperation({ summary: 'KPIs de vencimientos del estudio' })
   async kpis(@Principal() principal: EstudioPrincipal) {
     const result = await this.vencimientoKpisHandler.execute(principal);
     return successResponse(result);
   }
 
-  @Get('vencimientos')
+  @Get('calendario/:periodo')
+  @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
+  async calendario(@Principal() principal: EstudioPrincipal, @Param('periodo') periodo: string) {
+    const { fechaDesde, fechaHasta } = periodoToRange(periodo);
+    const items = await this.vencimientoCalendarioHandler.execute(principal, {
+      fechaDesde,
+      fechaHasta,
+    });
+    return successResponse(items);
+  }
+
+  @Get()
   @ApiOperation({ summary: 'Listar vencimientos' })
   async list(
     @Principal() principal: EstudioPrincipal,
@@ -67,41 +81,36 @@ export class ObligacionesController {
     });
   }
 
-  @Get('vencimientos/:id')
+  @Post()
+  @ApiOperation({ summary: 'Crear vencimiento' })
+  async create(
+    @Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto,
+    @Principal() principal: EstudioPrincipal,
+  ) {
+    const result = await this.crearVencimientoHandler.execute(
+      principal,
+      dto as CrearVencimientoCommand,
+    );
+    return result;
+  }
+
+  @Get(':id')
   @ApiOperation({ summary: 'Obtener vencimiento por ID' })
   async getById(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
     const vencimiento = await this.vencimientoByIdHandler.execute(principal, { id });
     return successResponse(vencimiento);
   }
 
-  @Post('vencimientos')
-  @ApiOperation({ summary: 'Crear vencimiento' })
-  async create(@Body(new ZodValidationPipe(crearVencimientoDtoSchema)) dto: CrearVencimientoDto, @Principal() principal: EstudioPrincipal) {
-    const result = await this.crearVencimientoHandler.execute(principal, dto as CrearVencimientoCommand);
-    return result;
-  }
-
-  @Patch('vencimientos/:id/presentar')
+  @Patch(':id/presentar')
   @ApiOperation({ summary: 'Marcar vencimiento como presentado' })
   async presentar(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
     return this.presentarVencimientoHandler.execute(principal, { vencimientoId: id });
   }
 
-  @Patch('vencimientos/:id/vencido')
+  @Patch(':id/vencido')
   @ApiOperation({ summary: 'Marcar vencimiento como vencido' })
   async marcarVencido(@Principal() principal: EstudioPrincipal, @Param('id') id: string) {
     return this.marcarVencidoHandler.execute(principal, { vencimientoId: id });
-  }
-
-  @Get('calendario/:periodo')
-  @ApiOperation({ summary: 'Calendario de vencimientos por periodo' })
-  async calendario(@Principal() principal: EstudioPrincipal, @Param('periodo') periodo: string) {
-    const { fechaDesde, fechaHasta } = periodoToRange(periodo);
-    const items = await this.vencimientoCalendarioHandler.execute(principal, {
-      fechaDesde,
-      fechaHasta,
-    });
-    return successResponse(items);
   }
 }
 

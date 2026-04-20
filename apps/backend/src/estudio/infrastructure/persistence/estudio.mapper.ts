@@ -6,7 +6,7 @@ import { PlanSubscripcion, type Plan } from '../../domain/value-objects/plan-sub
 import type { EstudioEntity } from './estudio.schema';
 
 export const estudioPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   nombre: z.string().min(1),
   planCodigo: z.string().min(1),
   planMaxClientes: z.number().int().nonnegative(),

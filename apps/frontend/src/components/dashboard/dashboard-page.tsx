@@ -19,13 +19,27 @@ import { ActividadRecienteCard } from './actividad-reciente-card';
 import { useState } from 'react';
 
 const Download = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 4v12M7 11l5 5 5-5M4 20h16" />
+  </svg>
 );
 
 export function DashboardPage() {
   const { estudioActual } = useAuth();
-  const { data: stats, loading, error } =
-    useFetchWithEstudio<DashboardStats>('/v1/dashboard/stats');
+  const {
+    data: stats,
+    loading,
+    error,
+  } = useFetchWithEstudio<DashboardStats>('/v1/dashboard/stats');
   const [range, setRange] = useState<'month' | 'quarter' | 'year'>('month');
 
   return (
@@ -63,18 +77,27 @@ export function DashboardPage() {
             <KpiCard
               label="Facturación Mes"
               value={formatCurrency(stats.kpis.facturacionMes)}
+              delta={{
+                tone: stats.kpis.facturacionMes > 0 ? 'brand' : 'neutral',
+                text: stats.kpis.facturacionMes > 0 ? 'este mes' : 'sin datos',
+              }}
             />
           )}
-          <KpiCard label="Tareas Activas" value={stats.kpis.tareasActivas} />
+          <KpiCard
+            label="Tareas Activas"
+            value={stats.kpis.tareasActivas}
+            delta={{
+              tone: stats.kpis.tareasActivas > 0 ? 'indigo' : 'neutral',
+              text: stats.kpis.tareasActivas > 0 ? 'activas' : 'sin carga',
+            }}
+          />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-3.5 mb-4">
         <VencimientosPorEstadoCard data={stats?.vencimientosPorEstado ?? []} />
         <Can permission="VER_FACTURACION">
-          {stats?.facturacionMensual && (
-            <FacturacionMensualCard data={stats.facturacionMensual} />
-          )}
+          {stats?.facturacionMensual && <FacturacionMensualCard data={stats.facturacionMensual} />}
         </Can>
       </div>
 

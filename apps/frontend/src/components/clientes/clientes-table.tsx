@@ -4,15 +4,14 @@ import { DataTable } from '../data-table';
 import { Pill } from '../pill';
 import { IconButton } from '../icon-button';
 import { Icons } from '../icons';
-import type { Cliente } from '@numerito/shared';
+import {
+  TIPO_CLIENTE_LABELS,
+  CONDICION_IVA_LABELS,
+  type Cliente,
+  type TipoCliente,
+  type CondicionIVA,
+} from '@numerito/shared';
 import { formatCurrency } from '@/lib/formatters';
-
-const TIPO: Record<string, string> = { EMPRESA: 'Empresa', PERSONA_FISICA: 'Persona Física' };
-const IVA: Record<string, string> = {
-  RESPONSABLE_INSCRIPTO: 'Resp. Inscripto',
-  MONOTRIBUTO: 'Monotributo',
-  EXENTO: 'Exento',
-};
 
 function initials(name: string) {
   return name
@@ -37,9 +36,7 @@ export function ClientesTable({ rows, total, onRowClick }: ClientesTableProps) {
       columns={[
         {
           header: 'Razón Social',
-          render: (c) => (
-            <span className="text-[var(--text)] font-medium">{c.razonSocial}</span>
-          ),
+          render: (c) => <span className="text-[var(--text)] font-medium">{c.razonSocial}</span>,
         },
         {
           header: 'CUIT',
@@ -47,10 +44,19 @@ export function ClientesTable({ rows, total, onRowClick }: ClientesTableProps) {
             <span className="font-mono text-[11.5px] text-[var(--text-2)]">{c.cuit}</span>
           ),
         },
-        { header: 'Tipo', render: (c) => <Pill tone="indigo">{TIPO[c.tipo] ?? c.tipo}</Pill> },
+        {
+          header: 'Tipo',
+          render: (c) => (
+            <Pill tone="indigo">{TIPO_CLIENTE_LABELS[c.tipo as TipoCliente] ?? c.tipo}</Pill>
+          ),
+        },
         {
           header: 'Condición IVA',
-          render: (c) => <Pill tone="blue">{IVA[c.condicionIva] ?? c.condicionIva}</Pill>,
+          render: (c) => (
+            <Pill tone="blue">
+              {CONDICION_IVA_LABELS[c.condicionIva as CondicionIVA] ?? c.condicionIva}
+            </Pill>
+          ),
         },
         {
           header: 'Responsable',

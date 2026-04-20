@@ -18,13 +18,13 @@ export interface ProximosVencimientosCardProps {
 }
 
 export function ProximosVencimientosCard({ items }: ProximosVencimientosCardProps) {
-  const relevant = items.filter((i) => i.estado !== 'PRESENTADO').slice(0, 4);
+  const relevant = items.filter((i) => i.estado !== 'PRESENTADO').slice(0, 5);
   return (
     <Card
       title="Próximos Vencimientos"
       right={
         <Link
-          href="/obligaciones"
+          href="/vencimientos"
           className="text-[12px] text-[var(--brand-ink)] font-medium no-underline hover:underline"
         >
           Ver todos →
@@ -41,15 +41,11 @@ export function ProximosVencimientosCard({ items }: ProximosVencimientosCardProp
               i < a.length - 1 ? 'border-b border-[var(--border)]' : ''
             }`}
           >
-            <div className="text-[12.5px] font-medium text-[var(--text)] truncate">
-              {r.cliente}
-            </div>
+            <div className="text-[12.5px] font-medium text-[var(--text)] truncate">{r.cliente}</div>
             <div className="text-[11.5px] text-[var(--text-2)]">{r.obligacion}</div>
-            <div className="font-mono text-[11px] text-[var(--text-3)]">
-              {formatFecha(r.fecha)}
-            </div>
-            <Pill tone={r.estado === 'VENCIDO' ? 'rose' : 'amber'} dot>
-              {r.estado === 'VENCIDO' ? 'Vencido' : 'Pendiente'}
+            <div className="font-mono text-[11px] text-[var(--text-3)]">{formatFecha(r.fecha)}</div>
+            <Pill tone={r.estado.toUpperCase() === 'VENCIDO' ? 'rose' : 'amber'} dot>
+              {r.estado.toUpperCase() === 'VENCIDO' ? 'Vencido' : 'Pendiente'}
             </Pill>
           </div>
         ))

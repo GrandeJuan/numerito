@@ -2,15 +2,26 @@ import { Injectable, ExecutionContext, BadRequestException } from '@nestjs/commo
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Injectable()
 export class EstudioMemberGuard extends JwtAuthGuard {
-  constructor(jwtService: JwtService, configService: ConfigService, reflector: Reflector) {
-    super(jwtService, configService, reflector);
+  constructor(
+    jwtService: JwtService,
+    configService: ConfigService,
+    private readonly memberReflector: Reflector,
+  ) {
+    super(jwtService, configService, memberReflector);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.memberReflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     await super.canActivate(context);
 
     const request = context.switchToHttp().getRequest();

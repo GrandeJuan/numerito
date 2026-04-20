@@ -1,10 +1,6 @@
 import { Factura, ESTADO_FACTURA } from '../../domain/entities/factura.entity';
 import { LineaFactura } from '../../domain/entities/linea-factura.entity';
-import {
-  FacturaMapper,
-  facturaPersistenceSchema,
-  type FacturaPersistence,
-} from './factura.mapper';
+import { FacturaMapper, facturaPersistenceSchema, type FacturaPersistence } from './factura.mapper';
 import type { FacturaEntity } from './factura.schema';
 
 describe('FacturaMapper', () => {
@@ -94,7 +90,7 @@ describe('FacturaMapper', () => {
     });
 
     it('rejects malformed persistence id (Zod validation)', () => {
-      const bad = { ...validPersistence, id: 'not-a-uuid' };
+      const bad = { ...validPersistence, id: '' };
       expect(() => mapper.toDomain(bad)).toThrow();
     });
 
@@ -123,7 +119,7 @@ describe('FacturaMapper', () => {
     it('rejects malformed linea id (Zod validation)', () => {
       const bad: FacturaPersistence = {
         ...validPersistence,
-        lineas: [{ ...validPersistence.lineas[0], id: 'not-a-uuid' }],
+        lineas: [{ ...validPersistence.lineas[0], id: '' }],
       };
       expect(() => mapper.toDomain(bad)).toThrow();
     });

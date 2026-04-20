@@ -10,7 +10,7 @@ const estadoFacturaValues = Object.values(ESTADO_FACTURA) as [EstadoFactura, ...
 /* ── LineaFactura persistence ─────────────────────────────────── */
 
 export const lineaFacturaPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   facturaId: z.string().min(1),
   descripcion: z.string(),
   cantidad: z.number(),
@@ -23,7 +23,7 @@ export type LineaFacturaPersistence = z.infer<typeof lineaFacturaPersistenceSche
 /* ── Factura persistence ──────────────────────────────────────── */
 
 export const facturaPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   numero: z.string(),

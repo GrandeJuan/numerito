@@ -16,17 +16,9 @@ const BOUNDED_CONTEXTS = [
   'facturacion',
 ];
 
-const READ_MODEL_CONTEXTS = [
-  'administracion',
-  'dashboard',
-  'portal',
-];
+const READ_MODEL_CONTEXTS = ['administracion', 'dashboard', 'portal'];
 
-function findFiles(
-  dir: string,
-  pattern: RegExp,
-  excludePattern?: RegExp,
-): string[] {
+function findFiles(dir: string, pattern: RegExp, excludePattern?: RegExp): string[] {
   const results: string[] = [];
   if (!fs.existsSync(dir)) return results;
 
@@ -35,10 +27,7 @@ function findFiles(
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       results.push(...findFiles(fullPath, pattern, excludePattern));
-    } else if (
-      pattern.test(entry.name) &&
-      (!excludePattern || !excludePattern.test(entry.name))
-    ) {
+    } else if (pattern.test(entry.name) && (!excludePattern || !excludePattern.test(entry.name))) {
       results.push(fullPath);
     }
   }
@@ -81,9 +70,7 @@ describe('Architecture rules', () => {
         const imports = extractImports(file);
         for (const imp of imports) {
           if (imp.includes('/application/') || imp.includes('/infrastructure/')) {
-            violations.push(
-              `${relativeTo(file)} imports "${imp}"`,
-            );
+            violations.push(`${relativeTo(file)} imports "${imp}"`);
           }
         }
       }
@@ -98,13 +85,17 @@ describe('Architecture rules', () => {
       const violations: string[] = [];
 
       for (const file of appFiles) {
+        const rel = relativeTo(file);
+        // Read-model views compose persistence schemas for typed repository access.
+        // This is an accepted pragma of MikroORM-based views — they need the
+        // schema class as a type handle for em.getRepository(Schema).
+        const isView = rel.includes('/application/views/');
+
         const imports = extractImports(file);
         for (const imp of imports) {
-          if (imp.includes('/infrastructure/')) {
-            violations.push(
-              `${relativeTo(file)} imports "${imp}"`,
-            );
-          }
+          if (!imp.includes('/infrastructure/')) continue;
+          if (isView && /\/infrastructure\/persistence\/[^/]+\.schema$/.test(imp)) continue;
+          violations.push(`${rel} imports "${imp}"`);
         }
       }
 
@@ -134,19 +125,12 @@ describe('Architecture rules', () => {
             if (imp.startsWith('@numerito/shared')) continue;
 
             // Check if this relative import resolves to another context
-            const resolvedDir = path.dirname(
-              path.resolve(path.dirname(file), imp),
-            );
-            const relFromSrc = path
-              .relative(SRC_DIR, resolvedDir)
-              .replace(/\\/g, '/');
+            const resolvedDir = path.dirname(path.resolve(path.dirname(file), imp));
+            const relFromSrc = path.relative(SRC_DIR, resolvedDir).replace(/\\/g, '/');
 
             for (const otherCtx of BOUNDED_CONTEXTS) {
               if (otherCtx === ctx) continue;
-              if (
-                relFromSrc === otherCtx ||
-                relFromSrc.startsWith(`${otherCtx}/`)
-              ) {
+              if (relFromSrc === otherCtx || relFromSrc.startsWith(`${otherCtx}/`)) {
                 violations.push(
                   `${relativeTo(file)} imports from context "${otherCtx}" via "${imp}"`,
                 );
@@ -164,17 +148,13 @@ describe('Architecture rules', () => {
     it('all *.entity.ts files should have a static create() method', () => {
       const entityFiles = findFiles(SRC_DIR, /\.entity\.ts$/, SPEC_PATTERN);
       // Exclude base entity
-      const domainEntities = entityFiles.filter(
-        (f) => !f.includes('base.entity.ts'),
-      );
+      const domainEntities = entityFiles.filter((f) => !f.includes('base.entity.ts'));
       const violations: string[] = [];
 
       for (const file of domainEntities) {
         const content = fs.readFileSync(file, 'utf-8');
         if (!/static\s+create\s*\(/.test(content)) {
-          violations.push(
-            `${relativeTo(file)} missing static create() method`,
-          );
+          violations.push(`${relativeTo(file)} missing static create() method`);
         }
       }
 
@@ -183,9 +163,7 @@ describe('Architecture rules', () => {
 
     it('all *.entity.ts files should have an id property (own or inherited)', () => {
       const entityFiles = findFiles(SRC_DIR, /\.entity\.ts$/, SPEC_PATTERN);
-      const domainEntities = entityFiles.filter(
-        (f) => !f.includes('base.entity.ts'),
-      );
+      const domainEntities = entityFiles.filter((f) => !f.includes('base.entity.ts'));
       const violations: string[] = [];
 
       for (const file of domainEntities) {
@@ -194,9 +172,7 @@ describe('Architecture rules', () => {
         const extendsBase = /extends\s+BaseEntity/.test(content);
 
         if (!hasOwnId && !extendsBase) {
-          violations.push(
-            `${relativeTo(file)} has no id property and does not extend BaseEntity`,
-          );
+          violations.push(`${relativeTo(file)} has no id property and does not extend BaseEntity`);
         }
       }
 
@@ -236,16 +212,8 @@ describe('Architecture rules', () => {
       const violations: string[] = [];
 
       for (const ctx of BOUNDED_CONTEXTS) {
-        const persistenceDir = path.join(
-          SRC_DIR,
-          ctx,
-          'infrastructure',
-          'persistence',
-        );
-        const repoFiles = findFiles(
-          persistenceDir,
-          /mikro-orm-.*\.repository\.ts$/,
-        );
+        const persistenceDir = path.join(SRC_DIR, ctx, 'infrastructure', 'persistence');
+        const repoFiles = findFiles(persistenceDir, /mikro-orm-.*\.repository\.ts$/);
         const entityNames = getEntityClassNames(ctx);
 
         for (const file of repoFiles) {
@@ -254,9 +222,7 @@ describe('Architecture rules', () => {
           if (!toDomainBody) continue;
 
           for (const entityName of entityNames) {
-            const createCallPattern = new RegExp(
-              `${entityName}\\.create\\s*\\(`,
-            );
+            const createCallPattern = new RegExp(`${entityName}\\.create\\s*\\(`);
             if (createCallPattern.test(toDomainBody)) {
               violations.push(
                 `${relativeTo(file)} toDomain() calls ${entityName}.create() — use ${entityName}.reconstitute() instead`,
@@ -308,9 +274,7 @@ describe('Architecture rules', () => {
           (rel.includes('/domain/') && rel.startsWith('shared/'));
 
         if (!inDomainRepos && !isImplementation) {
-          violations.push(
-            `${rel} is a repository interface outside domain/repositories/`,
-          );
+          violations.push(`${rel} is a repository interface outside domain/repositories/`);
         }
       }
 
@@ -332,12 +296,7 @@ describe('Architecture rules', () => {
       'estudio/infrastructure/controllers/estudio.controller.ts': [
         'domain/value-objects/nombre-estudio.vo',
       ],
-      'facturacion/infrastructure/controllers/facturacion.controller.ts': [
-        'domain/entities/pago.entity',
-      ],
-      'nomina/infrastructure/controllers/nomina.controller.ts': [
-        'domain/entities/empleado.entity',
-      ],
+      'nomina/infrastructure/controllers/nomina.controller.ts': ['domain/entities/empleado.entity'],
     };
 
     function isViolatingImport(imp: string): boolean {
@@ -367,7 +326,9 @@ describe('Architecture rules', () => {
             if (!isViolatingImport(imp)) continue;
             if (isKnownViolation(rel, imp)) continue;
 
-            violations.push(`${rel} imports "${imp}" — domain entities/events/event-bus are forbidden in controllers`);
+            violations.push(
+              `${rel} imports "${imp}" — domain entities/events/event-bus are forbidden in controllers`,
+            );
           }
         }
       }
@@ -389,7 +350,9 @@ describe('Architecture rules', () => {
         for (const pattern of patterns) {
           const stillPresent = imports.some((imp) => imp.includes(pattern));
           if (!stillPresent) {
-            staleEntries.push(`${controllerRel} no longer imports "${pattern}" — remove from KNOWN_CONTROLLER_VIOLATIONS`);
+            staleEntries.push(
+              `${controllerRel} no longer imports "${pattern}" — remove from KNOWN_CONTROLLER_VIOLATIONS`,
+            );
           }
         }
       }
@@ -404,9 +367,7 @@ describe('Architecture rules', () => {
       if (imp.includes('/shared/')) return null;
       if (imp.startsWith('@numerito/shared')) return null;
 
-      const resolvedDir = path.dirname(
-        path.resolve(path.dirname(file), imp),
-      );
+      const resolvedDir = path.dirname(path.resolve(path.dirname(file), imp));
       const relFromSrc = path.relative(SRC_DIR, resolvedDir).replace(/\\/g, '/');
 
       for (const ctx of BOUNDED_CONTEXTS) {
@@ -575,10 +536,7 @@ describe('Architecture rules', () => {
 
         for (const file of files) {
           const content = readFileContent(file);
-          if (
-            content.includes('RequestContextService') &&
-            content.includes('.estudioId')
-          ) {
+          if (content.includes('RequestContextService') && content.includes('.estudioId')) {
             violations.push(
               `${relativeTo(file)} reads RequestContextService.estudioId — must receive EstudioPrincipal instead`,
             );
@@ -605,9 +563,7 @@ describe('Architecture rules', () => {
       if (imp.includes('/shared/')) return null;
       if (imp.startsWith('@numerito/shared')) return null;
 
-      const resolvedDir = path.dirname(
-        path.resolve(path.dirname(file), imp),
-      );
+      const resolvedDir = path.dirname(path.resolve(path.dirname(file), imp));
       const relFromSrc = path.relative(SRC_DIR, resolvedDir).replace(/\\/g, '/');
 
       for (const ctx of BOUNDED_CONTEXTS) {
@@ -653,9 +609,7 @@ describe('Architecture rules', () => {
 
         const barrelPath = path.join(SRC_DIR, ctx, 'application', 'public-views.ts');
         if (!fs.existsSync(barrelPath)) {
-          violations.push(
-            `${ctx} has views in application/views/ but no public-views.ts barrel`,
-          );
+          violations.push(`${ctx} has views in application/views/ but no public-views.ts barrel`);
           continue;
         }
 

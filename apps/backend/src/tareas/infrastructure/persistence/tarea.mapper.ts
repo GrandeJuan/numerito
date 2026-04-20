@@ -1,18 +1,10 @@
 import { z } from 'zod';
-import {
-  ESTADO_TAREA,
-  PRIORIDAD,
-  type EstadoTarea,
-  type Prioridad,
-} from '@numerito/shared';
+import { ESTADO_TAREA, PRIORIDAD, type EstadoTarea, type Prioridad } from '@numerito/shared';
 import type { Mapper } from '../../../shared/domain';
 import { Tarea } from '../../domain/entities/tarea.entity';
 import type { TareaEntity } from './tarea.schema';
 
-const estadoTareaValues = Object.values(ESTADO_TAREA) as [
-  EstadoTarea,
-  ...EstadoTarea[],
-];
+const estadoTareaValues = Object.values(ESTADO_TAREA) as [EstadoTarea, ...EstadoTarea[]];
 const prioridadValues = Object.values(PRIORIDAD) as [Prioridad, ...Prioridad[]];
 
 const comentarioPersistenceSchema = z.object({
@@ -22,7 +14,7 @@ const comentarioPersistenceSchema = z.object({
 });
 
 export const tareaPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   titulo: z.string().min(1),
   descripcion: z.string().optional(),
   clienteId: z.string().min(1).optional(),

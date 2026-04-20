@@ -42,10 +42,38 @@ const ESTADO_LABEL: Record<string, string> = {
   PARCIAL: 'Parcial',
 };
 
+interface BackendStats {
+  facturado: number;
+  cobrado: number;
+  cobradoPorcentaje: number;
+  saldoPendiente: number;
+  facturasVencidas: number;
+  porEstado: { estado: string; count: number; monto?: number }[];
+  mensual: FacturacionPoint[];
+}
+
 export function FacturacionPage() {
   const { estudioActual } = useAuth();
-  const { data, loading, error } =
-    useFetchWithEstudio<FacturacionStats>('/v1/facturacion/stats');
+  const statsRes = useFetchWithEstudio<BackendStats>('/v1/facturacion/stats');
+  const facturasRes = useFetchWithEstudio<Factura[]>('/v1/facturacion/facturas');
+  const loading = statsRes.loading || facturasRes.loading;
+  const error = statsRes.error ?? facturasRes.error;
+
+  const data: FacturacionStats | null = statsRes.data
+    ? {
+        serie: statsRes.data.mensual ?? [],
+        porEstado: statsRes.data.porEstado ?? [],
+        kpis: {
+          facturado: statsRes.data.facturado,
+          cobrado: statsRes.data.cobrado,
+          vencidas: statsRes.data.facturasVencidas,
+          vencidasMonto: statsRes.data.porEstado?.find((e) => e.estado === 'VENCIDA')?.monto ?? 0,
+          pendientesCount:
+            statsRes.data.porEstado?.find((e) => e.estado === 'PENDIENTE')?.count ?? 0,
+        },
+        facturas: facturasRes.data ?? [],
+      }
+    : null;
 
   const slices = (data?.porEstado ?? []).map((s) => ({
     label: ESTADO_LABEL[s.estado] ?? s.estado,

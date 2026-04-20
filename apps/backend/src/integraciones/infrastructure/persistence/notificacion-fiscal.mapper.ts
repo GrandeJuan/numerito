@@ -7,10 +7,13 @@ import {
 } from '../../domain/entities/notificacion-fiscal.entity';
 import type { NotificacionFiscalEntity } from './notificacion-fiscal.schema';
 
-const estadoNotificacionValues = Object.values(ESTADO_NOTIFICACION) as [EstadoNotificacion, ...EstadoNotificacion[]];
+const estadoNotificacionValues = Object.values(ESTADO_NOTIFICACION) as [
+  EstadoNotificacion,
+  ...EstadoNotificacion[],
+];
 
 export const notificacionFiscalPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   clienteId: z.string().min(1),
   estudioId: z.string().min(1),
   organismoId: z.string(),
@@ -24,7 +27,10 @@ export const notificacionFiscalPersistenceSchema = z.object({
 
 export type NotificacionFiscalPersistence = z.infer<typeof notificacionFiscalPersistenceSchema>;
 
-export class NotificacionFiscalMapper implements Mapper<NotificacionFiscal, NotificacionFiscalPersistence> {
+export class NotificacionFiscalMapper implements Mapper<
+  NotificacionFiscal,
+  NotificacionFiscalPersistence
+> {
   toDomain(persistence: NotificacionFiscalPersistence): NotificacionFiscal {
     const data = notificacionFiscalPersistenceSchema.parse(persistence);
     return NotificacionFiscal.reconstitute(

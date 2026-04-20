@@ -1,6 +1,16 @@
 import {
-  Controller, Get, Patch, Post, Delete, Body, Query,
-  BadRequestException, Inject, UseGuards, UseInterceptors, UploadedFile,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Delete,
+  Body,
+  Query,
+  BadRequestException,
+  Inject,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiQuery, ApiConsumes } from '@nestjs/swagger';
@@ -44,6 +54,35 @@ export class UsuarioController {
     if (!estudioId) throw new BadRequestException('estudioId is required');
     const permisos = await this.obtenerPermisosHandler.execute({ usuarioId, estudioId });
     return successResponse(permisos);
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Actualizar perfil del usuario autenticado' })
+  async updateProfile(
+    @CurrentUser('sub') usuarioId: string,
+    @Body() body: { nombre?: string; apellido?: string },
+  ) {
+    const nombre = body.nombre?.trim();
+    const apellido = body.apellido?.trim();
+    if (!nombre || !apellido) {
+      throw new BadRequestException('nombre y apellido son requeridos');
+    }
+
+    const usuario = await this.usuarioRepo.findById(usuarioId);
+    if (!usuario) throw new BadRequestException('Usuario no encontrado');
+
+    usuario.updateProfile(nombre, apellido);
+    await this.usuarioRepo.save(usuario);
+
+    return successResponse({
+      id: usuario.id,
+      email: usuario.email.value,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      rol: usuario.rol,
+      avatarUrl: usuario.avatarUrl,
+      themePreference: usuario.themePreference,
+    });
   }
 
   @Patch('me/preferencias')

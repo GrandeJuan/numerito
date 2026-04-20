@@ -37,7 +37,10 @@ describe('DashboardController', () => {
     mockHandler = {
       execute: jest.fn().mockResolvedValue(mockStats),
     } as any;
-    controller = new DashboardController(mockHandler);
+    const mockActividadHandler = {
+      execute: jest.fn().mockResolvedValue([]),
+    } as any;
+    controller = new DashboardController(mockHandler, mockActividadHandler);
   });
 
   describe('getStats', () => {

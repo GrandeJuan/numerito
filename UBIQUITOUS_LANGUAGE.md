@@ -151,6 +151,14 @@
 ## Ambigüedades flaggeadas
 
 - **"Obligación" vs "Vencimiento"** — el bounded context se llama `obligaciones` pero la entidad central es `Vencimiento`. Criterio: **Tipo de Obligación** es la _clase_ fiscal catalogada; **Vencimiento** es la _instancia_ concreta agendable para un **Cliente** y **Período**. Nunca decir "la obligación de IVA de abril de ese cliente" — es un **Vencimiento**.
+
+  **Regla para superficies de usuario y API pública:** decir siempre **Vencimientos**. El sidebar debe decir `Vencimientos`, la ruta `/vencimientos`, y la tabla mostrar "Vencimientos". El nombre `Obligaciones` se reserva exclusivamente al módulo backend y al bounded context DDD (agrupa calendario fiscal + reglas + eventos). Estado actual desalineado a corregir:
+  - Sidebar → `Obligaciones` (debería ser `Vencimientos`)
+  - Ruta frontend → `/obligaciones` (debería ser `/vencimientos`)
+  - Endpoint público → `/v1/obligaciones/vencimientos` (redundante; ideal `/v1/vencimientos`, pero es breaking y conviene postergar)
+  - Archivos frontend → `obligaciones-page.tsx`, `obligaciones/` (renombrar a `vencimientos-page.tsx`, `vencimientos/`)
+  - El módulo backend `ObligacionesModule` puede quedarse como está — agrupa el contexto.
+
 - **"Presentar" vs "Cumplido"** — el método de dominio es `presentar()` pero el evento se llama `vencimiento-cumplido`. Criterio: la _acción_ del **Responsable** es **Presentar**; el _hecho de dominio_ resultante es **Cumplido** (participio). Son dos términos deliberadamente distintos: imperativo vs pasado.
 - **"Empleado"** se usa para dos conceptos distintos: (1) el rol de **Usuario** dentro del estudio (`ROL.EMPLEADO`), y (2) la entidad **Empleado** que representa un trabajador de un cliente para nómina. Son conceptos completamente diferentes — el primero es un rol de acceso, el segundo es un dato de RRHH.
 - **"Vencido/a"** se usa en tres contextos: **Vencimiento** vencido (obligación fiscal no presentada a tiempo), **Factura** vencida (no pagada al vencer), y **Subscripción** vencida (período expirado). Aunque comparten el término, los estados y transiciones son diferentes en cada caso.

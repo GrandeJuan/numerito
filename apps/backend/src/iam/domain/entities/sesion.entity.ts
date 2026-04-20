@@ -10,7 +10,7 @@ interface CreateSesionProps {
 }
 
 const sesionReconstitutePropsSchema = z.object({
-  usuarioId: z.string().uuid(),
+  usuarioId: z.string().min(1),
   refreshToken: z.string().min(1),
   ipAddress: z.string(),
   userAgent: z.string(),
@@ -57,12 +57,24 @@ export class Sesion extends BaseEntity {
     return instance;
   }
 
-  get usuarioId(): string { return this._usuarioId; }
-  get refreshToken(): string { return this._refreshToken; }
-  get ipAddress(): string { return this._ipAddress; }
-  get userAgent(): string { return this._userAgent; }
-  get expiresAt(): Date { return this._expiresAt; }
-  get isActive(): boolean { return this._isActive; }
+  get usuarioId(): string {
+    return this._usuarioId;
+  }
+  get refreshToken(): string {
+    return this._refreshToken;
+  }
+  get ipAddress(): string {
+    return this._ipAddress;
+  }
+  get userAgent(): string {
+    return this._userAgent;
+  }
+  get expiresAt(): Date {
+    return this._expiresAt;
+  }
+  get isActive(): boolean {
+    return this._isActive;
+  }
 
   get isExpired(): boolean {
     return this._expiresAt < new Date();

@@ -24,44 +24,24 @@ describe('PageStateGuard', () => {
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });
 
-  it('shows loading message when loading is true', () => {
-    render(
+  it('renders skeleton when loading is true', () => {
+    const { container } = render(
       <PageStateGuard estudioActual={estudio} loading={true} error={null}>
         <p>Content</p>
       </PageStateGuard>,
     );
-    expect(screen.getByText('Cargando...')).toBeInTheDocument();
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });
 
-  it('shows error message when error is present', () => {
+  it('renders error state when error is present', () => {
     render(
       <PageStateGuard estudioActual={estudio} loading={false} error="Algo salio mal">
         <p>Content</p>
       </PageStateGuard>,
     );
-    expect(screen.getByText('Algo salio mal')).toBeInTheDocument();
+    expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
-  });
-
-  it('uses custom icon when provided', () => {
-    const { container } = render(
-      <PageStateGuard estudioActual={null} loading={false} error={null} icon="search">
-        <p>Content</p>
-      </PageStateGuard>,
-    );
-    const icon = container.querySelector('.material-symbols-outlined');
-    expect(icon?.textContent).toBe('search');
-  });
-
-  it('uses default icon when not provided', () => {
-    const { container } = render(
-      <PageStateGuard estudioActual={null} loading={false} error={null}>
-        <p>Content</p>
-      </PageStateGuard>,
-    );
-    const icon = container.querySelector('.material-symbols-outlined');
-    expect(icon?.textContent).toBe('hourglass_empty');
   });
 
   it('prioritizes estudio check over loading state', () => {
@@ -70,17 +50,24 @@ describe('PageStateGuard', () => {
         <p>Content</p>
       </PageStateGuard>,
     );
-    // estudioActual null takes precedence over loading
     expect(screen.getByText('Cargando estudio...')).toBeInTheDocument();
   });
 
   it('prioritizes loading over error state', () => {
-    render(
+    const { container } = render(
       <PageStateGuard estudioActual={estudio} loading={true} error="Some error">
         <p>Content</p>
       </PageStateGuard>,
     );
-    // loading takes precedence over error
-    expect(screen.getByText('Cargando...')).toBeInTheDocument();
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+  });
+
+  it('works without estudioActual prop (profile/admin pages)', () => {
+    render(
+      <PageStateGuard loading={false} error={null}>
+        <p>Content</p>
+      </PageStateGuard>,
+    );
+    expect(screen.getByText('Content')).toBeInTheDocument();
   });
 });

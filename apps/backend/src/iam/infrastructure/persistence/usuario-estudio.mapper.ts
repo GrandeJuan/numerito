@@ -8,7 +8,7 @@ import type { UsuarioEstudioEntity } from './usuario-estudio.schema';
 const rolValues = Object.values(ROL) as [Rol, ...Rol[]];
 
 export const usuarioEstudioPersistenceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   usuarioId: z.string().min(1),
   estudioId: z.string().min(1),
   rol: z.enum(rolValues),
