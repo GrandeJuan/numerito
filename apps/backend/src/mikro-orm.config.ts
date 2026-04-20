@@ -72,6 +72,7 @@ import { MedioPagoSchema } from './shared/infrastructure/persistence/medio-pago.
 // Integraciones
 import { NotificacionFiscalSchema } from './integraciones/infrastructure/persistence/notificacion-fiscal.schema';
 import { CredencialFiscalSchema } from './integraciones/infrastructure/persistence/credencial-fiscal.schema';
+import { ConfiguracionIngestaSchema } from './integraciones/infrastructure/persistence/configuracion-ingesta.schema';
 
 // Notificaciones
 import { NotificacionSchema } from './notificaciones/infrastructure/persistence/notificacion.schema';
@@ -141,6 +142,7 @@ export default defineConfig({
     // Integraciones
     NotificacionFiscalSchema,
     CredencialFiscalSchema,
+    ConfiguracionIngestaSchema,
     // Notificaciones
     NotificacionSchema,
   ],

@@ -271,4 +271,14 @@ INSERT INTO regla_vencimiento (tipo_obligacion_id, terminacion_cuit, dia_vencimi
   ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '8', 22, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
   ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '9', 22, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA')
 ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- CONFIGURACION INGESTA (4 fuentes deshabilitadas)
+-- ============================================
+INSERT INTO configuracion_ingesta (id, fuente, habilitado, cadencia_dias, proxima_ejecucion, ultima_ejecucion, ultimo_resultado, created_at, updated_at) VALUES
+  ('d0000000-0000-0000-0000-000000000001', 'ARCA', false, 7, NULL, NULL, NULL, NOW(), NOW()),
+  ('d0000000-0000-0000-0000-000000000002', 'ARBA', false, 7, NULL, NULL, NULL, NOW(), NOW()),
+  ('d0000000-0000-0000-0000-000000000003', 'AGIP', false, 7, NULL, NULL, NULL, NOW(), NOW()),
+  ('d0000000-0000-0000-0000-000000000004', 'BCRA_FERIADOS', false, 30, NULL, NULL, NULL, NOW(), NOW())
+ON CONFLICT (fuente) DO NOTHING;
 `;
