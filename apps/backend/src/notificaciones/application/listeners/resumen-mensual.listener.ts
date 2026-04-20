@@ -47,6 +47,9 @@ export class ResumenMensualListener {
         return;
       }
 
+      // Look up the portal user linked to this client (for email + notification)
+      const portalUser = await this.findPortalUser(event.clienteId);
+
       // Create the resumen entity
       const resumen = ResumenMensual.create({
         estudioId: event.estudioId,
@@ -74,15 +77,21 @@ export class ResumenMensualListener {
       resumen.marcarListo(pdfBuffer);
       await this.resumenRepo.save(resumen);
 
-      // Send email if mail sender supports attachments
-      await this.sendEmailIfPossible(event, pdfBuffer);
-      if (resumen.estado === 'LISTO') {
+      // Send email to the portal user if we found one with an email
+      if (portalUser?.email) {
+        await this.sendEmailToClient(event, pdfBuffer, portalUser.email);
         resumen.marcarEmailEnviado();
         await this.resumenRepo.save(resumen);
+      } else {
+        this.logger.debug(
+          `No portal user email found for client=${event.clienteId}, skipping email`,
+        );
       }
 
       // Create portal notification
-      await this.createPortalNotification(event, resumen.id);
+      if (portalUser?.usuarioId) {
+        await this.createPortalNotification(event, resumen.id, portalUser.usuarioId);
+      }
 
       this.logger.log(
         `Resumen mensual generated for client=${event.clienteNombre} period=${event.periodo}`,
@@ -137,23 +146,50 @@ export class ResumenMensualListener {
     ];
   }
 
-  private async sendEmailIfPossible(
+  /**
+   * Finds the portal user (Usuario) linked to a client via CUIT.
+   * Returns the usuario ID and email, or null if no user is found.
+   */
+  private async findPortalUser(
+    clienteId: string,
+  ): Promise<{ usuarioId: string; email: string | null } | null> {
+    const conn = this.em.getConnection();
+    const rows = await conn.execute<{ usuario_id: string; email: string | null }[]>(
+      `SELECT u.id as usuario_id, u.email
+       FROM usuario u
+       JOIN cliente c ON c.cuit = u.cuit
+       WHERE c.id = ?
+       LIMIT 1`,
+      [clienteId],
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return { usuarioId: rows[0].usuario_id, email: rows[0].email };
+  }
+
+  private async sendEmailToClient(
     event: CalendarioMensualListoPayload,
     pdfBuffer: Buffer,
+    email: string,
   ): Promise<void> {
     const filename = `calendario-${event.periodo}-${event.clienteNombre.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+    const subject = `Calendario de vencimientos — ${this.formatPeriodo(event.periodo)}`;
+    const body = `Estimado/a ${event.clienteNombre},\n\nAdjunto encontrará el calendario de vencimientos del período ${this.formatPeriodo(event.periodo)}.\n\nSaludos,\nNumerito`;
 
     if (this.mailSender.sendWithAttachments) {
       await this.mailSender.sendWithAttachments(
-        '', // No email available on Cliente entity yet — logged as dev placeholder
-        `Calendario de vencimientos — ${this.formatPeriodo(event.periodo)}`,
-        `Estimado/a ${event.clienteNombre},\n\nAdjunto encontrará el calendario de vencimientos del período ${this.formatPeriodo(event.periodo)}.\n\nSaludos,\nNumerito`,
+        email,
+        subject,
+        body,
         [{ filename, content: pdfBuffer, contentType: 'application/pdf' }],
       );
     } else {
       await this.mailSender.send(
-        '',
-        `Calendario de vencimientos — ${this.formatPeriodo(event.periodo)}`,
+        email,
+        subject,
         `Estimado/a ${event.clienteNombre},\n\nSu calendario de vencimientos del período ${this.formatPeriodo(event.periodo)} está disponible en el portal.\n\nSaludos,\nNumerito`,
       );
     }
@@ -162,25 +198,10 @@ export class ResumenMensualListener {
   private async createPortalNotification(
     event: CalendarioMensualListoPayload,
     resumenId: string,
+    usuarioId: string,
   ): Promise<void> {
-    // Look up the usuario linked to this client for portal notification
-    const conn = this.em.getConnection();
-    const userRows = await conn.execute<{ usuario_id: string }[]>(
-      `SELECT u.id as usuario_id
-       FROM usuario u
-       JOIN cliente c ON c.cuit = u.cuit
-       WHERE c.id = ?
-       LIMIT 1`,
-      [event.clienteId],
-    );
-
-    if (userRows.length === 0) {
-      this.logger.debug(`No portal user found for client=${event.clienteId}, skipping notification`);
-      return;
-    }
-
     const notificacion = Notificacion.create({
-      usuarioId: userRows[0].usuario_id,
+      usuarioId,
       estudioId: event.estudioId,
       tipo: TipoNotificacion.VENCIMIENTO_PROXIMO,
       mensaje: `Su calendario de vencimientos de ${this.formatPeriodo(event.periodo)} está listo. ${event.totalVencimientos} vencimiento(s) programado(s).`,

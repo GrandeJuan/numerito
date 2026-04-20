@@ -13,6 +13,7 @@ describe('ResumenMensualListener', () => {
   let resumenRepo: jest.Mocked<ResumenMensualRepository>;
   let notificacionRepo: jest.Mocked<NotificacionRepository>;
   let em: any;
+  let mockExecute: jest.Mock;
 
   const event: CalendarioMensualListoPayload = {
     estudioId: 'estudio-1',
@@ -46,10 +47,12 @@ describe('ResumenMensualListener', () => {
       save: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn(),
     };
+    // Default: portal user found with email, then empty vencimientos for PDF
+    mockExecute = jest.fn()
+      .mockResolvedValueOnce([{ usuario_id: 'user-portal', email: 'cliente@test.com' }]) // findPortalUser
+      .mockResolvedValueOnce([]); // buildPdfSections — no vencimientos
     em = {
-      getConnection: jest.fn().mockReturnValue({
-        execute: jest.fn().mockResolvedValue([]),
-      }),
+      getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
 
     listener = new ResumenMensualListener(
@@ -72,14 +75,52 @@ describe('ResumenMensualListener', () => {
     expect(savedResumen.periodo).toBe('2026-05');
   });
 
-  it('should send email with attachment', async () => {
+  it('should send email to portal user email when found', async () => {
+    // findPortalUser returns user-portal with email
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([{ usuario_id: 'user-portal', email: 'cliente@test.com' }]) // findPortalUser
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
+
     await listener.handleCalendarioMensualListo(event);
 
     expect(mailSender.sendWithAttachments).toHaveBeenCalledTimes(1);
-    const [_to, subject, _body, attachments] = (mailSender.sendWithAttachments as jest.Mock).mock.calls[0];
+    const [to, subject, _body, attachments] = (mailSender.sendWithAttachments as jest.Mock).mock.calls[0];
+    expect(to).toBe('cliente@test.com');
     expect(subject).toContain('Mayo 2026');
     expect(attachments).toHaveLength(1);
     expect(attachments[0].filename).toContain('calendario-2026-05');
+  });
+
+  it('should skip email when no portal user found', async () => {
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([]) // findPortalUser — no user
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
+
+    await listener.handleCalendarioMensualListo(event);
+
+    expect(mailSender.sendWithAttachments).not.toHaveBeenCalled();
+    expect(mailSender.send).not.toHaveBeenCalled();
+    // Resumen should still be saved
+    expect(resumenRepo.save).toHaveBeenCalled();
+  });
+
+  it('should skip email when portal user has no email', async () => {
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([{ usuario_id: 'user-portal', email: null }]) // findPortalUser — no email
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
+
+    await listener.handleCalendarioMensualListo(event);
+
+    expect(mailSender.sendWithAttachments).not.toHaveBeenCalled();
+    expect(mailSender.send).not.toHaveBeenCalled();
+    // Resumen should still be saved
+    expect(resumenRepo.save).toHaveBeenCalled();
   });
 
   it('should skip if resumen already exists (idempotency)', async () => {
@@ -99,25 +140,27 @@ describe('ResumenMensualListener', () => {
   });
 
   it('should create portal notification when user found', async () => {
-    em.getConnection.mockReturnValue({
-      execute: jest.fn()
-        .mockResolvedValueOnce([]) // buildPdfSections — no vencimientos
-        .mockResolvedValueOnce([{ usuario_id: 'user-portal' }]), // createPortalNotification
-    });
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([{ usuario_id: 'user-portal', email: 'cliente@test.com' }]) // findPortalUser
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
 
     await listener.handleCalendarioMensualListo(event);
 
     expect(notificacionRepo.save).toHaveBeenCalledTimes(1);
   });
 
-  it('should not fail when no portal user found', async () => {
-    em.getConnection.mockReturnValue({
-      execute: jest.fn().mockResolvedValue([]),
-    });
+  it('should skip notification when no portal user found', async () => {
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([]) // findPortalUser — no user
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
 
-    await expect(
-      listener.handleCalendarioMensualListo(event),
-    ).resolves.not.toThrow();
+    await listener.handleCalendarioMensualListo(event);
+
+    expect(notificacionRepo.save).not.toHaveBeenCalled();
   });
 
   it('should handle PDF generation errors gracefully', async () => {
@@ -134,6 +177,12 @@ describe('ResumenMensualListener', () => {
       send: jest.fn().mockResolvedValue(undefined),
     };
 
+    mockExecute
+      .mockReset()
+      .mockResolvedValueOnce([{ usuario_id: 'user-portal', email: 'cliente@test.com' }]) // findPortalUser
+      .mockResolvedValueOnce([]); // buildPdfSections
+    em.getConnection.mockReturnValue({ execute: mockExecute });
+
     const listenerWithSimpleSender = new ResumenMensualListener(
       pdfGenerator,
       simpleSender,
@@ -145,5 +194,7 @@ describe('ResumenMensualListener', () => {
     await listenerWithSimpleSender.handleCalendarioMensualListo(event);
 
     expect(simpleSender.send).toHaveBeenCalledTimes(1);
+    const [to] = (simpleSender.send as jest.Mock).mock.calls[0];
+    expect(to).toBe('cliente@test.com');
   });
 });

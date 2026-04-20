@@ -6,6 +6,8 @@ import { RecordatoriosController } from './infrastructure/controllers/recordator
 import { ReglasPropuestasController } from './infrastructure/controllers/reglas-propuestas.controller';
 import { FeriadosAdminController } from './infrastructure/controllers/feriados-admin.controller';
 import { SugerenciasProrrogaController } from './infrastructure/controllers/sugerencias-prorroga.controller';
+import { ProyeccionMensualController } from './infrastructure/controllers/proyeccion-mensual.controller';
+import { ProyeccionMensualScheduler } from './application/commands/proyeccion-mensual-scheduler.command';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
@@ -17,6 +19,12 @@ import type {
   ReglaVencimientoEntityRepository,
 } from './domain/repositories/regla-vencimiento.repository';
 import { ClientesModule } from '../clientes/clientes.module';
+import { EstudioModule } from '../estudio/estudio.module';
+import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
+import type { EstudioRepository } from '../estudio/domain/repositories/estudio.repository';
+import { EstudioModule } from '../estudio/estudio.module';
+import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
+import type { EstudioRepository } from '../estudio/domain/repositories/estudio.repository';
 import { CLIENTE_REPOSITORY } from '../clientes/domain/repositories/cliente.repository';
 import type { ClienteRepository } from '../clientes/domain/repositories/cliente.repository';
 import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikro-orm-vencimiento.repository';
@@ -67,6 +75,7 @@ import { DescartarSugerenciaProrrogaHandler } from './application/commands/desca
 import { SugerenciasProrrogaListHandler } from './application/queries/sugerencias-prorroga-list.query';
 import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
 import { ProyectarCalendarioMasivoHandler } from './application/commands/proyectar-calendario-masivo.command';
+import { ProyeccionMensualScheduler } from './application/commands/proyeccion-mensual-scheduler.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
@@ -92,8 +101,8 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [forwardRef(() => ClientesModule), NotificacionesModule],
-  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController, SugerenciasProrrogaController],
+  imports: [forwardRef(() => ClientesModule), EstudioModule, NotificacionesModule],
+  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController, SugerenciasProrrogaController, ProyeccionMensualController],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
@@ -198,6 +207,17 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       ) =>
         new ProyectarCalendarioMasivoHandler(clienteRepo, proyectarHandler, eventBus),
       inject: [CLIENTE_REPOSITORY, ProyectarCalendarioMensualHandler, EVENT_BUS],
+    },
+
+    // ── Proyección Mensual Scheduler ──
+    {
+      provide: ProyeccionMensualScheduler,
+      useFactory: (
+        estudioRepo: EstudioRepository,
+        proyectarMasivoHandler: ProyectarCalendarioMasivoHandler,
+      ) =>
+        new ProyeccionMensualScheduler(estudioRepo, proyectarMasivoHandler),
+      inject: [ESTUDIO_REPOSITORY, ProyectarCalendarioMasivoHandler],
     },
 
     // ── Recordatorios ──
