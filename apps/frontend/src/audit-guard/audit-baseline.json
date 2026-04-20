@@ -1,0 +1,98 @@
+[
+  {
+    "type": "proximamente-label",
+    "file": "src/app/(auth)/privacy/page.tsx",
+    "line": 5,
+    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/app/(auth)/support/page.tsx",
+    "line": 5,
+    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/app/(auth)/terms/page.tsx",
+    "line": 5,
+    "snippet": "<p className=\"text-gray-600\">Contenido próximamente.</p>"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/configuracion-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Parámetros globales de la plataforma próximamente.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/facturacion-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Facturación de la plataforma a estudios suscriptos próximamente.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/integraciones-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Estado global de integraciones externas próximamente.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/logs-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Auditoría y eventos del sistema próximamente.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/metricas-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Métricas de uso agregado de la plataforma próximamente.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/admin/suscripciones-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Gestión de suscripciones y billing de estudios próximamente.\""
+  },
+  {
+    "type": "dead-href",
+    "file": "src/components/auth/login-page.tsx",
+    "line": 71,
+    "snippet": "href=\"/signup\""
+  },
+  {
+    "type": "console-log-handler",
+    "file": "src/components/clientes/clientes-table.tsx",
+    "line": 121,
+    "snippet": "<IconButton size={26} label=\"Acciones\" onClick={() => console.log('more', c.id)}>"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/configuracion/roles-permisos-page.tsx",
+    "line": 11,
+    "snippet": "description=\"La matriz de permisos por rol está en desarrollo. Próximamente vas a poder configurar qué puede hacer cada rol del estudio.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/portal/mis-documentos-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Repositorio documental próximamente. Por ahora los documentos recientes aparecen en el portal.\""
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src/components/portal/mis-vencimientos-page.tsx",
+    "line": 11,
+    "snippet": "description=\"Calendario de vencimientos fiscales próximamente. Por ahora los próximos vencimientos aparecen en el portal.\""
+  },
+  {
+    "type": "console-log-handler",
+    "file": "src/components/vencimientos/vencimientos-page.tsx",
+    "line": 76,
+    "snippet": "onPresentar={(o) => console.log('presentar', o.id)}"
+  },
+  {
+    "type": "console-log-handler",
+    "file": "src/components/vencimientos/vencimientos-page.tsx",
+    "line": 77,
+    "snippet": "onMore={(o) => console.log('more', o.id)}"
+  }
+]
