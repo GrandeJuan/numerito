@@ -53,6 +53,7 @@ import { AprobarReglaPropuestaHandler } from './application/commands/aprobar-reg
 import { RechazarReglaPropuestaHandler } from './application/commands/rechazar-regla-propuesta.command';
 import { AprobarReglasBloqueHandler } from './application/commands/aprobar-reglas-bloque.command';
 import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
+import { ProyectarCalendarioMasivoHandler } from './application/commands/proyectar-calendario-masivo.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
@@ -171,6 +172,18 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         AjusteDiaHabilService,
         EVENT_BUS,
       ],
+    },
+
+    // ── Masivo ──
+    {
+      provide: ProyectarCalendarioMasivoHandler,
+      useFactory: (
+        clienteRepo: ClienteRepository,
+        proyectarHandler: ProyectarCalendarioMensualHandler,
+        eventBus: EventBus,
+      ) =>
+        new ProyectarCalendarioMasivoHandler(clienteRepo, proyectarHandler, eventBus),
+      inject: [CLIENTE_REPOSITORY, ProyectarCalendarioMensualHandler, EVENT_BUS],
     },
 
     // ── Recordatorios ──
@@ -353,6 +366,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     PROXIMOS_VENCIMIENTOS_DETALLE_VIEW,
     VENCIMIENTOS_RECIENTES_CLIENTE_VIEW,
     ACTIVIDAD_RECIENTE_VENCIMIENTOS_VIEW,
+    ProyectarCalendarioMasivoHandler,
   ],
 })
 export class ObligacionesModule {}

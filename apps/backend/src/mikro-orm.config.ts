@@ -79,6 +79,7 @@ import { EjecucionIngestaSchema } from './integraciones/infrastructure/persisten
 
 // Notificaciones
 import { NotificacionSchema } from './notificaciones/infrastructure/persistence/notificacion.schema';
+import { ResumenMensualSchema } from './notificaciones/infrastructure/persistence/resumen-mensual.schema';
 
 export default defineConfig({
   host: process.env.DB_HOST || 'localhost',
@@ -151,6 +152,7 @@ export default defineConfig({
     EjecucionIngestaSchema,
     // Notificaciones
     NotificacionSchema,
+    ResumenMensualSchema,
   ],
   extensions: [Migrator],
   migrations: {

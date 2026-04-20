@@ -8,6 +8,7 @@ import { KpiCard } from '../kpi-card';
 import { Card } from '../card';
 import { Pill } from '../pill';
 import { formatFecha, formatCurrency } from '@/lib/formatters';
+import { getApiUrl } from '@/lib/api-client';
 
 interface VencimientoReciente {
   id: string;
@@ -31,6 +32,15 @@ interface DocumentoReciente {
   fecha: string;
 }
 
+interface ResumenMensual {
+  id: string;
+  periodo: string;
+  totalVencimientos: number;
+  estado: string;
+  emailEnviado: boolean;
+  createdAt: string;
+}
+
 interface PortalStats {
   clienteNombre: string;
   kpis: {
@@ -43,9 +53,20 @@ interface PortalStats {
   documentosRecientes: DocumentoReciente[];
 }
 
+function formatPeriodo(periodo: string): string {
+  const [year, month] = periodo.split('-');
+  const meses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  ];
+  const idx = parseInt(month, 10) - 1;
+  return `${meses[idx] ?? month} ${year}`;
+}
+
 export function MiPortalPage() {
   const { user } = useAuth();
   const { data, loading, error } = useFetch<PortalStats>('/v1/portal/dashboard/stats');
+  const { data: resumenes } = useFetch<ResumenMensual[]>('/v1/portal/mis-resumenes');
 
   return (
     <PageStateGuard loading={loading} error={error} icon="home">
@@ -160,6 +181,45 @@ export function MiPortalPage() {
                   <div className="font-mono text-[11px] text-[var(--text-3)]">
                     {formatFecha(d.fecha)}
                   </div>
+                </div>
+              ))
+            )}
+          </Card>
+
+          <Card title="Calendarios mensuales" subtitle="PDF consolidado de vencimientos">
+            {!resumenes || resumenes.length === 0 ? (
+              <p className="text-[var(--text-3)] text-[12.5px]">
+                No hay calendarios generados aun.
+              </p>
+            ) : (
+              resumenes.slice(0, 6).map((r, i, arr) => (
+                <div
+                  key={r.id}
+                  className={`grid grid-cols-[2fr_auto_auto_auto] gap-2.5 py-2.5 items-center ${
+                    i < arr.length - 1 ? 'border-b border-[var(--border)]' : ''
+                  }`}
+                >
+                  <div className="text-[12.5px] font-medium text-[var(--text)]">
+                    {formatPeriodo(r.periodo)}
+                  </div>
+                  <div className="font-mono text-[11px] text-[var(--text-3)]">
+                    {r.totalVencimientos} vto{r.totalVencimientos !== 1 ? 's' : ''}
+                  </div>
+                  <Pill
+                    tone={r.estado === 'LISTO' ? 'brand' : r.estado === 'ERROR' ? 'rose' : 'amber'}
+                    dot
+                  >
+                    {r.estado === 'LISTO' ? 'Listo' : r.estado === 'ERROR' ? 'Error' : 'Generando'}
+                  </Pill>
+                  {r.estado === 'LISTO' && (
+                    <a
+                      href={`${getApiUrl()}/api/v1/portal/mi-calendario/${r.periodo}.pdf`}
+                      className="text-[11.5px] font-medium text-[var(--brand)] hover:underline"
+                      download
+                    >
+                      Descargar
+                    </a>
+                  )}
                 </div>
               ))
             )}

@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { EntityManager } from '@mikro-orm/core';
 import { PortalController } from './infrastructure/controllers/portal.controller';
 import { ObtenerPortalStatsHandler } from './application/queries/obtener-portal-stats.query';
+import { ObtenerResumenesClienteHandler } from './application/queries/obtener-resumenes-cliente.query';
+import { DescargarCalendarioPdfHandler } from './application/queries/descargar-calendario-pdf.query';
 import { IamModule } from '../iam/iam.module';
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW } from '../obligaciones/application/public-views';
@@ -21,9 +24,12 @@ import type { DocumentosRecientesClienteView } from '../documentos/application/v
 import { ClientesModule } from '../clientes/clientes.module';
 import { CLIENTE_POR_USUARIO_PORTAL_VIEW } from '../clientes/application/public-views';
 import type { ClientePorUsuarioPortalView } from '../clientes/application/views/cliente-por-usuario-portal.view';
+import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+import { RESUMEN_MENSUAL_REPOSITORY } from '../notificaciones/domain/repositories/resumen-mensual.repository';
+import type { ResumenMensualRepository } from '../notificaciones/domain/repositories/resumen-mensual.repository';
 
 @Module({
-  imports: [IamModule, JwtModule.register({}), ObligacionesModule, FacturacionModule, DocumentosModule, ClientesModule],
+  imports: [IamModule, JwtModule.register({}), ObligacionesModule, FacturacionModule, DocumentosModule, ClientesModule, NotificacionesModule],
   controllers: [PortalController],
   providers: [
     {
@@ -54,6 +60,17 @@ import type { ClientePorUsuarioPortalView } from '../clientes/application/views/
         DOCUMENTOS_RECIENTES_CLIENTE_VIEW,
         CLIENTE_POR_USUARIO_PORTAL_VIEW,
       ],
+    },
+    {
+      provide: ObtenerResumenesClienteHandler,
+      useFactory: (resumenRepo: ResumenMensualRepository) =>
+        new ObtenerResumenesClienteHandler(resumenRepo),
+      inject: [RESUMEN_MENSUAL_REPOSITORY],
+    },
+    {
+      provide: DescargarCalendarioPdfHandler,
+      useFactory: (em: EntityManager) => new DescargarCalendarioPdfHandler(em),
+      inject: [EntityManager],
     },
   ],
 })

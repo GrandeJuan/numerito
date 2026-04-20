@@ -10,6 +10,7 @@ import { UserMenu } from '../user-menu';
 
 const NAV = [
   { href: '/portal', label: 'Mi portal', icon: Icons.home },
+  { href: '/portal/vencimientos', label: 'Vencimientos', icon: Icons.event },
 ];
 
 export function PortalShell({ children }: { children: ReactNode }) {

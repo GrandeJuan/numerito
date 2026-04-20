@@ -16,6 +16,7 @@ import {
   type CrearVencimientoCommand,
 } from '../../application/commands/crear-vencimiento.command';
 import { ProyectarCalendarioMensualHandler } from '../../application/commands/proyectar-calendario-mensual.command';
+import { ProyectarCalendarioMasivoHandler } from '../../application/commands/proyectar-calendario-masivo.command';
 import { PresentarVencimientoHandler } from '../../application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from '../../application/commands/marcar-vencido.command';
 import { ProrrogarVencimientoHandler } from '../../application/commands/prorrogar-vencimiento.command';
@@ -55,6 +56,7 @@ export class ObligacionesController {
     private readonly vencimientoListHandler: VencimientoListHandler,
     private readonly vencimientoCalendarioHandler: VencimientoCalendarioHandler,
     private readonly vencimientoByIdHandler: VencimientoByIdHandler,
+    private readonly proyectarMasivoHandler: ProyectarCalendarioMasivoHandler,
   ) {}
 
   @Get('kpis')
@@ -125,6 +127,18 @@ export class ObligacionesController {
     @Principal() principal: EstudioPrincipal,
   ) {
     const result = await this.proyectarCalendarioHandler.execute(principal, dto);
+    return successResponse(result);
+  }
+
+  @Post('calendario/proyectar-masivo')
+  @ApiOperation({ summary: 'Proyectar calendario mensual de todos los clientes del estudio' })
+  async proyectarCalendarioMasivo(
+    @Body(new ZodValidationPipe(proyectarCalendarioDtoSchema)) dto: { periodo: string },
+    @Principal() principal: EstudioPrincipal,
+  ) {
+    const result = await this.proyectarMasivoHandler.execute(principal, {
+      periodo: dto.periodo,
+    });
     return successResponse(result);
   }
 
