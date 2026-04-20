@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
@@ -192,7 +193,7 @@ const RESPONSABLE_COLUMNS: Column<CumplimientoResponsable>[] = [
   {
     header: 'Responsable',
     render: (r) => (
-      <span className="font-medium text-[var(--text)]">{r.responsableNombre}</span>
+      <span className="font-medium text-[var(--brand)] hover:underline">{r.responsableNombre}</span>
     ),
   },
   {
@@ -256,7 +257,21 @@ const RESPONSABLE_COLUMNS: Column<CumplimientoResponsable>[] = [
 
 export function CumplimientoSocioPage() {
   const { estudioActual } = useAuth();
+  const router = useRouter();
   const [periodo, setPeriodo] = useState(currentPeriodo);
+
+  const handleDrilldown = useCallback(
+    (row: CumplimientoResponsable) => {
+      const params = new URLSearchParams();
+      params.set('periodo', periodo);
+      if (row.responsableId) {
+        params.set('responsableId', row.responsableId);
+        params.set('responsable', row.responsableNombre);
+      }
+      router.push(`/vencimientos?${params.toString()}`);
+    },
+    [periodo, router],
+  );
 
   const endpoint = useMemo(
     () => `/v1/dashboard/cumplimiento-socio?periodo=${periodo}`,
@@ -354,6 +369,7 @@ export function CumplimientoSocioPage() {
                 columns={RESPONSABLE_COLUMNS}
                 rows={data.porResponsable}
                 rowKey={(r) => r.responsableId ?? 'sin-asignar'}
+                onRowClick={handleDrilldown}
                 emptyMessage="Sin datos de cumplimiento para este período."
                 footer={
                   <span>

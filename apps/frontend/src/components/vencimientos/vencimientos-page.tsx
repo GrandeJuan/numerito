@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { Obligacion, Cliente } from '@numerito/shared';
 import { useAuth } from '@/lib/auth-context';
 import { useFetchWithEstudio } from '@/lib/use-fetch-with-estudio';
@@ -10,6 +11,7 @@ import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { PageHeader } from '../page-header';
 import { Button } from '../button';
 import { Icons } from '../icons';
+import { Pill } from '../pill';
 
 import { VencimientosKpis } from './vencimientos-kpis';
 import { CalendarGrid } from './calendar-grid';
@@ -44,7 +46,20 @@ function exportVencimientosCsv(items: Obligacion[]) {
 
 export function VencimientosPage() {
   const { estudioActual } = useAuth();
-  const { data, loading, error, refetch } = useFetchWithEstudio<VencimientoApi[]>('/v1/vencimientos');
+  const searchParams = useSearchParams();
+  const filterResponsableId = searchParams.get('responsableId');
+  const filterPeriodo = searchParams.get('periodo');
+  const filterResponsableNombre = searchParams.get('responsable');
+
+  const endpoint = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filterResponsableId) params.set('responsableId', filterResponsableId);
+    if (filterPeriodo) params.set('periodo', filterPeriodo);
+    const qs = params.toString();
+    return qs ? `/v1/vencimientos?${qs}` : '/v1/vencimientos';
+  }, [filterResponsableId, filterPeriodo]);
+
+  const { data, loading, error, refetch } = useFetchWithEstudio<VencimientoApi[]>(endpoint);
   const { data: clientes } = useFetchWithEstudio<Cliente[]>('/v1/clientes');
   const items: Obligacion[] = (data ?? []).map((v) => ({
     id: v.id,
@@ -58,6 +73,8 @@ export function VencimientosPage() {
     monto: v.monto,
     responsable: v.responsable ?? null,
   }));
+
+  const hasFilters = !!(filterResponsableId || filterPeriodo);
 
   const [month, setMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [presentandoId, setPresentandoId] = useState<string | null>(null);
@@ -112,6 +129,21 @@ export function VencimientosPage() {
           </>
         }
       />
+
+      {hasFilters && (
+        <div className="flex items-center gap-2 mb-4 text-[12.5px] text-[var(--text-2)] bg-[var(--surface)] border border-[var(--border)] rounded-[8px] px-3 py-2">
+          <span>Filtros activos:</span>
+          {filterResponsableNombre && (
+            <Pill tone="brand" small>{filterResponsableNombre}</Pill>
+          )}
+          {filterPeriodo && (
+            <Pill tone="brand" small>{filterPeriodo}</Pill>
+          )}
+          <a href="/vencimientos" className="ml-auto text-[var(--brand)] hover:underline">
+            Limpiar filtros
+          </a>
+        </div>
+      )}
 
       {presentarError && (
         <div

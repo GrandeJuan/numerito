@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
     user: { id: 'u-1', email: 'socio@test.com', rol: 'SOCIO' },
@@ -202,5 +207,128 @@ describe('CumplimientoSocioPage', () => {
       expect(screen.getByText('67%')).toBeInTheDocument();
     });
     expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('shows en meta when cumplimiento >= 80%', async () => {
+    mockApiFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            ...mockData,
+            resumenGeneral: { ...mockData.resumenGeneral, porcentajeCumplimiento: 85 },
+          },
+        }),
+    });
+
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('en meta')).toBeInTheDocument();
+    });
+  });
+
+  it('shows sin riesgo when enRiesgo is 0', async () => {
+    mockApiFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            ...mockData,
+            resumenGeneral: { ...mockData.resumenGeneral, enRiesgo: 0 },
+          },
+        }),
+    });
+
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('sin riesgo')).toBeInTheDocument();
+    });
+  });
+
+  it('disables next period button when at current month', async () => {
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Cumplimiento por Responsable')).toBeInTheDocument();
+    });
+
+    const buttons = screen.getAllByRole('button');
+    // Next button is the second navigation button (index 1)
+    const nextBtn = buttons[1];
+    expect(nextBtn).toBeDisabled();
+  });
+
+  it('navigates to vencimientos page when clicking a responsable row', async () => {
+    const user = userEvent.setup();
+    render(<CumplimientoSocioPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Juan Pérez'));
+
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('/vencimientos?'),
+    );
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('responsableId=u-1'),
+    );
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('responsable=Juan'),
+    );
+  });
+
+  it('shows al día when pendientes is 0', async () => {
+    mockApiFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            ...mockData,
+            resumenGeneral: { ...mockData.resumenGeneral, pendientes: 0 },
+          },
+        }),
+    });
+
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('al día')).toBeInTheDocument();
+    });
+  });
+
+  it('shows ninguno when vencidos is 0', async () => {
+    mockApiFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            ...mockData,
+            resumenGeneral: { ...mockData.resumenGeneral, vencidos: 0 },
+          },
+        }),
+    });
+
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ninguno')).toBeInTheDocument();
+    });
+  });
+
+  it('renders 1 responsable (singular) footer for single responsable', async () => {
+    mockApiFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            ...mockData,
+            porResponsable: [mockData.porResponsable[0]],
+          },
+        }),
+    });
+
+    render(<CumplimientoSocioPage />);
+    await waitFor(() => {
+      expect(screen.getByText('1 responsable')).toBeInTheDocument();
+    });
   });
 });

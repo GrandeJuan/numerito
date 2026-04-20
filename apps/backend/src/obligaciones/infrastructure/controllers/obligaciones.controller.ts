@@ -86,6 +86,7 @@ export class ObligacionesController {
     @Query('estado') estado?: string,
     @Query('periodo') periodo?: string,
     @Query('clienteId') clienteId?: string,
+    @Query('responsableId') responsableId?: string,
     @Query('fechaDesde') fechaDesde?: string,
     @Query('fechaHasta') fechaHasta?: string,
   ) {
@@ -95,6 +96,7 @@ export class ObligacionesController {
       estado: estado as EstadoVencimiento | undefined,
       periodo,
       clienteId,
+      responsableId,
       fechaDesde,
       fechaHasta,
       page: pageNum,

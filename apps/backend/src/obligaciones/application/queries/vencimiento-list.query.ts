@@ -5,6 +5,7 @@ import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal'
 export interface VencimientoListQuery {
   estado?: EstadoVencimiento;
   clienteId?: string;
+  responsableId?: string;
   periodo?: string;
   fechaDesde?: string;
   fechaHasta?: string;
@@ -50,6 +51,10 @@ export class VencimientoListHandler {
     if (query.clienteId) {
       whereParts.push('v.cliente_id = ?');
       whereParams.push(query.clienteId);
+    }
+    if (query.responsableId) {
+      whereParts.push('v.responsable_id = ?');
+      whereParams.push(query.responsableId);
     }
     if (query.periodo) {
       whereParts.push('v.periodo = ?');
