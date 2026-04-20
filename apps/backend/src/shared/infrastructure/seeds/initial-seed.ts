@@ -139,6 +139,17 @@ INSERT INTO tipo_libro (codigo, nombre) VALUES
 ON CONFLICT (codigo) DO NOTHING;
 
 -- ============================================
+-- CATALOGO OBLIGACION
+-- ============================================
+INSERT INTO catalogo_obligacion (id, nombre, tipo_obligacion, jurisdiccion, frecuencia, activo, created_at, updated_at) VALUES
+  ('c0000000-0000-0000-0000-000000000001', 'IVA Mensual (ARCA)', 'IVA', 'ARCA', 'MENSUAL', true, NOW(), NOW()),
+  ('c0000000-0000-0000-0000-000000000002', 'SICOSS Mensual (ARCA)', 'SICOSS', 'ARCA', 'MENSUAL', true, NOW(), NOW()),
+  ('c0000000-0000-0000-0000-000000000003', 'Monotributo Mensual (ARCA)', 'MONOTRIBUTO', 'ARCA', 'MENSUAL', true, NOW(), NOW()),
+  ('c0000000-0000-0000-0000-000000000004', 'IIBB ARBA Mensual', 'IIBB_ARBA', 'ARBA', 'MENSUAL', true, NOW(), NOW()),
+  ('c0000000-0000-0000-0000-000000000005', 'IIBB AGIP Mensual', 'IIBB_AGIP', 'AGIP', 'MENSUAL', true, NOW(), NOW())
+ON CONFLICT (tipo_obligacion, jurisdiccion) DO NOTHING;
+
+-- ============================================
 -- ESTADO VENCIMIENTO
 -- ============================================
 INSERT INTO estado_vencimiento (codigo, nombre) VALUES
@@ -241,4 +252,23 @@ INSERT INTO permiso (codigo, nombre, modulo) VALUES
   ('VER_PROPIOS_DOCUMENTOS', 'Ver Propios Documentos', 'PORTAL_CLIENTE'),
   ('VER_PROPIOS_VENCIMIENTOS', 'Ver Propios Vencimientos', 'PORTAL_CLIENTE')
 ON CONFLICT (codigo) DO NOTHING;
+
+-- ============================================
+-- REGLA VENCIMIENTO — IVA ARCA (10 terminaciones CUIT)
+-- Fechas según calendario ARCA año fiscal 2026.
+-- mesSiguiente = true → el vencimiento cae el mes posterior al periodo.
+-- Regimen GENERAL = Responsable Inscripto.
+-- ============================================
+INSERT INTO regla_vencimiento (tipo_obligacion_id, terminacion_cuit, dia_vencimiento, mes_siguiente, jurisdiccion, regimen, vigencia_desde, vigencia_hasta, origen, estado) VALUES
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '0', 18, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '1', 18, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '2', 19, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '3', 19, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '4', 20, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '5', 20, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '6', 21, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '7', 21, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '8', 22, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA'),
+  ((SELECT id FROM tipo_obligacion WHERE codigo = 'IVA'), '9', 22, true, 'ARCA', 'GENERAL', '2026-01-01', NULL, 'MANUAL', 'ACTIVA')
+ON CONFLICT DO NOTHING;
 `;

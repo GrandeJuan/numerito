@@ -10,3 +10,5 @@ export * from './administracion.schema';
 export * from './contabilidad.schema';
 export * from './documento.schema';
 export * from './tarea.schema';
+export * from './catalogo-obligacion.schema';
+export * from './regla-vencimiento.schema';

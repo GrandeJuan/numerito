@@ -1,16 +1,34 @@
 import { Module } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
+import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
 import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.repository';
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
+import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
+import type { CatalogoObligacionRepository } from './domain/repositories/catalogo-obligacion.repository';
+import {
+  REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
+} from './domain/repositories/regla-vencimiento.repository';
+import type {
+  ReglaVencimientoEntityRepository,
+} from './domain/repositories/regla-vencimiento.repository';
 import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikro-orm-vencimiento.repository';
+import { MikroOrmCatalogoObligacionRepository } from './infrastructure/persistence/mikro-orm-catalogo-obligacion.repository';
+import { MikroOrmReglaVencimientoRepository } from './infrastructure/persistence/mikro-orm-regla-vencimiento.repository';
+import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
+import { CrearCatalogoObligacionHandler } from './application/commands/crear-catalogo-obligacion.command';
+import { ActualizarCatalogoObligacionHandler } from './application/commands/actualizar-catalogo-obligacion.command';
+import { CrearReglaVencimientoHandler } from './application/commands/crear-regla-vencimiento.command';
+import { ActualizarReglaVencimientoHandler } from './application/commands/actualizar-regla-vencimiento.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
 import { VencimientoByIdHandler } from './application/queries/vencimiento-by-id.query';
+import { CatalogoObligacionListHandler } from './application/queries/catalogo-obligacion-list.query';
+import { ReglaVencimientoListHandler } from './application/queries/regla-vencimiento-list.query';
 import { VencimientosProximosView } from './application/views/vencimientos-proximos.view';
 import { VencimientosPendientesClienteView } from './application/views/vencimientos-pendientes-cliente.view';
 import { VencimientosPorEstadoView } from './application/views/vencimientos-por-estado.view';
@@ -30,9 +48,22 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
   imports: [],
-  controllers: [ObligacionesController],
+  controllers: [ObligacionesController, CatalogoAdminController],
   providers: [
+    // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
+    { provide: CATALOGO_OBLIGACION_REPOSITORY, useClass: MikroOrmCatalogoObligacionRepository },
+    { provide: REGLA_VENCIMIENTO_ENTITY_REPOSITORY, useClass: MikroOrmReglaVencimientoRepository },
+
+    // ── Domain services ──
+    {
+      provide: ReglaVencimientoService,
+      useFactory: (entityRepo: ReglaVencimientoEntityRepository) =>
+        new ReglaVencimientoService(entityRepo),
+      inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
+    },
+
+    // ── Vencimiento commands ──
     {
       provide: CrearVencimientoHandler,
       useFactory: (repo: VencimientoRepository) =>
@@ -51,6 +82,34 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         new MarcarVencidoHandler(repo, eventBus),
       inject: [VENCIMIENTO_REPOSITORY, EVENT_BUS],
     },
+
+    // ── Catálogo/Regla commands ──
+    {
+      provide: CrearCatalogoObligacionHandler,
+      useFactory: (repo: CatalogoObligacionRepository) =>
+        new CrearCatalogoObligacionHandler(repo),
+      inject: [CATALOGO_OBLIGACION_REPOSITORY],
+    },
+    {
+      provide: ActualizarCatalogoObligacionHandler,
+      useFactory: (repo: CatalogoObligacionRepository) =>
+        new ActualizarCatalogoObligacionHandler(repo),
+      inject: [CATALOGO_OBLIGACION_REPOSITORY],
+    },
+    {
+      provide: CrearReglaVencimientoHandler,
+      useFactory: (repo: ReglaVencimientoEntityRepository, svc: ReglaVencimientoService) =>
+        new CrearReglaVencimientoHandler(repo, svc),
+      inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY, ReglaVencimientoService],
+    },
+    {
+      provide: ActualizarReglaVencimientoHandler,
+      useFactory: (repo: ReglaVencimientoEntityRepository) =>
+        new ActualizarReglaVencimientoHandler(repo),
+      inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
+    },
+
+    // ── Vencimiento queries ──
     {
       provide: VencimientoKpisHandler,
       useFactory: (em: EntityManager) => new VencimientoKpisHandler(em),
@@ -71,6 +130,20 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (em: EntityManager) => new VencimientoByIdHandler(em),
       inject: [EntityManager],
     },
+
+    // ── Catálogo/Regla queries ──
+    {
+      provide: CatalogoObligacionListHandler,
+      useFactory: (em: EntityManager) => new CatalogoObligacionListHandler(em),
+      inject: [EntityManager],
+    },
+    {
+      provide: ReglaVencimientoListHandler,
+      useFactory: (em: EntityManager) => new ReglaVencimientoListHandler(em),
+      inject: [EntityManager],
+    },
+
+    // ── Views ──
     {
       provide: VENCIMIENTOS_PROXIMOS_VIEW,
       useFactory: (em: EntityManager) => new VencimientosProximosView(em),
@@ -104,6 +177,9 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
   ],
   exports: [
     VENCIMIENTO_REPOSITORY,
+    CATALOGO_OBLIGACION_REPOSITORY,
+    REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
+    ReglaVencimientoService,
     VENCIMIENTOS_PROXIMOS_VIEW,
     VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
     VENCIMIENTOS_POR_ESTADO_VIEW,

@@ -48,6 +48,7 @@ import { ClienteSchema } from './clientes/infrastructure/persistence/cliente.sch
 import { VencimientoSchema } from './obligaciones/infrastructure/persistence/vencimiento.schema';
 import { ReglaVencimientoSchema } from './obligaciones/infrastructure/persistence/regla-vencimiento.schema';
 import { AlertaConfigSchema } from './obligaciones/infrastructure/persistence/alerta-config.schema';
+import { CatalogoObligacionSchema } from './obligaciones/infrastructure/persistence/catalogo-obligacion.schema';
 
 // Contabilidad
 import { LibroContableSchema } from './contabilidad/infrastructure/persistence/libro-contable.schema';
@@ -122,6 +123,7 @@ export default defineConfig({
     VencimientoSchema,
     ReglaVencimientoSchema,
     AlertaConfigSchema,
+    CatalogoObligacionSchema,
     // Contabilidad
     LibroContableSchema,
     AsientoContableSchema,

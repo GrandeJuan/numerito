@@ -11,3 +11,6 @@ export * from './estado-tarea';
 export * from './prioridad';
 export * from './plan';
 export * from './jurisdiccion';
+export * from './estado-regla';
+export * from './origen-regla';
+export * from './frecuencia-obligacion';

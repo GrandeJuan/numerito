@@ -1,5 +1,10 @@
-import type { TipoObligacion } from '@numerito/shared';
+import type { TipoObligacion, Jurisdiccion, EstadoRegla } from '@numerito/shared';
+import type { ReglaVencimiento } from '../entities/regla-vencimiento.entity';
 
+/**
+ * @deprecated Use ReglaVencimientoData only for backward compatibility.
+ * New code should use the ReglaVencimiento domain entity via ReglaVencimientoEntityRepository.
+ */
 export interface ReglaVencimientoData {
   tipoObligacion: TipoObligacion;
   terminacionCuit: string;
@@ -7,6 +12,9 @@ export interface ReglaVencimientoData {
   mesSiguiente: boolean; // true = vence el mes siguiente al periodo
 }
 
+/**
+ * @deprecated Legacy repository interface. Use ReglaVencimientoEntityRepository instead.
+ */
 export interface ReglaVencimientoRepository {
   findByTipoYTerminacion(tipo: TipoObligacion, terminacion: string): Promise<ReglaVencimientoData | null>;
   findByTipo(tipo: TipoObligacion): Promise<ReglaVencimientoData[]>;
@@ -16,3 +24,22 @@ export interface ReglaVencimientoRepository {
 }
 
 export const REGLA_VENCIMIENTO_REPOSITORY = Symbol('ReglaVencimientoRepository');
+
+/** New domain-entity-based repository for extended regla vencimiento */
+export interface ReglaVencimientoEntityRepository {
+  findById(id: string): Promise<ReglaVencimiento | null>;
+  findAll(): Promise<ReglaVencimiento[]>;
+  findActivas(): Promise<ReglaVencimiento[]>;
+  findByEstado(estado: EstadoRegla): Promise<ReglaVencimiento[]>;
+  findVigentes(
+    tipoObligacion: TipoObligacion,
+    jurisdiccion: Jurisdiccion,
+    regimen: string,
+    terminacion: string,
+    fecha: Date,
+  ): Promise<ReglaVencimiento[]>;
+  save(regla: ReglaVencimiento): Promise<void>;
+  delete(regla: ReglaVencimiento): Promise<void>;
+}
+
+export const REGLA_VENCIMIENTO_ENTITY_REPOSITORY = Symbol('ReglaVencimientoEntityRepository');
