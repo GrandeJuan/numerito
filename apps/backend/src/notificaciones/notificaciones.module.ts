@@ -13,6 +13,7 @@ import { ResumenMensualListener } from './application/listeners/resumen-mensual.
 import { PDF_GENERATOR } from '../shared/domain/ports/pdf-generator.port';
 import type { PdfGeneratorPort } from '../shared/domain/ports/pdf-generator.port';
 import { SimplePdfGenerator } from '../shared/infrastructure/adapters/simple-pdf-generator';
+import { PdfKitCalendarioPdfGenerator } from '../shared/infrastructure/adapters/pdfkit-calendario-pdf-generator';
 import { MAIL_SENDER } from '../shared/domain/ports/mail-sender.port';
 import type { MailSenderPort } from '../shared/domain/ports/mail-sender.port';
 import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mail-sender';
@@ -24,7 +25,7 @@ import { SesMailSender } from '../shared/infrastructure/adapters/ses-mail-sender
   providers: [
     { provide: NOTIFICACION_REPOSITORY, useClass: MikroOrmNotificacionRepository },
     { provide: RESUMEN_MENSUAL_REPOSITORY, useClass: MikroOrmResumenMensualRepository },
-    { provide: PDF_GENERATOR, useClass: SimplePdfGenerator },
+    { provide: PDF_GENERATOR, useClass: process.env.PDF_ENGINE === 'pdfkit' ? PdfKitCalendarioPdfGenerator : SimplePdfGenerator },
     { provide: MAIL_SENDER, useClass: process.env.AWS_SES_FROM_EMAIL ? SesMailSender : ConsoleMailSender },
 
     // ── Listener ──
