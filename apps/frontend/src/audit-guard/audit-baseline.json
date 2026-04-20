@@ -86,13 +86,7 @@
   {
     "type": "console-log-handler",
     "file": "src/components/vencimientos/vencimientos-page.tsx",
-    "line": 76,
-    "snippet": "onPresentar={(o) => console.log('presentar', o.id)}"
-  },
-  {
-    "type": "console-log-handler",
-    "file": "src/components/vencimientos/vencimientos-page.tsx",
-    "line": 77,
+    "line": 123,
     "snippet": "onMore={(o) => console.log('more', o.id)}"
   }
 ]

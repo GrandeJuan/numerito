@@ -17,11 +17,12 @@ const ESTADO: Record<Obligacion['estado'], { tone: 'amber' | 'rose' | 'brand'; l
 
 export interface VencimientosTableProps {
   rows: Obligacion[];
+  presentandoId?: string | null;
   onPresentar(o: Obligacion): void;
   onMore(o: Obligacion): void;
 }
 
-export function VencimientosTable({ rows, onPresentar, onMore }: VencimientosTableProps) {
+export function VencimientosTable({ rows, presentandoId, onPresentar, onMore }: VencimientosTableProps) {
   return (
     <Card title="Próximos Vencimientos" subtitle="Orden por fecha de vencimiento" padding={0}>
       <DataTable<Obligacion>
@@ -65,8 +66,13 @@ export function VencimientosTable({ rows, onPresentar, onMore }: VencimientosTab
             align: 'right',
             render: (o) =>
               o.estado === 'PENDIENTE' ? (
-                <Button size="sm" variant="primary" onClick={() => onPresentar(o)}>
-                  Presentar
+                <Button
+                  size="sm"
+                  variant="primary"
+                  disabled={presentandoId === o.id}
+                  onClick={() => onPresentar(o)}
+                >
+                  {presentandoId === o.id ? 'Presentando…' : 'Presentar'}
                 </Button>
               ) : (
                 <IconButton size={26} onClick={() => onMore(o)} label="Acciones">
