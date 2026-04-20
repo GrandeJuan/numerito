@@ -42,20 +42,6 @@ interface VencimientoApi {
   responsable?: string | null;
 }
 
-interface SugerenciaApi {
-  id: string;
-  vencimientoId: string;
-  clienteId: string;
-  cliente: string;
-  tipoObligacion: string;
-  periodo: string;
-  fechaOriginal: string;
-  fechaSugerida: string;
-  motivo: string;
-  estado: string;
-  createdAt: string;
-}
-
 type EstadoFilter = 'TODOS' | 'PENDIENTE' | 'PRESENTADO' | 'VENCIDO' | 'PRORROGADO' | 'NO_APLICA';
 
 const ESTADO_CONFIG: Record<string, { tone: PillTone; label: string }> = {
@@ -110,19 +96,6 @@ export function PlanillaPage() {
     `/v1/vencimientos?periodo=${periodo}`,
   );
   const rows = data ?? [];
-
-  const { data: sugerenciasData, refetch: refetchSugerencias } = useFetchWithEstudio<SugerenciaApi[]>(
-    '/v1/vencimientos/sugerencias-prorroga?estado=ABIERTA',
-  );
-  const sugerencias = sugerenciasData ?? [];
-
-  const sugerenciasByVencimiento = useMemo(() => {
-    const map = new Map<string, SugerenciaApi>();
-    for (const s of sugerencias) {
-      map.set(s.vencimientoId, s);
-    }
-    return map;
-  }, [sugerencias]);
 
   // Fetch open sugerencias de prórroga
   const { data: sugerenciasData, refetch: refetchSugerencias } = useFetchWithEstudio<SugerenciaProrrogaApi[]>(
@@ -273,49 +246,6 @@ export function PlanillaPage() {
       }
     },
     [refetch],
-  );
-
-  const handleAprobarSugerencia = useCallback(
-    async (sugerenciaId: string) => {
-      setActionLoading(sugerenciaId);
-      setFeedback(null);
-      try {
-        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/aprobar`, { method: 'PATCH' });
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.error?.message ?? body?.message ?? 'Error al aprobar sugerencia');
-        }
-        setFeedback({ type: 'success', msg: 'Sugerencia aprobada y prórroga aplicada.' });
-        refetch();
-        refetchSugerencias();
-      } catch (err) {
-        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
-      } finally {
-        setActionLoading(null);
-      }
-    },
-    [refetch, refetchSugerencias],
-  );
-
-  const handleDescartarSugerencia = useCallback(
-    async (sugerenciaId: string) => {
-      setActionLoading(sugerenciaId);
-      setFeedback(null);
-      try {
-        const res = await apiFetch(`/v1/vencimientos/sugerencias-prorroga/${sugerenciaId}/descartar`, { method: 'PATCH' });
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.error?.message ?? body?.message ?? 'Error al descartar sugerencia');
-        }
-        setFeedback({ type: 'success', msg: 'Sugerencia descartada.' });
-        refetchSugerencias();
-      } catch (err) {
-        setFeedback({ type: 'error', msg: err instanceof Error ? err.message : 'Error' });
-      } finally {
-        setActionLoading(null);
-      }
-    },
-    [refetchSugerencias],
   );
 
   // --- KPIs ---
