@@ -14,3 +14,4 @@ export * from './jurisdiccion';
 export * from './estado-regla';
 export * from './origen-regla';
 export * from './frecuencia-obligacion';
+export * from './tipo-feriado';

@@ -11,6 +11,7 @@ export class VencimientoEntity {
   tipoObligacion!: TipoObligacionEntity;
   periodo!: string;
   fechaVencimiento!: Date;
+  fechaNominal!: Date | null;
   descripcion!: string;
   estado!: EstadoVencimientoEntity;
   createdAt!: Date;
@@ -27,6 +28,7 @@ export const VencimientoSchema = new EntitySchema<VencimientoEntity>({
     tipoObligacion: { kind: 'm:1', entity: () => TipoObligacionEntity, fieldName: 'tipo_obligacion_id' },
     periodo: { type: 'string', length: 7 },
     fechaVencimiento: { type: 'Date', fieldName: 'fecha_vencimiento' },
+    fechaNominal: { type: 'Date', fieldName: 'fecha_nominal', nullable: true },
     descripcion: { type: 'string' },
     estado: { kind: 'm:1', entity: () => EstadoVencimientoEntity, fieldName: 'estado_id' },
     createdAt: { type: 'Date', fieldName: 'created_at', onCreate: () => new Date() },

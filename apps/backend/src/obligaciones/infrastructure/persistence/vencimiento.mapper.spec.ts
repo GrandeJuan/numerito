@@ -21,6 +21,7 @@ describe('VencimientoMapper', () => {
     tipoObligacion: TIPO_OBLIGACION.IVA,
     periodo: '2026-04',
     fechaVencimiento,
+    fechaNominal: null,
     descripcion: 'IVA mensual',
     estado: ESTADO_VENCIMIENTO.PENDIENTE,
   };
@@ -110,6 +111,7 @@ describe('VencimientoMapper', () => {
           tipoObligacion: TIPO_OBLIGACION.IVA,
           periodo: '2026-04',
           fechaVencimiento,
+          fechaNominal: null,
           descripcion: 'IVA mensual',
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
         },
@@ -157,6 +159,7 @@ describe('VencimientoMapper', () => {
       tipoObligacion: { codigo: TIPO_OBLIGACION.IVA },
       periodo: '2026-04',
       fechaVencimiento,
+      fechaNominal: null,
       descripcion: 'IVA mensual',
       estado: { codigo: ESTADO_VENCIMIENTO.PENDIENTE },
       createdAt: new Date(),

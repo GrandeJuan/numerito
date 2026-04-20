@@ -15,6 +15,7 @@ interface CreateVencimientoProps {
   tipoObligacion: TipoObligacion;
   periodo: string;
   fechaVencimiento: Date;
+  fechaNominal?: Date | null;
   descripcion: string;
 }
 
@@ -33,6 +34,7 @@ const vencimientoReconstitutePropsSchema = z.object({
   tipoObligacion: z.enum(tipoObligacionValues),
   periodo: z.string().min(1),
   fechaVencimiento: z.date(),
+  fechaNominal: z.date().nullable(),
   descripcion: z.string(),
   estado: z.enum(estadoVencimientoValues),
 });
@@ -45,6 +47,7 @@ export class Vencimiento extends BaseEntity {
   private _tipoObligacion!: TipoObligacion;
   private _periodo!: string;
   private _fechaVencimiento!: Date;
+  private _fechaNominal!: Date | null;
   private _descripcion!: string;
   private _estado!: EstadoVencimiento;
 
@@ -57,11 +60,19 @@ export class Vencimiento extends BaseEntity {
     if (dueDay < today) {
       throw new OperacionInvalidaError('La fecha de vencimiento no puede ser pasada');
     }
+    if (props.fechaNominal) {
+      const nominalDay = new Date(props.fechaNominal);
+      nominalDay.setHours(0, 0, 0, 0);
+      if (nominalDay > dueDay) {
+        throw new OperacionInvalidaError('La fecha nominal no puede ser posterior a la fecha ajustada');
+      }
+    }
     this._clienteId = props.clienteId;
     this._estudioId = props.estudioId;
     this._tipoObligacion = props.tipoObligacion;
     this._periodo = props.periodo;
     this._fechaVencimiento = props.fechaVencimiento;
+    this._fechaNominal = props.fechaNominal ?? null;
     this._descripcion = props.descripcion;
     this._estado = ESTADO_VENCIMIENTO.PENDIENTE;
   }
@@ -81,6 +92,7 @@ export class Vencimiento extends BaseEntity {
     instance._tipoObligacion = data.tipoObligacion;
     instance._periodo = data.periodo;
     instance._fechaVencimiento = data.fechaVencimiento;
+    instance._fechaNominal = data.fechaNominal;
     instance._descripcion = data.descripcion;
     instance._estado = data.estado;
     return instance;
@@ -100,6 +112,9 @@ export class Vencimiento extends BaseEntity {
   }
   get fechaVencimiento(): Date {
     return this._fechaVencimiento;
+  }
+  get fechaNominal(): Date | null {
+    return this._fechaNominal;
   }
   get descripcion(): string {
     return this._descripcion;

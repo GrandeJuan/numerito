@@ -185,11 +185,20 @@ export function ClienteDetallePage() {
             },
             {
               header: 'Vencimiento',
-              render: (o) => (
-                <span className="font-mono text-[11.5px] text-[var(--text-2)]">
-                  {formatFecha(o.fecha)}
-                </span>
-              ),
+              render: (o) => {
+                const fechaNominal = (o as any).fechaNominal;
+                const ajustado = fechaNominal && fechaNominal !== o.fecha;
+                return (
+                  <span className="font-mono text-[11.5px] text-[var(--text-2)]">
+                    {formatFecha(o.fecha)}
+                    {ajustado && (
+                      <span className="ml-1 text-[10px] text-[var(--text-3)]" title={`Fecha nominal: ${formatFecha(fechaNominal)}`}>
+                        (nom. {formatFecha(fechaNominal)})
+                      </span>
+                    )}
+                  </span>
+                );
+              },
             },
             {
               header: 'Estado',

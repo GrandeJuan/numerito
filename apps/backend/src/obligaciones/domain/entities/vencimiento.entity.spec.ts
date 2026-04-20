@@ -92,8 +92,37 @@ describe('Vencimiento Entity', () => {
     expect(v.tipoObligacion).toBe(TIPO_OBLIGACION.IVA);
     expect(v.periodo).toBe('2030-03');
     expect(v.fechaVencimiento).toEqual(new Date('2030-04-15'));
+    expect(v.fechaNominal).toBeNull();
     expect(v.descripcion).toBe('DDJJ IVA Marzo 2030');
     expect(v.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
+  });
+
+  it('should store fechaNominal when provided', () => {
+    const v = Vencimiento.create({
+      clienteId: 'c1',
+      estudioId: 'e1',
+      tipoObligacion: TIPO_OBLIGACION.IVA,
+      periodo: '2030-03',
+      fechaVencimiento: new Date('2030-04-17'), // adjusted (Monday)
+      fechaNominal: new Date('2030-04-15'), // nominal (Saturday)
+      descripcion: 'IVA',
+    });
+    expect(v.fechaNominal).toEqual(new Date('2030-04-15'));
+    expect(v.fechaVencimiento).toEqual(new Date('2030-04-17'));
+  });
+
+  it('should reject fechaNominal after fechaVencimiento', () => {
+    expect(() =>
+      Vencimiento.create({
+        clienteId: 'c1',
+        estudioId: 'e1',
+        tipoObligacion: TIPO_OBLIGACION.IVA,
+        periodo: '2030-03',
+        fechaVencimiento: new Date('2030-04-15'),
+        fechaNominal: new Date('2030-04-20'), // after adjusted — invalid
+        descripcion: 'IVA',
+      }),
+    ).toThrow('La fecha nominal no puede ser posterior a la fecha ajustada');
   });
 
   describe('reconstitute', () => {
@@ -106,6 +135,7 @@ describe('Vencimiento Entity', () => {
           tipoObligacion: TIPO_OBLIGACION.IVA,
           periodo: '2020-01',
           fechaVencimiento: pastDate,
+          fechaNominal: null,
           descripcion: 'IVA viejo',
           estado: ESTADO_VENCIMIENTO.VENCIDO,
         },
@@ -125,6 +155,7 @@ describe('Vencimiento Entity', () => {
           tipoObligacion: TIPO_OBLIGACION.MONOTRIBUTO,
           periodo: '2025-06',
           fechaVencimiento: new Date('2025-06-20'),
+          fechaNominal: null,
           descripcion: 'Monotributo Junio',
           estado: ESTADO_VENCIMIENTO.PRESENTADO,
         },
@@ -148,6 +179,7 @@ describe('Vencimiento Entity', () => {
           tipoObligacion: TIPO_OBLIGACION.IVA,
           periodo: '2020-01',
           fechaVencimiento: new Date('2020-01-15'),
+          fechaNominal: null,
           descripcion: 'IVA',
           estado: ESTADO_VENCIMIENTO.PENDIENTE,
         },

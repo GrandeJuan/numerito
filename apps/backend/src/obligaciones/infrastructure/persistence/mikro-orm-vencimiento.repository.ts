@@ -149,6 +149,7 @@ export class MikroOrmVencimientoRepository
       existing.tipoObligacion = tipoObligacion;
       existing.periodo = data.periodo;
       existing.fechaVencimiento = data.fechaVencimiento;
+      existing.fechaNominal = data.fechaNominal;
       existing.descripcion = data.descripcion;
       existing.estado = estado;
     } else {
@@ -159,6 +160,7 @@ export class MikroOrmVencimientoRepository
         tipoObligacion,
         periodo: data.periodo,
         fechaVencimiento: data.fechaVencimiento,
+        fechaNominal: data.fechaNominal,
         descripcion: data.descripcion,
         estado,
         createdAt: new Date(),

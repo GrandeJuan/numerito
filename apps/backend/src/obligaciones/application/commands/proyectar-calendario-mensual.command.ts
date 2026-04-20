@@ -4,6 +4,7 @@ import type { VencimientoRepository } from '../../domain/repositories/vencimient
 import type { CatalogoObligacionRepository } from '../../domain/repositories/catalogo-obligacion.repository';
 import type { ClienteRepository } from '../../../clientes/domain/repositories/cliente.repository';
 import { ReglaVencimientoService } from '../../domain/services/regla-vencimiento.service';
+import { AjusteDiaHabilService } from '../../domain/services/ajuste-dia-habil.service';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 import { VencimientoProyectado } from '../../domain/events/vencimiento-proyectado.event';
 import {
@@ -29,6 +30,7 @@ export class ProyectarCalendarioMensualHandler {
     private readonly clienteRepo: ClienteRepository,
     private readonly catalogoRepo: CatalogoObligacionRepository,
     private readonly reglaService: ReglaVencimientoService,
+    private readonly ajusteService: AjusteDiaHabilService,
     private readonly eventBus: EventBus,
   ) {}
 
@@ -81,7 +83,7 @@ export class ProyectarCalendarioMensualHandler {
         }
 
         try {
-          const fechaVencimiento = await this.reglaService.calcularFechaConPerfil(
+          const fechaNominal = await this.reglaService.calcularFechaConPerfil(
             obligacion.tipoObligacion as TipoObligacion,
             {
               cuit: cliente.cuit.raw,
@@ -91,8 +93,14 @@ export class ProyectarCalendarioMensualHandler {
             command.periodo,
           );
 
+          // Adjust for weekends and holidays
+          const fechaAjustada = await this.ajusteService.ajustar(
+            fechaNominal,
+            inscripcion.jurisdiccion,
+          );
+
           // Skip past dates — can't create vencimientos in the past
-          const fechaDay = new Date(fechaVencimiento);
+          const fechaDay = new Date(fechaAjustada);
           fechaDay.setHours(0, 0, 0, 0);
           if (fechaDay < today) {
             omitidos++;
@@ -104,7 +112,8 @@ export class ProyectarCalendarioMensualHandler {
             estudioId: principal.estudioId,
             tipoObligacion: obligacion.tipoObligacion as TipoObligacion,
             periodo: command.periodo,
-            fechaVencimiento,
+            fechaVencimiento: fechaAjustada,
+            fechaNominal,
             descripcion: obligacion.nombre,
           });
 

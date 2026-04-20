@@ -18,7 +18,11 @@ import type { ClienteRepository } from '../clientes/domain/repositories/cliente.
 import { MikroOrmVencimientoRepository } from './infrastructure/persistence/mikro-orm-vencimiento.repository';
 import { MikroOrmCatalogoObligacionRepository } from './infrastructure/persistence/mikro-orm-catalogo-obligacion.repository';
 import { MikroOrmReglaVencimientoRepository } from './infrastructure/persistence/mikro-orm-regla-vencimiento.repository';
+import { MikroOrmFeriadoRepository } from './infrastructure/persistence/mikro-orm-feriado.repository';
 import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
+import { AjusteDiaHabilService } from './domain/services/ajuste-dia-habil.service';
+import { FERIADO_REPOSITORY } from './domain/repositories/feriado.repository';
+import type { FeriadoRepository } from './domain/repositories/feriado.repository';
 import { CrearVencimientoHandler } from './application/commands/crear-vencimiento.command';
 import { PresentarVencimientoHandler } from './application/commands/presentar-vencimiento.command';
 import { MarcarVencidoHandler } from './application/commands/marcar-vencido.command';
@@ -58,6 +62,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
     { provide: CATALOGO_OBLIGACION_REPOSITORY, useClass: MikroOrmCatalogoObligacionRepository },
     { provide: REGLA_VENCIMIENTO_ENTITY_REPOSITORY, useClass: MikroOrmReglaVencimientoRepository },
+    { provide: FERIADO_REPOSITORY, useClass: MikroOrmFeriadoRepository },
 
     // ── Domain services ──
     {
@@ -65,6 +70,13 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (entityRepo: ReglaVencimientoEntityRepository) =>
         new ReglaVencimientoService(entityRepo),
       inject: [REGLA_VENCIMIENTO_ENTITY_REPOSITORY],
+    },
+
+    {
+      provide: AjusteDiaHabilService,
+      useFactory: (feriadoRepo: FeriadoRepository) =>
+        new AjusteDiaHabilService(feriadoRepo),
+      inject: [FERIADO_REPOSITORY],
     },
 
     // ── Vencimiento commands ──
@@ -95,6 +107,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         clienteRepo: ClienteRepository,
         catalogoRepo: CatalogoObligacionRepository,
         reglaService: ReglaVencimientoService,
+        ajusteService: AjusteDiaHabilService,
         eventBus: EventBus,
       ) =>
         new ProyectarCalendarioMensualHandler(
@@ -102,6 +115,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
           clienteRepo,
           catalogoRepo,
           reglaService,
+          ajusteService,
           eventBus,
         ),
       inject: [
@@ -109,6 +123,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         CLIENTE_REPOSITORY,
         CATALOGO_OBLIGACION_REPOSITORY,
         ReglaVencimientoService,
+        AjusteDiaHabilService,
         EVENT_BUS,
       ],
     },
@@ -209,7 +224,9 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     VENCIMIENTO_REPOSITORY,
     CATALOGO_OBLIGACION_REPOSITORY,
     REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
+    FERIADO_REPOSITORY,
     ReglaVencimientoService,
+    AjusteDiaHabilService,
     VENCIMIENTOS_PROXIMOS_VIEW,
     VENCIMIENTOS_PENDIENTES_CLIENTE_VIEW,
     VENCIMIENTOS_POR_ESTADO_VIEW,

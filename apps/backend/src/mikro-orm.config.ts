@@ -49,6 +49,7 @@ import { VencimientoSchema } from './obligaciones/infrastructure/persistence/ven
 import { ReglaVencimientoSchema } from './obligaciones/infrastructure/persistence/regla-vencimiento.schema';
 import { AlertaConfigSchema } from './obligaciones/infrastructure/persistence/alerta-config.schema';
 import { CatalogoObligacionSchema } from './obligaciones/infrastructure/persistence/catalogo-obligacion.schema';
+import { DiaFeriadoSchema } from './obligaciones/infrastructure/persistence/dia-feriado.schema';
 
 // Contabilidad
 import { LibroContableSchema } from './contabilidad/infrastructure/persistence/libro-contable.schema';
@@ -125,6 +126,7 @@ export default defineConfig({
     ReglaVencimientoSchema,
     AlertaConfigSchema,
     CatalogoObligacionSchema,
+    DiaFeriadoSchema,
     // Contabilidad
     LibroContableSchema,
     AsientoContableSchema,

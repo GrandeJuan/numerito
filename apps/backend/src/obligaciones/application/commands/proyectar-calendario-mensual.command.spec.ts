@@ -62,6 +62,7 @@ describe('ProyectarCalendarioMensual Command', () => {
   let mockClienteRepo: any;
   let mockCatalogoRepo: any;
   let mockReglaService: any;
+  let mockAjusteService: any;
   let mockEventBus: EventBus;
 
   const periodo = nextMonth();
@@ -99,6 +100,9 @@ describe('ProyectarCalendarioMensual Command', () => {
       calcularFechaVencimiento: jest.fn(),
       validarSinConflicto: jest.fn(),
     };
+    mockAjusteService = {
+      ajustar: jest.fn().mockImplementation((fecha: Date) => Promise.resolve(fecha)),
+    };
     mockEventBus = {
       publish: jest.fn(),
       publishAll: jest.fn(),
@@ -108,6 +112,7 @@ describe('ProyectarCalendarioMensual Command', () => {
       mockClienteRepo,
       mockCatalogoRepo,
       mockReglaService,
+      mockAjusteService,
       mockEventBus,
     );
   });
@@ -224,6 +229,7 @@ describe('ProyectarCalendarioMensual Command', () => {
         tipoObligacion: TIPO_OBLIGACION.IVA,
         periodo,
         fechaVencimiento: makeFutureDate(20),
+        fechaNominal: null,
         descripcion: 'DDJJ IVA',
         estado: 'PENDIENTE',
       },
@@ -355,6 +361,35 @@ describe('ProyectarCalendarioMensual Command', () => {
     expect(result.errores).toHaveLength(1);
     expect(result.errores[0]).toContain('IVA');
     expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('should apply ajuste día hábil and store both fechaNominal and fechaAjustada', async () => {
+    const inscripciones = [
+      InscripcionJurisdiccion.create({
+        jurisdiccion: JURISDICCION.ARCA,
+        regimen: 'GENERAL',
+        activa: true,
+        desde: '2024-01-01',
+      }),
+    ];
+    const cliente = makeCliente(inscripciones);
+    mockClienteRepo.findById.mockResolvedValue(cliente);
+
+    const catalogo = makeCatalogo(TIPO_OBLIGACION.IVA, JURISDICCION.ARCA);
+    mockCatalogoRepo.findByJurisdiccion.mockResolvedValue([catalogo]);
+
+    const fechaNominal = makeFutureDate(20);
+    const fechaAjustada = makeFutureDate(22); // Adjusted (e.g., holiday on 20, weekend on 21)
+    mockReglaService.calcularFechaConPerfil.mockResolvedValue(fechaNominal);
+    mockAjusteService.ajustar.mockResolvedValue(fechaAjustada);
+
+    await handler.execute(principal, { clienteId: 'cliente-1', periodo });
+
+    expect(mockAjusteService.ajustar).toHaveBeenCalledWith(fechaNominal, JURISDICCION.ARCA);
+
+    const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1] as Vencimiento;
+    expect(savedVencimiento.fechaVencimiento).toEqual(fechaAjustada);
+    expect(savedVencimiento.fechaNominal).toEqual(fechaNominal);
   });
 
   it('should use estudioId from principal for created vencimientos', async () => {

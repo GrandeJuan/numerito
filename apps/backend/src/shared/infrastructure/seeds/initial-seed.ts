@@ -281,4 +281,28 @@ INSERT INTO configuracion_ingesta (id, fuente, habilitado, cadencia_dias, proxim
   ('d0000000-0000-0000-0000-000000000003', 'AGIP', false, 7, NULL, NULL, NULL, NOW(), NOW()),
   ('d0000000-0000-0000-0000-000000000004', 'BCRA_FERIADOS', false, 30, NULL, NULL, NULL, NOW(), NOW())
 ON CONFLICT (fuente) DO NOTHING;
+
+-- ============================================
+-- DIA FERIADO — Feriados nacionales Argentina 2026
+-- Source: Decreto 764/2024 + calendario oficial.
+-- Idempotent via unique constraint on (fecha, tipo, jurisdiccion_afectada).
+-- ============================================
+INSERT INTO dia_feriado (id, fecha, tipo, descripcion, jurisdiccion_afectada, created_at, updated_at) VALUES
+  (gen_random_uuid(), '2026-01-01', 'NACIONAL', 'Año Nuevo', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-02-16', 'NACIONAL', 'Carnaval', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-02-17', 'NACIONAL', 'Carnaval', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-03-24', 'NACIONAL', 'Día Nacional de la Memoria por la Verdad y la Justicia', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-04-02', 'NACIONAL', 'Día del Veterano y de los Caídos en la Guerra de Malvinas', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-04-03', 'NACIONAL', 'Viernes Santo', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-05-01', 'NACIONAL', 'Día del Trabajador', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-05-25', 'NACIONAL', 'Día de la Revolución de Mayo', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-06-15', 'NACIONAL', 'Paso a la Inmortalidad del Gral. Martín Miguel de Güemes', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-06-20', 'NACIONAL', 'Paso a la Inmortalidad del Gral. Manuel Belgrano', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-07-09', 'NACIONAL', 'Día de la Independencia', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-08-17', 'NACIONAL', 'Paso a la Inmortalidad del Gral. José de San Martín', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-10-12', 'NACIONAL', 'Día del Respeto a la Diversidad Cultural', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-11-23', 'NACIONAL', 'Día de la Soberanía Nacional', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-12-08', 'NACIONAL', 'Día de la Inmaculada Concepción de María', NULL, NOW(), NOW()),
+  (gen_random_uuid(), '2026-12-25', 'NACIONAL', 'Navidad', NULL, NOW(), NOW())
+ON CONFLICT ON CONSTRAINT uq_dia_feriado_fecha_tipo_jurisdiccion DO NOTHING;
 `;
