@@ -7,6 +7,16 @@ let mockEstudioActual: { id: string; nombre: string; rol: string } | null = {
   rol: 'SOCIO',
 };
 
+let mockSearchParamsValue = new URLSearchParams();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => '/vencimientos',
+  useSearchParams: () => mockSearchParamsValue,
+  useParams: () => ({}),
+  redirect: vi.fn(),
+  notFound: vi.fn(),
+}));
+
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
     get estudioActual() {
@@ -60,8 +70,9 @@ describe('VencimientosPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEstudioActual = { id: 'est-1', nombre: 'Estudio Test', rol: 'SOCIO' };
+    mockSearchParamsValue = new URLSearchParams();
     mockApiFetch = vi.fn().mockImplementation((path: string) => {
-      if (path === '/v1/vencimientos') {
+      if (path.startsWith('/v1/vencimientos')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: mockVencimientos, meta: { total: 2 } }),
@@ -133,7 +144,7 @@ describe('VencimientosPage', () => {
           json: () => Promise.resolve({ data: { id: 'v3' } }),
         });
       }
-      if (path === '/v1/vencimientos') {
+      if (path.startsWith('/v1/vencimientos')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: mockVencimientos, meta: { total: 2 } }),
@@ -189,5 +200,97 @@ describe('VencimientosPage', () => {
 
     const exportBtn = screen.getByText('Exportar');
     expect(exportBtn.closest('button')).not.toBeNull();
+  });
+
+  describe('drilldown filter params', () => {
+    it('calls API with responsableId and periodo when URL params present', async () => {
+      mockSearchParamsValue = new URLSearchParams({
+        responsableId: 'u-42',
+        periodo: '2026-03',
+        responsable: 'María García',
+      });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(mockApiFetch).toHaveBeenCalledWith(
+          '/v1/vencimientos?responsableId=u-42&periodo=2026-03',
+          expect.any(Object),
+        );
+      });
+    });
+
+    it('shows filter banner with responsable name pill', async () => {
+      mockSearchParamsValue = new URLSearchParams({
+        responsableId: 'u-42',
+        periodo: '2026-03',
+        responsable: 'María García',
+      });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(screen.getByText('Filtros activos:')).toBeInTheDocument();
+      });
+      expect(screen.getByText('María García')).toBeInTheDocument();
+    });
+
+    it('shows filter banner with periodo pill', async () => {
+      mockSearchParamsValue = new URLSearchParams({
+        responsableId: 'u-42',
+        periodo: '2026-03',
+        responsable: 'María García',
+      });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(screen.getByText('2026-03')).toBeInTheDocument();
+      });
+    });
+
+    it('shows Limpiar filtros link pointing to /vencimientos', async () => {
+      mockSearchParamsValue = new URLSearchParams({
+        responsableId: 'u-42',
+        periodo: '2026-03',
+      });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        const link = screen.getByText('Limpiar filtros');
+        expect(link).toBeInTheDocument();
+        expect(link.closest('a')).toHaveAttribute('href', '/vencimientos');
+      });
+    });
+
+    it('does not show filter banner when no URL params', async () => {
+      mockSearchParamsValue = new URLSearchParams();
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(screen.getByText('Vencimientos')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Filtros activos:')).not.toBeInTheDocument();
+    });
+
+    it('calls API with only responsableId when periodo is absent', async () => {
+      mockSearchParamsValue = new URLSearchParams({ responsableId: 'u-42' });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(mockApiFetch).toHaveBeenCalledWith(
+          '/v1/vencimientos?responsableId=u-42',
+          expect.any(Object),
+        );
+      });
+    });
+
+    it('calls API with only periodo when responsableId is absent', async () => {
+      mockSearchParamsValue = new URLSearchParams({ periodo: '2026-03' });
+
+      render(<VencimientosPage />);
+      await waitFor(() => {
+        expect(mockApiFetch).toHaveBeenCalledWith(
+          '/v1/vencimientos?periodo=2026-03',
+          expect.any(Object),
+        );
+      });
+    });
   });
 });
