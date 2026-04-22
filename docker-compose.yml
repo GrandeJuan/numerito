@@ -18,15 +18,16 @@ services:
     environment: *backend-env
     restart: "no"
 
-  # Build-only: produces the numerito-scraper image used by DockerTaskLauncher
-  # at runtime. Never started as a service (its own entrypoint runs once per
-  # launch). Opt-in with `--profile build-only` so regular `up` skips it.
+  # Builds the numerito-scraper image used by DockerTaskLauncher at runtime.
+  # Runs `true` and exits immediately — it is NOT a long-running service.
+  # The backend depends on it (service_completed_successfully) so that
+  # `docker compose up --build` guarantees the image exists before the
+  # backend accepts traffic.
   scraper-image:
     build:
       context: .
       dockerfile: infra/fargate-scraper/Dockerfile
     image: ${SCRAPER_IMAGE:-numerito-scraper:latest}
-    profiles: ["build-only"]
     command: ["true"]
 
   backend:
@@ -57,6 +58,8 @@ services:
       SCRAPER_BACKEND_URL: ${SCRAPER_BACKEND_URL:-http://host.docker.internal:${BACKEND_PORT:-5101}}
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      scraper-image:
         condition: service_completed_successfully
 
   frontend:

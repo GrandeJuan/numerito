@@ -37,6 +37,8 @@ export class DockerTaskLauncher implements FargateTaskLauncherPort {
   }
 
   async launch(fuente: FuenteIngesta, options: LaunchTaskOptions): Promise<LaunchTaskResult> {
+    await this.ensureImageExists();
+
     const env = [
       `BACKEND_URL=${this.config.backendUrl}`,
       `INGESTA_SECRET=${this.config.ingestaSecret}`,
@@ -68,6 +70,20 @@ export class DockerTaskLauncher implements FargateTaskLauncherPort {
       fuente,
       launchedAt: new Date().toISOString(),
     };
+  }
+
+  private async ensureImageExists(): Promise<void> {
+    try {
+      await this.docker.getImage(this.config.image).inspect();
+    } catch (err) {
+      if ((err as { statusCode?: number }).statusCode === 404) {
+        throw new Error(
+          `La imagen "${this.config.image}" no existe en el daemon Docker. ` +
+            `Ejecutá "docker compose build scraper-image" para construirla.`,
+        );
+      }
+      throw err;
+    }
   }
 
   private async pruneOldContainers(): Promise<void> {
