@@ -106,6 +106,7 @@ import { IamModule } from '../iam/iam.module';
             taskDefinitionArns: JSON.parse(taskDefArns),
             subnets: subnets.split(',').map((s) => s.trim()),
             securityGroups: securityGroups.split(',').map((s) => s.trim()),
+            logGroupName: process.env.SCRAPER_LOG_GROUP,
           });
         }
 

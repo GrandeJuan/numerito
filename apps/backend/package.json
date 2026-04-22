@@ -16,6 +16,7 @@
     "seed:dev": "npx ts-node -r tsconfig-paths/register src/shared/infrastructure/seeds/dev-seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.1033.0",
     "@aws-sdk/client-ecs": "^3.1033.0",
     "@aws-sdk/client-s3": "^3.1030.0",
     "@aws-sdk/client-ses": "^3.1030.0",

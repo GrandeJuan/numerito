@@ -138,7 +138,7 @@ export class IngestaEjecucionController {
         logs: '(esta ejecución no registró un task id — corrió antes de #logs)',
       });
     }
-    const logs = await this.taskLauncher.getLogs(ejecucion.launcherTaskId);
+    const logs = await this.taskLauncher.getLogs(ejecucion.launcherTaskId, ejecucion.fuente);
     return successResponse({ logs });
   }
 }

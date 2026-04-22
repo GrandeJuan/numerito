@@ -20,7 +20,7 @@ export interface LaunchTaskOptions {
 export interface FargateTaskLauncherPort {
   launch(fuente: FuenteIngesta, options: LaunchTaskOptions): Promise<LaunchTaskResult>;
   /** Retrieves recent stdout/stderr from a running or recently-completed task. */
-  getLogs(taskId: string): Promise<string>;
+  getLogs(taskId: string, fuente?: FuenteIngesta): Promise<string>;
 }
 
 export const FARGATE_TASK_LAUNCHER = Symbol('FargateTaskLauncher');
