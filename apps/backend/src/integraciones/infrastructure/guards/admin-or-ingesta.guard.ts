@@ -1,5 +1,13 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { ROL } from '@numerito/shared';
 import { IngestaWebhookGuard } from './ingesta-webhook.guard';
 
 /**
@@ -8,11 +16,17 @@ import { IngestaWebhookGuard } from './ingesta-webhook.guard';
  * Used on the POST /:fuente/resultado endpoint which is called by:
  * - Fargate tasks (x-ingesta-secret)
  * - Admin UI / manual tools (JWT Bearer token)
+ *
+ * This guard does JWT+admin validation inline instead of delegating to
+ * AdminGuard, because AdminGuard checks @Public() metadata — and the
+ * resultado endpoint IS marked @Public() (to bypass the global JwtAuthGuard).
+ * Delegating to AdminGuard would short-circuit and allow unauthenticated access.
  */
 @Injectable()
 export class AdminOrIngestaGuard implements CanActivate {
   constructor(
-    private readonly adminGuard: AdminGuard,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly webhookGuard: IngestaWebhookGuard,
   ) {}
 
@@ -26,7 +40,34 @@ export class AdminOrIngestaGuard implements CanActivate {
       return this.webhookGuard.canActivate(context);
     }
 
-    // Otherwise, require a valid admin JWT (manual UI trigger).
-    return this.adminGuard.canActivate(context);
+    // JWT admin path: validate token and check admin role directly.
+    // We intentionally skip the @Public() check that AdminGuard performs,
+    // because THIS guard is the auth layer for the @Public() route.
+    const token = this.extractTokenFromHeader(req);
+    if (!token) {
+      throw new UnauthorizedException('Token no proporcionado');
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      });
+      req.user = payload;
+    } catch {
+      throw new UnauthorizedException('Token inválido o expirado');
+    }
+
+    if (!req.user || req.user.rol !== ROL.SUPERADMIN) {
+      throw new ForbiddenException('Acceso restringido a superadministradores');
+    }
+
+    return true;
+  }
+
+  private extractTokenFromHeader(request: {
+    headers: { authorization?: string };
+  }): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }
