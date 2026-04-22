@@ -226,6 +226,19 @@ curl -X POST https://api.numerito.app/api/v1/admin/ingesta/ARCA/ejecutar-ahora \
 
 Replace `ARCA` with `ARBA`, `AGIP`, or `BCRA_FERIADOS` as needed.
 
+### Change scraping cadence (cadenciaDias)
+
+The superadmin can change `cadenciaDias` from the UI (Admin → Integraciones → Configuraciones).
+This updates the database but does **NOT** update the EventBridge schedule automatically.
+
+**To sync the schedule:**
+1. Update `cadencia_dias` in `terraform.tfvars` for the target fuente
+2. Run `terraform plan` to verify only the schedule expression changes
+3. Run `terraform apply`
+
+See [README.md — Syncing cadenciaDias Changes](./README.md#syncing-cadenciadias-changes-from-the-ui)
+for the full procedure and rationale.
+
 ### Disable a scraper temporarily
 
 **Via UI:** Admin → Integraciones → Configuraciones → toggle "Habilitado"
