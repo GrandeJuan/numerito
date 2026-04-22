@@ -1,0 +1,22 @@
+# Normalize line endings to LF on commit
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.xlsx binary
+*.docx binary
+
+# Shell scripts must use LF
+*.sh text eol=lf
+
+# Lock files
+pnpm-lock.yaml -diff
