@@ -35,7 +35,7 @@ jest.mock('pdfkit', () => {
       // Reset y for each new instance
       mockDocInstance.y = 50;
       // Wire up on/end to emit data+end events synchronously on end()
-      const listeners: Record<string, (...args: unknown[]) => void[]> = {};
+      const listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
       mockDocInstance.on.mockImplementation((event: string, cb: (...args: unknown[]) => void) => {
         listeners[event] = listeners[event] || [];
         listeners[event].push(cb);
@@ -269,7 +269,7 @@ describe('PdfKitCalendarioPdfGenerator', () => {
   it('should propagate pdfkit errors', async () => {
     // Override end to emit error
     mockDocInstance.end.mockImplementationOnce(() => {
-      const listeners: Record<string, (...args: unknown[]) => void[]> = {};
+      const listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
       // Re-wire to capture the actual listeners from `on` calls
       const onCalls = mockDocInstance.on.mock.calls;
       for (const [event, cb] of onCalls) {

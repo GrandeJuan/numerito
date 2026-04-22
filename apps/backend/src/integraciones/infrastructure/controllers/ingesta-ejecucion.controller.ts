@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { AdminOrIngestaGuard } from '../guards/admin-or-ingesta.guard';
@@ -45,6 +56,7 @@ export class IngestaEjecucionController {
   ) {}
 
   @Post(':fuente/resultado')
+  @HttpCode(HttpStatus.OK)
   // @Public() bypasses the global JwtAuthGuard so the `x-ingesta-secret` path
   // in AdminOrIngestaGuard gets a chance to run. The route still requires auth:
   // AdminOrIngestaGuard enforces either the shared secret (scraper container)
