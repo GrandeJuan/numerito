@@ -11,7 +11,8 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "smoke:scrapers": "npx tsx scripts/smoke-scrapers.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
