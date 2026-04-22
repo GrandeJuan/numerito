@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { AdminSearchHandler } from '../../application/queries/admin-search.query';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 

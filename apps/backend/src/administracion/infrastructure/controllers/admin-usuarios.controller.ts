@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Rol } from '@numerito/shared';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { ObtenerAdminUsuariosHandler } from '../../application/queries/obtener-admin-usuarios.query';
-import { InvitarUsuarioAdminHandler } from '../../application/commands/invitar-usuario-admin.command';
+import { InvitarUsuarioAdminHandler } from '../../../iam/application/public-commands';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 
 @ApiTags('Admin — Usuarios')

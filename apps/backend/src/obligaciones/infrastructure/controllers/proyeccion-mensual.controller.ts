@@ -1,6 +1,6 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { ProyeccionMensualScheduler } from '../../application/commands/proyeccion-mensual-scheduler.command';
 
@@ -8,9 +8,7 @@ import { ProyeccionMensualScheduler } from '../../application/commands/proyeccio
 @Controller({ path: 'admin/proyeccion-mensual', version: '1' })
 @UseGuards(AdminGuard)
 export class ProyeccionMensualController {
-  constructor(
-    private readonly scheduler: ProyeccionMensualScheduler,
-  ) {}
+  constructor(private readonly scheduler: ProyeccionMensualScheduler) {}
 
   @Post('ejecutar')
   @ApiOperation({

@@ -3,11 +3,23 @@ import type { SugerenciaProrroga, EstadoSugerencia } from '../entities/sugerenci
 
 export interface SugerenciaProrrogaRepository {
   findById(principal: EstudioPrincipal, id: string): Promise<SugerenciaProrroga | null>;
-  findByVencimientoId(principal: EstudioPrincipal, vencimientoId: string): Promise<SugerenciaProrroga[]>;
-  findByEstado(principal: EstudioPrincipal, estado: EstadoSugerencia): Promise<SugerenciaProrroga[]>;
+  findByVencimientoId(
+    principal: EstudioPrincipal,
+    vencimientoId: string,
+  ): Promise<SugerenciaProrroga[]>;
+  findByEstado(
+    principal: EstudioPrincipal,
+    estado: EstadoSugerencia,
+  ): Promise<SugerenciaProrroga[]>;
   findAbiertas(principal: EstudioPrincipal): Promise<SugerenciaProrroga[]>;
   save(principal: EstudioPrincipal, entity: SugerenciaProrroga): Promise<void>;
   delete(principal: EstudioPrincipal, entity: SugerenciaProrroga): Promise<void>;
+  /**
+   * Cross-tenant batch insert used by global detection jobs triggered from
+   * ingesta results. The calling handler does not own a single principal since
+   * suggestions span every tenant affected by a rule change.
+   */
+  saveManyGlobal(entities: SugerenciaProrroga[]): Promise<void>;
 }
 
 export const SUGERENCIA_PRORROGA_REPOSITORY = Symbol('SugerenciaProrrogaRepository');

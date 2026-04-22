@@ -103,6 +103,30 @@ export class MikroOrmSugerenciaProrrogaRepository
     await this.em.flush();
   }
 
+  async saveManyGlobal(sugerencias: SugerenciaProrroga[]): Promise<void> {
+    if (sugerencias.length === 0) return;
+    for (const sugerencia of sugerencias) {
+      const data = this.mapper.toPersistence(sugerencia);
+      this.em.create(SugerenciaProrrogaEntity, {
+        id: data.id,
+        vencimiento: this.em.getReference(VencimientoEntity, data.vencimientoId),
+        estudio: this.em.getReference(EstudioEntity, data.estudioId),
+        clienteId: data.clienteId,
+        tipoObligacion: data.tipoObligacion,
+        periodo: data.periodo,
+        fechaOriginal: data.fechaOriginal,
+        fechaSugerida: data.fechaSugerida,
+        motivo: data.motivo,
+        estado: data.estado,
+        reglaActivaId: data.reglaActivaId,
+        ejecucionIngestaId: data.ejecucionIngestaId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+    await this.em.flush();
+  }
+
   async delete(principal: EstudioPrincipal, sugerencia: SugerenciaProrroga): Promise<void> {
     const entity = await this.em.findOne(SugerenciaProrrogaEntity, {
       id: sugerencia.id,
@@ -113,5 +137,4 @@ export class MikroOrmSugerenciaProrrogaRepository
       await this.em.flush();
     }
   }
-
 }

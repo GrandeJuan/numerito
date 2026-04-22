@@ -1,18 +1,24 @@
 /**
  * ScraperCalendarioARCA — Playwright-based scraper for ARCA vencimientos.
  *
- * Navigates to seti.afip.gob.ar/av/seleccionVencimientos.do, selects the
- * target period, and parses the resulting vencimientos table.
+ * Real flow:
+ *   1. GET https://seti.afip.gob.ar/av/seleccionVencimientos.do
+ *      (sets a JSESSIONID cookie; form action embeds it)
+ *   2. Fill form inputs:
+ *        fechaVDesde, fechaVHasta (dd/mm/yyyy, first/last day of target month)
+ *        terminacionCuit = "Todos"
+ *        impuestosSeleccionados = "999" (TODOS) — injected into the multi-select
+ *   3. Submit the form and wait for navigation to /av/viewVencimientos.do
+ *   4. Capture HTML and hand it to arca-html-parser
  *
  * Designed to run in a Fargate task with Playwright + Chromium.
  * The result is POSTed to /v1/admin/ingesta/ARCA/resultado.
- *
- * Architecture:
- * - Browser automation: this file (Playwright)
- * - HTML parsing: arca-html-parser.ts (pure, independently testable)
  */
 
-import type { CalendarioScraperPort, ResultadoScraping } from '../../domain/ports/calendario-scraper.port';
+import type {
+  CalendarioScraperPort,
+  ResultadoScraping,
+} from '../../domain/ports/calendario-scraper.port';
 import type { FuenteIngesta } from '../../domain/entities/configuracion-ingesta.entity';
 import { parseArcaVencimientosHtml } from './arca-html-parser';
 
@@ -27,9 +33,11 @@ interface Page {
   setDefaultTimeout(ms: number): void;
   goto(url: string, opts?: Record<string, unknown>): Promise<unknown>;
   content(): Promise<string>;
-  locator(selector: string): { count(): Promise<number>; selectOption(value: string): Promise<void> };
+  fill(selector: string, value: string): Promise<void>;
+  selectOption(selector: string, value: string | string[]): Promise<void>;
+  evaluate<T = unknown>(fn: string | ((...args: unknown[]) => T), arg?: unknown): Promise<T>;
   waitForLoadState(state?: string): Promise<void>;
-  selectOption?(selector: string, value: string): Promise<void>;
+  waitForURL?(url: string | RegExp, opts?: Record<string, unknown>): Promise<void>;
 }
 
 export interface ScraperCalendarioARCAConfig {
@@ -38,6 +46,14 @@ export interface ScraperCalendarioARCAConfig {
 }
 
 type BrowserFactory = () => Promise<Browser>;
+
+function lastDayOfMonth(anio: number, mes: number): number {
+  return new Date(anio, mes, 0).getDate();
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
 
 export class ScraperCalendarioARCA implements CalendarioScraperPort {
   private readonly browserFactory: BrowserFactory;
@@ -51,17 +67,14 @@ export class ScraperCalendarioARCA implements CalendarioScraperPort {
     };
   }
 
-  /**
-   * Default factory that launches Playwright Chromium.
-   * Used in production (Fargate); tests inject a mock factory.
-   */
   static defaultBrowserFactory(): BrowserFactory {
     return async () => {
       const { chromium } = await import('playwright');
-      return chromium.launch({
+      const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
+      return browser as unknown as Browser;
     };
   }
 
@@ -76,16 +89,15 @@ export class ScraperCalendarioARCA implements CalendarioScraperPort {
     }
 
     const now = new Date();
-    let mes = now.getMonth() + 1;
-    let anio = now.getFullYear();
+    const mesActual = now.getMonth() + 1;
+    const anioActual = now.getFullYear();
 
-    // Collect reglas across multiple months if configured
-    const allReglas: Map<string, ResultadoScraping['reglas'][number]> = new Map();
+    const allReglas = new Map<string, ResultadoScraping['reglas'][number]>();
     const allErrores: string[] = [];
 
     for (let offset = 0; offset <= this.config.mesesAdelante; offset++) {
-      let targetMes = mes + offset;
-      let targetAnio = anio;
+      let targetMes = mesActual + offset;
+      let targetAnio = anioActual;
       if (targetMes > 12) {
         targetMes -= 12;
         targetAnio += 1;
@@ -95,21 +107,43 @@ export class ScraperCalendarioARCA implements CalendarioScraperPort {
       try {
         browser = await this.browserFactory();
         const page = await browser.newPage();
+        page.setDefaultTimeout(45_000);
 
-        page.setDefaultTimeout(30_000);
         await page.goto(ARCA_URL, { waitUntil: 'networkidle' });
 
-        // Select period if selector exists
-        const periodoLocator = page.locator('select[name="periodo"], #periodo');
-        if (await periodoLocator.count() > 0) {
-          const mesStr = String(targetMes).padStart(2, '0');
-          await periodoLocator.selectOption(`${targetAnio}${mesStr}`).catch(() => {});
-        }
+        const desde = `01/${pad2(targetMes)}/${targetAnio}`;
+        const hasta = `${pad2(lastDayOfMonth(targetAnio, targetMes))}/${pad2(targetMes)}/${targetAnio}`;
 
+        await page.fill('input[name="fechaVDesde"]', desde);
+        await page.fill('input[name="fechaVHasta"]', hasta);
+        await page.selectOption('select[name="terminacionCuit"]', 'Todos');
+
+        // The real page expects impuestosSeleccionados (the right-side multi-select)
+        // to carry the chosen codes before submit. "999" = TODOS. We inject the
+        // option and submit via JS — bypasses the move() helper and the Buscar
+        // button (which has quirky inline onclick).
+        await page.evaluate(`
+          (() => {
+            const form = document.forms['consultaVencimientoForm'];
+            if (!form) return;
+            const sel = form.elements['impuestosSeleccionados'];
+            if (sel) {
+              const opt = document.createElement('option');
+              opt.value = '999';
+              opt.text = 'TODOS';
+              opt.selected = true;
+              sel.appendChild(opt);
+            }
+            form.submit();
+          })();
+        `);
+
+        if (page.waitForURL) {
+          await page.waitForURL(/viewVencimientos\.do/, { timeout: 45_000 }).catch(() => {});
+        }
         await page.waitForLoadState('networkidle');
 
         const html = await page.content();
-
         const parseResult = parseArcaVencimientosHtml(
           html,
           targetMes,
@@ -117,7 +151,6 @@ export class ScraperCalendarioARCA implements CalendarioScraperPort {
           this.config.vigenciaDesde,
         );
 
-        // Deduplicate by natural key — last month wins
         for (const regla of parseResult.reglas) {
           const key = `${regla.tipoObligacion}|${regla.jurisdiccion}|${regla.regimen}|${regla.terminacionCuit}`;
           allReglas.set(key, regla);
@@ -126,13 +159,14 @@ export class ScraperCalendarioARCA implements CalendarioScraperPort {
         allErrores.push(...parseResult.errores);
 
         if (parseResult.conceptosIgnorados.length > 0) {
+          const unique = Array.from(new Set(parseResult.conceptosIgnorados));
           allErrores.push(
-            `Conceptos no reconocidos (${parseResult.conceptosIgnorados.length}): ${parseResult.conceptosIgnorados.join(', ')}`,
+            `Conceptos sin mapeo a TipoObligacion (${unique.length}): ${unique.join(', ')}`,
           );
         }
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        allErrores.push(`Error al scrapear ARCA (${targetAnio}-${String(targetMes).padStart(2, '0')}): ${msg}`);
+        allErrores.push(`Error al scrapear ARCA (${targetAnio}-${pad2(targetMes)}): ${msg}`);
       } finally {
         if (browser) {
           await browser.close();

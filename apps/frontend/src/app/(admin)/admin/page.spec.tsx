@@ -133,8 +133,11 @@ describe('AdminDashboardPage', () => {
       expect(screen.getByText('Studio Beta')).toBeInTheDocument();
     });
 
-    // Click "Trial" chip
-    const trialChip = screen.getByText('Trial');
+    // Click "Trial" chip (there are multiple "Trial" texts — pick the clickable button/chip)
+    const trialChips = screen.getAllByText('Trial');
+    const trialChip =
+      trialChips.find((el) => el.tagName === 'BUTTON' || el.closest('button') !== null) ??
+      trialChips[0];
     fireEvent.click(trialChip);
 
     await waitFor(() => {

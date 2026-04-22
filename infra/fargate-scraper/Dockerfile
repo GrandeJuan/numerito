@@ -1,10 +1,36 @@
-# Fargate task image for ARCA calendar scraping.
-# Runs the standalone scraper-entrypoint.ts with Playwright + Chromium.
-#
-# Build from repo root:
-#   docker build -f infra/fargate-scraper/Dockerfile -t numerito-scraper .
+# Fargate task image for calendar scraping (ARCA / ARBA / AGIP / BCRA).
+# Shares the same build pipeline as apps/backend/Dockerfile; differs only in
+# the runtime layer, which adds Playwright + Chromium and a scraper entrypoint.
 
-FROM node:20-slim AS base
+# ---- Base ----
+FROM node:22-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+# ---- Dependencies ----
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/backend/package.json apps/backend/
+COPY packages/shared/package.json packages/shared/
+RUN pnpm install --frozen-lockfile
+
+# ---- Build ----
+FROM deps AS build
+COPY packages/shared/src/ packages/shared/src/
+COPY packages/shared/tsconfig.json packages/shared/
+RUN pnpm --filter @numerito/shared run build
+COPY apps/backend/src/ apps/backend/src/
+COPY apps/backend/tsconfig.json apps/backend/tsconfig.build.json apps/backend/nest-cli.json apps/backend/
+RUN pnpm --filter @numerito/backend run build
+
+# ---- Playwright browsers (cached layer, isolated OS deps) ----
+FROM node:22-slim AS playwright-browsers
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/*
+RUN npx -y playwright@1.59.1 install chromium --with-deps
+
+# ---- Runtime ----
+# Debian slim because Chromium's runtime libs are non-trivial on Alpine.
+FROM node:22-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates fonts-liberation libglib2.0-0 libnss3 libnspr4 \
     libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libdbus-1-3 \
@@ -13,47 +39,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 libasound2 && \
     rm -rf /var/lib/apt/lists/*
 
+ENV NODE_ENV=production
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 WORKDIR /app
 
-# ── Install dependencies ──
-FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/backend/package.json apps/backend/
-COPY packages/shared/package.json packages/shared/
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+COPY pnpm-workspace.yaml package.json ./
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=build /app/apps/backend/dist ./apps/backend/dist
+COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=build /app/packages/shared/dist ./packages/shared/dist
+COPY --from=build /app/packages/shared/package.json ./packages/shared/package.json
+COPY --from=playwright-browsers /root/.cache/ms-playwright /ms-playwright
 
-# ── Build shared package ──
-FROM deps AS shared-build
-COPY packages/shared packages/shared
-RUN cd packages/shared && npm run build
+WORKDIR /app/apps/backend
 
-# ── Build backend (includes scraper entry point) ──
-FROM deps AS backend-build
-COPY --from=shared-build /app/packages/shared/dist packages/shared/dist
-COPY apps/backend apps/backend
-RUN cd apps/backend && npx nest build
-
-# ── Install Playwright browsers ──
-FROM base AS playwright
-RUN npm install playwright@latest && npx playwright install chromium
-
-# ── Final image ──
-FROM base AS runtime
-WORKDIR /app
-
-COPY --from=backend-build /app/apps/backend/dist ./dist
-COPY --from=backend-build /app/node_modules ./node_modules
-COPY --from=backend-build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=playwright /root/.cache/ms-playwright /root/.cache/ms-playwright
-
-# Playwright needs to find its browsers
-ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
-
-# Required env vars (set via ECS task definition):
-#   BACKEND_URL       — e.g. https://api.numerito.app
+# Required env vars:
+#   BACKEND_URL       — e.g. https://api.numerito.app or http://host.docker.internal:5101
 #   INGESTA_SECRET    — shared secret for webhook auth
-#   FUENTE            — ARCA (default)
+#   FUENTE            — ARCA | ARBA | AGIP | BCRA_FERIADOS
 #   MESES_ADELANTE    — 0 (default)
-#   DISPARADOR        — SCHEDULE (default)
-
-ENTRYPOINT ["node", "dist/integraciones/infrastructure/fargate/scraper-entrypoint.js"]
+#   DISPARADOR        — MANUAL | SCHEDULE (default SCHEDULE)
+ENTRYPOINT ["node", "--experimental-require-module", "dist/integraciones/infrastructure/fargate/scraper-entrypoint"]

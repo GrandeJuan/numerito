@@ -1,7 +1,4 @@
-import {
-  AsignarResponsablePorObligacionHandler,
-  type AsignarResponsablePorObligacionCommand,
-} from './asignar-responsable-por-obligacion.command';
+import { AsignarResponsablePorObligacionHandler } from './asignar-responsable-por-obligacion.command';
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';

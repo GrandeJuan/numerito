@@ -2,7 +2,11 @@ import { EjecutarIngestaManualHandler } from './ejecutar-ingesta-manual.command'
 import { ConfiguracionIngesta } from '../../domain/entities/configuracion-ingesta.entity';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { ConfiguracionIngestaRepository } from '../../domain/repositories/configuracion-ingesta.repository';
-import type { CalendarioScraperPort, ResultadoScraping } from '../../domain/ports/calendario-scraper.port';
+import type { EjecucionIngestaRepository } from '../../domain/repositories/ejecucion-ingesta.repository';
+import type {
+  CalendarioScraperPort,
+  ResultadoScraping,
+} from '../../domain/ports/calendario-scraper.port';
 import type { FargateTaskLauncherPort } from '../../domain/ports/fargate-task-launcher.port';
 import type { ProcesarResultadoScrapingHandler } from './procesar-resultado-scraping.command';
 
@@ -18,6 +22,17 @@ function buildConfigRepo(config: ConfiguracionIngesta | null = buildConfig()) {
     save: jest.fn(),
     delete: jest.fn(),
   } as unknown as jest.Mocked<ConfiguracionIngestaRepository>;
+}
+
+function buildEjecucionRepo(): jest.Mocked<EjecucionIngestaRepository> {
+  return {
+    findById: jest.fn(),
+    findByIngestaId: jest.fn().mockResolvedValue(null),
+    findByFuente: jest.fn(),
+    findEnCursoByFuente: jest.fn().mockResolvedValue(null),
+    findAll: jest.fn(),
+    save: jest.fn().mockResolvedValue(undefined),
+  };
 }
 
 function buildProcesarHandler() {
@@ -60,6 +75,7 @@ function buildTaskLauncher(): jest.Mocked<FargateTaskLauncherPort> {
       fuente: 'ARCA',
       launchedAt: '2026-04-20T10:00:00Z',
     }),
+    getLogs: jest.fn().mockResolvedValue(''),
   };
 }
 
@@ -67,14 +83,15 @@ describe('EjecutarIngestaManualHandler', () => {
   it('should throw RecursoNoEncontradoError if config not found', async () => {
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(null),
+      buildEjecucionRepo(),
       buildProcesarHandler(),
       null,
       null,
     );
 
-    await expect(
-      handler.execute({ fuente: 'ARCA', disparadoPor: 'admin' }),
-    ).rejects.toThrow(RecursoNoEncontradoError);
+    await expect(handler.execute({ fuente: 'ARCA', disparadoPor: 'admin' })).rejects.toThrow(
+      RecursoNoEncontradoError,
+    );
   });
 
   it('should run synchronously when scraperPort is available', async () => {
@@ -82,6 +99,7 @@ describe('EjecutarIngestaManualHandler', () => {
     const procesar = buildProcesarHandler();
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(),
+      buildEjecucionRepo(),
       procesar,
       scraper,
       null,
@@ -102,6 +120,7 @@ describe('EjecutarIngestaManualHandler', () => {
     const launcher = buildTaskLauncher();
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(),
+      buildEjecucionRepo(),
       buildProcesarHandler(),
       scraper,
       launcher,
@@ -118,6 +137,7 @@ describe('EjecutarIngestaManualHandler', () => {
     const launcher = buildTaskLauncher();
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(),
+      buildEjecucionRepo(),
       buildProcesarHandler(),
       null,
       launcher,
@@ -128,28 +148,31 @@ describe('EjecutarIngestaManualHandler', () => {
     expect(result.mode).toBe('async');
     expect(result.fuente).toBe('ARCA');
     expect(result.taskArn).toBe('arn:aws:ecs:us-east-1:123:task/abc-def');
-    expect(launcher.launch).toHaveBeenCalledWith('ARCA', 'admin');
+    expect(launcher.launch).toHaveBeenCalledWith(
+      'ARCA',
+      expect.objectContaining({ disparadoPor: 'admin' }),
+    );
   });
 
-  it('should return async mode with no taskArn when neither port nor launcher available', async () => {
+  it('should throw when neither scraperPort nor launcher is available', async () => {
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(),
+      buildEjecucionRepo(),
       buildProcesarHandler(),
       null,
       null,
     );
 
-    const result = await handler.execute({ fuente: 'ARCA', disparadoPor: 'admin' });
-
-    expect(result.mode).toBe('async');
-    expect(result.fuente).toBe('ARCA');
-    expect(result.taskArn).toBeUndefined();
+    await expect(handler.execute({ fuente: 'ARCA', disparadoPor: 'admin' })).rejects.toThrow(
+      /scraper ni task launcher/,
+    );
   });
 
   it('should pass disparador=MANUAL to procesar handler in sync mode', async () => {
     const procesar = buildProcesarHandler();
     const handler = new EjecutarIngestaManualHandler(
       buildConfigRepo(),
+      buildEjecucionRepo(),
       procesar,
       buildScraperPort(),
       null,
@@ -160,5 +183,29 @@ describe('EjecutarIngestaManualHandler', () => {
     const call = procesar.execute.mock.calls[0][0];
     expect(call.disparador).toBe('MANUAL');
     expect(call.disparadoPor).toBe('user-123');
+  });
+
+  it('should adopt an EN_CURSO ejecucion instead of launching a duplicate', async () => {
+    const launcher = buildTaskLauncher();
+    const ejecucionRepo = buildEjecucionRepo();
+    const existing = {
+      id: 'existing-ej-id',
+    } as any;
+    ejecucionRepo.findEnCursoByFuente.mockResolvedValue(existing);
+
+    const handler = new EjecutarIngestaManualHandler(
+      buildConfigRepo(),
+      ejecucionRepo,
+      buildProcesarHandler(),
+      null,
+      launcher,
+    );
+
+    const result = await handler.execute({ fuente: 'ARCA', disparadoPor: 'admin' });
+
+    expect(result.mode).toBe('async');
+    expect(result.ejecucionId).toBe('existing-ej-id');
+    expect(result.alreadyRunning).toBe(true);
+    expect(launcher.launch).not.toHaveBeenCalled();
   });
 });

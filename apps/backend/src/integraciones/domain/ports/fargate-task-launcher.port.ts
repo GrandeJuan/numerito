@@ -11,8 +11,16 @@ export interface LaunchTaskResult {
   launchedAt: string; // ISO datetime
 }
 
+export interface LaunchTaskOptions {
+  /** Correlation id for the ejecucion_ingesta record already created in EN_CURSO state. */
+  ejecucionId: string;
+  disparadoPor: string;
+}
+
 export interface FargateTaskLauncherPort {
-  launch(fuente: FuenteIngesta, disparadoPor: string): Promise<LaunchTaskResult>;
+  launch(fuente: FuenteIngesta, options: LaunchTaskOptions): Promise<LaunchTaskResult>;
+  /** Retrieves recent stdout/stderr from a running or recently-completed task. */
+  getLogs(taskId: string): Promise<string>;
 }
 
 export const FARGATE_TASK_LAUNCHER = Symbol('FargateTaskLauncher');

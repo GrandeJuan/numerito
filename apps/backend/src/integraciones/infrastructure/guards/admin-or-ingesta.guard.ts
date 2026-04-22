@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { IngestaWebhookGuard } from './ingesta-webhook.guard';
 
 /**
@@ -17,15 +17,16 @@ export class AdminOrIngestaGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Try webhook secret first (Fargate tasks)
-    try {
-      const webhookResult = this.webhookGuard.canActivate(context);
-      if (webhookResult) return true;
-    } catch {
-      // Webhook auth failed — fall through to JWT
+    const req = context.switchToHttp().getRequest();
+    const hasSecretHeader = !!req.headers['x-ingesta-secret'];
+
+    // If the caller sent a shared secret, that's the path they want (scraper
+    // container). A bad secret is a hard 401 — don't fall through to JWT.
+    if (hasSecretHeader) {
+      return this.webhookGuard.canActivate(context);
     }
 
-    // Try JWT admin auth (human users)
+    // Otherwise, require a valid admin JWT (manual UI trigger).
     return this.adminGuard.canActivate(context);
   }
 }

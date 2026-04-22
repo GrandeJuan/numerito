@@ -22,7 +22,7 @@ function exportClientesCsv(clientes: Cliente[]) {
   const rows: string[] = ['Razón Social,CUIT,Tipo,Condición IVA,Responsable,Activo'];
   for (const c of clientes) {
     rows.push(
-      `"${c.razonSocial}","${c.cuit}","${c.tipo}","${c.condicionIva}","${c.responsable ?? ''}",${c.isActive !== false ? 'Sí' : 'No'}`,
+      `"${c.razonSocial}","${c.cuit}","${c.tipo}","${c.condicionIva}","${c.responsable ?? ''}",${c.estado !== 'INACTIVO' ? 'Sí' : 'No'}`,
     );
   }
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });

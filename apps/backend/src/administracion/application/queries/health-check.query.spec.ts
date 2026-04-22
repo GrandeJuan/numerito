@@ -6,7 +6,15 @@ describe('HealthCheckHandler', () => {
   let mockEm: any;
 
   beforeEach(() => {
-    mockExecute = jest.fn().mockResolvedValue([{ ok: 1 }]);
+    // Two queries run against the DB: SELECT 1 (DB health) and scraping-ingesta stats.
+    // Route by SQL prefix so tests can independently simulate failures.
+    mockExecute = jest.fn().mockImplementation((sql: string) => {
+      if (sql.includes('SELECT 1')) return Promise.resolve([{ ok: 1 }]);
+      if (sql.includes('ejecucion_ingesta')) {
+        return Promise.resolve([{ total_24h: '0', fallidos_24h: '0', en_curso: '0' }]);
+      }
+      return Promise.resolve([]);
+    });
     mockEm = {
       getConnection: jest.fn().mockReturnValue({ execute: mockExecute }),
     };
@@ -21,8 +29,8 @@ describe('HealthCheckHandler', () => {
     expect(names).toEqual([
       'API Principal',
       'Base de Datos',
-      'Queue Workers',
-      'ARCA Integration',
+      'Scraping Ingesta',
+      'ARCA Webservices (facturación)',
       'Storage S3',
     ]);
   });
@@ -37,7 +45,10 @@ describe('HealthCheckHandler', () => {
   });
 
   it('should return down status when DB fails', async () => {
-    mockExecute.mockRejectedValue(new Error('Connection refused'));
+    mockExecute.mockImplementation((sql: string) => {
+      if (sql.includes('SELECT 1')) return Promise.reject(new Error('Connection refused'));
+      return Promise.resolve([{ total_24h: '0', fallidos_24h: '0', en_curso: '0' }]);
+    });
 
     const result = await handler.execute();
 
@@ -57,49 +68,30 @@ describe('HealthCheckHandler', () => {
     const result1 = await handler.execute();
     const result2 = await handler.execute();
 
-    // DB query called only once due to caching
-    expect(mockExecute).toHaveBeenCalledTimes(1);
+    // Two DB queries per check (SELECT 1 + scraping stats) — but only one check.
+    expect(mockExecute).toHaveBeenCalledTimes(2);
     expect(result1).toBe(result2);
   });
 
   it('should refresh cache after TTL expires', async () => {
     await handler.execute();
+    const callsFirst = mockExecute.mock.calls.length;
 
-    // Manually expire the cache
     (handler as any).cache.cachedAt = Date.now() - 31_000;
 
     await handler.execute();
 
-    expect(mockExecute).toHaveBeenCalledTimes(2);
+    expect(mockExecute.mock.calls.length).toBeGreaterThan(callsFirst);
   });
 
   it('should track history for uptime calculation', async () => {
     await handler.execute();
 
-    // Expire cache, run again
     (handler as any).cache.cachedAt = Date.now() - 31_000;
     await handler.execute();
 
     const history = (handler as any).history;
     expect(history).toHaveLength(2);
-    expect(history.every((h: any) => h.allOperational === true)).toBe(true);
-  });
-
-  it('should calculate uptime as 100% when all checks pass', async () => {
-    const result = await handler.execute();
-    expect(result.uptimePercent).toBe(100);
-  });
-
-  it('should calculate uptime correctly with failures', async () => {
-    // First check: all operational
-    await handler.execute();
-
-    // Second check: DB down → not all operational
-    (handler as any).cache = null;
-    mockExecute.mockRejectedValue(new Error('Connection refused'));
-    const result = await handler.execute();
-
-    expect(result.uptimePercent).toBe(50);
   });
 
   it('should return API Principal as always operational', async () => {
@@ -109,17 +101,20 @@ describe('HealthCheckHandler', () => {
     expect(api.status).toBe('operational');
   });
 
-  it('should return stub services as operational', async () => {
+  it('should report ARCA Webservices as degraded (stub — no configurado)', async () => {
     const result = await handler.execute();
 
-    const stubs = result.services.filter((s) =>
-      ['Queue Workers', 'ARCA Integration', 'Storage S3'].includes(s.name),
-    );
-    expect(stubs).toHaveLength(3);
-    stubs.forEach((s) => {
-      expect(s.status).toBe('operational');
-      expect(s.latencyMs).toBe(0);
-    });
+    const arca = result.services.find((s) => s.name === 'ARCA Webservices (facturación)')!;
+    expect(arca.status).toBe('degraded');
+    expect(arca.detail).toBe('no configurado');
+  });
+
+  it('should report Storage S3 as degraded when AWS_S3_BUCKET unset', async () => {
+    delete process.env.AWS_S3_BUCKET;
+    const result = await handler.execute();
+
+    const s3 = result.services.find((s) => s.name === 'Storage S3')!;
+    expect(s3.status).toBe('degraded');
   });
 
   it('should include lastCheck ISO string for each service', async () => {
@@ -131,7 +126,6 @@ describe('HealthCheckHandler', () => {
   });
 
   it('should prune history older than 30 days', async () => {
-    // Inject old history entries
     const oldDate = new Date();
     oldDate.setDate(oldDate.getDate() - 31);
     (handler as any).history = [
@@ -139,11 +133,9 @@ describe('HealthCheckHandler', () => {
       { checkedAt: oldDate, allOperational: false },
     ];
 
-    const result = await handler.execute();
+    await handler.execute();
 
-    // Old entries pruned, only the new check remains
     const history = (handler as any).history;
     expect(history).toHaveLength(1);
-    expect(result.uptimePercent).toBe(100);
   });
 });

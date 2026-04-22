@@ -1,15 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { AprobarReglaPropuestaHandler } from '../../application/commands/aprobar-regla-propuesta.command';
@@ -57,9 +48,7 @@ export class ReglasPropuestasController {
 
   @Post('aprobar-bloque')
   @ApiOperation({ summary: 'Aprobar múltiples reglas propuestas en bloque' })
-  async aprobarBloque(
-    @Body(new ZodValidationPipe(aprobarBloqueDtoSchema)) dto: AprobarBloqueDto,
-  ) {
+  async aprobarBloque(@Body(new ZodValidationPipe(aprobarBloqueDtoSchema)) dto: AprobarBloqueDto) {
     const result = await this.aprobarBloqueHandler.execute({ reglaIds: dto.reglaIds });
     return successResponse(result);
   }

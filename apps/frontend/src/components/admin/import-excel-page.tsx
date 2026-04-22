@@ -44,11 +44,7 @@ const columns: Column<ClienteDiff>[] = [
     key: 'accion',
     header: 'Accion',
     render: (r) =>
-      r.accion === 'CREAR' ? (
-        <Pill tone="green">Nuevo</Pill>
-      ) : (
-        <Pill tone="blue">Existente</Pill>
-      ),
+      r.accion === 'CREAR' ? <Pill tone="brand">Nuevo</Pill> : <Pill tone="blue">Existente</Pill>,
   },
   {
     key: 'vencimientosNuevos',
@@ -59,11 +55,7 @@ const columns: Column<ClienteDiff>[] = [
     key: 'vencimientosDuplicados',
     header: 'Duplicados',
     render: (r) =>
-      r.vencimientosDuplicados > 0 ? (
-        <Pill tone="yellow">{r.vencimientosDuplicados}</Pill>
-      ) : (
-        '0'
-      ),
+      r.vencimientosDuplicados > 0 ? <Pill tone="amber">{r.vencimientosDuplicados}</Pill> : '0',
   },
 ];
 
@@ -73,7 +65,9 @@ export function ImportExcelPage() {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ImportResponse | null>(null);
   const [confirmed, setConfirmed] = useState<ImportResponse | null>(null);
-  const [estadoHistoricos, setEstadoHistoricos] = useState<'PRESENTADO' | 'PENDIENTE'>('PRESENTADO');
+  const [estadoHistoricos, setEstadoHistoricos] = useState<'PRESENTADO' | 'PENDIENTE'>(
+    'PRESENTADO',
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const selectedFileRef = useRef<File | null>(null);
 
@@ -168,8 +162,8 @@ export function ImportExcelPage() {
         <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-6 flex flex-col gap-4">
           <h3 className="text-sm font-medium text-[var(--text)]">1. Seleccionar archivo</h3>
           <p className="text-xs text-[var(--text-muted)]">
-            Subi el archivo &quot;Vtos mensuales por responsable.xlsx&quot; del estudio.
-            Se mostrara una vista previa antes de confirmar.
+            Subi el archivo &quot;Vtos mensuales por responsable.xlsx&quot; del estudio. Se mostrara
+            una vista previa antes de confirmar.
           </p>
           <input
             ref={fileRef}
@@ -179,7 +173,9 @@ export function ImportExcelPage() {
           />
 
           <div className="flex items-center gap-3">
-            <label className="text-xs text-[var(--text-muted)]">Estado para vencimientos historicos:</label>
+            <label className="text-xs text-[var(--text-muted)]">
+              Estado para vencimientos historicos:
+            </label>
             <select
               value={estadoHistoricos}
               onChange={(e) => setEstadoHistoricos(e.target.value as 'PRESENTADO' | 'PENDIENTE')}
@@ -202,14 +198,27 @@ export function ImportExcelPage() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard label="Filas" value={preview.importResult.totalFilas} />
-            <StatCard label="Clientes nuevos" value={preview.importResult.clientesNuevos} tone="green" />
-            <StatCard label="Clientes existentes" value={preview.importResult.clientesExistentes} tone="blue" />
-            <StatCard label="Vtos a crear" value={preview.importResult.vencimientosCreados} tone="green" />
+            <StatCard
+              label="Clientes nuevos"
+              value={preview.importResult.clientesNuevos}
+              tone="green"
+            />
+            <StatCard
+              label="Clientes existentes"
+              value={preview.importResult.clientesExistentes}
+              tone="blue"
+            />
+            <StatCard
+              label="Vtos a crear"
+              value={preview.importResult.vencimientosCreados}
+              tone="green"
+            />
           </div>
 
           {preview.importResult.vencimientosDuplicados > 0 && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-4 py-2 rounded-lg text-xs">
-              {preview.importResult.vencimientosDuplicados} vencimientos duplicados seran omitidos (ya existen en el sistema).
+              {preview.importResult.vencimientosDuplicados} vencimientos duplicados seran omitidos
+              (ya existen en el sistema).
             </div>
           )}
 
@@ -230,14 +239,16 @@ export function ImportExcelPage() {
                 Advertencias del parser ({preview.parseInfo.erroresParser.length}):
               </p>
               {preview.parseInfo.erroresParser.slice(0, 10).map((e, i) => (
-                <p key={i} className="text-xs text-yellow-400 opacity-70">{e}</p>
+                <p key={i} className="text-xs text-yellow-400 opacity-70">
+                  {e}
+                </p>
               ))}
             </div>
           )}
 
           <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-4">
             <h3 className="text-sm font-medium text-[var(--text)] mb-3">Detalle por cliente</h3>
-            <DataTable columns={columns} data={preview.importResult.detalle} />
+            <DataTable columns={columns} rows={preview.importResult.detalle} />
           </div>
 
           <div className="flex gap-3">
@@ -258,9 +269,21 @@ export function ImportExcelPage() {
             <h3 className="text-sm font-medium text-[var(--text)]">Importacion completada</h3>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Clientes creados" value={confirmed.importResult.clientesNuevos} tone="green" />
-            <StatCard label="Vtos creados" value={confirmed.importResult.vencimientosCreados} tone="green" />
-            <StatCard label="Duplicados omitidos" value={confirmed.importResult.vencimientosDuplicados} tone="yellow" />
+            <StatCard
+              label="Clientes creados"
+              value={confirmed.importResult.clientesNuevos}
+              tone="green"
+            />
+            <StatCard
+              label="Vtos creados"
+              value={confirmed.importResult.vencimientosCreados}
+              tone="green"
+            />
+            <StatCard
+              label="Duplicados omitidos"
+              value={confirmed.importResult.vencimientosDuplicados}
+              tone="yellow"
+            />
             <StatCard label="Total filas" value={confirmed.importResult.totalFilas} />
           </div>
           <div>

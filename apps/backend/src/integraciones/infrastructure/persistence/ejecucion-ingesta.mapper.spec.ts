@@ -16,6 +16,7 @@ describe('EjecucionIngestaMapper', () => {
     disparador: DISPARADOR_INGESTA.MANUAL,
     disparadoPor: 'admin-1',
     ingestaId: 'evt-123',
+    launcherTaskId: null,
     inicio: new Date('2026-04-01T10:00:00Z'),
     fin: new Date('2026-04-01T10:05:00Z'),
     reglasNuevas: 3,

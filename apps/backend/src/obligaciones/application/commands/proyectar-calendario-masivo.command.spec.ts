@@ -1,7 +1,4 @@
-import {
-  ProyectarCalendarioMasivoHandler,
-  type ProyectarCalendarioMasivoResult,
-} from './proyectar-calendario-masivo.command';
+import { ProyectarCalendarioMasivoHandler } from './proyectar-calendario-masivo.command';
 import { ProyectarCalendarioMensualHandler } from './proyectar-calendario-mensual.command';
 import { Cliente } from '../../../clientes/domain/entities/cliente.entity';
 import { Cuit } from '../../../clientes/domain/value-objects/cuit.vo';
@@ -29,10 +26,10 @@ const makeCliente = (id: string, nombre: string, withInscripciones: boolean) => 
   );
   if (withInscripciones) {
     const insc = InscripcionJurisdiccion.create({
-      jurisdiccion: JURISDICCION.NACIONAL,
+      jurisdiccion: JURISDICCION.ARCA,
       regimen: 'GENERAL',
       activa: true,
-      desde: new Date('2025-01-01'),
+      desde: '2025-01-01',
     });
     cliente.actualizarPerfilFiscal([insc]);
     cliente.clearDomainEvents();

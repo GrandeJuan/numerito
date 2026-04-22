@@ -47,7 +47,9 @@ describe('AdminGuard', () => {
 
   it('should reject when token is invalid (401 before role check)', async () => {
     jwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
-    await expect(guard.canActivate(mockContext('Bearer bad'))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(mockContext('Bearer bad'))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('should allow SUPERADMIN with valid token', async () => {
@@ -62,7 +64,9 @@ describe('AdminGuard', () => {
     const payload = { sub: '2', email: 'socio@test.com', rol: 'SOCIO' };
     jwtService.verifyAsync.mockResolvedValue(payload);
 
-    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(
+      ForbiddenException,
+    );
     await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(
       'Acceso restringido a superadministradores',
     );
@@ -72,13 +76,17 @@ describe('AdminGuard', () => {
     const payload = { sub: '3', email: 'emp@test.com', rol: 'EMPLEADO' };
     jwtService.verifyAsync.mockResolvedValue(payload);
 
-    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should reject CLIENTE with valid token (403)', async () => {
     const payload = { sub: '4', email: 'cli@test.com', rol: 'CLIENTE' };
     jwtService.verifyAsync.mockResolvedValue(payload);
 
-    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(mockContext('Bearer valid-token'))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });

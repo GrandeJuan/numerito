@@ -7,6 +7,7 @@ export class EjecucionIngestaEntity {
   disparador!: string;
   disparadoPor!: string | null;
   ingestaId!: string | null;
+  launcherTaskId!: string | null;
   inicio!: Date;
   fin!: Date | null;
   reglasNuevas!: number;
@@ -26,6 +27,7 @@ export const EjecucionIngestaSchema = new EntitySchema<EjecucionIngestaEntity>({
     disparador: { type: 'string' },
     disparadoPor: { type: 'string', fieldName: 'disparado_por', nullable: true },
     ingestaId: { type: 'string', fieldName: 'ingesta_id', nullable: true },
+    launcherTaskId: { type: 'string', fieldName: 'launcher_task_id', nullable: true },
     inicio: { type: 'Date' },
     fin: { type: 'Date', nullable: true },
     reglasNuevas: { type: 'number', fieldName: 'reglas_nuevas', default: 0 },
@@ -39,12 +41,6 @@ export const EjecucionIngestaSchema = new EntitySchema<EjecucionIngestaEntity>({
       onUpdate: () => new Date(),
     },
   },
-  indexes: [
-    { properties: ['fuente'] },
-    { properties: ['estado'] },
-    { properties: ['inicio'] },
-  ],
-  uniques: [
-    { properties: ['ingestaId'], options: { where: 'ingesta_id IS NOT NULL' } },
-  ],
+  indexes: [{ properties: ['fuente'] }, { properties: ['estado'] }, { properties: ['inicio'] }],
+  uniques: [{ properties: ['ingestaId'], options: { where: 'ingesta_id IS NOT NULL' } }],
 });

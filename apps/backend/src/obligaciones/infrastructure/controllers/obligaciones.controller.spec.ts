@@ -64,6 +64,8 @@ describe('ObligacionesController', () => {
     mockVencimientoByIdHandler = {
       execute: jest.fn().mockResolvedValue(byIdFixture),
     };
+    const mockReasignarHandler: any = { execute: jest.fn() };
+    const mockProyectarMasivoHandler: any = { execute: jest.fn() };
     controller = new ObligacionesController(
       mockCrearVencimientoHandler,
       mockProyectarCalendarioHandler,
@@ -71,10 +73,12 @@ describe('ObligacionesController', () => {
       mockMarcarVencidoHandler,
       mockProrrogarVencimientoHandler,
       mockMarcarNoAplicaHandler,
+      mockReasignarHandler,
       mockVencimientoKpisHandler,
       mockVencimientoListHandler,
       mockVencimientoCalendarioHandler,
       mockVencimientoByIdHandler,
+      mockProyectarMasivoHandler,
     );
   });
 
@@ -174,6 +178,7 @@ describe('ObligacionesController', () => {
         undefined,
         undefined,
         'cli-42',
+        undefined,
         '2026-04-01',
         '2026-04-30',
       );
@@ -181,6 +186,7 @@ describe('ObligacionesController', () => {
         estado: undefined,
         periodo: undefined,
         clienteId: 'cli-42',
+        responsableId: undefined,
         fechaDesde: '2026-04-01',
         fechaHasta: '2026-04-30',
         page: 2,

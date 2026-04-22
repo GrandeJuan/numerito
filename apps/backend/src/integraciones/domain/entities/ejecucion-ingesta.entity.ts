@@ -31,6 +31,7 @@ const reconstituteSchema = z.object({
   disparador: z.enum(['MANUAL', 'SCHEDULE']),
   disparadoPor: z.string().nullable(),
   ingestaId: z.string().nullable(),
+  launcherTaskId: z.string().nullable(),
   inicio: z.date(),
   fin: z.date().nullable(),
   reglasNuevas: z.number().int().min(0),
@@ -46,6 +47,7 @@ export class EjecucionIngesta extends BaseEntity {
   private _disparador!: DisparadorIngesta;
   private _disparadoPor!: string | null;
   private _ingestaId!: string | null;
+  private _launcherTaskId!: string | null;
   private _inicio!: Date;
   private _fin!: Date | null;
   private _reglasNuevas!: number;
@@ -59,6 +61,7 @@ export class EjecucionIngesta extends BaseEntity {
     this._disparador = props.disparador;
     this._disparadoPor = props.disparadoPor ?? null;
     this._ingestaId = props.ingestaId ?? null;
+    this._launcherTaskId = null;
     this._inicio = new Date();
     this._fin = null;
     this._reglasNuevas = 0;
@@ -81,6 +84,7 @@ export class EjecucionIngesta extends BaseEntity {
     instance._disparador = data.disparador as DisparadorIngesta;
     instance._disparadoPor = data.disparadoPor;
     instance._ingestaId = data.ingestaId;
+    instance._launcherTaskId = data.launcherTaskId;
     instance._inicio = data.inicio;
     instance._fin = data.fin;
     instance._reglasNuevas = data.reglasNuevas;
@@ -89,16 +93,44 @@ export class EjecucionIngesta extends BaseEntity {
     return instance;
   }
 
-  get fuente(): FuenteIngesta { return this._fuente; }
-  get estado(): EstadoEjecucion { return this._estado; }
-  get disparador(): DisparadorIngesta { return this._disparador; }
-  get disparadoPor(): string | null { return this._disparadoPor; }
-  get ingestaId(): string | null { return this._ingestaId; }
-  get inicio(): Date { return this._inicio; }
-  get fin(): Date | null { return this._fin; }
-  get reglasNuevas(): number { return this._reglasNuevas; }
-  get reglasModificadas(): number { return this._reglasModificadas; }
-  get errores(): string[] { return [...this._errores]; }
+  get fuente(): FuenteIngesta {
+    return this._fuente;
+  }
+  get estado(): EstadoEjecucion {
+    return this._estado;
+  }
+  get disparador(): DisparadorIngesta {
+    return this._disparador;
+  }
+  get disparadoPor(): string | null {
+    return this._disparadoPor;
+  }
+  get ingestaId(): string | null {
+    return this._ingestaId;
+  }
+  get launcherTaskId(): string | null {
+    return this._launcherTaskId;
+  }
+  get inicio(): Date {
+    return this._inicio;
+  }
+  get fin(): Date | null {
+    return this._fin;
+  }
+  get reglasNuevas(): number {
+    return this._reglasNuevas;
+  }
+  get reglasModificadas(): number {
+    return this._reglasModificadas;
+  }
+  get errores(): string[] {
+    return [...this._errores];
+  }
+
+  asignarLauncherTaskId(id: string): void {
+    this._launcherTaskId = id;
+    this.updatedAt = new Date();
+  }
 
   completarExitosa(reglasNuevas: number, reglasModificadas: number): void {
     this._estado = ESTADO_EJECUCION.EXITOSA;

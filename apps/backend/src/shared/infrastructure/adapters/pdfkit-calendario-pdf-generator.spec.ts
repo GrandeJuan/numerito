@@ -35,8 +35,8 @@ jest.mock('pdfkit', () => {
       // Reset y for each new instance
       mockDocInstance.y = 50;
       // Wire up on/end to emit data+end events synchronously on end()
-      const listeners: Record<string, Function[]> = {};
-      mockDocInstance.on.mockImplementation((event: string, cb: Function) => {
+      const listeners: Record<string, (...args: unknown[]) => void[]> = {};
+      mockDocInstance.on.mockImplementation((event: string, cb: (...args: unknown[]) => void) => {
         listeners[event] = listeners[event] || [];
         listeners[event].push(cb);
         return mockDocInstance;
@@ -114,18 +114,16 @@ describe('PdfKitCalendarioPdfGenerator', () => {
     await generator.generarCalendarioMensual(baseInput);
 
     const textCalls = mockDocInstance.text.mock.calls.map((c: any[]) => c[0]);
-    expect(textCalls).toContain(
-      expect.stringContaining('Mayo 2026'),
-    );
+    expect(textCalls).toContainEqual(expect.stringContaining('Mayo 2026'));
   });
 
   it('should render client and estudio info', async () => {
     await generator.generarCalendarioMensual(baseInput);
 
     const textCalls = mockDocInstance.text.mock.calls.map((c: any[]) => c[0]);
-    expect(textCalls).toContain(expect.stringContaining('Empresa Test SRL'));
-    expect(textCalls).toContain(expect.stringContaining('Estudio Pini'));
-    expect(textCalls).toContain(expect.stringContaining('30-12345678-9'));
+    expect(textCalls).toContainEqual(expect.stringContaining('Empresa Test SRL'));
+    expect(textCalls).toContainEqual(expect.stringContaining('Estudio Pini'));
+    expect(textCalls).toContainEqual(expect.stringContaining('30-12345678-9'));
   });
 
   it('should render table rows for each vencimiento', async () => {
@@ -156,9 +154,7 @@ describe('PdfKitCalendarioPdfGenerator', () => {
     expect(result).toBeInstanceOf(Buffer);
 
     const textCalls = mockDocInstance.text.mock.calls.map((c: any[]) => c[0]);
-    expect(textCalls).toContain(
-      expect.stringContaining('No hay vencimientos proyectados'),
-    );
+    expect(textCalls).toContainEqual(expect.stringContaining('No hay vencimientos proyectados'));
   });
 
   it('should use color coding for estado values', async () => {
@@ -168,9 +164,27 @@ describe('PdfKitCalendarioPdfGenerator', () => {
         {
           title: 'Test',
           rows: [
-            { obligacion: 'A', periodo: '2026-05', fecha: '2026-05-01', jurisdiccion: 'NAC', estado: 'Presentado' },
-            { obligacion: 'B', periodo: '2026-05', fecha: '2026-05-02', jurisdiccion: 'NAC', estado: 'Vencido' },
-            { obligacion: 'C', periodo: '2026-05', fecha: '2026-05-03', jurisdiccion: 'NAC', estado: 'Pendiente' },
+            {
+              obligacion: 'A',
+              periodo: '2026-05',
+              fecha: '2026-05-01',
+              jurisdiccion: 'NAC',
+              estado: 'Presentado',
+            },
+            {
+              obligacion: 'B',
+              periodo: '2026-05',
+              fecha: '2026-05-02',
+              jurisdiccion: 'NAC',
+              estado: 'Vencido',
+            },
+            {
+              obligacion: 'C',
+              periodo: '2026-05',
+              fecha: '2026-05-03',
+              jurisdiccion: 'NAC',
+              estado: 'Pendiente',
+            },
           ],
         },
       ],
@@ -189,7 +203,7 @@ describe('PdfKitCalendarioPdfGenerator', () => {
     await generator.generarCalendarioMensual(baseInput);
 
     const textCalls = mockDocInstance.text.mock.calls.map((c: any[]) => c[0]);
-    expect(textCalls).toContain(
+    expect(textCalls).toContainEqual(
       expect.stringContaining('Documento generado automáticamente por Numerito'),
     );
   });
@@ -201,10 +215,18 @@ describe('PdfKitCalendarioPdfGenerator', () => {
 
   it('should format all 12 months correctly', async () => {
     const months = [
-      ['01', 'Enero'], ['02', 'Febrero'], ['03', 'Marzo'],
-      ['04', 'Abril'], ['05', 'Mayo'], ['06', 'Junio'],
-      ['07', 'Julio'], ['08', 'Agosto'], ['09', 'Septiembre'],
-      ['10', 'Octubre'], ['11', 'Noviembre'], ['12', 'Diciembre'],
+      ['01', 'Enero'],
+      ['02', 'Febrero'],
+      ['03', 'Marzo'],
+      ['04', 'Abril'],
+      ['05', 'Mayo'],
+      ['06', 'Junio'],
+      ['07', 'Julio'],
+      ['08', 'Agosto'],
+      ['09', 'Septiembre'],
+      ['10', 'Octubre'],
+      ['11', 'Noviembre'],
+      ['12', 'Diciembre'],
     ];
 
     for (const [num, name] of months) {
@@ -234,11 +256,11 @@ describe('PdfKitCalendarioPdfGenerator', () => {
     await generator.generarCalendarioMensual(minimalInput);
 
     const textCalls = mockDocInstance.text.mock.calls.map((c: any[]) => c[0]);
-    const estudioTexts = textCalls.filter((t: string) =>
-      typeof t === 'string' && t.includes('Estudio:'),
+    const estudioTexts = textCalls.filter(
+      (t: string) => typeof t === 'string' && t.includes('Estudio:'),
     );
-    const cuitTexts = textCalls.filter((t: string) =>
-      typeof t === 'string' && t.includes('CUIT Estudio:'),
+    const cuitTexts = textCalls.filter(
+      (t: string) => typeof t === 'string' && t.includes('CUIT Estudio:'),
     );
     expect(estudioTexts).toHaveLength(0);
     expect(cuitTexts).toHaveLength(0);
@@ -247,7 +269,7 @@ describe('PdfKitCalendarioPdfGenerator', () => {
   it('should propagate pdfkit errors', async () => {
     // Override end to emit error
     mockDocInstance.end.mockImplementationOnce(() => {
-      const listeners: Record<string, Function[]> = {};
+      const listeners: Record<string, (...args: unknown[]) => void[]> = {};
       // Re-wire to capture the actual listeners from `on` calls
       const onCalls = mockDocInstance.on.mock.calls;
       for (const [event, cb] of onCalls) {
@@ -257,8 +279,8 @@ describe('PdfKitCalendarioPdfGenerator', () => {
       for (const cb of listeners['error'] ?? []) cb(new Error('PDF generation failed'));
     });
 
-    await expect(
-      generator.generarCalendarioMensual(baseInput),
-    ).rejects.toThrow('PDF generation failed');
+    await expect(generator.generarCalendarioMensual(baseInput)).rejects.toThrow(
+      'PDF generation failed',
+    );
   });
 });

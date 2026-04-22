@@ -109,6 +109,7 @@ describe('createScraper', () => {
     mesesAdelante: 2,
     disparador: 'SCHEDULE',
     disparadoPor: null,
+    ejecucionId: null,
   };
 
   it('creates ScraperCalendarioARCA for ARCA', () => {

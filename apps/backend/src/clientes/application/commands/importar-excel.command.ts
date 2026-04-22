@@ -4,10 +4,10 @@ import type { VencimientoRepository } from '../../../obligaciones/domain/reposit
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
 import { Cliente } from '../../domain/entities/cliente.entity';
-import { Vencimiento, ESTADO_VENCIMIENTO } from '../../../obligaciones/domain/entities/vencimiento.entity';
+import { ESTADO_VENCIMIENTO } from '@numerito/shared';
 import { CONDICION_IVA, TIPO_CLIENTE, REGIMEN } from '@numerito/shared';
 import type { TipoObligacion } from '@numerito/shared';
-import type { ImportRow, ObligacionImportada } from '../services/excel-parser.service';
+import type { ImportRow } from '../services/excel-parser.service';
 
 export interface ImportarExcelCommand {
   rows: ImportRow[];
@@ -51,10 +51,7 @@ export class ImportarExcelHandler {
     private readonly vencimientoRepo: VencimientoRepository,
   ) {}
 
-  async execute(
-    principal: EstudioPrincipal,
-    command: ImportarExcelCommand,
-  ): Promise<ImportResult> {
+  async execute(principal: EstudioPrincipal, command: ImportarExcelCommand): Promise<ImportResult> {
     const { rows, dryRun, estadoHistoricos } = command;
     const estado =
       estadoHistoricos === 'PRESENTADO'
@@ -105,12 +102,8 @@ export class ImportarExcelHandler {
       let duplicados = 0;
 
       if (cliente) {
-        const existingVencimientos = await this.vencimientoRepo.findByClienteId(
-          principal,
-          cliente.id,
-        );
         const existingKeys = new Set(
-          existingVencimientos.map(
+          (await this.vencimientoRepo.findClienteIdAndPeriodoKeys(principal, cliente.id)).map(
             (v) => `${v.tipoObligacion}|${v.periodo}`,
           ),
         );
@@ -130,7 +123,7 @@ export class ImportarExcelHandler {
           existingKeys.add(key); // prevent duplicates within same import
 
           if (!dryRun) {
-            const vencimiento = Vencimiento.importar({
+            await this.vencimientoRepo.importar(principal, {
               clienteId: cliente.id,
               estudioId: principal.estudioId,
               tipoObligacion: obl.tipoObligacion,
@@ -139,7 +132,6 @@ export class ImportarExcelHandler {
               descripcion: buildDescripcion(obl.tipoObligacion, obl.headerOriginal),
               estado,
             });
-            await this.vencimientoRepo.save(principal, vencimiento);
           }
         }
       } else {
@@ -169,5 +161,4 @@ export class ImportarExcelHandler {
       detalle,
     };
   }
-
 }

@@ -54,7 +54,9 @@ export class Migration20260420CalendarioVencimientos extends Migration {
     `);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_dia_feriado_fecha" ON "dia_feriado" ("fecha");`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "idx_dia_feriado_tipo" ON "dia_feriado" ("tipo");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_dia_feriado_fecha_tipo" ON "dia_feriado" ("fecha", "tipo");`);
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_dia_feriado_fecha_tipo" ON "dia_feriado" ("fecha", "tipo");`,
+    );
     this.addSql(`
       ALTER TABLE "dia_feriado"
         ADD CONSTRAINT "uq_dia_feriado_fecha_tipo_jurisdiccion"
@@ -100,9 +102,15 @@ export class Migration20260420CalendarioVencimientos extends Migration {
         PRIMARY KEY ("id")
       );
     `);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_fuente" ON "ejecucion_ingesta" ("fuente");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_estado" ON "ejecucion_ingesta" ("estado");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_inicio" ON "ejecucion_ingesta" ("inicio");`);
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_fuente" ON "ejecucion_ingesta" ("fuente");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_estado" ON "ejecucion_ingesta" ("estado");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_ejecucion_ingesta_inicio" ON "ejecucion_ingesta" ("inicio");`,
+    );
 
     // recordatorio_enviado (global idempotency tracking)
     this.addSql(`
@@ -130,9 +138,15 @@ export class Migration20260420CalendarioVencimientos extends Migration {
         ADD CONSTRAINT "recordatorio_enviado_estudio_id_foreign"
         FOREIGN KEY ("estudio_id") REFERENCES "estudio" ("id") ON DELETE CASCADE;
     `);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_recordatorio_venc_tipo" ON "recordatorio_enviado" ("vencimiento_id", "tipo_recordatorio");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_recordatorio_estudio" ON "recordatorio_enviado" ("estudio_id");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_recordatorio_fecha_envio" ON "recordatorio_enviado" ("fecha_envio");`);
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_recordatorio_venc_tipo" ON "recordatorio_enviado" ("vencimiento_id", "tipo_recordatorio");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_recordatorio_estudio" ON "recordatorio_enviado" ("estudio_id");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_recordatorio_fecha_envio" ON "recordatorio_enviado" ("fecha_envio");`,
+    );
     this.addSql(`
       ALTER TABLE "recordatorio_enviado"
         ADD CONSTRAINT "uq_recordatorio_idempotent"
@@ -195,7 +209,9 @@ export class Migration20260420CalendarioVencimientos extends Migration {
         DROP COLUMN IF EXISTS "dias_anticipacion";
     `);
 
-    this.addSql(`ALTER TABLE "vencimiento" DROP CONSTRAINT IF EXISTS "vencimiento_responsable_id_foreign";`);
+    this.addSql(
+      `ALTER TABLE "vencimiento" DROP CONSTRAINT IF EXISTS "vencimiento_responsable_id_foreign";`,
+    );
     this.addSql(`
       ALTER TABLE "vencimiento"
         DROP COLUMN IF EXISTS "fecha_nominal",

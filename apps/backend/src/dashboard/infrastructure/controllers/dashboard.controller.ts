@@ -1,6 +1,6 @@
 import { Controller, Get, Headers, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../iam/infrastructure/decorators/current-user.decorator';
 import { ObtenerDashboardStatsHandler } from '../../application/queries/obtener-dashboard-stats.query';
 import { ObtenerActividadHandler } from '../../application/queries/obtener-actividad.query';
@@ -47,12 +47,19 @@ export class DashboardController {
   }
 
   @Get('cumplimiento-socio')
-  @ApiOperation({ summary: 'Dashboard del socio: cumplimiento por responsable, en riesgo, filtros' })
+  @ApiOperation({
+    summary: 'Dashboard del socio: cumplimiento por responsable, en riesgo, filtros',
+  })
   @ApiQuery({ name: 'periodo', required: false, description: 'Periodo fiscal YYYY-MM' })
   @ApiQuery({ name: 'tipoObligacionId', required: false, type: Number })
   @ApiQuery({ name: 'clienteId', required: false })
   @ApiQuery({ name: 'responsableId', required: false })
-  @ApiQuery({ name: 'diasRiesgo', required: false, type: Number, description: 'Días para considerar en riesgo (default 3)' })
+  @ApiQuery({
+    name: 'diasRiesgo',
+    required: false,
+    type: Number,
+    description: 'Días para considerar en riesgo (default 3)',
+  })
   async getCumplimientoSocio(
     @Headers('x-estudio-id') estudioId: string,
     @CurrentUser('sub') usuarioId: string,

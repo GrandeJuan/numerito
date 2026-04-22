@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader, Pill, type Column, DataTable } from '@/components';
+import { PageHeader, Pill, type Column, type PillTone, DataTable } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetch } from '@/lib/use-fetch';
 import { apiFetch } from '@/lib/api-client';
@@ -21,9 +21,9 @@ const TIPO_LABEL: Record<string, string> = {
   MUNICIPAL: 'Municipal',
 };
 
-const TIPO_TONE: Record<string, 'brand' | 'neutral' | 'warning' | 'danger'> = {
+const TIPO_TONE: Record<string, PillTone> = {
   NACIONAL: 'brand',
-  BANCARIO: 'warning',
+  BANCARIO: 'amber',
   PROVINCIAL: 'neutral',
   MUNICIPAL: 'neutral',
 };
@@ -133,9 +133,7 @@ export function FeriadosAdminPage() {
     },
     {
       header: 'Descripcion',
-      render: (r) => (
-        <span className="text-[12px] text-[var(--text)]">{r.descripcion}</span>
-      ),
+      render: (r) => <span className="text-[12px] text-[var(--text)]">{r.descripcion}</span>,
     },
     {
       header: 'Jurisdiccion',
@@ -178,7 +176,10 @@ export function FeriadosAdminPage() {
         actions={
           <button
             type="button"
-            onClick={() => { resetForm(); setShowForm(true); }}
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
             className="text-[12px] px-3 py-1.5 rounded border border-[var(--brand)]/30 bg-[var(--brand)]/10 text-[var(--brand)] hover:bg-[var(--brand)]/20 no-underline"
           >
             + Agregar feriado
@@ -194,7 +195,9 @@ export function FeriadosAdminPage() {
           className="text-[12px] px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
         >
           {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
-            <option key={y} value={y}>{y}</option>
+            <option key={y} value={y}>
+              {y}
+            </option>
           ))}
         </select>
         <select
@@ -204,7 +207,9 @@ export function FeriadosAdminPage() {
         >
           <option value="">Todos los tipos</option>
           {TIPOS.map((t) => (
-            <option key={t} value={t}>{TIPO_LABEL[t]}</option>
+            <option key={t} value={t}>
+              {TIPO_LABEL[t]}
+            </option>
           ))}
         </select>
       </div>
@@ -233,7 +238,9 @@ export function FeriadosAdminPage() {
                 className="w-full text-[12px] px-2 py-1.5 rounded border border-[var(--border)] bg-[var(--bg)] text-[var(--text)]"
               >
                 {TIPOS.map((t) => (
-                  <option key={t} value={t}>{TIPO_LABEL[t]}</option>
+                  <option key={t} value={t}>
+                    {TIPO_LABEL[t]}
+                  </option>
                 ))}
               </select>
             </div>
@@ -259,7 +266,9 @@ export function FeriadosAdminPage() {
               >
                 <option value="">Todas</option>
                 {JURISDICCIONES.map((j) => (
-                  <option key={j} value={j}>{j}</option>
+                  <option key={j} value={j}>
+                    {j}
+                  </option>
                 ))}
               </select>
             </div>

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { Principal } from '../../../shared/infrastructure/decorators/estudio-principal.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
@@ -32,9 +32,7 @@ const ALLOWED_MIME_TYPES = [
 export class ImportAdminController {
   private readonly parser = new ExcelParserService();
 
-  constructor(
-    private readonly importarHandler: ImportarExcelHandler,
-  ) {}
+  constructor(private readonly importarHandler: ImportarExcelHandler) {}
 
   @Post()
   @ApiOperation({ summary: 'Importar clientes y vencimientos desde Excel (dry-run por defecto)' })
@@ -50,9 +48,7 @@ export class ImportAdminController {
       throw new BadRequestException('No se proporcionó archivo Excel');
     }
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Tipo de archivo no permitido. Se requiere .xlsx o .xls',
-      );
+      throw new BadRequestException('Tipo de archivo no permitido. Se requiere .xlsx o .xls');
     }
     if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException('El archivo supera el tamaño máximo de 10MB');
@@ -83,8 +79,7 @@ export class ImportAdminController {
 
     // Default to dry-run=true for safety
     const dryRun = dryRunParam !== 'false';
-    const estadoHistoricos =
-      estadoHistoricosParam === 'PENDIENTE' ? 'PENDIENTE' : 'PRESENTADO';
+    const estadoHistoricos = estadoHistoricosParam === 'PENDIENTE' ? 'PENDIENTE' : 'PRESENTADO';
 
     const importResult = await this.importarHandler.execute(principal, {
       rows: parseResult.rows,

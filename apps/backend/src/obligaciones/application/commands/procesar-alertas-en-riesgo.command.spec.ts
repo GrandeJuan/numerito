@@ -1,11 +1,13 @@
 import { ProcesarAlertasEnRiesgoHandler } from './procesar-alertas-en-riesgo.command';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
-import type { AlertaConfigRepository, AlertaConfigData } from '../../domain/repositories/alerta-config.repository';
+import type {
+  AlertaConfigRepository,
+  AlertaConfigData,
+} from '../../domain/repositories/alerta-config.repository';
 import type { RecordatorioEnviadoRepository } from '../../domain/repositories/recordatorio-enviado.repository';
 import type { NotificacionRepository } from '../../../notificaciones/domain/repositories/notificacion.repository';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 import { TIPO_OBLIGACION } from '@numerito/shared';
-import { TIPO_RECORDATORIO } from '../../domain/entities/recordatorio-enviado.entity';
 
 describe('ProcesarAlertasEnRiesgoHandler', () => {
   let handler: ProcesarAlertasEnRiesgoHandler;
@@ -32,7 +34,8 @@ describe('ProcesarAlertasEnRiesgoHandler', () => {
       periodo: '2026-04',
       fechaVencimiento: inTwoDays,
       descripcion: 'IVA Abril 2026',
-      responsableId: overrides.responsableId !== undefined ? overrides.responsableId : 'user-resp-1',
+      responsableId:
+        overrides.responsableId !== undefined ? overrides.responsableId : 'user-resp-1',
     });
   };
 

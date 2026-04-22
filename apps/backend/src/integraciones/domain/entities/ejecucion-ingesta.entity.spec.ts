@@ -1,8 +1,4 @@
-import {
-  EjecucionIngesta,
-  ESTADO_EJECUCION,
-  DISPARADOR_INGESTA,
-} from './ejecucion-ingesta.entity';
+import { EjecucionIngesta, ESTADO_EJECUCION, DISPARADOR_INGESTA } from './ejecucion-ingesta.entity';
 import { FUENTE_INGESTA } from './configuracion-ingesta.entity';
 
 describe('EjecucionIngesta', () => {
@@ -86,6 +82,7 @@ describe('EjecucionIngesta', () => {
         disparador: 'SCHEDULE',
         disparadoPor: null,
         ingestaId: 'evt-abc-123',
+        launcherTaskId: null,
         inicio,
         fin,
         reglasNuevas: 10,

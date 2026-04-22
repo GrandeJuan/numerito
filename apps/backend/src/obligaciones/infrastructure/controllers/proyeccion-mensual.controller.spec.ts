@@ -1,6 +1,9 @@
 import { ProyeccionMensualController } from './proyeccion-mensual.controller';
-import type { ProyeccionMensualScheduler, ProyeccionMensualResult } from '../../application/commands/proyeccion-mensual-scheduler.command';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import type {
+  ProyeccionMensualScheduler,
+  ProyeccionMensualResult,
+} from '../../application/commands/proyeccion-mensual-scheduler.command';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 
 describe('ProyeccionMensualController', () => {
   let controller: ProyeccionMensualController;
@@ -34,7 +37,8 @@ describe('ProyeccionMensualController', () => {
     const result = await controller.ejecutar({ periodo: '2026-06' });
 
     expect(scheduler.execute).toHaveBeenCalledWith('2026-06');
-    expect(result).toEqual({ success: true, data: mockResult });
+    expect(result.data).toEqual(mockResult);
+    expect(result.meta.timestamp).toBeDefined();
   });
 
   it('should call scheduler without periodo when not provided', async () => {

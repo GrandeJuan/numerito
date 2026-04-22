@@ -1,28 +1,16 @@
 import * as http from 'http';
 import { Test } from '@nestjs/testing';
-import {
-  Controller,
-  Get,
-  INestApplication,
-  Inject,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, INestApplication, Inject, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { RequestContextModule } from '../request-context.module';
-import {
-  RequestContextService,
-  REQUEST_CONTEXT,
-} from '../services/request-context.service';
+import { RequestContextService, REQUEST_CONTEXT } from '../services/request-context.service';
 import { EstudioId } from '../decorators/estudio-id.decorator';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { EstudioMemberGuard } from '../../../iam/infrastructure/guards/estudio-member.guard';
-import { Public } from '../../../iam/infrastructure/decorators/public.decorator';
-import {
-  ESTUDIO_ID_HEADER,
-  CORRELATION_ID_HEADER,
-} from './request-context.middleware';
+import { Public } from '../../../shared/infrastructure/decorators/public.decorator';
+import { ESTUDIO_ID_HEADER, CORRELATION_ID_HEADER } from './request-context.middleware';
 
 const TEST_JWT_SECRET = 'test-secret-for-integration';
 
@@ -173,7 +161,12 @@ describe('Tenant Context Boundary (integration)', () => {
     });
 
     it('should not set userId in context — middleware runs before JWT guard sets req.user', async () => {
-      const token = signToken(jwtService, { sub: 'user-42', id: 'user-42', email: 'u@test.com', rol: 'SOCIO' });
+      const token = signToken(jwtService, {
+        sub: 'user-42',
+        id: 'user-42',
+        email: 'u@test.com',
+        rol: 'SOCIO',
+      });
 
       const res = await request('GET', '/test/auth-only')
         .header('Authorization', `Bearer ${token}`)
@@ -229,7 +222,12 @@ describe('Tenant Context Boundary (integration)', () => {
     });
 
     it('should not have userId in context — middleware runs before guard populates req.user', async () => {
-      const token = signToken(jwtService, { sub: 'user-99', id: 'user-99', email: 'u@test.com', rol: 'SOCIO' });
+      const token = signToken(jwtService, {
+        sub: 'user-99',
+        id: 'user-99',
+        email: 'u@test.com',
+        rol: 'SOCIO',
+      });
 
       const res = await request('GET', '/test/tenant-required')
         .header('Authorization', `Bearer ${token}`)

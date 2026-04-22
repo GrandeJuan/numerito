@@ -13,7 +13,7 @@ export class MarcarSubscripcionVencidaHandler {
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(principal: EstudioPrincipal, command: MarcarSubscripcionVencidaCommand) {
+  async execute(principal: EstudioPrincipal, _command: MarcarSubscripcionVencidaCommand) {
     const subscripcion = await this.subscripcionRepo.findActiva(principal);
     if (!subscripcion) throw new RecursoNoEncontradoError('Subscripcion');
 

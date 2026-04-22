@@ -3,7 +3,7 @@ import { DiaFeriado, TIPO_FERIADO } from './dia-feriado.entity';
 describe('DiaFeriado', () => {
   const defaultProps = {
     fecha: new Date('2026-05-01'),
-    tipo: TIPO_FERIADO.NACIONAL as const,
+    tipo: TIPO_FERIADO.NACIONAL,
     descripcion: 'Día del Trabajador',
   };
 

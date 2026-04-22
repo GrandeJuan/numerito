@@ -1,5 +1,9 @@
 import { CrearReglaVencimientoHandler } from './crear-regla-vencimiento.command';
-import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../domain/entities/regla-vencimiento.entity';
+import {
+  ReglaVencimiento,
+  ESTADO_REGLA,
+  ORIGEN_REGLA,
+} from '../../domain/entities/regla-vencimiento.entity';
 import { ReglaVencimientoService } from '../../domain/services/regla-vencimiento.service';
 import type { ReglaVencimientoEntityRepository } from '../../domain/repositories/regla-vencimiento.repository';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
@@ -11,6 +15,8 @@ function createMockRepo(): jest.Mocked<ReglaVencimientoEntityRepository> {
     findActivas: jest.fn().mockResolvedValue([]),
     findByEstado: jest.fn(),
     findVigentes: jest.fn(),
+    findActivasAsSummary: jest.fn(),
+    createPropuestaFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };

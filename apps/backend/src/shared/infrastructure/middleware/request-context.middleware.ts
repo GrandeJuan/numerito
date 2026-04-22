@@ -6,11 +6,11 @@ import { RequestContextService, REQUEST_CONTEXT } from '../services/request-cont
 export const CORRELATION_ID_HEADER = 'x-correlation-id';
 export const ESTUDIO_ID_HEADER = 'x-estudio-id';
 
-declare global {
-  namespace Express {
-    interface Request {
-      estudioId?: string;
-    }
+declare module 'express' {
+  // Express augmentation for typed tenant context on the request object.
+
+  export interface Request {
+    estudioId?: string;
   }
 }
 

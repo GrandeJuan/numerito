@@ -22,6 +22,8 @@ export const resultadoScrapingDtoSchema = z.object({
   fuente: z.enum(['ARCA', 'ARBA', 'AGIP', 'BCRA_FERIADOS']),
   ejecutadoEn: z.string().min(1),
   ingestaId: z.string().min(1).optional(),
+  /** Pre-created ejecucion_ingesta record (EN_CURSO) to update instead of creating a new one. */
+  ejecucionId: z.string().min(1).optional(),
   reglas: z.array(reglaPropuestaScrapeadaDtoSchema).default([]),
   feriados: z.array(feriadoPropuestoDtoSchema).default([]),
   errores: z.array(z.string()).default([]),

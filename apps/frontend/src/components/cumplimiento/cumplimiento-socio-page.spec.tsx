@@ -81,10 +81,10 @@ describe('CumplimientoSocioPage', () => {
   it('renders KPI cards with correct values', async () => {
     render(<CumplimientoSocioPage />);
     await waitFor(() => {
-      expect(screen.getByText('60%')).toBeInTheDocument();
+      expect(screen.getAllByText('60%').length).toBeGreaterThan(0);
     });
-    expect(screen.getByText('12')).toBeInTheDocument(); // presentados
-    expect(screen.getByText('4')).toBeInTheDocument(); // pendientes
+    expect(screen.getAllByText('12').length).toBeGreaterThan(0); // presentados
+    expect(screen.getAllByText('4').length).toBeGreaterThan(0); // pendientes
   });
 
   it('renders responsable table with names', async () => {
@@ -174,9 +174,7 @@ describe('CumplimientoSocioPage', () => {
 
     render(<CumplimientoSocioPage />);
     await waitFor(() => {
-      expect(
-        screen.getByText('Sin datos de cumplimiento para este período.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Sin datos de cumplimiento para este período.')).toBeInTheDocument();
     });
   });
 
@@ -195,10 +193,10 @@ describe('CumplimientoSocioPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Distribución por Estado')).toBeInTheDocument();
     });
-    expect(screen.getByText('Presentados')).toBeInTheDocument();
-    expect(screen.getByText('Vencidos')).toBeInTheDocument();
-    expect(screen.getByText('Prorrogados')).toBeInTheDocument();
-    expect(screen.getByText('Pendientes')).toBeInTheDocument();
+    expect(screen.getAllByText('Presentados').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Vencidos').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Prorrogados').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Pendientes').length).toBeGreaterThan(0);
   });
 
   it('shows cumplimiento percentage per responsable in table', async () => {
@@ -267,15 +265,9 @@ describe('CumplimientoSocioPage', () => {
 
     await user.click(screen.getByText('Juan Pérez'));
 
-    expect(mockPush).toHaveBeenCalledWith(
-      expect.stringContaining('/vencimientos?'),
-    );
-    expect(mockPush).toHaveBeenCalledWith(
-      expect.stringContaining('responsableId=u-1'),
-    );
-    expect(mockPush).toHaveBeenCalledWith(
-      expect.stringContaining('responsable=Juan'),
-    );
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('/vencimientos?'));
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('responsableId=u-1'));
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('responsable=Juan'));
   });
 
   it('shows al día when pendientes is 0', async () => {

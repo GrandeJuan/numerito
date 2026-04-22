@@ -1,20 +1,40 @@
 import { ProcesarResultadoScrapingHandler } from './procesar-resultado-scraping.command';
-import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../../obligaciones/domain/entities/regla-vencimiento.entity';
+import {
+  ReglaVencimiento,
+  ESTADO_REGLA,
+  ORIGEN_REGLA,
+} from '../../../obligaciones/domain/entities/regla-vencimiento.entity';
 import { DiaFeriado } from '../../../obligaciones/domain/entities/dia-feriado.entity';
-import { EjecucionIngesta, DISPARADOR_INGESTA } from '../../domain/entities/ejecucion-ingesta.entity';
+import {
+  EjecucionIngesta,
+  DISPARADOR_INGESTA,
+} from '../../domain/entities/ejecucion-ingesta.entity';
 import type { ReglaVencimientoEntityRepository } from '../../../obligaciones/domain/repositories/regla-vencimiento.repository';
 import type { EjecucionIngestaRepository } from '../../domain/repositories/ejecucion-ingesta.repository';
 import type { ConfiguracionIngestaRepository } from '../../domain/repositories/configuracion-ingesta.repository';
 import type { FeriadoRepository } from '../../../obligaciones/domain/repositories/feriado.repository';
 import type { ResultadoScrapingDto } from '../dtos/resultado-scraping.dto';
 
-function createMockReglaRepo(activas: ReglaVencimiento[] = []): jest.Mocked<ReglaVencimientoEntityRepository> {
+function createMockReglaRepo(
+  activas: ReglaVencimiento[] = [],
+): jest.Mocked<ReglaVencimientoEntityRepository> {
+  const summaries = activas.map((r) => ({
+    id: r.id,
+    tipoObligacion: r.tipoObligacion,
+    jurisdiccion: r.jurisdiccion,
+    regimen: r.regimen,
+    terminacionCuit: r.terminacionCuit,
+    diaVencimiento: r.diaVencimiento,
+    mesSiguiente: r.mesSiguiente,
+  }));
   return {
     findById: jest.fn(),
     findAll: jest.fn(),
     findActivas: jest.fn().mockResolvedValue(activas),
     findByEstado: jest.fn(),
     findVigentes: jest.fn(),
+    findActivasAsSummary: jest.fn().mockResolvedValue(summaries),
+    createPropuestaFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
@@ -25,6 +45,7 @@ function createMockEjecucionRepo(): jest.Mocked<EjecucionIngestaRepository> {
     findById: jest.fn(),
     findByIngestaId: jest.fn().mockResolvedValue(null),
     findByFuente: jest.fn(),
+    findEnCursoByFuente: jest.fn().mockResolvedValue(null),
     findAll: jest.fn(),
     save: jest.fn(),
   };
@@ -40,7 +61,9 @@ function createMockConfigRepo(): jest.Mocked<ConfiguracionIngestaRepository> {
   };
 }
 
-function createMockFeriadoRepo(existingFeriados: DiaFeriado[] = []): jest.Mocked<FeriadoRepository> {
+function createMockFeriadoRepo(
+  existingFeriados: DiaFeriado[] = [],
+): jest.Mocked<FeriadoRepository> {
   return {
     findById: jest.fn(),
     findAll: jest.fn(),
@@ -51,6 +74,15 @@ function createMockFeriadoRepo(existingFeriados: DiaFeriado[] = []): jest.Mocked
       );
     }),
     findByRango: jest.fn(),
+    findByFechaAsSummary: jest.fn().mockImplementation((fecha: Date) => {
+      const dateKey = fecha.toISOString().slice(0, 10);
+      return Promise.resolve(
+        existingFeriados
+          .filter((f) => f.fecha.toISOString().slice(0, 10) === dateKey)
+          .map((f) => ({ tipo: f.tipo, jurisdiccionAfectada: f.jurisdiccionAfectada })),
+      );
+    }),
+    createFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
@@ -61,6 +93,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
     fuente: 'ARCA',
     ejecutadoEn: '2026-04-20T10:00:00Z',
     reglas: [],
+    feriados: [],
     errores: [],
   };
 
@@ -94,10 +127,14 @@ describe('ProcesarResultadoScrapingHandler', () => {
     expect(result.reglasModificadas).toBe(0);
     expect(result.sinCambios).toBe(0);
     expect(result.diff[0].tipo).toBe('NUEVA');
-    expect(reglaRepo.save).toHaveBeenCalledTimes(1);
-    const savedRegla = (reglaRepo.save as jest.Mock).mock.calls[0][0] as ReglaVencimiento;
-    expect(savedRegla.estado).toBe(ESTADO_REGLA.PROPUESTA);
-    expect(savedRegla.origen).toBe(ORIGEN_REGLA.SCRAPING_OFICIAL);
+    expect(reglaRepo.createPropuestaFromScrape).toHaveBeenCalledTimes(1);
+    const savedData = (reglaRepo.createPropuestaFromScrape as jest.Mock).mock.calls[0][0];
+    expect(savedData.tipoObligacion).toBe('IVA');
+    expect(savedData.diaVencimiento).toBe(22);
+    // estado PROPUESTA and origen SCRAPING_OFICIAL are applied by the repo implementation,
+    // not the scraping command — verified in the repo unit test instead.
+    void ESTADO_REGLA;
+    void ORIGEN_REGLA;
   });
 
   it('should detect MODIFICADA when diaVencimiento differs', async () => {
@@ -181,7 +218,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
     expect(result.reglasNuevas).toBe(0);
     expect(result.reglasModificadas).toBe(0);
     // No save for SIN_CAMBIOS
-    expect(reglaRepo.save).not.toHaveBeenCalled();
+    expect(reglaRepo.createPropuestaFromScrape).not.toHaveBeenCalled();
   });
 
   it('should record EjecucionIngesta as EXITOSA', async () => {
@@ -201,7 +238,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
 
   it('should record EjecucionIngesta as FALLIDA when all reglas error out', async () => {
     const reglaRepo = createMockReglaRepo([]);
-    reglaRepo.save.mockRejectedValue(new Error('DB error'));
+    reglaRepo.createPropuestaFromScrape.mockRejectedValue(new Error('DB error'));
 
     const ejecucionRepo = createMockEjecucionRepo();
     const handler = new ProcesarResultadoScrapingHandler(
@@ -379,7 +416,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
     expect(result.reglasNuevas).toBe(3);
     expect(result.reglasModificadas).toBe(1);
     // Should NOT have processed any reglas or saved a new ejecucion
-    expect(reglaRepo.findActivas).not.toHaveBeenCalled();
+    expect(reglaRepo.findActivasAsSummary).not.toHaveBeenCalled();
     expect(ejecucionRepo.save).not.toHaveBeenCalled();
   });
 
@@ -459,7 +496,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
       expect(result.feriadosExistentes).toBe(0);
       expect(result.diffFeriados).toHaveLength(2);
       expect(result.diffFeriados[0].tipo).toBe('NUEVO');
-      expect(feriadoRepo.save).toHaveBeenCalledTimes(2);
+      expect(feriadoRepo.createFromScrape).toHaveBeenCalledTimes(2);
     });
 
     it('should skip existing feriados (same fecha + tipo)', async () => {
@@ -499,7 +536,7 @@ describe('ProcesarResultadoScrapingHandler', () => {
 
       expect(result.feriadosNuevos).toBe(1); // Only Jueves Santo
       expect(result.feriadosExistentes).toBe(1); // Año Nuevo already exists
-      expect(feriadoRepo.save).toHaveBeenCalledTimes(1);
+      expect(feriadoRepo.createFromScrape).toHaveBeenCalledTimes(1);
     });
 
     it('should skip feriado processing when feriadoRepo is null', async () => {

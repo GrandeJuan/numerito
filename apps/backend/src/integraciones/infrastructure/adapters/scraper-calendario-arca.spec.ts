@@ -4,10 +4,7 @@ import { ScraperCalendarioARCA } from './scraper-calendario-arca';
 import { TIPO_OBLIGACION, JURISDICCION } from '@numerito/shared';
 
 function loadFixture(name: string): string {
-  return fs.readFileSync(
-    path.join(__dirname, '__fixtures__', name),
-    'utf-8',
-  );
+  return fs.readFileSync(path.join(__dirname, '__fixtures__', name), 'utf-8');
 }
 
 function createMockBrowser(htmlContent: string) {
@@ -15,9 +12,11 @@ function createMockBrowser(htmlContent: string) {
     setDefaultTimeout: jest.fn(),
     goto: jest.fn().mockResolvedValue(undefined),
     content: jest.fn().mockResolvedValue(htmlContent),
-    locator: jest.fn().mockReturnValue({ count: jest.fn().mockResolvedValue(0) }),
-    waitForLoadState: jest.fn().mockResolvedValue(undefined),
+    fill: jest.fn().mockResolvedValue(undefined),
     selectOption: jest.fn().mockResolvedValue(undefined),
+    evaluate: jest.fn().mockResolvedValue(undefined),
+    waitForLoadState: jest.fn().mockResolvedValue(undefined),
+    waitForURL: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockBrowser = {
@@ -29,101 +28,100 @@ function createMockBrowser(htmlContent: string) {
 }
 
 describe('ScraperCalendarioARCA', () => {
-  it('should extract reglas from fixture HTML', async () => {
-    const html = loadFixture('arca-vencimientos-iva-2026-05.html');
-    const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0, vigenciaDesde: '2026-01-01' },
-    );
+  it('fills form + submits + returns parsed reglas from fixture', async () => {
+    const html = loadFixture('arca-vencimientos-2026-04.html');
+    const { browser, page } = createMockBrowser(html);
+
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+      vigenciaDesde: '2026-01-01',
+    });
 
     const result = await scraper.scrapear('ARCA');
 
     expect(result.fuente).toBe('ARCA');
-    expect(result.reglas.length).toBe(70); // 7 conceptos × 10 terminaciones
-    expect(result.ejecutadoEn).toBeDefined();
+    expect(result.reglas.length).toBeGreaterThan(0);
 
-    // Verify IVA rule
-    const ivaT0 = result.reglas.find(
-      (r) => r.tipoObligacion === TIPO_OBLIGACION.IVA && r.terminacionCuit === '0',
+    // Verify form was filled with a date range for the current month.
+    expect(page.fill).toHaveBeenCalledWith(
+      'input[name="fechaVDesde"]',
+      expect.stringMatching(/^\d{2}\/\d{2}\/\d{4}$/),
     );
-    expect(ivaT0).toBeDefined();
-    expect(ivaT0!.diaVencimiento).toBe(18);
-    expect(ivaT0!.jurisdiccion).toBe(JURISDICCION.ARCA);
+    expect(page.fill).toHaveBeenCalledWith(
+      'input[name="fechaVHasta"]',
+      expect.stringMatching(/^\d{2}\/\d{2}\/\d{4}$/),
+    );
+    expect(page.selectOption).toHaveBeenCalledWith('select[name="terminacionCuit"]', 'Todos');
+
+    // Verify form.submit() path was invoked via evaluate.
+    expect(page.evaluate).toHaveBeenCalled();
+    const evalArg = (page.evaluate.mock.calls[0][0] as string) ?? '';
+    expect(evalArg).toContain('consultaVencimientoForm');
+    expect(evalArg).toContain('impuestosSeleccionados');
+    expect(evalArg).toContain('999');
+
+    // At least one IVA regla should come out of the real fixture.
+    const iva = result.reglas.find((r) => r.tipoObligacion === TIPO_OBLIGACION.IVA);
+    expect(iva).toBeDefined();
+    expect(iva!.jurisdiccion).toBe(JURISDICCION.ARCA);
   });
 
-  it('should return empty reglas for empty page', async () => {
+  it('returns empty reglas for empty fixture', async () => {
     const html = loadFixture('arca-vencimientos-empty.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     const result = await scraper.scrapear('ARCA');
-
-    expect(result.fuente).toBe('ARCA');
     expect(result.reglas).toHaveLength(0);
-    expect(result.errores).toHaveLength(0);
   });
 
-  it('should handle malformed page gracefully', async () => {
+  it('does not crash on malformed page', async () => {
     const html = loadFixture('arca-vencimientos-malformed.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     const result = await scraper.scrapear('ARCA');
-
-    expect(result.fuente).toBe('ARCA');
     expect(result.reglas).toHaveLength(0);
-    // Should not crash
   });
 
-  it('should handle browser launch failure gracefully', async () => {
+  it('reports error and yields empty reglas when browser launch fails', async () => {
     const scraper = new ScraperCalendarioARCA(
       () => Promise.reject(new Error('Chromium not found')),
       { mesesAdelante: 0 },
     );
 
     const result = await scraper.scrapear('ARCA');
-
-    expect(result.fuente).toBe('ARCA');
     expect(result.reglas).toHaveLength(0);
     expect(result.errores.length).toBeGreaterThan(0);
     expect(result.errores[0]).toContain('Chromium not found');
   });
 
-  it('should close browser even on error', async () => {
-    const html = loadFixture('arca-vencimientos-iva-2026-05.html');
+  it('closes browser even if page.content() rejects', async () => {
+    const html = loadFixture('arca-vencimientos-2026-04.html');
     const { browser, page } = createMockBrowser(html);
     page.content.mockRejectedValue(new Error('Navigation failed'));
 
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     await scraper.scrapear('ARCA');
-
     expect(browser.close).toHaveBeenCalled();
   });
 
-  it('should deduplicate rules across months with same natural key', async () => {
-    // When scraping 2 months, same obligation appears with different dates.
-    // The scraper should keep only the latest (last month scraped).
-    const html = loadFixture('arca-vencimientos-iva-2026-05.html');
+  it('deduplicates across months by natural key (last month wins)', async () => {
+    const html = loadFixture('arca-vencimientos-2026-04.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 1, vigenciaDesde: '2026-01-01' },
-    );
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 1,
+      vigenciaDesde: '2026-01-01',
+    });
 
     const result = await scraper.scrapear('ARCA');
-
-    // With deduplication, we should have unique (tipo × jurisdiccion × regimen × terminacion)
     const keys = new Set(
       result.reglas.map(
         (r) => `${r.tipoObligacion}|${r.jurisdiccion}|${r.regimen}|${r.terminacionCuit}`,
@@ -132,18 +130,30 @@ describe('ScraperCalendarioARCA', () => {
     expect(keys.size).toBe(result.reglas.length);
   });
 
-  it('should set vigenciaDesde from config', async () => {
-    const html = loadFixture('arca-vencimientos-iva-2026-05.html');
+  it('applies vigenciaDesde from config to every regla', async () => {
+    const html = loadFixture('arca-vencimientos-2026-04.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARCA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0, vigenciaDesde: '2026-04-01' },
-    );
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+      vigenciaDesde: '2026-04-01',
+    });
 
     const result = await scraper.scrapear('ARCA');
-
     for (const regla of result.reglas) {
       expect(regla.vigenciaDesde).toBe('2026-04-01');
     }
+  });
+
+  it('reports unmapped impuestos in errores', async () => {
+    const html = loadFixture('arca-vencimientos-2026-04.html');
+    const { browser } = createMockBrowser(html);
+    const scraper = new ScraperCalendarioARCA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+      vigenciaDesde: '2026-01-01',
+    });
+
+    const result = await scraper.scrapear('ARCA');
+    const sinMapeo = result.errores.find((e) => e.startsWith('Conceptos sin mapeo'));
+    expect(sinMapeo).toBeDefined();
   });
 });

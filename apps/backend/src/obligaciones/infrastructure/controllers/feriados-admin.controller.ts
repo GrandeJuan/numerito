@@ -11,7 +11,7 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { CrearFeriadoHandler } from '../../application/commands/crear-feriado.command';
@@ -38,10 +38,7 @@ export class FeriadosAdminController {
 
   @Get()
   @ApiOperation({ summary: 'Listar feriados (filtrar por año y/o tipo)' })
-  async list(
-    @Query('anio') anio?: string,
-    @Query('tipo') tipo?: string,
-  ) {
+  async list(@Query('anio') anio?: string, @Query('tipo') tipo?: string) {
     const items = await this.listHandler.execute({
       anio: anio ? parseInt(anio, 10) : undefined,
       tipo: tipo || undefined,

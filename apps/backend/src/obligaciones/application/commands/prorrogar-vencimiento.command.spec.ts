@@ -1,6 +1,6 @@
 import { ProrrogarVencimientoHandler } from './prorrogar-vencimiento.command';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
-import { TIPO_OBLIGACION, ESTADO_VENCIMIENTO } from '@numerito/shared';
+import { TIPO_OBLIGACION, ESTADO_VENCIMIENTO, type EstadoVencimiento } from '@numerito/shared';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal';
 
@@ -11,7 +11,7 @@ describe('ProrrogarVencimientoHandler', () => {
   let mockRepo: any;
   let mockEventBus: any;
 
-  const makeVencimiento = (estado = ESTADO_VENCIMIENTO.PENDIENTE) => {
+  const makeVencimiento = (estado: EstadoVencimiento = ESTADO_VENCIMIENTO.PENDIENTE) => {
     return Vencimiento.reconstitute(
       {
         clienteId: 'cliente-1',

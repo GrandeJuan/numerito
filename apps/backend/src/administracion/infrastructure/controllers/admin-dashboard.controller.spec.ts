@@ -1,7 +1,7 @@
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { ObtenerAdminDashboardStatsHandler } from '../../application/queries/obtener-admin-dashboard-stats.query';
 import { DashboardStatsProjection } from '../../application/services/dashboard-stats-projection';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 
 describe('AdminDashboardController', () => {
   let controller: AdminDashboardController;

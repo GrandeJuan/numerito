@@ -15,18 +15,14 @@ describe('AjusteDiaHabilService', () => {
       fecha: new Date(fecha),
       tipo: tipo as any,
       descripcion: `Feriado ${fecha}`,
-      jurisdiccionAfectada: jurisdiccion ?? null,
+      jurisdiccionAfectada: (jurisdiccion as any) ?? null,
     });
   }
 
   describe('día hábil — no adjustment needed', () => {
     it('returns the same date when it is a weekday with no feriados', () => {
       // 2026-05-04 is Monday
-      const result = service.ajustarConFeriados(
-        new Date('2026-05-04'),
-        'ARCA',
-        [],
-      );
+      const result = service.ajustarConFeriados(new Date('2026-05-04'), 'ARCA', []);
       expect(result.toISOString().slice(0, 10)).toBe('2026-05-04');
     });
   });
@@ -34,21 +30,13 @@ describe('AjusteDiaHabilService', () => {
   describe('fin de semana', () => {
     it('moves Saturday to next Monday', () => {
       // 2026-05-02 is Saturday
-      const result = service.ajustarConFeriados(
-        new Date('2026-05-02'),
-        'ARCA',
-        [],
-      );
+      const result = service.ajustarConFeriados(new Date('2026-05-02'), 'ARCA', []);
       expect(result.toISOString().slice(0, 10)).toBe('2026-05-04'); // Monday
     });
 
     it('moves Sunday to next Monday', () => {
       // 2026-05-03 is Sunday
-      const result = service.ajustarConFeriados(
-        new Date('2026-05-03'),
-        'ARCA',
-        [],
-      );
+      const result = service.ajustarConFeriados(new Date('2026-05-03'), 'ARCA', []);
       expect(result.toISOString().slice(0, 10)).toBe('2026-05-04'); // Monday
     });
   });
@@ -57,11 +45,7 @@ describe('AjusteDiaHabilService', () => {
     it('moves to the next business day', () => {
       // 2026-05-01 is Friday, Día del Trabajador
       const feriados = [feriado('2026-05-01', TIPO_FERIADO.NACIONAL)];
-      const result = service.ajustarConFeriados(
-        new Date('2026-05-01'),
-        'ARCA',
-        feriados,
-      );
+      const result = service.ajustarConFeriados(new Date('2026-05-01'), 'ARCA', feriados);
       // Next day is Saturday 05-02, then Sunday 05-03, then Monday 05-04
       expect(result.toISOString().slice(0, 10)).toBe('2026-05-04');
     });
@@ -80,11 +64,7 @@ describe('AjusteDiaHabilService', () => {
     it('banking holiday affects all jurisdictions (shifts fiscal dates)', () => {
       // 2026-12-31 is Thursday
       const feriados = [feriado('2026-12-31', TIPO_FERIADO.BANCARIO)];
-      const result = service.ajustarConFeriados(
-        new Date('2026-12-31'),
-        'ARCA',
-        feriados,
-      );
+      const result = service.ajustarConFeriados(new Date('2026-12-31'), 'ARCA', feriados);
       // Next day 01-01 is... a new year. But we only have the banking holiday in our list.
       // Without a Jan 1 feriado, it advances to Jan 1 (Thursday → Friday 01-01 if no feriado)
       // Actually 2026-12-31 is Thursday, next is 2027-01-01 which is Friday (not in feriados)

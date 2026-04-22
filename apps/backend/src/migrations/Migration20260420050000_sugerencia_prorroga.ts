@@ -41,9 +41,15 @@ export class Migration20260420SugerenciaProrroga extends Migration {
     `);
 
     // Indexes matching the MikroORM schema definition
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_estudio" ON "sugerencia_prorroga" ("estudio_id");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_vencimiento" ON "sugerencia_prorroga" ("vencimiento_id");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_estudio_estado" ON "sugerencia_prorroga" ("estudio_id", "estado");`);
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_estudio" ON "sugerencia_prorroga" ("estudio_id");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_vencimiento" ON "sugerencia_prorroga" ("vencimiento_id");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_sugerencia_prorroga_estudio_estado" ON "sugerencia_prorroga" ("estudio_id", "estado");`,
+    );
   }
 
   override down(): void {

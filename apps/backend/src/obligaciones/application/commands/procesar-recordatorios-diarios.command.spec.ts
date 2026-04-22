@@ -1,13 +1,15 @@
 import { ProcesarRecordatoriosDiariosHandler } from './procesar-recordatorios-diarios.command';
 import type { VencimientoRepository } from '../../domain/repositories/vencimiento.repository';
-import type { AlertaConfigRepository, AlertaConfigData } from '../../domain/repositories/alerta-config.repository';
+import type {
+  AlertaConfigRepository,
+  AlertaConfigData,
+} from '../../domain/repositories/alerta-config.repository';
 import type { RecordatorioEnviadoRepository } from '../../domain/repositories/recordatorio-enviado.repository';
 import type { ClienteRepository } from '../../../clientes/domain/repositories/cliente.repository';
 import type { NotificacionRepository } from '../../../notificaciones/domain/repositories/notificacion.repository';
 import type { MailSenderPort } from '../../../shared/domain/ports/mail-sender.port';
 import { Vencimiento } from '../../domain/entities/vencimiento.entity';
 import { TIPO_OBLIGACION } from '@numerito/shared';
-import { TIPO_RECORDATORIO } from '../../domain/entities/recordatorio-enviado.entity';
 
 describe('ProcesarRecordatoriosDiariosHandler', () => {
   let handler: ProcesarRecordatoriosDiariosHandler;
@@ -26,9 +28,16 @@ describe('ProcesarRecordatoriosDiariosHandler', () => {
     activa: true,
   };
 
-  const createVencimiento = (overrides: Partial<{ clienteId: string; responsableId: string; descripcion: string }> = {}) => {
+  const createVencimiento = (
+    overrides: Partial<{
+      clienteId: string;
+      responsableId: string | undefined;
+      descripcion: string;
+    }> = {},
+  ) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 2);
+    const responsableId = 'responsableId' in overrides ? overrides.responsableId : 'user-resp-1';
     return Vencimiento.create({
       clienteId: overrides.clienteId ?? 'cliente-1',
       estudioId,
@@ -36,7 +45,7 @@ describe('ProcesarRecordatoriosDiariosHandler', () => {
       periodo: '2026-04',
       fechaVencimiento: tomorrow,
       descripcion: overrides.descripcion ?? 'IVA Abril 2026',
-      responsableId: overrides.responsableId ?? 'user-resp-1',
+      responsableId,
     });
   };
 
@@ -174,7 +183,7 @@ describe('ProcesarRecordatoriosDiariosHandler', () => {
     const venc = createVencimiento({ responsableId: undefined });
     vencimientoRepo.findProximosAVencer.mockResolvedValue([venc]);
 
-    const result = await handler.execute();
+    await handler.execute();
 
     // No responsable → no internal notification, but still counted as processed
     expect(notificacionRepo.save).not.toHaveBeenCalled();
@@ -220,9 +229,7 @@ describe('ProcesarRecordatoriosDiariosHandler', () => {
     const venc2 = createVencimiento({ clienteId: 'c2', descripcion: 'Venc 2' });
     vencimientoRepo.findProximosAVencer.mockResolvedValue([venc1, venc2]);
 
-    mailSender.send
-      .mockRejectedValueOnce(new Error('SMTP error'))
-      .mockResolvedValueOnce(undefined);
+    mailSender.send.mockRejectedValueOnce(new Error('SMTP error')).mockResolvedValueOnce(undefined);
 
     const result = await handler.execute();
 

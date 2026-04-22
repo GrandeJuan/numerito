@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { fontSans, fontMono } from '@/lib/fonts';
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen font-sans antialiased">
         <AuthProvider>{children}</AuthProvider>
+        <Toaster position="top-right" theme="dark" richColors closeButton />
       </body>
     </html>
   );

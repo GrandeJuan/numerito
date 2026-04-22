@@ -1,43 +1,73 @@
 [
   {
+    "type": "console-log-handler",
+    "file": "src\\audit-guard\\fixtures\\bad\\console-log-handler.tsx",
+    "line": 4,
+    "snippet": "<button onClick={() => console.log('clicked')}>Exportar</button>"
+  },
+  {
+    "type": "dead-href",
+    "file": "src\\audit-guard\\fixtures\\bad\\dead-href.tsx",
+    "line": 4,
+    "snippet": "<a href=\"/this-route-does-not-exist\">Ir a ningún lado</a>"
+  },
+  {
+    "type": "empty-handler",
+    "file": "src\\audit-guard\\fixtures\\bad\\empty-handler.tsx",
+    "line": 1,
+    "snippet": "// Bad: onClick={undefined}"
+  },
+  {
+    "type": "empty-handler",
+    "file": "src\\audit-guard\\fixtures\\bad\\empty-handler.tsx",
+    "line": 4,
+    "snippet": "<button onClick={undefined}>Filtros</button>"
+  },
+  {
     "type": "proximamente-label",
-    "file": "src/components/admin/configuracion-page.tsx",
+    "file": "src\\audit-guard\\fixtures\\bad\\proximamente-label.tsx",
+    "line": 2,
+    "snippet": "export function ProximamentePage() {"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src\\audit-guard\\fixtures\\bad\\proximamente-label.tsx",
+    "line": 5,
+    "snippet": "<p>Esta funcionalidad estará disponible próximamente.</p>"
+  },
+  {
+    "type": "proximamente-label",
+    "file": "src\\components\\admin\\configuracion-page.tsx",
     "line": 11,
     "snippet": "description=\"Parámetros globales de la plataforma próximamente.\""
   },
   {
     "type": "proximamente-label",
-    "file": "src/components/admin/facturacion-page.tsx",
+    "file": "src\\components\\admin\\facturacion-page.tsx",
     "line": 11,
     "snippet": "description=\"Facturación de la plataforma a estudios suscriptos próximamente.\""
   },
   {
     "type": "proximamente-label",
-    "file": "src/components/admin/integraciones-page.tsx",
-    "line": 11,
-    "snippet": "description=\"Estado global de integraciones externas próximamente.\""
-  },
-  {
-    "type": "proximamente-label",
-    "file": "src/components/admin/logs-page.tsx",
+    "file": "src\\components\\admin\\logs-page.tsx",
     "line": 11,
     "snippet": "description=\"Auditoría y eventos del sistema próximamente.\""
   },
   {
     "type": "proximamente-label",
-    "file": "src/components/admin/metricas-page.tsx",
+    "file": "src\\components\\admin\\metricas-page.tsx",
     "line": 11,
     "snippet": "description=\"Métricas de uso agregado de la plataforma próximamente.\""
   },
   {
     "type": "proximamente-label",
-    "file": "src/components/admin/suscripciones-page.tsx",
+    "file": "src\\components\\admin\\suscripciones-page.tsx",
     "line": 11,
     "snippet": "description=\"Gestión de suscripciones y billing de estudios próximamente.\""
   },
   {
     "type": "proximamente-label",
-    "file": "src/components/configuracion/roles-permisos-page.tsx",
+    "file": "src\\components\\configuracion\\roles-permisos-page.tsx",
     "line": 11,
     "snippet": "description=\"La matriz de permisos por rol está en desarrollo. Próximamente vas a poder configurar qué puede hacer cada rol del estudio.\""
   }

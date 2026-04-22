@@ -3,7 +3,11 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { EntityManager } from '@mikro-orm/core';
 import { OBLIGACIONES_EVENTS } from '../../../obligaciones/application/public-events';
 import type { CalendarioMensualListoPayload } from '../../../obligaciones/application/public-events';
-import type { PdfGeneratorPort, PdfSection, PdfTableRow } from '../../../shared/domain/ports/pdf-generator.port';
+import type {
+  PdfGeneratorPort,
+  PdfSection,
+  PdfTableRow,
+} from '../../../shared/domain/ports/pdf-generator.port';
 import type { MailSenderPort } from '../../../shared/domain/ports/mail-sender.port';
 import type { ResumenMensualRepository } from '../../domain/repositories/resumen-mensual.repository';
 import { ResumenMensual } from '../../domain/entities/resumen-mensual.entity';
@@ -60,11 +64,7 @@ export class ResumenMensualListener {
       });
 
       // Fetch vencimientos for this client+period via raw SQL
-      const sections = await this.buildPdfSections(
-        event.estudioId,
-        event.clienteId,
-        event.periodo,
-      );
+      const sections = await this.buildPdfSections(event.estudioId, event.clienteId, event.periodo);
 
       // Generate PDF
       const pdfBuffer = await this.pdfGenerator.generarCalendarioMensual({
@@ -110,13 +110,15 @@ export class ResumenMensualListener {
     periodo: string,
   ): Promise<PdfSection[]> {
     const conn = this.em.getConnection();
-    const rows = await conn.execute<{
-      tipo_obligacion: string;
-      periodo: string;
-      fecha_vencimiento: string;
-      descripcion: string;
-      estado_nombre: string;
-    }[]>(
+    const rows = await conn.execute<
+      {
+        tipo_obligacion: string;
+        periodo: string;
+        fecha_vencimiento: string;
+        descripcion: string;
+        estado_nombre: string;
+      }[]
+    >(
       `SELECT v.tipo_obligacion, v.periodo, v.fecha_vencimiento::text,
               v.descripcion, ev.nombre as estado_nombre
        FROM vencimiento v
@@ -130,7 +132,15 @@ export class ResumenMensualListener {
       return [];
     }
 
-    const pdfRows: PdfTableRow[] = rows.map((r) => ({
+    const pdfRows: PdfTableRow[] = (
+      rows as Array<{
+        tipo_obligacion: string;
+        periodo: string;
+        fecha_vencimiento: string;
+        descripcion: string;
+        estado_nombre: string;
+      }>
+    ).map((r) => ({
       obligacion: r.descripcion || r.tipo_obligacion,
       periodo: r.periodo,
       fecha: r.fecha_vencimiento,
@@ -180,12 +190,9 @@ export class ResumenMensualListener {
     const body = `Estimado/a ${event.clienteNombre},\n\nAdjunto encontrará el calendario de vencimientos del período ${this.formatPeriodo(event.periodo)}.\n\nSaludos,\nNumerito`;
 
     if (this.mailSender.sendWithAttachments) {
-      await this.mailSender.sendWithAttachments(
-        email,
-        subject,
-        body,
-        [{ filename, content: pdfBuffer, contentType: 'application/pdf' }],
-      );
+      await this.mailSender.sendWithAttachments(email, subject, body, [
+        { filename, content: pdfBuffer, contentType: 'application/pdf' },
+      ]);
     } else {
       await this.mailSender.send(
         email,
@@ -213,8 +220,18 @@ export class ResumenMensualListener {
   private formatPeriodo(periodo: string): string {
     const [year, month] = periodo.split('-');
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     const idx = parseInt(month, 10) - 1;
     return `${meses[idx] ?? month} ${year}`;

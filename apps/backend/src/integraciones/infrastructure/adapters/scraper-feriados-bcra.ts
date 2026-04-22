@@ -13,7 +13,10 @@
  * - HTML parsing: bcra-feriados-parser.ts (pure, independently testable)
  */
 
-import type { CalendarioScraperPort, ResultadoScraping } from '../../domain/ports/calendario-scraper.port';
+import type {
+  CalendarioScraperPort,
+  ResultadoScraping,
+} from '../../domain/ports/calendario-scraper.port';
 import type { FuenteIngesta } from '../../domain/entities/configuracion-ingesta.entity';
 import { parseBcraFeriadosHtml } from './bcra-feriados-parser';
 
@@ -28,7 +31,10 @@ interface Page {
   setDefaultTimeout(ms: number): void;
   goto(url: string, opts?: Record<string, unknown>): Promise<unknown>;
   content(): Promise<string>;
-  locator(selector: string): { count(): Promise<number>; selectOption(value: string): Promise<void> };
+  locator(selector: string): {
+    count(): Promise<number>;
+    selectOption(value: string): Promise<void>;
+  };
   waitForLoadState(state?: string): Promise<void>;
 }
 
@@ -52,10 +58,11 @@ export class ScraperFeriadosBCRA implements CalendarioScraperPort {
   static defaultBrowserFactory(): BrowserFactory {
     return async () => {
       const { chromium } = await import('playwright');
-      return chromium.launch({
+      const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
+      return browser as unknown as Browser;
     };
   }
 
@@ -81,7 +88,7 @@ export class ScraperFeriadosBCRA implements CalendarioScraperPort {
 
       // Select year if dropdown exists
       const anioLocator = page.locator('select[name="anio"], #anio, select.anio');
-      if (await anioLocator.count() > 0) {
+      if ((await anioLocator.count()) > 0) {
         await anioLocator.selectOption(String(this.config.anio)).catch(() => {});
         await page.waitForLoadState('networkidle');
       }

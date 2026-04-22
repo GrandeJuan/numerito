@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { GlobalRepository } from '../../../shared/domain';
-import type { ReglaVencimientoEntityRepository } from '../../domain/repositories/regla-vencimiento.repository';
+import type {
+  ReglaVencimientoEntityRepository,
+  ReglaActivaSummary,
+  ReglaPropuestaScrapeData,
+} from '../../domain/repositories/regla-vencimiento.repository';
 import { ReglaVencimiento } from '../../domain/entities/regla-vencimiento.entity';
+import { ORIGEN_REGLA } from '../../domain/entities/regla-vencimiento.entity';
 import { ReglaVencimientoEntity } from './regla-vencimiento.schema';
 import { TipoObligacionEntity } from '../../../shared/infrastructure/persistence/tipo-obligacion.schema';
 import { ReglaVencimientoMapper } from './regla-vencimiento.mapper';
@@ -48,6 +53,39 @@ export class MikroOrmReglaVencimientoRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
+  async findActivasAsSummary(): Promise<ReglaActivaSummary[]> {
+    const entities = await this.em.find(
+      ReglaVencimientoEntity,
+      { estado: ESTADO_REGLA.ACTIVA },
+      { populate: ['tipoObligacion'] },
+    );
+    return entities.map((e) => ({
+      id: String(e.id),
+      tipoObligacion: e.tipoObligacion.codigo as TipoObligacion,
+      jurisdiccion: e.jurisdiccion as Jurisdiccion,
+      regimen: e.regimen,
+      terminacionCuit: e.terminacionCuit,
+      diaVencimiento: e.diaVencimiento,
+      mesSiguiente: e.mesSiguiente,
+    }));
+  }
+
+  async createPropuestaFromScrape(data: ReglaPropuestaScrapeData): Promise<void> {
+    const propuesta = ReglaVencimiento.create({
+      tipoObligacion: data.tipoObligacion,
+      jurisdiccion: data.jurisdiccion,
+      regimen: data.regimen,
+      terminacionCuit: data.terminacionCuit,
+      diaVencimiento: data.diaVencimiento,
+      mesSiguiente: data.mesSiguiente,
+      vigenciaDesde: data.vigenciaDesde,
+      vigenciaHasta: data.vigenciaHasta,
+      origen: ORIGEN_REGLA.SCRAPING_OFICIAL,
+      estado: ESTADO_REGLA.PROPUESTA,
+    });
+    await this.save(propuesta);
+  }
+
   async findByEstado(estado: EstadoRegla): Promise<ReglaVencimiento[]> {
     const entities = await this.em.find(
       ReglaVencimientoEntity,
@@ -73,10 +111,7 @@ export class MikroOrmReglaVencimientoRepository
         terminacionCuit: terminacion,
         estado: ESTADO_REGLA.ACTIVA,
         vigenciaDesde: { $lte: fecha },
-        $or: [
-          { vigenciaHasta: null },
-          { vigenciaHasta: { $gte: fecha } },
-        ],
+        $or: [{ vigenciaHasta: null }, { vigenciaHasta: { $gte: fecha } }],
       },
       { populate: ['tipoObligacion'] },
     );

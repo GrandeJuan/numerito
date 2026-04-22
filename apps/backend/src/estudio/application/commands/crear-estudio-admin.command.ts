@@ -1,10 +1,14 @@
-import type { EstudioRepository } from '../../../estudio/domain/repositories/estudio.repository';
-import type { AdminPlanRepository } from '../../domain/repositories/admin-plan.repository';
+import type { EstudioRepository } from '../../domain/repositories/estudio.repository';
+import type { AdminPlanRepository } from '../../../administracion/domain/repositories/admin-plan.repository';
 import type { EventBus } from '../../../shared/domain/event-bus';
-import { Estudio } from '../../../estudio/domain/entities/estudio.entity';
-import { Subscripcion, EstadoSubscripcion, CicloFacturacion } from '../../../estudio/domain/entities/subscripcion.entity';
-import { NombreEstudio } from '../../../estudio/domain/value-objects/nombre-estudio.vo';
-import { PlanSubscripcion } from '../../../estudio/domain/value-objects/plan-subscripcion.vo';
+import { Estudio } from '../../domain/entities/estudio.entity';
+import {
+  Subscripcion,
+  EstadoSubscripcion,
+  CicloFacturacion,
+} from '../../domain/entities/subscripcion.entity';
+import { NombreEstudio } from '../../domain/value-objects/nombre-estudio.vo';
+import { PlanSubscripcion } from '../../domain/value-objects/plan-subscripcion.vo';
 import { CuitDuplicadoError, RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 export interface CrearEstudioAdminCommand {
@@ -64,10 +68,7 @@ export class CrearEstudioAdminHandler {
     await this.estudioRepo.save(estudio);
     await this.saveSubscripcion(subscripcion);
 
-    this.eventBus.publishAll([
-      ...estudio.getDomainEvents(),
-      ...subscripcion.getDomainEvents(),
-    ]);
+    this.eventBus.publishAll([...estudio.getDomainEvents(), ...subscripcion.getDomainEvents()]);
     estudio.clearDomainEvents();
     subscripcion.clearDomainEvents();
 

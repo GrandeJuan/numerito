@@ -39,6 +39,16 @@ export class MikroOrmEjecucionIngestaRepository
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
   }
 
+  async findEnCursoByFuente(fuente: FuenteIngesta): Promise<EjecucionIngesta | null> {
+    const entity = await this.em.findOne(
+      EjecucionIngestaEntity,
+      { fuente, estado: 'EN_CURSO' },
+      { orderBy: { inicio: 'DESC' } },
+    );
+    if (!entity) return null;
+    return this.mapper.toDomain(this.mapper.fromSchema(entity));
+  }
+
   async findAll(): Promise<EjecucionIngesta[]> {
     const entities = await this.em.find(
       EjecucionIngestaEntity,
@@ -58,6 +68,7 @@ export class MikroOrmEjecucionIngestaRepository
       existing.disparador = data.disparador;
       existing.disparadoPor = data.disparadoPor;
       existing.ingestaId = data.ingestaId;
+      existing.launcherTaskId = data.launcherTaskId;
       existing.inicio = data.inicio;
       existing.fin = data.fin;
       existing.reglasNuevas = data.reglasNuevas;
@@ -72,6 +83,7 @@ export class MikroOrmEjecucionIngestaRepository
         disparador: data.disparador,
         disparadoPor: data.disparadoPor,
         ingestaId: data.ingestaId,
+        launcherTaskId: data.launcherTaskId,
         inicio: data.inicio,
         fin: data.fin,
         reglasNuevas: data.reglasNuevas,
@@ -81,6 +93,13 @@ export class MikroOrmEjecucionIngestaRepository
         updatedAt: new Date(),
       });
     }
+    await this.em.flush();
+  }
+
+  async delete(ejecucion: EjecucionIngesta): Promise<void> {
+    const entity = await this.em.findOne(EjecucionIngestaEntity, { id: ejecucion.id });
+    if (!entity) return;
+    this.em.remove(entity);
     await this.em.flush();
   }
 }

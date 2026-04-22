@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -9,7 +10,15 @@ import { ResponseWrapperInterceptor } from './shared/infrastructure/interceptors
 import { parseAllowedOrigins } from './shared/infrastructure/cors-origins';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  // Scraper webhooks post large payloads (e.g., ARCA ≈ 1350 reglas/mes).
+  // Default body limit (100 KB) rejects them with 413. bodyParser: false +
+  // explicit useBodyParser lets us override the limit.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+    bodyParser: false,
+  });
+  app.useBodyParser('json', { limit: '10mb' });
+  app.useBodyParser('urlencoded', { limit: '10mb', extended: true });
 
   // Use Pino as the application logger (captures all NestJS internal logs)
   const logger = app.get(Logger);

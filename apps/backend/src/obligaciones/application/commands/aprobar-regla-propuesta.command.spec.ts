@@ -1,17 +1,30 @@
 import { AprobarReglaPropuestaHandler } from './aprobar-regla-propuesta.command';
-import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../domain/entities/regla-vencimiento.entity';
+import {
+  ReglaVencimiento,
+  ESTADO_REGLA,
+  ORIGEN_REGLA,
+} from '../../domain/entities/regla-vencimiento.entity';
 import type { ReglaVencimientoEntityRepository } from '../../domain/repositories/regla-vencimiento.repository';
-import { RecursoNoEncontradoError, OperacionInvalidaError } from '../../../shared/domain/exceptions';
+import {
+  RecursoNoEncontradoError,
+  OperacionInvalidaError,
+} from '../../../shared/domain/exceptions';
 
-function createMockRepo(reglas: ReglaVencimiento[] = []): jest.Mocked<ReglaVencimientoEntityRepository> {
+function createMockRepo(
+  reglas: ReglaVencimiento[] = [],
+): jest.Mocked<ReglaVencimientoEntityRepository> {
   return {
-    findById: jest.fn().mockImplementation((id: string) =>
-      Promise.resolve(reglas.find((r) => r.id === id) ?? null),
-    ),
+    findById: jest
+      .fn()
+      .mockImplementation((id: string) => Promise.resolve(reglas.find((r) => r.id === id) ?? null)),
     findAll: jest.fn(),
-    findActivas: jest.fn().mockResolvedValue(reglas.filter((r) => r.estado === ESTADO_REGLA.ACTIVA)),
+    findActivas: jest
+      .fn()
+      .mockResolvedValue(reglas.filter((r) => r.estado === ESTADO_REGLA.ACTIVA)),
     findByEstado: jest.fn(),
     findVigentes: jest.fn(),
+    findActivasAsSummary: jest.fn(),
+    createPropuestaFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
@@ -80,9 +93,9 @@ describe('AprobarReglaPropuestaHandler', () => {
     const repo = createMockRepo([]);
     const handler = new AprobarReglaPropuestaHandler(repo);
 
-    await expect(
-      handler.execute({ reglaId: 'non-existent' }),
-    ).rejects.toThrow(RecursoNoEncontradoError);
+    await expect(handler.execute({ reglaId: 'non-existent' })).rejects.toThrow(
+      RecursoNoEncontradoError,
+    );
   });
 
   it('should throw OperacionInvalidaError for non-PROPUESTA rule', async () => {
@@ -100,9 +113,7 @@ describe('AprobarReglaPropuestaHandler', () => {
     const repo = createMockRepo([activa]);
     const handler = new AprobarReglaPropuestaHandler(repo);
 
-    await expect(
-      handler.execute({ reglaId: activa.id }),
-    ).rejects.toThrow(OperacionInvalidaError);
+    await expect(handler.execute({ reglaId: activa.id })).rejects.toThrow(OperacionInvalidaError);
   });
 
   it('should not close vigencia of rules for different natural key', async () => {
@@ -110,7 +121,7 @@ describe('AprobarReglaPropuestaHandler', () => {
       tipoObligacion: 'IVA' as any,
       jurisdiccion: 'ARCA' as any,
       regimen: 'GENERAL',
-      terminacionCuit: '5',  // different terminacion
+      terminacionCuit: '5', // different terminacion
       diaVencimiento: 18,
       mesSiguiente: true,
       vigenciaDesde: new Date('2026-01-01'),

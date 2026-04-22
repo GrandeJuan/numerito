@@ -1,8 +1,21 @@
-import { Controller, Get, Post, Put, Patch, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { CrearPlanDto, crearPlanDtoSchema } from '../../application/dtos/crear-plan.dto';
-import { ActualizarPlanDto, actualizarPlanDtoSchema } from '../../application/dtos/actualizar-plan.dto';
+import {
+  ActualizarPlanDto,
+  actualizarPlanDtoSchema,
+} from '../../application/dtos/actualizar-plan.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { AdminPlanesService } from '../../application/services/admin-planes.service';
@@ -34,7 +47,10 @@ export class AdminPlanesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualizar plan' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body(new ZodValidationPipe(actualizarPlanDtoSchema)) dto: ActualizarPlanDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(actualizarPlanDtoSchema)) dto: ActualizarPlanDto,
+  ) {
     return this.planesService.update(id, dto);
   }
 

@@ -9,8 +9,8 @@ describe('RecordatorioEnviado Entity', () => {
     vencimientoId: 'venc-1',
     estudioId: 'estudio-1',
     clienteId: 'cliente-1',
-    tipoRecordatorio: TIPO_RECORDATORIO.ANTICIPACION as const,
-    canal: CANAL_RECORDATORIO.EMAIL as const,
+    tipoRecordatorio: TIPO_RECORDATORIO.ANTICIPACION,
+    canal: CANAL_RECORDATORIO.EMAIL,
     destinatarioId: 'cliente-1',
   };
 

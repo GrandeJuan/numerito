@@ -40,6 +40,8 @@ export interface EntrypointConfig {
   mesesAdelante: number;
   disparador: 'MANUAL' | 'SCHEDULE';
   disparadoPor: string | null;
+  /** Correlation id of a pre-created EjecucionIngesta record. Null for SCHEDULE runs. */
+  ejecucionId: string | null;
 }
 
 export function loadConfig(): EntrypointConfig {
@@ -65,6 +67,7 @@ export function loadConfig(): EntrypointConfig {
     mesesAdelante: parseInt(process.env.MESES_ADELANTE || '0', 10),
     disparador: (process.env.DISPARADOR as 'MANUAL' | 'SCHEDULE') || 'SCHEDULE',
     disparadoPor: process.env.DISPARADO_POR || null,
+    ejecucionId: process.env.EJECUCION_ID || null,
   };
 }
 
@@ -75,24 +78,19 @@ export function loadConfig(): EntrypointConfig {
 export function createScraper(config: EntrypointConfig): CalendarioScraperPort {
   switch (config.fuente) {
     case 'ARCA':
-      return new ScraperCalendarioARCA(
-        ScraperCalendarioARCA.defaultBrowserFactory(),
-        { mesesAdelante: config.mesesAdelante },
-      );
+      return new ScraperCalendarioARCA(ScraperCalendarioARCA.defaultBrowserFactory(), {
+        mesesAdelante: config.mesesAdelante,
+      });
     case 'ARBA':
-      return new ScraperCalendarioARBA(
-        ScraperCalendarioARBA.defaultBrowserFactory(),
-        { mesesAdelante: config.mesesAdelante },
-      );
+      return new ScraperCalendarioARBA(ScraperCalendarioARBA.defaultBrowserFactory(), {
+        mesesAdelante: config.mesesAdelante,
+      });
     case 'AGIP':
-      return new ScraperCalendarioAGIP(
-        ScraperCalendarioAGIP.defaultBrowserFactory(),
-        { mesesAdelante: config.mesesAdelante },
-      );
+      return new ScraperCalendarioAGIP(ScraperCalendarioAGIP.defaultBrowserFactory(), {
+        mesesAdelante: config.mesesAdelante,
+      });
     case 'BCRA_FERIADOS':
-      return new ScraperFeriadosBCRA(
-        ScraperFeriadosBCRA.defaultBrowserFactory(),
-      );
+      return new ScraperFeriadosBCRA(ScraperFeriadosBCRA.defaultBrowserFactory());
     default: {
       const _exhaustive: never = config.fuente;
       throw new Error(`Unsupported fuente: ${_exhaustive}`);
@@ -124,7 +122,9 @@ async function main(): Promise<void> {
   console.log('[scraper-entrypoint] Starting...');
 
   const config = loadConfig();
-  console.log(`[scraper-entrypoint] fuente=${config.fuente} mesesAdelante=${config.mesesAdelante} disparador=${config.disparador}`);
+  console.log(
+    `[scraper-entrypoint] fuente=${config.fuente} mesesAdelante=${config.mesesAdelante} disparador=${config.disparador}`,
+  );
 
   const scraper = createScraper(config);
 
@@ -145,7 +145,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`[scraper-entrypoint] POSTing resultado to ${config.backendUrl}...`);
-  const { ok, status, body } = await postResultado(config, resultado);
+  const payload = config.ejecucionId
+    ? { ...resultado, ejecucionId: config.ejecucionId }
+    : resultado;
+  const { ok, status, body } = await postResultado(config, payload);
 
   if (!ok) {
     console.error(`[scraper-entrypoint] Backend rejected resultado: HTTP ${status}`);
@@ -158,8 +161,7 @@ async function main(): Promise<void> {
 }
 
 // Only run main() when this file is the entry point (not when imported for testing)
-const isMainModule =
-  typeof require !== 'undefined' && require.main === module;
+const isMainModule = typeof require !== 'undefined' && require.main === module;
 
 if (isMainModule) {
   main().catch((err) => {

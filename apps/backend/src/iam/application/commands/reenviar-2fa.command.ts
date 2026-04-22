@@ -1,7 +1,10 @@
 import { generateTotpSecret, generateTotpUri } from '../../../shared/utils/totp';
 import type { TotpSecretRepository } from '../../domain/repositories/totp-secret.repository';
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
-import { RecursoNoEncontradoError, TwoFANoConfiguradoError } from '../../../shared/domain/exceptions';
+import {
+  RecursoNoEncontradoError,
+  TwoFANoConfiguradoError,
+} from '../../../shared/domain/exceptions';
 import { OperacionInvalidaError } from '../../../shared/domain/exceptions';
 
 export interface Reenviar2FACommand {
@@ -46,7 +49,7 @@ export class Reenviar2FAHandler {
 
     // Regenerate the secret and persist it
     const newSecret = generateTotpSecret();
-    const otpauthUrl = generateTotpUri(usuario.email.value, 'Numerito', newSecret);
+    generateTotpUri(usuario.email.value, 'Numerito', newSecret);
 
     await this.totpSecretRepo.save({
       usuarioId: command.usuarioId,

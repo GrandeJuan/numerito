@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { GlobalRepository } from '../../../shared/domain';
-import type { FeriadoRepository } from '../../domain/repositories/feriado.repository';
+import type {
+  FeriadoRepository,
+  FeriadoSummary,
+  FeriadoScrapeData,
+} from '../../domain/repositories/feriado.repository';
 import { DiaFeriado } from '../../domain/entities/dia-feriado.entity';
 import { DiaFeriadoEntity } from './dia-feriado.schema';
 import { DiaFeriadoMapper } from './dia-feriado.mapper';
+import type { TipoFeriado, Jurisdiccion } from '@numerito/shared';
 
 @Injectable()
 export class MikroOrmFeriadoRepository
@@ -31,6 +36,24 @@ export class MikroOrmFeriadoRepository
   async findByFecha(fecha: Date): Promise<DiaFeriado[]> {
     const entities = await this.em.find(DiaFeriadoEntity, { fecha });
     return entities.map((e) => this.mapper.toDomain(this.mapper.fromSchema(e)));
+  }
+
+  async findByFechaAsSummary(fecha: Date): Promise<FeriadoSummary[]> {
+    const entities = await this.em.find(DiaFeriadoEntity, { fecha });
+    return entities.map((e) => ({
+      tipo: e.tipo as TipoFeriado,
+      jurisdiccionAfectada: (e.jurisdiccionAfectada ?? null) as Jurisdiccion | null,
+    }));
+  }
+
+  async createFromScrape(data: FeriadoScrapeData): Promise<void> {
+    const entity = DiaFeriado.create({
+      fecha: data.fecha,
+      tipo: data.tipo,
+      descripcion: data.descripcion,
+      jurisdiccionAfectada: data.jurisdiccionAfectada,
+    });
+    await this.save(entity);
   }
 
   async findByRango(desde: Date, hasta: Date): Promise<DiaFeriado[]> {

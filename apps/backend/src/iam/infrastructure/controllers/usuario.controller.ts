@@ -20,7 +20,7 @@ import { USUARIO_REPOSITORY } from '../../domain/repositories/usuario.repository
 import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import { AVATAR_STORAGE } from '../../domain/ports/avatar-storage.port';
 import type { AvatarStoragePort } from '../../domain/ports/avatar-storage.port';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 

@@ -1,6 +1,10 @@
-import { DetectarSugerenciasProrrogaHandler } from './detectar-sugerencias-prorroga.command';
-import type { DiffRegla } from '../../../integraciones/application/commands/procesar-resultado-scraping.command';
+import {
+  DetectarSugerenciasProrrogaHandler,
+  type DiffReglaInput,
+} from './detectar-sugerencias-prorroga.command';
 import type { AjusteDiaHabilService } from '../../domain/services/ajuste-dia-habil.service';
+import type { SugerenciaProrrogaRepository } from '../../domain/repositories/sugerencia-prorroga.repository';
+import type { SugerenciaProrroga } from '../../domain/entities/sugerencia-prorroga.entity';
 
 function makeAjusteDiaHabil(adjustments: Record<string, string> = {}): AjusteDiaHabilService {
   return {
@@ -9,42 +13,44 @@ function makeAjusteDiaHabil(adjustments: Record<string, string> = {}): AjusteDia
       if (adjustments[key]) {
         return new Date(adjustments[key]);
       }
-      // Default: return same date (no adjustment needed)
       return new Date(fecha);
     }),
   } as any;
 }
 
 function makeEntityManager(pendientes: any[] = [], existingOpen: any[] = []) {
-  const created: any[] = [];
   const em = {
     getConnection: () => ({
-      execute: jest.fn()
-        .mockResolvedValueOnce(pendientes) // first call: find PENDIENTE vencimientos
-        .mockResolvedValueOnce(existingOpen), // second call: existing open sugerencias
+      execute: jest.fn().mockResolvedValueOnce(pendientes).mockResolvedValueOnce(existingOpen),
     }),
-    create: jest.fn((_cls: any, data: any) => {
-      created.push(data);
-      return data;
-    }),
-    getReference: jest.fn((_cls: any, id: string) => ({ id })),
-    flush: jest.fn().mockResolvedValue(undefined),
-    _created: created,
   };
   return em;
 }
 
+function makeRepo() {
+  const saved: SugerenciaProrroga[] = [];
+  const repo: SugerenciaProrrogaRepository = {
+    findById: jest.fn(),
+    findByVencimientoId: jest.fn(),
+    findByEstado: jest.fn(),
+    findAbiertas: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+    saveManyGlobal: jest.fn(async (entities: SugerenciaProrroga[]) => {
+      saved.push(...entities);
+    }),
+  } as any;
+  return { repo, saved };
+}
+
 describe('DetectarSugerenciasProrrogaHandler', () => {
-  const modifiedDiff: DiffRegla = {
+  const modifiedDiff: DiffReglaInput = {
     tipo: 'MODIFICADA',
     propuesta: {
       tipoObligacion: 'IVA',
       jurisdiccion: 'ARCA',
-      regimen: 'GENERAL',
-      terminacionCuit: '0',
       diaVencimiento: 22,
       mesSiguiente: true,
-      vigenciaDesde: '2026-01-01',
     },
     reglaActivaId: 'regla-1',
     cambios: ['diaVencimiento: 20 → 22'],
@@ -58,11 +64,12 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
         cliente_id: 'cli-1',
         tipo_obligacion: 'IVA',
         periodo: '2026-05',
-        fecha_vencimiento: new Date('2026-06-20'), // original date (mesSiguiente was true, dia was 20)
+        fecha_vencimiento: new Date('2026-06-20'),
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
+    const { repo, saved } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil(), repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -71,16 +78,12 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
 
     expect(result.sugerenciasCreadas).toBe(1);
     expect(result.sugerenciasOmitidas).toBe(0);
-    expect(em.flush).toHaveBeenCalled();
-    expect(em._created).toHaveLength(1);
-    expect(em._created[0]).toMatchObject({
-      tipoObligacion: 'IVA',
-      periodo: '2026-05',
-      motivo: 'diaVencimiento: 20 → 22',
-      estado: 'ABIERTA',
-      reglaActivaId: 'regla-1',
-      ejecucionIngestaId: 'ejec-1',
-    });
+    expect(saved).toHaveLength(1);
+    expect(saved[0].tipoObligacion).toBe('IVA');
+    expect(saved[0].periodo).toBe('2026-05');
+    expect(saved[0].motivo).toBe('diaVencimiento: 20 → 22');
+    expect(saved[0].reglaActivaId).toBe('regla-1');
+    expect(saved[0].ejecucionIngestaId).toBe('ejec-1');
   });
 
   it('skips vencimientos that already have an open sugerencia', async () => {
@@ -96,7 +99,8 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
     ];
     const existingOpen = [{ vencimiento_id: 'venc-1' }];
     const em = makeEntityManager(pendientes, existingOpen);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
+    const { repo } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil(), repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -115,11 +119,12 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
         cliente_id: 'cli-1',
         tipo_obligacion: 'IVA',
         periodo: '2026-05',
-        fecha_vencimiento: new Date('2026-06-22'), // already at the proposed date
+        fecha_vencimiento: new Date('2026-06-22'),
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
+    const { repo } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil(), repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -132,7 +137,8 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
 
   it('returns zero when no modified rules', async () => {
     const em = makeEntityManager([], []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
+    const { repo } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil(), repo);
 
     const result = await handler.execute({
       reglasModificadas: [{ tipo: 'NUEVA', propuesta: {} as any }],
@@ -151,13 +157,13 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
         cliente_id: 'cli-1',
         tipo_obligacion: 'IVA',
         periodo: '2026-05',
-        fecha_vencimiento: new Date('2026-06-20'), // original
+        fecha_vencimiento: new Date('2026-06-20'),
       },
     ];
-    // June 22 2026 is a Monday, but pretend it's a feriado — adjust to June 23
     const ajuste = makeAjusteDiaHabil({ '2026-06-22': '2026-06-23' });
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste);
+    const { repo, saved } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste, repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -165,13 +171,8 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
     });
 
     expect(result.sugerenciasCreadas).toBe(1);
-    expect(ajuste.ajustar).toHaveBeenCalledWith(
-      expect.any(Date),
-      'ARCA',
-    );
-    // The persisted fechaSugerida should be the adjusted date, not the nominal
-    const created = em._created[0];
-    expect(created.fechaSugerida.toISOString().slice(0, 10)).toBe('2026-06-23');
+    expect(ajuste.ajustar).toHaveBeenCalledWith(expect.any(Date), 'ARCA');
+    expect(saved[0].fechaSugerida.toISOString().slice(0, 10)).toBe('2026-06-23');
   });
 
   it('skips when business-day-adjusted date equals current date', async () => {
@@ -182,13 +183,13 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
         cliente_id: 'cli-1',
         tipo_obligacion: 'IVA',
         periodo: '2026-05',
-        fecha_vencimiento: new Date('2026-06-23'), // current is already at adjusted date
+        fecha_vencimiento: new Date('2026-06-23'),
       },
     ];
-    // Nominal is June 22 but adjusts to June 23 (same as current)
     const ajuste = makeAjusteDiaHabil({ '2026-06-22': '2026-06-23' });
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste);
+    const { repo } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, ajuste, repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -219,7 +220,8 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
       },
     ];
     const em = makeEntityManager(pendientes, []);
-    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil());
+    const { repo, saved } = makeRepo();
+    const handler = new DetectarSugerenciasProrrogaHandler(em as any, makeAjusteDiaHabil(), repo);
 
     const result = await handler.execute({
       reglasModificadas: [modifiedDiff],
@@ -227,8 +229,8 @@ describe('DetectarSugerenciasProrrogaHandler', () => {
     });
 
     expect(result.sugerenciasCreadas).toBe(2);
-    expect(em._created).toHaveLength(2);
-    expect(em._created[0].estudio).toEqual({ id: 'est-1' });
-    expect(em._created[1].estudio).toEqual({ id: 'est-2' });
+    expect(saved).toHaveLength(2);
+    expect(saved[0].estudioId).toBe('est-1');
+    expect(saved[1].estudioId).toBe('est-2');
   });
 });

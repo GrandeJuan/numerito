@@ -8,6 +8,8 @@ function createMockRepo(): jest.Mocked<FeriadoRepository> {
     findAll: jest.fn(),
     findByFecha: jest.fn(),
     findByRango: jest.fn(),
+    findByFechaAsSummary: jest.fn(),
+    createFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };

@@ -43,7 +43,7 @@ describe('SesMailSender', () => {
       expect(SendRawEmailCommand).toHaveBeenCalledTimes(1);
       expect(mockSend).toHaveBeenCalledTimes(1);
 
-      const rawCommand = (SendRawEmailCommand as jest.Mock).mock.calls[0][0];
+      const rawCommand = (SendRawEmailCommand as unknown as jest.Mock).mock.calls[0][0];
       expect(rawCommand.RawMessage.Data).toBeInstanceOf(Buffer);
 
       const rawStr = rawCommand.RawMessage.Data.toString('utf-8');
@@ -57,7 +57,7 @@ describe('SesMailSender', () => {
     it('encodes subject as UTF-8 base64 for special characters', async () => {
       await sender.send('test@example.com', 'Prórroga — Abril 2026', 'Body');
 
-      const rawCommand = (SendRawEmailCommand as jest.Mock).mock.calls[0][0];
+      const rawCommand = (SendRawEmailCommand as unknown as jest.Mock).mock.calls[0][0];
       const rawStr = rawCommand.RawMessage.Data.toString('utf-8');
       const expected = Buffer.from('Prórroga — Abril 2026').toString('base64');
       expect(rawStr).toContain(`=?UTF-8?B?${expected}?=`);
@@ -84,12 +84,14 @@ describe('SesMailSender', () => {
       expect(SendRawEmailCommand).toHaveBeenCalledTimes(1);
       expect(mockSend).toHaveBeenCalledTimes(1);
 
-      const rawCommand = (SendRawEmailCommand as jest.Mock).mock.calls[0][0];
+      const rawCommand = (SendRawEmailCommand as unknown as jest.Mock).mock.calls[0][0];
       const rawStr = rawCommand.RawMessage.Data.toString('utf-8');
 
       expect(rawStr).toContain('Content-Type: multipart/mixed; boundary=');
       expect(rawStr).toContain('Content-Type: application/pdf; name="calendario-2026-05.pdf"');
-      expect(rawStr).toContain('Content-Disposition: attachment; filename="calendario-2026-05.pdf"');
+      expect(rawStr).toContain(
+        'Content-Disposition: attachment; filename="calendario-2026-05.pdf"',
+      );
       expect(rawStr).toContain(pdfBuffer.toString('base64'));
     });
 
@@ -97,17 +99,12 @@ describe('SesMailSender', () => {
       const pdf1 = Buffer.from('pdf-1');
       const pdf2 = Buffer.from('pdf-2');
 
-      await sender.sendWithAttachments(
-        'test@example.com',
-        'Docs',
-        'Adjuntos.',
-        [
-          { filename: 'doc1.pdf', content: pdf1, contentType: 'application/pdf' },
-          { filename: 'doc2.pdf', content: pdf2, contentType: 'application/pdf' },
-        ],
-      );
+      await sender.sendWithAttachments('test@example.com', 'Docs', 'Adjuntos.', [
+        { filename: 'doc1.pdf', content: pdf1, contentType: 'application/pdf' },
+        { filename: 'doc2.pdf', content: pdf2, contentType: 'application/pdf' },
+      ]);
 
-      const rawCommand = (SendRawEmailCommand as jest.Mock).mock.calls[0][0];
+      const rawCommand = (SendRawEmailCommand as unknown as jest.Mock).mock.calls[0][0];
       const rawStr = rawCommand.RawMessage.Data.toString('utf-8');
 
       expect(rawStr).toContain('filename="doc1.pdf"');
@@ -119,7 +116,7 @@ describe('SesMailSender', () => {
     it('uses plain text format when attachments array is empty', async () => {
       await sender.sendWithAttachments('test@example.com', 'No attachments', 'Just text.', []);
 
-      const rawCommand = (SendRawEmailCommand as jest.Mock).mock.calls[0][0];
+      const rawCommand = (SendRawEmailCommand as unknown as jest.Mock).mock.calls[0][0];
       const rawStr = rawCommand.RawMessage.Data.toString('utf-8');
 
       expect(rawStr).toContain('Content-Type: text/plain; charset=UTF-8');
@@ -131,9 +128,9 @@ describe('SesMailSender', () => {
     it('propagates SES errors to caller', async () => {
       mockSend.mockRejectedValueOnce(new Error('SES rate limit exceeded'));
 
-      await expect(
-        sender.send('test@example.com', 'Test', 'Body'),
-      ).rejects.toThrow('SES rate limit exceeded');
+      await expect(sender.send('test@example.com', 'Test', 'Body')).rejects.toThrow(
+        'SES rate limit exceeded',
+      );
     });
   });
 });

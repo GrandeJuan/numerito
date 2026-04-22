@@ -1,4 +1,16 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Inject, Param, Req, UseGuards, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Req,
+  UseGuards,
+  Res,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -15,14 +27,26 @@ import { TOKEN_SERVICE } from '../../application/services/token.service';
 import type { TokenService } from '../../application/services/token.service';
 import { TOTP_SECRET_REPOSITORY } from '../../domain/repositories/totp-secret.repository';
 import type { TotpSecretRepository } from '../../domain/repositories/totp-secret.repository';
-import { RegistrarUsuarioDto, registrarUsuarioDtoSchema } from '../../application/dtos/registrar-usuario.dto';
-import { IniciarSesionDto, iniciarSesionDtoSchema } from '../../application/dtos/iniciar-sesion.dto';
-import { SolicitarResetPasswordDto, solicitarResetPasswordDtoSchema } from '../../application/dtos/solicitar-reset-password.dto';
-import { ResetearPasswordDto, resetearPasswordDtoSchema } from '../../application/dtos/resetear-password.dto';
+import {
+  RegistrarUsuarioDto,
+  registrarUsuarioDtoSchema,
+} from '../../application/dtos/registrar-usuario.dto';
+import {
+  IniciarSesionDto,
+  iniciarSesionDtoSchema,
+} from '../../application/dtos/iniciar-sesion.dto';
+import {
+  SolicitarResetPasswordDto,
+  solicitarResetPasswordDtoSchema,
+} from '../../application/dtos/solicitar-reset-password.dto';
+import {
+  ResetearPasswordDto,
+  resetearPasswordDtoSchema,
+} from '../../application/dtos/resetear-password.dto';
 import { RefreshTokenDto, refreshTokenDtoSchema } from '../../application/dtos/refresh-token.dto';
 import { Verificar2FADto, verificar2FADtoSchema } from '../../application/dtos/verificar-2fa.dto';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
-import { Public } from '../decorators/public.decorator';
+import { Public } from '../../../shared/infrastructure/decorators/public.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { Rol } from '@numerito/shared';
 
@@ -65,7 +89,9 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Solicitar reset de contraseña' })
-  async forgotPassword(@Body(new ZodValidationPipe(solicitarResetPasswordDtoSchema)) dto: SolicitarResetPasswordDto) {
+  async forgotPassword(
+    @Body(new ZodValidationPipe(solicitarResetPasswordDtoSchema)) dto: SolicitarResetPasswordDto,
+  ) {
     return this.solicitarResetHandler.execute(dto);
   }
 
@@ -73,7 +99,9 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resetear contraseña con token' })
-  async resetPassword(@Body(new ZodValidationPipe(resetearPasswordDtoSchema)) dto: ResetearPasswordDto) {
+  async resetPassword(
+    @Body(new ZodValidationPipe(resetearPasswordDtoSchema)) dto: ResetearPasswordDto,
+  ) {
     return this.resetearPasswordHandler.execute(dto);
   }
 
@@ -160,7 +188,10 @@ export class AuthController {
   @Post('2fa/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verificar código 2FA' })
-  async verify2FA(@Param('usuarioId') usuarioId: string, @Body(new ZodValidationPipe(verificar2FADtoSchema)) dto: Verificar2FADto) {
+  async verify2FA(
+    @Param('usuarioId') usuarioId: string,
+    @Body(new ZodValidationPipe(verificar2FADtoSchema)) dto: Verificar2FADto,
+  ) {
     return this.verificar2FAHandler.execute({ usuarioId, code: dto.code });
   }
 

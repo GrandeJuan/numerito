@@ -1,11 +1,19 @@
-import type { ReglaVencimientoEntityRepository } from '../../../obligaciones/domain/repositories/regla-vencimiento.repository';
+import type {
+  ReglaVencimientoEntityRepository,
+  ReglaActivaSummary,
+} from '../../../obligaciones/domain/repositories/regla-vencimiento.repository';
 import type { EjecucionIngestaRepository } from '../../domain/repositories/ejecucion-ingesta.repository';
 import type { ConfiguracionIngestaRepository } from '../../domain/repositories/configuracion-ingesta.repository';
 import type { FeriadoRepository } from '../../../obligaciones/domain/repositories/feriado.repository';
-import { EjecucionIngesta, DISPARADOR_INGESTA } from '../../domain/entities/ejecucion-ingesta.entity';
-import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../../obligaciones/domain/entities/regla-vencimiento.entity';
-import { DiaFeriado } from '../../../obligaciones/domain/entities/dia-feriado.entity';
-import type { ResultadoScrapingDto, ReglaPropuestaScrapeadaDto, FeriadoPropuestoDto } from '../dtos/resultado-scraping.dto';
+import {
+  EjecucionIngesta,
+  DISPARADOR_INGESTA,
+} from '../../domain/entities/ejecucion-ingesta.entity';
+import type {
+  ResultadoScrapingDto,
+  ReglaPropuestaScrapeadaDto,
+  FeriadoPropuestoDto,
+} from '../dtos/resultado-scraping.dto';
 import type { TipoObligacion, Jurisdiccion, TipoFeriado } from '@numerito/shared';
 import type { DisparadorIngesta } from '../../domain/entities/ejecucion-ingesta.entity';
 
@@ -48,7 +56,9 @@ export class ProcesarResultadoScrapingHandler {
     private readonly feriadoRepo: FeriadoRepository | null = null,
   ) {}
 
-  async execute(command: ProcesarResultadoScrapingCommand): Promise<ProcesarResultadoScrapingResult> {
+  async execute(
+    command: ProcesarResultadoScrapingCommand,
+  ): Promise<ProcesarResultadoScrapingResult> {
     const { resultado, disparador, disparadoPor } = command;
 
     // Idempotency: if ingestaId was provided and already processed, return existing result
@@ -70,12 +80,26 @@ export class ProcesarResultadoScrapingHandler {
       }
     }
 
-    const ejecucion = EjecucionIngesta.create({
-      fuente: resultado.fuente,
-      disparador: disparador ?? DISPARADOR_INGESTA.SCHEDULE,
-      disparadoPor: disparadoPor ?? null,
-      ingestaId: resultado.ingestaId ?? null,
-    });
+    // If an EN_CURSO ejecucion was pre-created by the launcher, update it
+    // instead of creating a new row. Otherwise create one (SCHEDULE runs,
+    // legacy callers without ejecucionId).
+    let ejecucion: EjecucionIngesta;
+    if (resultado.ejecucionId) {
+      const existing = await this.ejecucionRepo.findById(resultado.ejecucionId);
+      if (!existing) {
+        throw new Error(
+          `ejecucionId ${resultado.ejecucionId} provided but no EjecucionIngesta record found`,
+        );
+      }
+      ejecucion = existing;
+    } else {
+      ejecucion = EjecucionIngesta.create({
+        fuente: resultado.fuente,
+        disparador: disparador ?? DISPARADOR_INGESTA.SCHEDULE,
+        disparadoPor: disparadoPor ?? null,
+        ingestaId: resultado.ingestaId ?? null,
+      });
+    }
 
     const errores: string[] = [...resultado.errores];
 
@@ -96,7 +120,13 @@ export class ProcesarResultadoScrapingHandler {
     const totalNuevas = nuevas + feriadosNuevos;
     const totalModificadas = modificadas;
 
-    if (errores.length > 0 && totalNuevas === 0 && totalModificadas === 0 && sinCambios === 0 && feriadosExistentes === 0) {
+    if (
+      errores.length > 0 &&
+      totalNuevas === 0 &&
+      totalModificadas === 0 &&
+      sinCambios === 0 &&
+      feriadosExistentes === 0
+    ) {
       ejecucion.completarFallida(errores);
     } else {
       ejecucion.completarExitosa(totalNuevas, totalModificadas);
@@ -109,13 +139,17 @@ export class ProcesarResultadoScrapingHandler {
     if (config) {
       const parts: string[] = [];
       if (nuevas > 0 || modificadas > 0 || sinCambios > 0) {
-        parts.push(`reglas: ${nuevas} nuevas, ${modificadas} modificadas, ${sinCambios} sin cambios`);
+        parts.push(
+          `reglas: ${nuevas} nuevas, ${modificadas} modificadas, ${sinCambios} sin cambios`,
+        );
       }
       if (feriadosNuevos > 0 || feriadosExistentes > 0) {
         parts.push(`feriados: ${feriadosNuevos} nuevos, ${feriadosExistentes} existentes`);
       }
       const resumenMsg = parts.length > 0 ? `OK: ${parts.join('; ')}` : 'OK: sin datos';
-      config.registrarEjecucion(errores.length > 0 ? `${resumenMsg} (${errores.length} errores)` : resumenMsg);
+      config.registrarEjecucion(
+        errores.length > 0 ? `${resumenMsg} (${errores.length} errores)` : resumenMsg,
+      );
       await this.configRepo.save(config);
     }
 
@@ -141,7 +175,7 @@ export class ProcesarResultadoScrapingHandler {
       return { diff: [], nuevas: 0, modificadas: 0, sinCambios: 0 };
     }
 
-    const reglasActivas = await this.reglaRepo.findActivas();
+    const reglasActivas = await this.reglaRepo.findActivasAsSummary();
     const diff: DiffRegla[] = [];
     let nuevas = 0;
     let modificadas = 0;
@@ -152,8 +186,8 @@ export class ProcesarResultadoScrapingHandler {
         const diffItem = this.clasificarRegla(reglaDto, reglasActivas);
         diff.push(diffItem);
 
-        if (diffItem.tipo === 'NUEVA') {
-          const propuesta = ReglaVencimiento.create({
+        if (diffItem.tipo === 'NUEVA' || diffItem.tipo === 'MODIFICADA') {
+          await this.reglaRepo.createPropuestaFromScrape({
             tipoObligacion: reglaDto.tipoObligacion as TipoObligacion,
             jurisdiccion: reglaDto.jurisdiccion as Jurisdiccion,
             regimen: reglaDto.regimen,
@@ -162,26 +196,9 @@ export class ProcesarResultadoScrapingHandler {
             mesSiguiente: reglaDto.mesSiguiente,
             vigenciaDesde: new Date(reglaDto.vigenciaDesde),
             vigenciaHasta: reglaDto.vigenciaHasta ? new Date(reglaDto.vigenciaHasta) : null,
-            origen: ORIGEN_REGLA.SCRAPING_OFICIAL,
-            estado: ESTADO_REGLA.PROPUESTA,
           });
-          await this.reglaRepo.save(propuesta);
-          nuevas++;
-        } else if (diffItem.tipo === 'MODIFICADA') {
-          const propuesta = ReglaVencimiento.create({
-            tipoObligacion: reglaDto.tipoObligacion as TipoObligacion,
-            jurisdiccion: reglaDto.jurisdiccion as Jurisdiccion,
-            regimen: reglaDto.regimen,
-            terminacionCuit: reglaDto.terminacionCuit,
-            diaVencimiento: reglaDto.diaVencimiento,
-            mesSiguiente: reglaDto.mesSiguiente,
-            vigenciaDesde: new Date(reglaDto.vigenciaDesde),
-            vigenciaHasta: reglaDto.vigenciaHasta ? new Date(reglaDto.vigenciaHasta) : null,
-            origen: ORIGEN_REGLA.SCRAPING_OFICIAL,
-            estado: ESTADO_REGLA.PROPUESTA,
-          });
-          await this.reglaRepo.save(propuesta);
-          modificadas++;
+          if (diffItem.tipo === 'NUEVA') nuevas++;
+          else modificadas++;
         } else {
           sinCambios++;
         }
@@ -210,24 +227,24 @@ export class ProcesarResultadoScrapingHandler {
 
     for (const feriadoDto of feriados) {
       try {
-        // Check if feriado already exists for this date
         const fecha = new Date(feriadoDto.fecha);
-        const existentes = await this.feriadoRepo.findByFecha(fecha);
+        const existentes = await this.feriadoRepo.findByFechaAsSummary(fecha);
         const yaExiste = existentes.some(
-          (f) => f.tipo === feriadoDto.tipo && f.jurisdiccionAfectada === (feriadoDto.jurisdiccionAfectada ?? null),
+          (f) =>
+            f.tipo === feriadoDto.tipo &&
+            f.jurisdiccionAfectada === (feriadoDto.jurisdiccionAfectada ?? null),
         );
 
         if (yaExiste) {
           diffFeriados.push({ tipo: 'EXISTENTE', feriado: feriadoDto });
           feriadosExistentes++;
         } else {
-          const nuevaEntidad = DiaFeriado.create({
+          await this.feriadoRepo.createFromScrape({
             fecha,
             tipo: feriadoDto.tipo as TipoFeriado,
             descripcion: feriadoDto.descripcion,
-            jurisdiccionAfectada: feriadoDto.jurisdiccionAfectada ?? null,
+            jurisdiccionAfectada: (feriadoDto.jurisdiccionAfectada ?? null) as Jurisdiccion | null,
           });
-          await this.feriadoRepo.save(nuevaEntidad);
           diffFeriados.push({ tipo: 'NUEVO', feriado: feriadoDto });
           feriadosNuevos++;
         }
@@ -243,7 +260,7 @@ export class ProcesarResultadoScrapingHandler {
 
   private clasificarRegla(
     dto: ReglaPropuestaScrapeadaDto,
-    reglasActivas: ReglaVencimiento[],
+    reglasActivas: ReglaActivaSummary[],
   ): DiffRegla {
     const match = reglasActivas.find(
       (r) =>

@@ -1,5 +1,4 @@
 import type { Plan } from '../value-objects/plan-subscripcion.vo';
-import { PlanSubscripcion } from '../value-objects/plan-subscripcion.vo';
 
 export interface PlanData {
   plan: Plan;

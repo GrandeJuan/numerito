@@ -33,9 +33,15 @@ export class Migration20260420ResumenMensual extends Migration {
     `);
 
     // Indexes for common query patterns
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_estudio" ON "resumen_mensual" ("estudio_id");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_cliente" ON "resumen_mensual" ("cliente_id");`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_periodo" ON "resumen_mensual" ("periodo");`);
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_estudio" ON "resumen_mensual" ("estudio_id");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_cliente" ON "resumen_mensual" ("cliente_id");`,
+    );
+    this.addSql(
+      `CREATE INDEX IF NOT EXISTS "idx_resumen_mensual_periodo" ON "resumen_mensual" ("periodo");`,
+    );
   }
 
   override down(): void {

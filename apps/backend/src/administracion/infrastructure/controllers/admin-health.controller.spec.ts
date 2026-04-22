@@ -1,6 +1,6 @@
 import { AdminHealthController } from './admin-health.controller';
 import { HealthCheckHandler } from '../../application/queries/health-check.query';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 
 describe('AdminHealthController', () => {
   let controller: AdminHealthController;
@@ -8,11 +8,36 @@ describe('AdminHealthController', () => {
 
   const mockResult = {
     services: [
-      { name: 'API Principal', status: 'operational' as const, latencyMs: 1, lastCheck: '2026-04-13T00:00:00.000Z' },
-      { name: 'Base de Datos', status: 'operational' as const, latencyMs: 5, lastCheck: '2026-04-13T00:00:00.000Z' },
-      { name: 'Queue Workers', status: 'operational' as const, latencyMs: 0, lastCheck: '2026-04-13T00:00:00.000Z' },
-      { name: 'ARCA Integration', status: 'operational' as const, latencyMs: 0, lastCheck: '2026-04-13T00:00:00.000Z' },
-      { name: 'Storage S3', status: 'operational' as const, latencyMs: 0, lastCheck: '2026-04-13T00:00:00.000Z' },
+      {
+        name: 'API Principal',
+        status: 'operational' as const,
+        latencyMs: 1,
+        lastCheck: '2026-04-13T00:00:00.000Z',
+      },
+      {
+        name: 'Base de Datos',
+        status: 'operational' as const,
+        latencyMs: 5,
+        lastCheck: '2026-04-13T00:00:00.000Z',
+      },
+      {
+        name: 'Queue Workers',
+        status: 'operational' as const,
+        latencyMs: 0,
+        lastCheck: '2026-04-13T00:00:00.000Z',
+      },
+      {
+        name: 'ARCA Integration',
+        status: 'operational' as const,
+        latencyMs: 0,
+        lastCheck: '2026-04-13T00:00:00.000Z',
+      },
+      {
+        name: 'Storage S3',
+        status: 'operational' as const,
+        latencyMs: 0,
+        lastCheck: '2026-04-13T00:00:00.000Z',
+      },
     ],
     uptimePercent: 99.95,
   };

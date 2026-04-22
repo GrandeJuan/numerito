@@ -12,7 +12,7 @@ import { TenantContext } from './tenant-context';
  * interfaces. All bounded-context repos have been migrated to accept
  * `EstudioPrincipal` explicitly (#225–#228).
  */
-export abstract class TenantAwareRepository<T> {
+export abstract class TenantAwareRepository<_T> {
   constructor(protected readonly context: TenantContext) {}
 
   /**

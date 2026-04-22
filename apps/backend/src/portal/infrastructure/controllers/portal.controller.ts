@@ -1,7 +1,7 @@
 import { Controller, Get, Inject, Param, Res, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../iam/infrastructure/guards/roles.guard';
 import { Roles } from '../../../iam/infrastructure/decorators/roles.decorator';
 import { CurrentUser } from '../../../iam/infrastructure/decorators/current-user.decorator';
@@ -22,7 +22,8 @@ export class PortalController {
     private readonly statsHandler: ObtenerPortalStatsHandler,
     private readonly resumenesHandler: ObtenerResumenesClienteHandler,
     private readonly descargarPdfHandler: DescargarCalendarioPdfHandler,
-    @Inject(CLIENTE_POR_USUARIO_PORTAL_VIEW) private readonly clientePorUsuario: ClientePorUsuarioPortalView,
+    @Inject(CLIENTE_POR_USUARIO_PORTAL_VIEW)
+    private readonly clientePorUsuario: ClientePorUsuarioPortalView,
   ) {}
 
   @Get('dashboard/stats')

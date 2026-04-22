@@ -11,17 +11,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import {
-  CATALOGO_OBLIGACION_REPOSITORY,
-} from '../../domain/repositories/catalogo-obligacion.repository';
+import { CATALOGO_OBLIGACION_REPOSITORY } from '../../domain/repositories/catalogo-obligacion.repository';
 import type { CatalogoObligacionRepository } from '../../domain/repositories/catalogo-obligacion.repository';
-import {
-  REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
-} from '../../domain/repositories/regla-vencimiento.repository';
+import { REGLA_VENCIMIENTO_ENTITY_REPOSITORY } from '../../domain/repositories/regla-vencimiento.repository';
 import type { ReglaVencimientoEntityRepository } from '../../domain/repositories/regla-vencimiento.repository';
 import { CrearCatalogoObligacionHandler } from '../../application/commands/crear-catalogo-obligacion.command';
 import { ActualizarCatalogoObligacionHandler } from '../../application/commands/actualizar-catalogo-obligacion.command';
@@ -70,9 +66,7 @@ export class CatalogoAdminController {
 
   @Post()
   @ApiOperation({ summary: 'Crear entrada de catálogo' })
-  async createCatalogo(
-    @Body(new ZodValidationPipe(crearCatalogoDtoSchema)) dto: CrearCatalogoDto,
-  ) {
+  async createCatalogo(@Body(new ZodValidationPipe(crearCatalogoDtoSchema)) dto: CrearCatalogoDto) {
     const result = await this.crearCatalogoHandler.execute(dto);
     return successResponse(result);
   }
@@ -122,9 +116,7 @@ export class CatalogoAdminController {
 
   @Post('reglas')
   @ApiOperation({ summary: 'Crear regla de vencimiento' })
-  async createRegla(
-    @Body(new ZodValidationPipe(crearReglaDtoSchema)) dto: CrearReglaDto,
-  ) {
+  async createRegla(@Body(new ZodValidationPipe(crearReglaDtoSchema)) dto: CrearReglaDto) {
     const result = await this.crearReglaHandler.execute(dto);
     return successResponse(result);
   }

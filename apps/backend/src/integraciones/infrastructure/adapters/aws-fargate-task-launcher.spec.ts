@@ -28,7 +28,10 @@ describe('AwsFargateTaskLauncher', () => {
     });
 
     const launcher = new AwsFargateTaskLauncher(DEFAULT_CONFIG);
-    const result = await launcher.launch('ARCA', 'admin-user');
+    const result = await launcher.launch('ARCA', {
+      ejecucionId: 'ej-1',
+      disparadoPor: 'admin-user',
+    });
 
     expect(result.taskArn).toBe('arn:aws:ecs:us-east-1:123:task/abc-def');
     expect(result.fuente).toBe('ARCA');
@@ -39,7 +42,9 @@ describe('AwsFargateTaskLauncher', () => {
     expect(command.cluster).toBe(DEFAULT_CONFIG.clusterArn);
     expect(command.taskDefinition).toBe(DEFAULT_CONFIG.taskDefinitionArns.ARCA);
     expect(command.launchType).toBe('FARGATE');
-    expect(command.networkConfiguration.awsvpcConfiguration.subnets).toEqual(DEFAULT_CONFIG.subnets);
+    expect(command.networkConfiguration.awsvpcConfiguration.subnets).toEqual(
+      DEFAULT_CONFIG.subnets,
+    );
   });
 
   it('should pass MANUAL disparador and disparadoPor as container overrides', async () => {
@@ -48,7 +53,7 @@ describe('AwsFargateTaskLauncher', () => {
     });
 
     const launcher = new AwsFargateTaskLauncher(DEFAULT_CONFIG);
-    await launcher.launch('ARCA', 'user-456');
+    await launcher.launch('ARCA', { ejecucionId: 'ej-456', disparadoPor: 'user-456' });
 
     const command = mockSend.mock.calls[0][0];
     const overrides = command.overrides.containerOverrides[0];
@@ -56,15 +61,16 @@ describe('AwsFargateTaskLauncher', () => {
     expect(overrides.environment).toEqual([
       { name: 'DISPARADOR', value: 'MANUAL' },
       { name: 'DISPARADO_POR', value: 'user-456' },
+      { name: 'EJECUCION_ID', value: 'ej-456' },
     ]);
   });
 
   it('should throw if no task definition configured for fuente', async () => {
     const launcher = new AwsFargateTaskLauncher(DEFAULT_CONFIG);
 
-    await expect(launcher.launch('ARBA' as any, 'admin')).rejects.toThrow(
-      'No task definition configured for fuente: ARBA',
-    );
+    await expect(
+      launcher.launch('ARBA' as any, { ejecucionId: 'ej-1', disparadoPor: 'admin' }),
+    ).rejects.toThrow('No task definition configured for fuente: ARBA');
     expect(mockSend).not.toHaveBeenCalled();
   });
 
@@ -76,9 +82,9 @@ describe('AwsFargateTaskLauncher', () => {
 
     const launcher = new AwsFargateTaskLauncher(DEFAULT_CONFIG);
 
-    await expect(launcher.launch('ARCA', 'admin')).rejects.toThrow(
-      'Failed to launch Fargate task for ARCA: RESOURCE: insufficient capacity',
-    );
+    await expect(
+      launcher.launch('ARCA', { ejecucionId: 'ej-1', disparadoPor: 'admin' }),
+    ).rejects.toThrow('Failed to launch Fargate task for ARCA: RESOURCE: insufficient capacity');
   });
 
   it('should set assignPublicIp DISABLED by default', async () => {
@@ -87,7 +93,7 @@ describe('AwsFargateTaskLauncher', () => {
     });
 
     const launcher = new AwsFargateTaskLauncher(DEFAULT_CONFIG);
-    await launcher.launch('ARCA', 'admin');
+    await launcher.launch('ARCA', { ejecucionId: 'ej-1', disparadoPor: 'admin' });
 
     const command = mockSend.mock.calls[0][0];
     expect(command.networkConfiguration.awsvpcConfiguration.assignPublicIp).toBe('DISABLED');
@@ -99,7 +105,7 @@ describe('AwsFargateTaskLauncher', () => {
     });
 
     const launcher = new AwsFargateTaskLauncher({ ...DEFAULT_CONFIG, assignPublicIp: true });
-    await launcher.launch('ARCA', 'admin');
+    await launcher.launch('ARCA', { ejecucionId: 'ej-1', disparadoPor: 'admin' });
 
     const command = mockSend.mock.calls[0][0];
     expect(command.networkConfiguration.awsvpcConfiguration.assignPublicIp).toBe('ENABLED');

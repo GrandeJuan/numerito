@@ -2,8 +2,8 @@ import { Injectable, ExecutionContext, BadRequestException } from '@nestjs/commo
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { IS_PUBLIC_KEY } from '../../../shared/infrastructure/decorators/public.decorator';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 
 @Injectable()
 export class EstudioMemberGuard extends JwtAuthGuard {

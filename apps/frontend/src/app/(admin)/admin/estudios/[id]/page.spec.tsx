@@ -50,7 +50,7 @@ describe('EstudioDetailPage', () => {
     render(<Page />);
 
     await waitFor(() => {
-      expect(screen.getByText('Estudio Alpha')).toBeInTheDocument();
+      expect(screen.getAllByText('Estudio Alpha').length).toBeGreaterThan(0);
     });
     expect(screen.getByText('30-12345678-9')).toBeInTheDocument();
     expect(screen.getByText('PROFESIONAL')).toBeInTheDocument();

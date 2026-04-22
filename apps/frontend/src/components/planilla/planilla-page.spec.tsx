@@ -1,11 +1,12 @@
 import React from 'react';
+import { vi } from 'vitest';
 
 // Mock dependencies before importing the component
-jest.mock('@/lib/auth-context', () => ({
+vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({ estudioActual: { id: 'est-1', nombre: 'Estudio Test' } }),
 }));
 
-jest.mock('@/lib/use-fetch-with-estudio', () => ({
+vi.mock('@/lib/use-fetch-with-estudio', () => ({
   useFetchWithEstudio: () => ({
     data: [
       {
@@ -44,32 +45,27 @@ jest.mock('@/lib/use-fetch-with-estudio', () => ({
     ],
     loading: false,
     error: null,
-    refetch: jest.fn(),
+    refetch: vi.fn(),
   }),
 }));
 
-jest.mock('@/lib/api-client', () => ({
-  apiFetch: jest.fn(),
+vi.mock('@/lib/api-client', () => ({
+  apiFetch: vi.fn(),
 }));
 
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-// Use a simple render helper instead of @testing-library/react
-// to avoid dependency issues in sandbox
+import { PlanillaPage } from './planilla-page';
+
 describe('PlanillaPage', () => {
   it('should export PlanillaPage component', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('./planilla-page');
-    expect(mod.PlanillaPage).toBeDefined();
-    expect(typeof mod.PlanillaPage).toBe('function');
+    expect(PlanillaPage).toBeDefined();
+    expect(typeof PlanillaPage).toBe('function');
   });
 
   it('should render without throwing', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PlanillaPage } = require('./planilla-page');
-    // Verify component can be created as a React element
     const element = React.createElement(PlanillaPage);
     expect(element).toBeDefined();
     expect(element.type).toBe(PlanillaPage);

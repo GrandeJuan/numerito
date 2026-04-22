@@ -18,27 +18,26 @@ import { ActualizarConfiguracionIngestaHandler } from './application/commands/ac
 import { ProcesarResultadoScrapingHandler } from './application/commands/procesar-resultado-scraping.command';
 import { ConfiguracionIngestaListHandler } from './application/queries/configuracion-ingesta-list.query';
 import { EjecucionIngestaListHandler } from './application/queries/ejecucion-ingesta-list.query';
-import {
-  REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
-} from '../obligaciones/domain/repositories/regla-vencimiento.repository';
-import type {
-  ReglaVencimientoEntityRepository,
-} from '../obligaciones/domain/repositories/regla-vencimiento.repository';
+import { REGLA_VENCIMIENTO_ENTITY_REPOSITORY } from '../obligaciones/domain/repositories/regla-vencimiento.repository';
+import type { ReglaVencimientoEntityRepository } from '../obligaciones/domain/repositories/regla-vencimiento.repository';
 import { FERIADO_REPOSITORY } from '../obligaciones/domain/repositories/feriado.repository';
 import type { FeriadoRepository } from '../obligaciones/domain/repositories/feriado.repository';
 import { ObligacionesModule } from '../obligaciones/obligaciones.module';
 import { DetectarSugerenciasProrrogaHandler } from '../obligaciones/application/commands/detectar-sugerencias-prorroga.command';
+import { SUGERENCIAS_PRORROGA_DETECTOR } from './domain/ports/sugerencias-prorroga-detector.port';
 import { CALENDARIO_SCRAPER } from './domain/ports/calendario-scraper.port';
 import type { CalendarioScraperPort } from './domain/ports/calendario-scraper.port';
 import { FARGATE_TASK_LAUNCHER } from './domain/ports/fargate-task-launcher.port';
 import type { FargateTaskLauncherPort } from './domain/ports/fargate-task-launcher.port';
 import { AwsFargateTaskLauncher } from './infrastructure/adapters/aws-fargate-task-launcher';
+import { DockerTaskLauncher } from './infrastructure/adapters/docker-task-launcher';
 import { EjecutarIngestaManualHandler } from './application/commands/ejecutar-ingesta-manual.command';
 import { IngestaWebhookGuard } from './infrastructure/guards/ingesta-webhook.guard';
 import { AdminOrIngestaGuard } from './infrastructure/guards/admin-or-ingesta.guard';
+import { IamModule } from '../iam/iam.module';
 
 @Module({
-  imports: [ObligacionesModule],
+  imports: [ObligacionesModule, IamModule],
   controllers: [IngestaAdminController, IngestaEjecucionController],
   providers: [
     // ── Guards ──
@@ -90,37 +89,69 @@ import { AdminOrIngestaGuard } from './infrastructure/guards/admin-or-ingesta.gu
     // ���─ CalendarioScraperPort (null in backend runtime — Fargate tasks push results via POST) ──
     { provide: CALENDARIO_SCRAPER, useValue: null },
 
-    // ── FargateTaskLauncher (launches ECS RunTask for on-demand scraping) ──
+    // ── Task launcher for on-demand scraping ──
+    // Same port, two adapters: AWS ECS (prod) or local Docker daemon (dev).
+    // Choice is driven by env — no code differences between environments.
     {
       provide: FARGATE_TASK_LAUNCHER,
       useFactory: () => {
         const clusterArn = process.env.ECS_CLUSTER_ARN;
-        const taskDefArns = process.env.SCRAPER_TASK_DEFINITION_ARNS; // JSON: {"ARCA":"arn:..."}
-        const subnets = process.env.SCRAPER_SUBNETS; // comma-separated
-        const securityGroups = process.env.SCRAPER_SECURITY_GROUPS; // comma-separated
+        const taskDefArns = process.env.SCRAPER_TASK_DEFINITION_ARNS;
+        const subnets = process.env.SCRAPER_SUBNETS;
+        const securityGroups = process.env.SCRAPER_SECURITY_GROUPS;
 
-        if (!clusterArn || !taskDefArns || !subnets || !securityGroups) {
-          return null; // Fargate triggering not configured in this environment
+        if (clusterArn && taskDefArns && subnets && securityGroups) {
+          return new AwsFargateTaskLauncher({
+            clusterArn,
+            taskDefinitionArns: JSON.parse(taskDefArns),
+            subnets: subnets.split(',').map((s) => s.trim()),
+            securityGroups: securityGroups.split(',').map((s) => s.trim()),
+          });
         }
 
-        return new AwsFargateTaskLauncher({
-          clusterArn,
-          taskDefinitionArns: JSON.parse(taskDefArns),
-          subnets: subnets.split(',').map((s) => s.trim()),
-          securityGroups: securityGroups.split(',').map((s) => s.trim()),
-        });
+        const scraperImage = process.env.SCRAPER_IMAGE;
+        const backendUrl = process.env.SCRAPER_BACKEND_URL;
+        const ingestaSecret = process.env.INGESTA_SECRET;
+        if (scraperImage && backendUrl && ingestaSecret) {
+          return new DockerTaskLauncher({
+            image: scraperImage,
+            backendUrl,
+            ingestaSecret,
+            socketPath: process.env.DOCKER_SOCKET_PATH,
+          });
+        }
+
+        return null;
       },
+    },
+    // ── Adapter: SugerenciasProrrogaDetectorPort → obligaciones handler ──
+    {
+      provide: SUGERENCIAS_PRORROGA_DETECTOR,
+      useFactory: (handler: DetectarSugerenciasProrrogaHandler) => ({
+        detectar: (input: Parameters<DetectarSugerenciasProrrogaHandler['execute']>[0]) =>
+          handler.execute(input),
+      }),
+      inject: [DetectarSugerenciasProrrogaHandler],
     },
     {
       provide: EjecutarIngestaManualHandler,
       useFactory: (
         configRepo: ConfiguracionIngestaRepository,
+        ejecucionRepo: EjecucionIngestaRepository,
         procesarHandler: ProcesarResultadoScrapingHandler,
         scraperPort: CalendarioScraperPort | null,
         taskLauncher: FargateTaskLauncherPort | null,
-      ) => new EjecutarIngestaManualHandler(configRepo, procesarHandler, scraperPort, taskLauncher),
+      ) =>
+        new EjecutarIngestaManualHandler(
+          configRepo,
+          ejecucionRepo,
+          procesarHandler,
+          scraperPort,
+          taskLauncher,
+        ),
       inject: [
         CONFIGURACION_INGESTA_REPOSITORY,
+        EJECUCION_INGESTA_REPOSITORY,
         ProcesarResultadoScrapingHandler,
         CALENDARIO_SCRAPER,
         FARGATE_TASK_LAUNCHER,

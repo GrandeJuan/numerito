@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { PageHeader, Pill, type Column, DataTable } from '@/components';
 import { PageStateGuard } from '@/components/shared/page-state-guard';
 import { useFetch } from '@/lib/use-fetch';
 import { apiFetch } from '@/lib/api-client';
+import { parseApiResponse, ApiResponseError } from '@/lib/parse-api-response';
 
 interface EjecucionIngesta {
   id: string;
@@ -57,10 +59,17 @@ function formatDuration(inicio: string, fin: string | null): string {
   return `${mins}m ${secs % 60}s`;
 }
 
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiResponseError) return err.message;
+  if (err instanceof Error) return err.message;
+  return 'Error desconocido';
+}
+
 export function EjecucionesHistorialPage() {
   const [fuenteFilter, setFuenteFilter] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [logsExpanded, setLogsExpanded] = useState<Set<string>>(new Set());
   const [launching, setLaunching] = useState<string | null>(null);
 
   const params = new URLSearchParams();
@@ -80,13 +89,28 @@ export function EjecucionesHistorialPage() {
     });
   }
 
+  function toggleLogs(id: string) {
+    setLogsExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   async function ejecutarAhora(fuente: string) {
     setLaunching(fuente);
     try {
-      await apiFetch(`/v1/admin/ingesta/${fuente}/ejecutar-ahora`, {
+      const res = await apiFetch(`/v1/admin/ingesta/${fuente}/ejecutar-ahora`, {
         method: 'POST',
       });
+      await parseApiResponse(res);
+      toast.info(`Scraping ${FUENTE_LABEL[fuente] ?? fuente} iniciado…`);
       refetch();
+    } catch (err) {
+      toast.error(`No se pudo iniciar ${FUENTE_LABEL[fuente] ?? fuente}`, {
+        description: errorMessage(err),
+      });
     } finally {
       setLaunching(null);
     }
@@ -96,9 +120,7 @@ export function EjecucionesHistorialPage() {
     {
       header: 'Fuente',
       render: (r) => (
-        <span className="font-medium text-[var(--text)]">
-          {FUENTE_LABEL[r.fuente] ?? r.fuente}
-        </span>
+        <span className="font-medium text-[var(--text)]">{FUENTE_LABEL[r.fuente] ?? r.fuente}</span>
       ),
     },
     {
@@ -121,9 +143,7 @@ export function EjecucionesHistorialPage() {
     {
       header: 'Inicio',
       render: (r) => (
-        <span className="font-mono text-[11.5px] text-[var(--text-2)]">
-          {formatDate(r.inicio)}
-        </span>
+        <span className="font-mono text-[11.5px] text-[var(--text-2)]">{formatDate(r.inicio)}</span>
       ),
     },
     {
@@ -138,9 +158,7 @@ export function EjecucionesHistorialPage() {
       header: 'Reglas',
       render: (r) => (
         <span className="font-mono text-[11.5px] text-[var(--text-2)]">
-          {r.reglasNuevas > 0 && (
-            <span className="text-emerald-400 mr-1.5">+{r.reglasNuevas}</span>
-          )}
+          {r.reglasNuevas > 0 && <span className="text-emerald-400 mr-1.5">+{r.reglasNuevas}</span>}
           {r.reglasModificadas > 0 && (
             <span className="text-amber-400 mr-1.5">~{r.reglasModificadas}</span>
           )}
@@ -151,16 +169,28 @@ export function EjecucionesHistorialPage() {
     {
       header: '',
       align: 'right',
-      render: (r) =>
-        r.errores.length > 0 ? (
+      render: (r) => (
+        <div className="flex gap-1.5 justify-end">
           <button
             type="button"
-            onClick={() => toggleExpand(r.id)}
-            className="text-[11.5px] px-2 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+            onClick={() => toggleLogs(r.id)}
+            className="text-[11.5px] px-2 py-0.5 rounded border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--brand)]"
           >
-            {expanded.has(r.id) ? 'Ocultar' : `${r.errores.length} error${r.errores.length > 1 ? 'es' : ''}`}
+            {logsExpanded.has(r.id) ? 'Ocultar logs' : 'Ver logs'}
           </button>
-        ) : null,
+          {r.errores.length > 0 && (
+            <button
+              type="button"
+              onClick={() => toggleExpand(r.id)}
+              className="text-[11.5px] px-2 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+            >
+              {expanded.has(r.id)
+                ? 'Ocultar'
+                : `${r.errores.length} error${r.errores.length > 1 ? 'es' : ''}`}
+            </button>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -196,7 +226,7 @@ export function EjecucionesHistorialPage() {
         >
           {FUENTES.map((f) => (
             <option key={f} value={f}>
-              {f ? FUENTE_LABEL[f] ?? f : 'Todas las fuentes'}
+              {f ? (FUENTE_LABEL[f] ?? f) : 'Todas las fuentes'}
             </option>
           ))}
         </select>
@@ -222,13 +252,10 @@ export function EjecucionesHistorialPage() {
         ) : (
           <>
             <DataTable columns={columns} rows={ejecuciones} rowKey={(r) => r.id} />
-            {ejecuciones.map(
-              (ej) =>
-                expanded.has(ej.id) && (
-                  <div
-                    key={`err-${ej.id}`}
-                    className="mt-1 mb-3 mx-2 p-3 rounded bg-rose-500/5 border border-rose-500/20"
-                  >
+            {ejecuciones.map((ej) => (
+              <div key={`panels-${ej.id}`}>
+                {expanded.has(ej.id) && (
+                  <div className="mt-1 mb-3 mx-2 p-3 rounded bg-rose-500/5 border border-rose-500/20">
                     <div className="text-[11px] text-rose-400 font-medium mb-1.5">
                       Errores — {FUENTE_LABEL[ej.fuente] ?? ej.fuente} — {formatDate(ej.inicio)}
                     </div>
@@ -248,11 +275,78 @@ export function EjecucionesHistorialPage() {
                       </div>
                     )}
                   </div>
-                ),
-            )}
+                )}
+                {logsExpanded.has(ej.id) && <LogsPanel ejecucion={ej} />}
+              </div>
+            ))}
           </>
         )}
       </PageStateGuard>
     </>
+  );
+}
+
+const LOG_POLL_INTERVAL_MS = 3000;
+
+function LogsPanel({ ejecucion }: { ejecucion: EjecucionIngesta }) {
+  const [logs, setLogs] = useState<string>('Cargando…');
+  const [loading, setLoading] = useState(true);
+  const preRef = useRef<HTMLPreElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchLogs() {
+      try {
+        const res = await apiFetch(`/v1/admin/ingesta/ejecuciones/${ejecucion.id}/logs`);
+        const { data: result } = await parseApiResponse<{ logs: string }>(res);
+        if (cancelled) return;
+        setLogs(result.logs || '(sin salida)');
+      } catch (err) {
+        if (cancelled) return;
+        setLogs(`Error leyendo logs: ${errorMessage(err)}`);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchLogs();
+
+    // Keep polling while the run is still in progress so the user sees
+    // the scraper's stdout as it happens.
+    const timer =
+      ejecucion.estado === 'EN_CURSO' ? setInterval(fetchLogs, LOG_POLL_INTERVAL_MS) : null;
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [ejecucion.id, ejecucion.estado]);
+
+  useEffect(() => {
+    // Auto-scroll to bottom on new content while EN_CURSO.
+    if (preRef.current && ejecucion.estado === 'EN_CURSO') {
+      preRef.current.scrollTop = preRef.current.scrollHeight;
+    }
+  }, [logs, ejecucion.estado]);
+
+  return (
+    <div className="mt-1 mb-3 mx-2 rounded bg-[var(--surface-2)] border border-[var(--border)]">
+      <div className="px-3 py-1.5 border-b border-[var(--border)] flex items-center justify-between">
+        <span className="text-[11px] text-[var(--text-2)] font-medium">
+          Logs del container · {FUENTE_LABEL[ejecucion.fuente] ?? ejecucion.fuente}
+          {ejecucion.estado === 'EN_CURSO' && (
+            <span className="ml-2 text-[var(--brand)]">● live</span>
+          )}
+        </span>
+        {loading && <span className="text-[10.5px] text-[var(--text-3)]">cargando…</span>}
+      </div>
+      <pre
+        ref={preRef}
+        className="p-3 text-[11px] leading-relaxed font-mono text-[var(--text-2)] whitespace-pre-wrap break-all max-h-[400px] overflow-auto"
+      >
+        {logs}
+      </pre>
+    </div>
   );
 }

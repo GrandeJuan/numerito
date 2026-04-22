@@ -5,14 +5,22 @@ import type { EstudioPrincipal } from '../../../shared/domain/estudio-principal'
 const principal: EstudioPrincipal = { estudioId: 'estudio-1', userId: 'user-1', roles: [] };
 
 const makeVencimiento = () =>
-  Vencimiento.create({
-    clienteId: 'cliente-1',
-    estudioId: 'estudio-1',
-    tipoObligacion: 'IVA',
-    periodo: '2026-04',
-    fechaVencimiento: new Date('2026-04-20'),
-    descripcion: 'DDJJ IVA',
-  });
+  Vencimiento.reconstitute(
+    {
+      clienteId: 'cliente-1',
+      estudioId: 'estudio-1',
+      tipoObligacion: 'IVA',
+      periodo: '2026-04',
+      fechaVencimiento: new Date('2026-04-20'),
+      fechaNominal: null,
+      descripcion: 'DDJJ IVA',
+      estado: 'PENDIENTE',
+      motivo: null,
+      fechaProrrogada: null,
+      responsableId: null,
+    },
+    'v-1',
+  );
 
 describe('MarcarVencido Command', () => {
   let handler: MarcarVencidoHandler;

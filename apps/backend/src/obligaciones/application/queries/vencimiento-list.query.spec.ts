@@ -35,10 +35,7 @@ describe('VencimientoListHandler', () => {
 
   it('returns DTO-shaped items and coerces count from string', async () => {
     mockQueries(
-      [
-        rowFixture(),
-        rowFixture({ id: 'v-2', estado: 'PRESENTADO', tipo_obligacion: 'GANANCIAS' }),
-      ],
+      [rowFixture(), rowFixture({ id: 'v-2', estado: 'PRESENTADO', tipo_obligacion: 'GANANCIAS' })],
       2,
     );
 
@@ -56,6 +53,7 @@ describe('VencimientoListHandler', () => {
         fechaVencimiento: '2026-04-20',
         descripcion: 'DDJJ IVA',
         estado: 'PENDIENTE',
+        responsable: null,
       },
       {
         id: 'v-2',
@@ -66,6 +64,7 @@ describe('VencimientoListHandler', () => {
         fechaVencimiento: '2026-04-20',
         descripcion: 'DDJJ IVA',
         estado: 'PRESENTADO',
+        responsable: null,
       },
     ]);
   });
@@ -166,7 +165,9 @@ describe('VencimientoListHandler', () => {
     });
 
     const [listSql, listParams] = mockExecute.mock.calls[0];
-    expect(listSql).toMatch(/v\.estudio_id = \? AND ev\.codigo = \? AND v\.cliente_id = \? AND v\.periodo = \?/);
+    expect(listSql).toMatch(
+      /v\.estudio_id = \? AND ev\.codigo = \? AND v\.cliente_id = \? AND v\.periodo = \?/,
+    );
     expect(listParams).toEqual([principal.estudioId, 'PENDIENTE', 'cli-1', '2026-04', 20, 0]);
   });
 

@@ -1,6 +1,6 @@
 import { IngestaEjecucionController } from './ingesta-ejecucion.controller';
 import type { ProcesarResultadoScrapingHandler } from '../../application/commands/procesar-resultado-scraping.command';
-import type { DetectarSugerenciasProrrogaHandler } from '../../../obligaciones/application/commands/detectar-sugerencias-prorroga.command';
+import type { SugerenciasProrrogaDetectorPort } from '../../domain/ports/sugerencias-prorroga-detector.port';
 import type { EjecutarIngestaManualHandler } from '../../application/commands/ejecutar-ingesta-manual.command';
 import type { EjecucionIngestaListHandler } from '../../application/queries/ejecucion-ingesta-list.query';
 
@@ -16,12 +16,12 @@ function createController() {
     }),
   } as unknown as jest.Mocked<ProcesarResultadoScrapingHandler>;
 
-  const detectarSugerencias = {
-    execute: jest.fn().mockResolvedValue({
+  const detectarSugerencias: jest.Mocked<SugerenciasProrrogaDetectorPort> = {
+    detectar: jest.fn().mockResolvedValue({
       sugerenciasCreadas: 0,
       sugerenciasOmitidas: 0,
     }),
-  } as unknown as jest.Mocked<DetectarSugerenciasProrrogaHandler>;
+  };
 
   const ejecutarManual = {
     execute: jest.fn().mockResolvedValue({
@@ -33,9 +33,23 @@ function createController() {
 
   const list = {
     execute: jest.fn().mockResolvedValue([]),
+    byId: jest.fn().mockResolvedValue(null),
   } as unknown as jest.Mocked<EjecucionIngestaListHandler>;
 
-  const controller = new IngestaEjecucionController(procesar, detectarSugerencias, ejecutarManual, list);
+  const ejecucionRepo = {
+    findById: jest.fn().mockResolvedValue(null),
+  } as any;
+
+  const taskLauncher = null;
+
+  const controller = new IngestaEjecucionController(
+    procesar,
+    detectarSugerencias,
+    ejecutarManual,
+    list,
+    ejecucionRepo,
+    taskLauncher,
+  );
   return { controller, procesar, detectarSugerencias, ejecutarManual, list };
 }
 
@@ -57,6 +71,7 @@ describe('IngestaEjecucionController', () => {
           vigenciaDesde: '2026-01-01',
         },
       ],
+      feriados: [],
       errores: [],
     };
 
@@ -75,6 +90,7 @@ describe('IngestaEjecucionController', () => {
       fuente: 'ARCA' as const,
       ejecutadoEn: '2026-04-20T10:00:00Z',
       reglas: [],
+      feriados: [],
       errores: [],
     };
 
@@ -111,12 +127,17 @@ describe('IngestaEjecucionController', () => {
 
     const req = { headers: {}, user: { sub: 'admin' } };
     await expect(
-      controller.recibirResultado('ARCA', {
-        fuente: 'ARCA',
-        ejecutadoEn: '2026-04-20T10:00:00Z',
-        reglas: [],
-        errores: [],
-      }, req as any),
+      controller.recibirResultado(
+        'ARCA',
+        {
+          fuente: 'ARCA',
+          ejecutadoEn: '2026-04-20T10:00:00Z',
+          reglas: [],
+          feriados: [],
+          errores: [],
+        },
+        req as any,
+      ),
     ).rejects.toThrow('processing failed');
   });
 

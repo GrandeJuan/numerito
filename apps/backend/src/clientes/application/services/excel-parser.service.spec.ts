@@ -1,4 +1,4 @@
-import { ExcelParserService, type ParseResult } from './excel-parser.service';
+import { ExcelParserService } from './excel-parser.service';
 import { TIPO_OBLIGACION } from '@numerito/shared';
 
 describe('ExcelParserService', () => {
@@ -9,18 +9,18 @@ describe('ExcelParserService', () => {
   });
 
   const HEADERS = [
-    'CLIENTE',    // 0  A
-    'Responsable',// 1  B
-    'CUIT',       // 2  C
-    'SICOSS',     // 3  D
-    'IVA',        // 4  E
+    'CLIENTE', // 0  A
+    'Responsable', // 1  B
+    'CUIT', // 2  C
+    'SICOSS', // 3  D
+    'IVA', // 4  E
     'REG INF.\nCYV', // 5  F
-    'CITI CPRA',  // 6  G
+    'CITI CPRA', // 6  G
     'L. DIGITAL IVA', // 7  H
-    'SICORE',     // 8  V (simplified)
-    'DETALLE',    // 9  AE
-    'IIBB',       // 10 AG
-    'BALANCE PDF',// 11 AQ
+    'SICORE', // 8  V (simplified)
+    'DETALLE', // 9  AE
+    'IIBB', // 10 AG
+    'BALANCE PDF', // 11 AQ
     'CALENDARIO', // 12 AR
   ];
 
@@ -41,7 +41,7 @@ describe('ExcelParserService', () => {
   it('should return empty result for header-only file', () => {
     const result = parser.parse([HEADERS]);
     expect(result.rows).toEqual([]);
-    expect(result.errores).toEqual([]);
+    expect(result.errores).toContain('Archivo vacío o sin datos');
   });
 
   it('should parse a basic row with datetime values', () => {

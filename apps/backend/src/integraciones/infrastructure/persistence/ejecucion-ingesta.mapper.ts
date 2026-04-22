@@ -2,7 +2,10 @@ import { z } from 'zod';
 import type { Mapper } from '../../../shared/domain';
 import { EjecucionIngesta } from '../../domain/entities/ejecucion-ingesta.entity';
 import type { FuenteIngesta } from '../../domain/entities/configuracion-ingesta.entity';
-import type { EstadoEjecucion, DisparadorIngesta } from '../../domain/entities/ejecucion-ingesta.entity';
+import type {
+  EstadoEjecucion,
+  DisparadorIngesta,
+} from '../../domain/entities/ejecucion-ingesta.entity';
 import type { EjecucionIngestaEntity } from './ejecucion-ingesta.schema';
 
 export const ejecucionIngestaPersistenceSchema = z.object({
@@ -12,6 +15,7 @@ export const ejecucionIngestaPersistenceSchema = z.object({
   disparador: z.string().min(1),
   disparadoPor: z.string().nullable(),
   ingestaId: z.string().nullable(),
+  launcherTaskId: z.string().nullable(),
   inicio: z.date(),
   fin: z.date().nullable(),
   reglasNuevas: z.number().int().min(0),
@@ -21,9 +25,10 @@ export const ejecucionIngestaPersistenceSchema = z.object({
 
 export type EjecucionIngestaPersistence = z.infer<typeof ejecucionIngestaPersistenceSchema>;
 
-export class EjecucionIngestaMapper
-  implements Mapper<EjecucionIngesta, EjecucionIngestaPersistence>
-{
+export class EjecucionIngestaMapper implements Mapper<
+  EjecucionIngesta,
+  EjecucionIngestaPersistence
+> {
   toDomain(persistence: EjecucionIngestaPersistence): EjecucionIngesta {
     const data = ejecucionIngestaPersistenceSchema.parse(persistence);
     return EjecucionIngesta.reconstitute(
@@ -33,6 +38,7 @@ export class EjecucionIngestaMapper
         disparador: data.disparador as DisparadorIngesta,
         disparadoPor: data.disparadoPor,
         ingestaId: data.ingestaId,
+        launcherTaskId: data.launcherTaskId,
         inicio: data.inicio,
         fin: data.fin,
         reglasNuevas: data.reglasNuevas,
@@ -51,6 +57,7 @@ export class EjecucionIngestaMapper
       disparador: domain.disparador,
       disparadoPor: domain.disparadoPor,
       ingestaId: domain.ingestaId,
+      launcherTaskId: domain.launcherTaskId,
       inicio: domain.inicio,
       fin: domain.fin,
       reglasNuevas: domain.reglasNuevas,
@@ -67,6 +74,7 @@ export class EjecucionIngestaMapper
       disparador: entity.disparador,
       disparadoPor: entity.disparadoPor,
       ingestaId: entity.ingestaId,
+      launcherTaskId: entity.launcherTaskId,
       inicio: entity.inicio,
       fin: entity.fin,
       reglasNuevas: entity.reglasNuevas,

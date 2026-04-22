@@ -1,6 +1,6 @@
 import { AdminSearchController } from './admin-search.controller';
 import { AdminSearchHandler } from '../../application/queries/admin-search.query';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 
 describe('AdminSearchController', () => {
   let controller: AdminSearchController;
@@ -8,10 +8,23 @@ describe('AdminSearchController', () => {
 
   const mockResult = {
     estudios: [
-      { id: 'est-1', nombre: 'Estudio Perez', cuit: '20-12345678-9', plan: 'Profesional', isActive: true },
+      {
+        id: 'est-1',
+        nombre: 'Estudio Perez',
+        cuit: '20-12345678-9',
+        plan: 'Profesional',
+        isActive: true,
+      },
     ],
     usuarios: [
-      { id: 'usr-1', email: 'juan@perez.com', nombre: 'Juan', apellido: 'Perez', rol: 'SOCIO', isActive: true },
+      {
+        id: 'usr-1',
+        email: 'juan@perez.com',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        rol: 'SOCIO',
+        isActive: true,
+      },
     ],
   };
 
@@ -43,7 +56,7 @@ describe('AdminSearchController', () => {
     it('should handle undefined query parameter', async () => {
       mockHandler.execute.mockResolvedValue({ estudios: [], usuarios: [] });
 
-      const result = await controller.search(undefined as any);
+      await controller.search(undefined as any);
 
       expect(mockHandler.execute).toHaveBeenCalledWith('');
     });

@@ -10,15 +10,16 @@ import {
   TIPO_RECORDATORIO,
   CANAL_RECORDATORIO,
 } from '../../domain/entities/recordatorio-enviado.entity';
-import { Notificacion, TipoNotificacion } from '../../../notificaciones/domain/entities/notificacion.entity';
+import {
+  Notificacion,
+  TipoNotificacion,
+} from '../../../notificaciones/domain/entities/notificacion.entity';
 
 export interface ProcesarRecordatoriosResult {
   estudiosProcessados: number;
   recordatoriosEnviados: number;
   errores: string[];
 }
-
-const DEFAULT_DIAS_ANTICIPACION = 3;
 
 export class ProcesarRecordatoriosDiariosHandler {
   constructor(

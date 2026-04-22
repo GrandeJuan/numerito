@@ -12,7 +12,10 @@
  * - HTML parsing: agip-html-parser.ts (pure, independently testable)
  */
 
-import type { CalendarioScraperPort, ResultadoScraping } from '../../domain/ports/calendario-scraper.port';
+import type {
+  CalendarioScraperPort,
+  ResultadoScraping,
+} from '../../domain/ports/calendario-scraper.port';
 import type { FuenteIngesta } from '../../domain/entities/configuracion-ingesta.entity';
 import { parseAgipVencimientosHtml } from './agip-html-parser';
 
@@ -27,7 +30,10 @@ interface Page {
   setDefaultTimeout(ms: number): void;
   goto(url: string, opts?: Record<string, unknown>): Promise<unknown>;
   content(): Promise<string>;
-  locator(selector: string): { count(): Promise<number>; selectOption(value: string): Promise<void> };
+  locator(selector: string): {
+    count(): Promise<number>;
+    selectOption(value: string): Promise<void>;
+  };
   waitForLoadState(state?: string): Promise<void>;
 }
 
@@ -53,10 +59,11 @@ export class ScraperCalendarioAGIP implements CalendarioScraperPort {
   static defaultBrowserFactory(): BrowserFactory {
     return async () => {
       const { chromium } = await import('playwright');
-      return chromium.launch({
+      const browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-dev-shm-usage'],
       });
+      return browser as unknown as Browser;
     };
   }
 
@@ -71,8 +78,8 @@ export class ScraperCalendarioAGIP implements CalendarioScraperPort {
     }
 
     const now = new Date();
-    let mes = now.getMonth() + 1;
-    let anio = now.getFullYear();
+    const mes = now.getMonth() + 1;
+    const anio = now.getFullYear();
 
     const allReglas: Map<string, ResultadoScraping['reglas'][number]> = new Map();
     const allErrores: string[] = [];
@@ -95,7 +102,7 @@ export class ScraperCalendarioAGIP implements CalendarioScraperPort {
 
         // Select period if dropdown exists
         const periodoLocator = page.locator('select[name="periodo"], #periodo, select.periodo');
-        if (await periodoLocator.count() > 0) {
+        if ((await periodoLocator.count()) > 0) {
           const mesStr = String(targetMes).padStart(2, '0');
           await periodoLocator.selectOption(`${targetAnio}${mesStr}`).catch(() => {});
         }
@@ -125,7 +132,9 @@ export class ScraperCalendarioAGIP implements CalendarioScraperPort {
         }
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        allErrores.push(`Error al scrapear AGIP (${targetAnio}-${String(targetMes).padStart(2, '0')}): ${msg}`);
+        allErrores.push(
+          `Error al scrapear AGIP (${targetAnio}-${String(targetMes).padStart(2, '0')}): ${msg}`,
+        );
       } finally {
         if (browser) {
           await browser.close();

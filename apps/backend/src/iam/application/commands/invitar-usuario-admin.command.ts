@@ -1,9 +1,9 @@
 import type { Rol } from '@numerito/shared';
-import type { UsuarioRepository } from '../../../iam/domain/repositories/usuario.repository';
+import type { UsuarioRepository } from '../../domain/repositories/usuario.repository';
 import type { EventBus } from '../../../shared/domain/event-bus';
-import { Email } from '../../../iam/domain/value-objects/email.vo';
-import { Password } from '../../../iam/domain/value-objects/password.vo';
-import { Usuario } from '../../../iam/domain/entities/usuario.entity';
+import { Email } from '../../domain/value-objects/email.vo';
+import { Password } from '../../domain/value-objects/password.vo';
+import { Usuario } from '../../domain/entities/usuario.entity';
 import { EmailYaRegistradoError } from '../../../shared/domain/exceptions';
 import { randomBytes } from 'crypto';
 

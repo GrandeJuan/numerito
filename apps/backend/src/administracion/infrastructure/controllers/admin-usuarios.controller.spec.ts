@@ -7,7 +7,7 @@ jest.mock('../../../shared/infrastructure/persistence/rol.schema', () => ({
 
 import { AdminUsuariosController } from './admin-usuarios.controller';
 import { ObtenerAdminUsuariosHandler } from '../../application/queries/obtener-admin-usuarios.query';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 
 describe('AdminUsuariosController', () => {
   let controller: AdminUsuariosController;

@@ -33,14 +33,17 @@ function makeImportRow(overrides: Partial<ImportRow> = {}): ImportRow {
 }
 
 function makeExistingCliente(razonSocial: string, id: string): Cliente {
-  return Cliente.create({
-    cuit: Cuit.create('20-12345678-0'),
-    razonSocial: RazonSocial.create(razonSocial),
-    condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
-    tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
-    regimen: REGIMEN.GENERAL,
-    estudioId: 'estudio-1',
-  }, id);
+  return Cliente.create(
+    {
+      cuit: Cuit.create('20-12345678-6'),
+      razonSocial: RazonSocial.create(razonSocial),
+      condicionIva: CONDICION_IVA.RESPONSABLE_INSCRIPTO,
+      tipo: TIPO_CLIENTE.PERSONA_JURIDICA,
+      regimen: REGIMEN.GENERAL,
+      estudioId: 'estudio-1',
+    },
+    id,
+  );
 }
 
 describe('ImportarExcelHandler', () => {
@@ -59,7 +62,9 @@ describe('ImportarExcelHandler', () => {
     };
     mockVencimientoRepo = {
       findByClienteId: jest.fn().mockResolvedValue([]),
+      findClienteIdAndPeriodoKeys: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
+      importar: jest.fn().mockResolvedValue(undefined),
       findById: jest.fn().mockResolvedValue(null),
       findAll: jest.fn().mockResolvedValue([]),
       findByPeriodo: jest.fn().mockResolvedValue([]),
@@ -86,13 +91,13 @@ describe('ImportarExcelHandler', () => {
       expect(result.clientesNuevos).toBe(1);
       expect(result.vencimientosCreados).toBe(1);
       expect(mockClienteRepo.save).not.toHaveBeenCalled();
-      expect(mockVencimientoRepo.save).not.toHaveBeenCalled();
+      expect(mockVencimientoRepo.importar).not.toHaveBeenCalled();
     });
 
     it('should detect existing clients by name match', async () => {
       const existing = makeExistingCliente('MAFISSA', 'client-1');
       mockClienteRepo.findAll.mockResolvedValue([existing]);
-      mockVencimientoRepo.findByClienteId.mockResolvedValue([]);
+      mockVencimientoRepo.findClienteIdAndPeriodoKeys.mockResolvedValue([]);
 
       const result = await handler.execute(principal, {
         rows: [makeImportRow()],
@@ -111,7 +116,7 @@ describe('ImportarExcelHandler', () => {
       mockClienteRepo.findAll.mockResolvedValue([existing]);
 
       // Simulate existing vencimiento for IVA 2026-02
-      mockVencimientoRepo.findByClienteId.mockResolvedValue([
+      mockVencimientoRepo.findClienteIdAndPeriodoKeys.mockResolvedValue([
         {
           id: 'v-1',
           tipoObligacion: TIPO_OBLIGACION.IVA,
@@ -152,20 +157,20 @@ describe('ImportarExcelHandler', () => {
       });
 
       expect(result.vencimientosCreados).toBe(1);
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockVencimientoRepo.importar).toHaveBeenCalledTimes(1);
 
-      const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1];
+      const savedVencimiento = mockVencimientoRepo.importar.mock.calls[0][1];
       expect(savedVencimiento.estado).toBe(ESTADO_VENCIMIENTO.PRESENTADO);
     });
 
     it('should create vencimientos with PENDIENTE estado when specified', async () => {
-      const result = await handler.execute(principal, {
+      await handler.execute(principal, {
         rows: [makeImportRow()],
         dryRun: false,
         estadoHistoricos: 'PENDIENTE',
       });
 
-      const savedVencimiento = mockVencimientoRepo.save.mock.calls[0][1];
+      const savedVencimiento = mockVencimientoRepo.importar.mock.calls[0][1];
       expect(savedVencimiento.estado).toBe(ESTADO_VENCIMIENTO.PENDIENTE);
     });
 
@@ -173,7 +178,7 @@ describe('ImportarExcelHandler', () => {
       const existing = makeExistingCliente('MAFISSA', 'client-1');
       mockClienteRepo.findAll.mockResolvedValue([existing]);
 
-      mockVencimientoRepo.findByClienteId.mockResolvedValue([
+      mockVencimientoRepo.findClienteIdAndPeriodoKeys.mockResolvedValue([
         {
           id: 'v-1',
           tipoObligacion: TIPO_OBLIGACION.IVA,
@@ -189,7 +194,7 @@ describe('ImportarExcelHandler', () => {
 
       expect(result.vencimientosDuplicados).toBe(1);
       expect(result.vencimientosCreados).toBe(0);
-      expect(mockVencimientoRepo.save).not.toHaveBeenCalled();
+      expect(mockVencimientoRepo.importar).not.toHaveBeenCalled();
     });
 
     it('should handle multiple rows with different clients', async () => {
@@ -222,7 +227,7 @@ describe('ImportarExcelHandler', () => {
       expect(result.clientesNuevos).toBe(2);
       expect(result.vencimientosCreados).toBe(3);
       expect(mockClienteRepo.save).toHaveBeenCalledTimes(2);
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(3);
+      expect(mockVencimientoRepo.importar).toHaveBeenCalledTimes(3);
     });
 
     it('should reuse existing client for matching name', async () => {
@@ -240,7 +245,7 @@ describe('ImportarExcelHandler', () => {
       // Should not create the client again
       expect(mockClienteRepo.save).not.toHaveBeenCalled();
       // But should create the vencimiento
-      expect(mockVencimientoRepo.save).toHaveBeenCalledTimes(1);
+      expect(mockVencimientoRepo.importar).toHaveBeenCalledTimes(1);
     });
 
     it('should match client names case-insensitively', async () => {
@@ -260,7 +265,7 @@ describe('ImportarExcelHandler', () => {
     it('should prevent duplicate vencimientos within same import file', async () => {
       const existing = makeExistingCliente('MAFISSA', 'client-1');
       mockClienteRepo.findAll.mockResolvedValue([existing]);
-      mockVencimientoRepo.findByClienteId.mockResolvedValue([]);
+      mockVencimientoRepo.findClienteIdAndPeriodoKeys.mockResolvedValue([]);
 
       const duplicateObl = {
         tipoObligacion: TIPO_OBLIGACION.IVA,

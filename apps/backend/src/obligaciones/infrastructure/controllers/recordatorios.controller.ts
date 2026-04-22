@@ -1,6 +1,6 @@
 import { Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { ProcesarRecordatoriosDiariosHandler } from '../../application/commands/procesar-recordatorios-diarios.command';
 import { ProcesarAlertasEnRiesgoHandler } from '../../application/commands/procesar-alertas-en-riesgo.command';

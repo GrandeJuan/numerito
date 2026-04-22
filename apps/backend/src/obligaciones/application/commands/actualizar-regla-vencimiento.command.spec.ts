@@ -1,5 +1,9 @@
 import { ActualizarReglaVencimientoHandler } from './actualizar-regla-vencimiento.command';
-import { ReglaVencimiento, ESTADO_REGLA, ORIGEN_REGLA } from '../../domain/entities/regla-vencimiento.entity';
+import {
+  ReglaVencimiento,
+  ESTADO_REGLA,
+  ORIGEN_REGLA,
+} from '../../domain/entities/regla-vencimiento.entity';
 import type { ReglaVencimientoEntityRepository } from '../../domain/repositories/regla-vencimiento.repository';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
@@ -7,13 +11,15 @@ function createMockRepo(
   reglas: ReglaVencimiento[] = [],
 ): jest.Mocked<ReglaVencimientoEntityRepository> {
   return {
-    findById: jest.fn().mockImplementation((id: string) =>
-      Promise.resolve(reglas.find((r) => r.id === id) ?? null),
-    ),
+    findById: jest
+      .fn()
+      .mockImplementation((id: string) => Promise.resolve(reglas.find((r) => r.id === id) ?? null)),
     findAll: jest.fn(),
     findActivas: jest.fn(),
     findByEstado: jest.fn(),
     findVigentes: jest.fn(),
+    findActivasAsSummary: jest.fn(),
+    createPropuestaFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
@@ -39,9 +45,7 @@ describe('ActualizarReglaVencimientoHandler', () => {
     const repo = createMockRepo([]);
     const handler = new ActualizarReglaVencimientoHandler(repo);
 
-    await expect(
-      handler.execute({ id: 'non-existent' }),
-    ).rejects.toThrow(RecursoNoEncontradoError);
+    await expect(handler.execute({ id: 'non-existent' })).rejects.toThrow(RecursoNoEncontradoError);
   });
 
   it('should approve a PROPUESTA rule by setting estado to ACTIVA', async () => {

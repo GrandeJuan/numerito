@@ -34,15 +34,12 @@ export class AjusteDiaHabilService {
    * Pure computation variant — useful for testing and batch processing
    * where feriados are pre-loaded.
    */
-  ajustarConFeriados(
-    fechaNominal: Date,
-    jurisdiccion: string,
-    feriados: DiaFeriado[],
-  ): Date {
+  ajustarConFeriados(fechaNominal: Date, jurisdiccion: string, feriados: DiaFeriado[]): Date {
+    // UTC-normalized to avoid TZ drift between weekend (getDay) and feriado-key
+    // (toISOString) checks when the process runs outside UTC.
     const current = new Date(fechaNominal);
-    current.setHours(0, 0, 0, 0);
+    current.setUTCHours(0, 0, 0, 0);
 
-    // Index feriados by date string for O(1) lookup
     const feriadosByDate = new Map<string, DiaFeriado[]>();
     for (const f of feriados) {
       const key = this.dateKey(f.fecha);
@@ -55,10 +52,9 @@ export class AjusteDiaHabilService {
       if (!this.esNoHabil(current, jurisdiccion, feriadosByDate)) {
         return current;
       }
-      current.setDate(current.getDate() + 1);
+      current.setUTCDate(current.getUTCDate() + 1);
     }
 
-    // Fallback: return the last date we checked (should never happen in practice)
     return current;
   }
 
@@ -67,11 +63,9 @@ export class AjusteDiaHabilService {
     jurisdiccion: string,
     feriadosByDate: Map<string, DiaFeriado[]>,
   ): boolean {
-    // Weekend check: Saturday = 6, Sunday = 0
-    const day = fecha.getDay();
+    const day = fecha.getUTCDay();
     if (day === 0 || day === 6) return true;
 
-    // Feriado check
     const key = this.dateKey(fecha);
     const feriadosEnFecha = feriadosByDate.get(key);
     if (feriadosEnFecha) {
@@ -83,7 +77,7 @@ export class AjusteDiaHabilService {
 
   private dateKey(date: Date): string {
     const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
+    d.setUTCHours(0, 0, 0, 0);
     return d.toISOString().slice(0, 10);
   }
 }

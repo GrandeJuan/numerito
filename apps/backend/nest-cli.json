@@ -3,7 +3,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "tsConfigPath": "tsconfig.build.json",
-    "plugins": ["@nestjs/swagger"]
+    "tsConfigPath": "tsconfig.build.json"
   }
 }

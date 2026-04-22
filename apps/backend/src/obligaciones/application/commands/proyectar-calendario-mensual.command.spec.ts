@@ -1,7 +1,4 @@
-import {
-  ProyectarCalendarioMensualHandler,
-  type ProyectarCalendarioMensualCommand,
-} from './proyectar-calendario-mensual.command';
+import { ProyectarCalendarioMensualHandler } from './proyectar-calendario-mensual.command';
 import { Cuit } from '../../../clientes/domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../../clientes/domain/value-objects/razon-social.vo';
 import { InscripcionJurisdiccion } from '../../../clientes/domain/value-objects/inscripcion-jurisdiccion.vo';
@@ -120,18 +117,18 @@ describe('ProyectarCalendarioMensual Command', () => {
   it('should throw when cliente not found', async () => {
     mockClienteRepo.findById.mockResolvedValue(null);
 
-    await expect(
-      handler.execute(principal, { clienteId: 'nonexistent', periodo }),
-    ).rejects.toThrow('Cliente no encontrado');
+    await expect(handler.execute(principal, { clienteId: 'nonexistent', periodo })).rejects.toThrow(
+      'Cliente no encontrado',
+    );
   });
 
   it('should throw when cliente has no active inscripciones', async () => {
     const cliente = makeCliente(); // no inscripciones
     mockClienteRepo.findById.mockResolvedValue(cliente);
 
-    await expect(
-      handler.execute(principal, { clienteId: 'cliente-1', periodo }),
-    ).rejects.toThrow('no tiene inscripciones activas');
+    await expect(handler.execute(principal, { clienteId: 'cliente-1', periodo })).rejects.toThrow(
+      'no tiene inscripciones activas',
+    );
   });
 
   it('should project vencimientos for a single ARCA inscription', async () => {
@@ -190,7 +187,7 @@ describe('ProyectarCalendarioMensual Command', () => {
     mockClienteRepo.findById.mockResolvedValue(cliente);
 
     const catalogoARCA = makeCatalogo(TIPO_OBLIGACION.IVA, JURISDICCION.ARCA);
-    const catalogoARBA = makeCatalogo(TIPO_OBLIGACION.IIBB, JURISDICCION.ARBA);
+    const catalogoARBA = makeCatalogo(TIPO_OBLIGACION.IIBB_ARBA, JURISDICCION.ARBA);
     mockCatalogoRepo.findByJurisdiccion
       .mockResolvedValueOnce([catalogoARCA])
       .mockResolvedValueOnce([catalogoARBA]);

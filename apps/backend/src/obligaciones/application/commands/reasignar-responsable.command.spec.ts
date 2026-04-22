@@ -1,7 +1,4 @@
-import {
-  ReasignarResponsableHandler,
-  type ReasignarResponsableCommand,
-} from './reasignar-responsable.command';
+import { ReasignarResponsableHandler } from './reasignar-responsable.command';
 import { Cliente } from '../../../clientes/domain/entities/cliente.entity';
 import { Cuit } from '../../../clientes/domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../../clientes/domain/value-objects/razon-social.vo';
@@ -103,7 +100,7 @@ describe('ReasignarResponsable Command', () => {
     mockClienteRepo.findById.mockResolvedValue(cliente);
 
     const ivaVenc = makeFutureVencimiento(TIPO_OBLIGACION.IVA, 'v-1', 'user-old');
-    const iibbVenc = makeFutureVencimiento(TIPO_OBLIGACION.IIBB, 'v-2', 'user-old');
+    const iibbVenc = makeFutureVencimiento(TIPO_OBLIGACION.IIBB_ARBA, 'v-2', 'user-old');
     mockVencimientoRepo.findByClienteId.mockResolvedValue([ivaVenc, iibbVenc]);
 
     const result = await handler.execute(principal, {

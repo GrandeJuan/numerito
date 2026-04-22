@@ -8,10 +8,7 @@ import {
 import { TIPO_OBLIGACION, JURISDICCION } from '@numerito/shared';
 
 function loadFixture(name: string): string {
-  return fs.readFileSync(
-    path.join(__dirname, '__fixtures__', name),
-    'utf-8',
-  );
+  return fs.readFileSync(path.join(__dirname, '__fixtures__', name), 'utf-8');
 }
 
 describe('ArbaHtmlParser', () => {
@@ -45,12 +42,18 @@ describe('ArbaHtmlParser', () => {
 
     it('should map Anticipo Mensual IIBB Contribuyente Directo', () => {
       const result = resolverConceptoArba('Anticipo Mensual IIBB - Contribuyente Directo');
-      expect(result).toEqual({ tipo: TIPO_OBLIGACION.IIBB_ARBA, regimen: 'CONTRIBUYENTE_DIRECTO_ANTICIPO' });
+      expect(result).toEqual({
+        tipo: TIPO_OBLIGACION.IIBB_ARBA,
+        regimen: 'CONTRIBUYENTE_DIRECTO_ANTICIPO',
+      });
     });
 
     it('should map DDJJ Mensual IIBB Convenio Multilateral', () => {
       const result = resolverConceptoArba('DDJJ Mensual IIBB - Convenio Multilateral');
-      expect(result).toEqual({ tipo: TIPO_OBLIGACION.IIBB_CONVENIO_MULTILATERAL, regimen: 'CONVENIO_MULTILATERAL' });
+      expect(result).toEqual({
+        tipo: TIPO_OBLIGACION.IIBB_CONVENIO_MULTILATERAL,
+        regimen: 'CONVENIO_MULTILATERAL',
+      });
     });
 
     it('should map Retenciones IIBB', () => {
@@ -77,9 +80,9 @@ describe('ArbaHtmlParser', () => {
       const html = loadFixture('arba-vencimientos-2026-05.html');
       const result = parseArbaVencimientosHtml(html, 5, 2026, '2026-01-01');
 
-      // 4 IIBB concepts × 10 terminaciones = 40 reglas
+      // 5 IIBB concepts × 10 terminaciones = 50 reglas
       // Inmobiliario is ignored (1 concept × 10 = 10 ignored)
-      expect(result.reglas.length).toBe(40);
+      expect(result.reglas.length).toBe(50);
       expect(result.errores).toHaveLength(0);
       expect(result.conceptosIgnorados).toHaveLength(1); // Inmobiliario
     });
@@ -89,7 +92,8 @@ describe('ArbaHtmlParser', () => {
       const result = parseArbaVencimientosHtml(html, 5, 2026, '2026-01-01');
 
       const iibbT0 = result.reglas.find(
-        (r) => r.tipoObligacion === TIPO_OBLIGACION.IIBB_ARBA &&
+        (r) =>
+          r.tipoObligacion === TIPO_OBLIGACION.IIBB_ARBA &&
           r.regimen === 'CONTRIBUYENTE_DIRECTO' &&
           r.terminacionCuit === '0',
       );
@@ -105,7 +109,8 @@ describe('ArbaHtmlParser', () => {
       const result = parseArbaVencimientosHtml(html, 5, 2026, '2026-01-01');
 
       const cmT0 = result.reglas.find(
-        (r) => r.tipoObligacion === TIPO_OBLIGACION.IIBB_CONVENIO_MULTILATERAL &&
+        (r) =>
+          r.tipoObligacion === TIPO_OBLIGACION.IIBB_CONVENIO_MULTILATERAL &&
           r.terminacionCuit === '0',
       );
       expect(cmT0).toBeDefined();

@@ -1,6 +1,6 @@
 import { Controller, Get, Patch, Param, Query, Req, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../iam/infrastructure/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../shared/infrastructure/guards/jwt-auth.guard';
 import { NOTIFICACION_REPOSITORY } from '../../domain/repositories/notificacion.repository';
 import type { NotificacionRepository } from '../../domain/repositories/notificacion.repository';
 import {

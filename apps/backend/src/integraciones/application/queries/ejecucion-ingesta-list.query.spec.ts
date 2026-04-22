@@ -52,10 +52,11 @@ describe('EjecucionIngestaListHandler', () => {
 
     await handler.execute({ fuente: 'ARBA' });
 
-    const sql = executeFn.mock.calls[0][0] as string;
-    const params = executeFn.mock.calls[0][1] as unknown[];
+    // calls[0] is expireZombies' UPDATE; calls[1] is the SELECT under test.
+    const sql = executeFn.mock.calls[1][0] as string;
+    const params = executeFn.mock.calls[1][1] as unknown[];
     expect(sql).toContain('WHERE');
-    expect(sql).toContain('fuente = $1');
+    expect(sql).toContain('fuente = ?');
     expect(params).toContain('ARBA');
   });
 
@@ -65,9 +66,10 @@ describe('EjecucionIngestaListHandler', () => {
 
     await handler.execute({ estado: 'FALLIDA' });
 
-    const sql = executeFn.mock.calls[0][0] as string;
-    const params = executeFn.mock.calls[0][1] as unknown[];
-    expect(sql).toContain('estado = $1');
+    // calls[0] is expireZombies' UPDATE; calls[1] is the SELECT under test.
+    const sql = executeFn.mock.calls[1][0] as string;
+    const params = executeFn.mock.calls[1][1] as unknown[];
+    expect(sql).toContain('estado = ?');
     expect(params).toContain('FALLIDA');
   });
 
@@ -77,10 +79,11 @@ describe('EjecucionIngestaListHandler', () => {
 
     await handler.execute({ fuente: 'ARCA', estado: 'EXITOSA' });
 
-    const sql = executeFn.mock.calls[0][0] as string;
-    const params = executeFn.mock.calls[0][1] as unknown[];
-    expect(sql).toContain('fuente = $1');
-    expect(sql).toContain('estado = $2');
+    // calls[0] is expireZombies' UPDATE; calls[1] is the SELECT under test.
+    const sql = executeFn.mock.calls[1][0] as string;
+    const params = executeFn.mock.calls[1][1] as unknown[];
+    expect(sql).toContain('fuente = ?');
+    expect(sql).toContain('estado = ?');
     expect(params).toEqual(['ARCA', 'EXITOSA']);
   });
 
@@ -90,7 +93,7 @@ describe('EjecucionIngestaListHandler', () => {
 
     await handler.execute();
 
-    const sql = executeFn.mock.calls[0][0] as string;
+    const sql = executeFn.mock.calls[1][0] as string;
     expect(sql).toContain('ORDER BY inicio DESC');
     expect(sql).toContain('LIMIT 100');
   });
@@ -127,7 +130,7 @@ describe('EjecucionIngestaListHandler', () => {
 
     await handler.execute({});
 
-    const sql = executeFn.mock.calls[0][0] as string;
+    const sql = executeFn.mock.calls[1][0] as string;
     expect(sql).not.toContain('WHERE');
   });
 });

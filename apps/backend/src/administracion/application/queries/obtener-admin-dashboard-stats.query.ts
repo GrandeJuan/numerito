@@ -153,12 +153,13 @@ export class ObtenerAdminDashboardStatsHandler {
     const services = health.services.map<ServiceHealthEntry>((s) => ({
       name: s.name,
       detail:
-        s.latencyMs > 0
+        s.detail ??
+        (s.latencyMs > 0
           ? `p50 · ${Math.round(s.latencyMs)}ms${s.status === 'degraded' ? ' · degradado' : ''}`
           : s.status === 'down'
             ? 'caído'
-            : 'operativo',
-      uptime: `${health.uptimePercent.toFixed(2)}%`,
+            : 'operativo'),
+      uptime: s.status === 'operational' ? `${health.uptimePercent.toFixed(2)}%` : '—',
       status: toServiceStatus(s.status),
     }));
 

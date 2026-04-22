@@ -4,10 +4,7 @@ import { ScraperCalendarioARBA } from './scraper-calendario-arba';
 import { TIPO_OBLIGACION, JURISDICCION } from '@numerito/shared';
 
 function loadFixture(name: string): string {
-  return fs.readFileSync(
-    path.join(__dirname, '__fixtures__', name),
-    'utf-8',
-  );
+  return fs.readFileSync(path.join(__dirname, '__fixtures__', name), 'utf-8');
 }
 
 function createMockBrowser(htmlContent: string) {
@@ -31,15 +28,15 @@ describe('ScraperCalendarioARBA', () => {
   it('should extract reglas from fixture HTML', async () => {
     const html = loadFixture('arba-vencimientos-2026-05.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0, vigenciaDesde: '2026-01-01' },
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+      vigenciaDesde: '2026-01-01',
+    });
 
     const result = await scraper.scrapear('ARBA');
 
     expect(result.fuente).toBe('ARBA');
-    expect(result.reglas.length).toBe(40); // 4 IIBB concepts × 10 terminaciones
+    expect(result.reglas.length).toBe(50); // 5 IIBB concepts × 10 terminaciones
     expect(result.ejecutadoEn).toBeDefined();
 
     const iibbT0 = result.reglas.find(
@@ -52,10 +49,9 @@ describe('ScraperCalendarioARBA', () => {
   it('should return empty reglas for empty page', async () => {
     const html = loadFixture('arba-vencimientos-empty.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     const result = await scraper.scrapear('ARBA');
 
@@ -66,10 +62,9 @@ describe('ScraperCalendarioARBA', () => {
   it('should handle malformed page gracefully', async () => {
     const html = loadFixture('arba-vencimientos-malformed.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     const result = await scraper.scrapear('ARBA');
 
@@ -96,10 +91,9 @@ describe('ScraperCalendarioARBA', () => {
     const { browser, page } = createMockBrowser(html);
     page.content.mockRejectedValue(new Error('Navigation failed'));
 
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 0 },
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 0,
+    });
 
     await scraper.scrapear('ARBA');
 
@@ -109,10 +103,10 @@ describe('ScraperCalendarioARBA', () => {
   it('should deduplicate rules across months with same natural key', async () => {
     const html = loadFixture('arba-vencimientos-2026-05.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-      { mesesAdelante: 1, vigenciaDesde: '2026-01-01' },
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any), {
+      mesesAdelante: 1,
+      vigenciaDesde: '2026-01-01',
+    });
 
     const result = await scraper.scrapear('ARBA');
 
@@ -127,9 +121,7 @@ describe('ScraperCalendarioARBA', () => {
   it('should reject wrong fuente', async () => {
     const html = loadFixture('arba-vencimientos-2026-05.html');
     const { browser } = createMockBrowser(html);
-    const scraper = new ScraperCalendarioARBA(
-      () => Promise.resolve(browser as any),
-    );
+    const scraper = new ScraperCalendarioARBA(() => Promise.resolve(browser as any));
 
     const result = await scraper.scrapear('ARCA' as any);
 

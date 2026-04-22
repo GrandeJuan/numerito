@@ -1,7 +1,6 @@
 import { Cliente } from '../../domain/entities/cliente.entity';
 import { Cuit } from '../../domain/value-objects/cuit.vo';
 import { RazonSocial } from '../../domain/value-objects/razon-social.vo';
-import { InscripcionJurisdiccion } from '../../domain/value-objects/inscripcion-jurisdiccion.vo';
 import { ClienteMapper, clientePersistenceSchema, type ClientePersistence } from './cliente.mapper';
 import type { ClienteEntity } from './cliente.schema';
 import { CONDICION_IVA, REGIMEN, TIPO_CLIENTE, JURISDICCION } from '@numerito/shared';

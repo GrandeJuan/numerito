@@ -5,6 +5,8 @@ export interface ServiceStatus {
   status: 'operational' | 'degraded' | 'down';
   latencyMs: number;
   lastCheck: string;
+  /** Optional human-readable detail — surfaced in the dashboard below the service name. */
+  detail?: string;
 }
 
 export interface HealthCheckResult {
@@ -35,8 +37,8 @@ export class HealthCheckHandler {
     const services = await Promise.all([
       this.checkApi(),
       this.checkDatabase(),
-      this.checkQueueWorkers(),
-      this.checkArcaIntegration(),
+      this.checkScrapingIngesta(),
+      this.checkArcaWebservices(),
       this.checkStorageS3(),
     ]);
 
@@ -74,7 +76,7 @@ export class HealthCheckHandler {
   private async checkDatabase(): Promise<ServiceStatus> {
     const start = Date.now();
     try {
-      const result = await this.withTimeout(
+      await this.withTimeout(
         this.em.getConnection().execute('SELECT 1 as ok'),
         HealthCheckHandler.TIMEOUT_MS,
       );
@@ -96,28 +98,71 @@ export class HealthCheckHandler {
     }
   }
 
-  private async checkQueueWorkers(): Promise<ServiceStatus> {
-    // Stub — no queue infrastructure yet
-    return {
-      name: 'Queue Workers',
-      status: 'operational',
-      latencyMs: 0,
-      lastCheck: new Date().toISOString(),
-    };
+  /**
+   * Real check: looks at configuracion_ingesta + ejecucion_ingesta.
+   * Surfaces FALLIDA runs so the user notices scraping is broken instead of
+   * seeing a fake "operativo 100%".
+   */
+  private async checkScrapingIngesta(): Promise<ServiceStatus> {
+    try {
+      const [{ total_24h, fallidos_24h, en_curso }] = await this.em
+        .getConnection()
+        .execute<[{ total_24h: string; fallidos_24h: string; en_curso: string }]>(
+          `SELECT
+             COUNT(*) FILTER (WHERE inicio > NOW() - INTERVAL '24 hours')            AS total_24h,
+             COUNT(*) FILTER (WHERE estado = 'FALLIDA' AND inicio > NOW() - INTERVAL '24 hours') AS fallidos_24h,
+             COUNT(*) FILTER (WHERE estado = 'EN_CURSO')                              AS en_curso
+           FROM ejecucion_ingesta`,
+        );
+      const fallidas = Number(fallidos_24h);
+      const total = Number(total_24h);
+      const enCurso = Number(en_curso);
+      const detail =
+        fallidas > 0
+          ? `${fallidas} fallidas · ${total} total 24h${enCurso > 0 ? ` · ${enCurso} en curso` : ''}`
+          : total === 0
+            ? 'sin actividad 24h'
+            : `${total} ejecuciones 24h${enCurso > 0 ? ` · ${enCurso} en curso` : ''}`;
+      return {
+        name: 'Scraping Ingesta',
+        status: fallidas > 0 ? 'degraded' : 'operational',
+        latencyMs: 0,
+        lastCheck: new Date().toISOString(),
+        detail,
+      };
+    } catch {
+      return {
+        name: 'Scraping Ingesta',
+        status: 'down',
+        latencyMs: 0,
+        lastCheck: new Date().toISOString(),
+        detail: 'error consultando historial',
+      };
+    }
   }
 
-  private async checkArcaIntegration(): Promise<ServiceStatus> {
-    // Stub — ARCA integration not yet implemented
+  private async checkArcaWebservices(): Promise<ServiceStatus> {
+    // Webservices de ARCA (CAE/facturación electrónica, padrón). Distinto del
+    // scraping del calendario. Todavía no implementado.
     return {
-      name: 'ARCA Integration',
-      status: 'operational',
+      name: 'ARCA Webservices (facturación)',
+      status: 'degraded',
       latencyMs: 0,
       lastCheck: new Date().toISOString(),
+      detail: 'no configurado',
     };
   }
 
   private async checkStorageS3(): Promise<ServiceStatus> {
-    // Stub — S3 storage not yet configured
+    if (!process.env.AWS_S3_BUCKET) {
+      return {
+        name: 'Storage S3',
+        status: 'degraded',
+        latencyMs: 0,
+        lastCheck: new Date().toISOString(),
+        detail: 'no configurado',
+      };
+    }
     return {
       name: 'Storage S3',
       status: 'operational',

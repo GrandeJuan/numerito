@@ -1,20 +1,10 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Param,
-  Body,
-  Inject,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { AdminGuard } from '../../../iam/infrastructure/guards/admin.guard';
+import { AdminGuard } from '../../../shared/infrastructure/guards/admin.guard';
 import { ZodValidationPipe } from '../../../shared/infrastructure/pipes/zod-validation.pipe';
 import { successResponse } from '../../../shared/infrastructure/responses/api-response';
 import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
-import {
-  CONFIGURACION_INGESTA_REPOSITORY,
-} from '../../domain/repositories/configuracion-ingesta.repository';
+import { CONFIGURACION_INGESTA_REPOSITORY } from '../../domain/repositories/configuracion-ingesta.repository';
 import type { ConfiguracionIngestaRepository } from '../../domain/repositories/configuracion-ingesta.repository';
 import { ActualizarConfiguracionIngestaHandler } from '../../application/commands/actualizar-configuracion-ingesta.command';
 import { ConfiguracionIngestaListHandler } from '../../application/queries/configuracion-ingesta-list.query';

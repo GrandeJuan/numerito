@@ -24,9 +24,10 @@ export class ActualizarFeriadoHandler {
         fecha: command.fecha ? new Date(command.fecha) : existing.fecha,
         tipo: (command.tipo as TipoFeriado) ?? existing.tipo,
         descripcion: command.descripcion ?? existing.descripcion,
-        jurisdiccionAfectada: command.jurisdiccionAfectada !== undefined
-          ? (command.jurisdiccionAfectada as Jurisdiccion | null)
-          : existing.jurisdiccionAfectada,
+        jurisdiccionAfectada:
+          command.jurisdiccionAfectada !== undefined
+            ? (command.jurisdiccionAfectada as Jurisdiccion | null)
+            : (existing.jurisdiccionAfectada as Jurisdiccion | null),
       },
       existing.id,
     );

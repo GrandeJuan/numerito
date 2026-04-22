@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
+import { EntityManager as PostgresEntityManager } from '@mikro-orm/postgresql';
 import { ObligacionesController } from './infrastructure/controllers/obligaciones.controller';
 import { CatalogoAdminController } from './infrastructure/controllers/catalogo-admin.controller';
 import { RecordatoriosController } from './infrastructure/controllers/recordatorios.controller';
@@ -12,12 +13,8 @@ import { VENCIMIENTO_REPOSITORY } from './domain/repositories/vencimiento.reposi
 import type { VencimientoRepository } from './domain/repositories/vencimiento.repository';
 import { CATALOGO_OBLIGACION_REPOSITORY } from './domain/repositories/catalogo-obligacion.repository';
 import type { CatalogoObligacionRepository } from './domain/repositories/catalogo-obligacion.repository';
-import {
-  REGLA_VENCIMIENTO_ENTITY_REPOSITORY,
-} from './domain/repositories/regla-vencimiento.repository';
-import type {
-  ReglaVencimientoEntityRepository,
-} from './domain/repositories/regla-vencimiento.repository';
+import { REGLA_VENCIMIENTO_ENTITY_REPOSITORY } from './domain/repositories/regla-vencimiento.repository';
+import type { ReglaVencimientoEntityRepository } from './domain/repositories/regla-vencimiento.repository';
 import { ClientesModule } from '../clientes/clientes.module';
 import { EstudioModule } from '../estudio/estudio.module';
 import { ESTUDIO_REPOSITORY } from '../estudio/domain/repositories/estudio.repository';
@@ -46,6 +43,7 @@ import type { MailSenderPort } from '../shared/domain/ports/mail-sender.port';
 import { ConsoleMailSender } from '../shared/infrastructure/adapters/console-mail-sender';
 import { SesMailSender } from '../shared/infrastructure/adapters/ses-mail-sender';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+import { IamModule } from '../iam/iam.module';
 import { ReglaVencimientoService } from './domain/services/regla-vencimiento.service';
 import { AjusteDiaHabilService } from './domain/services/ajuste-dia-habil.service';
 import { CrearFeriadoHandler } from './application/commands/crear-feriado.command';
@@ -73,7 +71,6 @@ import { DescartarSugerenciaProrrogaHandler } from './application/commands/desca
 import { SugerenciasProrrogaListHandler } from './application/queries/sugerencias-prorroga-list.query';
 import { ProyectarCalendarioMensualHandler } from './application/commands/proyectar-calendario-mensual.command';
 import { ProyectarCalendarioMasivoHandler } from './application/commands/proyectar-calendario-masivo.command';
-import { ProyeccionMensualScheduler } from './application/commands/proyeccion-mensual-scheduler.command';
 import { VencimientoKpisHandler } from './application/queries/vencimiento-kpis.query';
 import { VencimientoListHandler } from './application/queries/vencimiento-list.query';
 import { VencimientoCalendarioHandler } from './application/queries/vencimiento-calendario.query';
@@ -101,8 +98,21 @@ import type { EventBus } from '../shared/domain/event-bus';
 import { EVENT_BUS } from '../shared/domain/event-bus';
 
 @Module({
-  imports: [forwardRef(() => ClientesModule), forwardRef(() => EstudioModule), NotificacionesModule],
-  controllers: [ObligacionesController, CatalogoAdminController, RecordatoriosController, ReglasPropuestasController, FeriadosAdminController, SugerenciasProrrogaController, ProyeccionMensualController],
+  imports: [
+    forwardRef(() => ClientesModule),
+    forwardRef(() => EstudioModule),
+    NotificacionesModule,
+    IamModule,
+  ],
+  controllers: [
+    ObligacionesController,
+    CatalogoAdminController,
+    RecordatoriosController,
+    ReglasPropuestasController,
+    FeriadosAdminController,
+    SugerenciasProrrogaController,
+    ProyeccionMensualController,
+  ],
   providers: [
     // ── Repositories ──
     { provide: VENCIMIENTO_REPOSITORY, useClass: MikroOrmVencimientoRepository },
@@ -112,7 +122,10 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     { provide: RECORDATORIO_ENVIADO_REPOSITORY, useClass: MikroOrmRecordatorioEnviadoRepository },
     { provide: ALERTA_CONFIG_REPOSITORY, useClass: MikroOrmAlertaConfigRepository },
     { provide: SUGERENCIA_PRORROGA_REPOSITORY, useClass: MikroOrmSugerenciaProrrogaRepository },
-    { provide: MAIL_SENDER, useClass: process.env.AWS_SES_FROM_EMAIL ? SesMailSender : ConsoleMailSender },
+    {
+      provide: MAIL_SENDER,
+      useClass: process.env.AWS_SES_FROM_EMAIL ? SesMailSender : ConsoleMailSender,
+    },
 
     // ── Domain services ──
     {
@@ -124,16 +137,14 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
 
     {
       provide: AjusteDiaHabilService,
-      useFactory: (feriadoRepo: FeriadoRepository) =>
-        new AjusteDiaHabilService(feriadoRepo),
+      useFactory: (feriadoRepo: FeriadoRepository) => new AjusteDiaHabilService(feriadoRepo),
       inject: [FERIADO_REPOSITORY],
     },
 
     // ── Vencimiento commands ──
     {
       provide: CrearVencimientoHandler,
-      useFactory: (repo: VencimientoRepository) =>
-        new CrearVencimientoHandler(repo),
+      useFactory: (repo: VencimientoRepository) => new CrearVencimientoHandler(repo),
       inject: [VENCIMIENTO_REPOSITORY],
     },
     {
@@ -156,8 +167,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     },
     {
       provide: MarcarNoAplicaHandler,
-      useFactory: (repo: VencimientoRepository) =>
-        new MarcarNoAplicaHandler(repo),
+      useFactory: (repo: VencimientoRepository) => new MarcarNoAplicaHandler(repo),
       inject: [VENCIMIENTO_REPOSITORY],
     },
 
@@ -204,8 +214,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
         clienteRepo: ClienteRepository,
         proyectarHandler: ProyectarCalendarioMensualHandler,
         eventBus: EventBus,
-      ) =>
-        new ProyectarCalendarioMasivoHandler(clienteRepo, proyectarHandler, eventBus),
+      ) => new ProyectarCalendarioMasivoHandler(clienteRepo, proyectarHandler, eventBus),
       inject: [CLIENTE_REPOSITORY, ProyectarCalendarioMensualHandler, EVENT_BUS],
     },
 
@@ -215,8 +224,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
       useFactory: (
         estudioRepo: EstudioRepository,
         proyectarMasivoHandler: ProyectarCalendarioMasivoHandler,
-      ) =>
-        new ProyeccionMensualScheduler(estudioRepo, proyectarMasivoHandler),
+      ) => new ProyeccionMensualScheduler(estudioRepo, proyectarMasivoHandler),
       inject: [ESTUDIO_REPOSITORY, ProyectarCalendarioMasivoHandler],
     },
 
@@ -273,8 +281,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     // ── Catálogo/Regla commands ──
     {
       provide: CrearCatalogoObligacionHandler,
-      useFactory: (repo: CatalogoObligacionRepository) =>
-        new CrearCatalogoObligacionHandler(repo),
+      useFactory: (repo: CatalogoObligacionRepository) => new CrearCatalogoObligacionHandler(repo),
       inject: [CATALOGO_OBLIGACION_REPOSITORY],
     },
     {
@@ -341,14 +348,19 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     // ── Sugerencias de prórroga ──
     {
       provide: DetectarSugerenciasProrrogaHandler,
-      useFactory: (em: EntityManager, ajusteDiaHabil: AjusteDiaHabilService) =>
-        new DetectarSugerenciasProrrogaHandler(em, ajusteDiaHabil),
-      inject: [EntityManager, AjusteDiaHabilService],
+      useFactory: (
+        em: PostgresEntityManager,
+        ajusteDiaHabil: AjusteDiaHabilService,
+        sugerenciaRepo: SugerenciaProrrogaRepository,
+      ) => new DetectarSugerenciasProrrogaHandler(em, ajusteDiaHabil, sugerenciaRepo),
+      inject: [EntityManager, AjusteDiaHabilService, SUGERENCIA_PRORROGA_REPOSITORY],
     },
     {
       provide: AprobarSugerenciaProrrogaHandler,
-      useFactory: (sugerenciaRepo: SugerenciaProrrogaRepository, prorrogarHandler: ProrrogarVencimientoHandler) =>
-        new AprobarSugerenciaProrrogaHandler(sugerenciaRepo, prorrogarHandler),
+      useFactory: (
+        sugerenciaRepo: SugerenciaProrrogaRepository,
+        prorrogarHandler: ProrrogarVencimientoHandler,
+      ) => new AprobarSugerenciaProrrogaHandler(sugerenciaRepo, prorrogarHandler),
       inject: [SUGERENCIA_PRORROGA_REPOSITORY, ProrrogarVencimientoHandler],
     },
     {
@@ -359,7 +371,7 @@ import { EVENT_BUS } from '../shared/domain/event-bus';
     },
     {
       provide: SugerenciasProrrogaListHandler,
-      useFactory: (em: EntityManager) => new SugerenciasProrrogaListHandler(em),
+      useFactory: (em: PostgresEntityManager) => new SugerenciasProrrogaListHandler(em),
       inject: [EntityManager],
     },
 

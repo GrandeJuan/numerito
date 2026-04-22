@@ -5,28 +5,34 @@ import { RecursoNoEncontradoError } from '../../../shared/domain/exceptions';
 
 function createMockRepo(feriados: DiaFeriado[] = []): jest.Mocked<FeriadoRepository> {
   return {
-    findById: jest.fn().mockImplementation((id: string) =>
-      Promise.resolve(feriados.find((f) => f.id === id) ?? null),
-    ),
+    findById: jest
+      .fn()
+      .mockImplementation((id: string) =>
+        Promise.resolve(feriados.find((f) => f.id === id) ?? null),
+      ),
     findAll: jest.fn(),
     findByFecha: jest.fn(),
     findByRango: jest.fn(),
+    findByFechaAsSummary: jest.fn(),
+    createFromScrape: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
   };
 }
 
-function createFeriado(overrides: Partial<{
-  fecha: Date;
-  tipo: string;
-  descripcion: string;
-  jurisdiccionAfectada: string | null;
-}> = {}): DiaFeriado {
+function createFeriado(
+  overrides: Partial<{
+    fecha: Date;
+    tipo: string;
+    descripcion: string;
+    jurisdiccionAfectada: string | null;
+  }> = {},
+): DiaFeriado {
   return DiaFeriado.create({
     fecha: overrides.fecha ?? new Date('2026-05-01'),
     tipo: (overrides.tipo as any) ?? TIPO_FERIADO.NACIONAL,
     descripcion: overrides.descripcion ?? 'Día del Trabajador',
-    jurisdiccionAfectada: overrides.jurisdiccionAfectada ?? null,
+    jurisdiccionAfectada: (overrides.jurisdiccionAfectada as any) ?? null,
   });
 }
 
@@ -35,9 +41,9 @@ describe('ActualizarFeriadoHandler', () => {
     const repo = createMockRepo([]);
     const handler = new ActualizarFeriadoHandler(repo);
 
-    await expect(
-      handler.execute({ id: 'non-existent', descripcion: 'updated' }),
-    ).rejects.toThrow(RecursoNoEncontradoError);
+    await expect(handler.execute({ id: 'non-existent', descripcion: 'updated' })).rejects.toThrow(
+      RecursoNoEncontradoError,
+    );
   });
 
   it('should update descripcion only', async () => {
